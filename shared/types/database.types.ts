@@ -129,12 +129,13 @@ export type Database = {
           sport_type: Database["public"]["Enums"]["sport_type"]
           start_point: unknown
           updated_at: string
+          route_geojson: Json | null
         }
         Insert: {
           cover_image_url?: string | null
           created_at?: string
           description?: string | null
-          distance_m: number
+          distance_m?: number
           elevation_gain_m?: number | null
           elevation_loss_m?: number | null
           elevation_profile?: Json | null
@@ -145,7 +146,7 @@ export type Database = {
           owner_id: string
           source?: Database["public"]["Enums"]["route_source"]
           sport_type?: Database["public"]["Enums"]["sport_type"]
-          start_point: unknown
+          start_point?: unknown
           updated_at?: string
         }
         Update: {
@@ -181,7 +182,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      route_geojson: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
     }
     Enums: {
       activity_type: "saved" | "completed"

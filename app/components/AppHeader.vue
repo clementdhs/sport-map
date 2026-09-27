@@ -28,6 +28,13 @@ async function signOut() {
     </template>
 
     <template #right>
+      <UButton
+        v-if="user"
+        to="/routes/create"
+        icon="i-lucide-plus"
+        label="Créer un parcours"
+        :ui="{ label: 'hidden sm:inline' }"
+      />
       <UDropdownMenu v-if="user" :items="userMenu">
         <UButton
           color="neutral"

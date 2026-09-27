@@ -15,9 +15,11 @@ Web app (installable PWA) to create, share and discover running / hiking / cycli
 - Server routes use `serverSupabaseClient(event)` (user session + RLS) by default; `serverSupabaseServiceRole` only when bypassing RLS is really required.
 - Mutating routes check `await serverSupabaseUser(event)` and return 401 when missing.
 - `useSupabaseUser()` / `serverSupabaseUser()` return JWT claims: the user id is `.sub`, not `.id`.
+- API response types live in `shared/types/` and are used both as the handler's return type and as `useFetch<T>()`'s generic: the app's TS project can't resolve server-only aliases, so types inferred from handlers become `any`.
+- Validation schemas (zod) live in `shared/utils/` and are shared by `UForm` and `readValidatedBody`.
 - Every new table gets RLS enabled with explicit policies, in a new file under `supabase/migrations/` (never edit an applied migration).
 - After a schema change, regenerate `shared/types/database.types.ts` with `npm run db:types`.
-- Geometry is stored as `geography(…, 4326)`; `start_point` and `distance_m` on `routes` are computed by a DB trigger.
+- Geometry is stored as `geography(…, 4326)`, inserted as EWKT (`SRID=4326;LINESTRING(...)`); `start_point` and `distance_m` on `routes` are generated columns. Read the track as GeoJSON with the `route_geojson` computed field.
 - MapLibre is imported only client-side (dynamic import in `onMounted`), and its worker URL is set via `?worker&url` (required by MapLibre 6 with Vite).
 - Free-tier quotas matter: debounce OpenRouteService calls, serve images straight from Supabase Storage.
 - APIs of Nuxt 4 / Nuxt UI 4 / MapLibre 6 / @nuxtjs/supabase 2 change fast: when unsure, check the official docs or the package's types in `node_modules` rather than relying on memory.

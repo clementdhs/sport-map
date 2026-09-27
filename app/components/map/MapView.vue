@@ -10,6 +10,10 @@ const props = withDefaults(defineProps<{
   zoom: 5,
 })
 
+const emit = defineEmits<{
+  load: [map: Map]
+}>()
+
 const { maptilerKey } = useRuntimeConfig().public
 
 // Keyless fallback so the app runs before a MapTiler key is configured (low-detail tiles).
@@ -43,6 +47,7 @@ onMounted(async () => {
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
+  instance.once('load', () => emit('load', instance))
   map.value = instance
 })
 

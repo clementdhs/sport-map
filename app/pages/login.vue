@@ -7,9 +7,16 @@ useSeoMeta({ title: 'Connexion — sport-map' })
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const route = useRoute()
+
+// Only same-site paths, so the query cannot be used as an open redirect.
+const redirectTo = computed(() => {
+  const target = route.query.redirect
+  return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/'
+})
 
 watch(user, (value) => {
-  if (value) navigateTo('/')
+  if (value) navigateTo(redirectTo.value)
 }, { immediate: true })
 
 const fields: AuthFormField[] = [

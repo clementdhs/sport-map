@@ -10,7 +10,8 @@ export const E2E_USER = {
   username: 'e2e_user',
 }
 
-export const SEEDED_ROUTE_NAME = 'Boucle e2e du lac'
+export const SEEDED_ROUTE_NAME = 'Traversée e2e du lac'
+export const SEEDED_LOOP_NAME = 'Tour e2e des crêtes'
 
 // A style without any source: the map loads instantly and offline.
 const EMPTY_MAP_STYLE = {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
 
 useSeoMeta({
@@ -15,18 +16,31 @@ const sportItems = [
   ...SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] })),
 ]
 
-const distanceLabel = computed(() => {
-  const [min, max] = search.distanceKm
-  if (min === 0 && max === DISTANCE_FILTER_MAX_KM) return 'Toutes distances'
-  if (max === DISTANCE_FILTER_MAX_KM) return `Plus de ${min} km`
-  if (min === 0) return `Moins de ${max} km`
-  return `De ${min} à ${max} km`
-})
+const sortItems = SEARCH_SORTS.map(value => ({ value, label: SEARCH_SORT_LABELS[value] }))
+
+// "unit" follows the numbers, e.g. "km" or "m D+".
+function rangeLabel([min, max]: [number, number], top: number, unit: string, all: string) {
+  if (min === 0 && max === top) return all
+  if (max === top) return `Plus de ${min} ${unit}`
+  if (min === 0) return `Moins de ${max} ${unit}`
+  return `De ${min} à ${max} ${unit}`
+}
+
+const distanceLabel = computed(() => rangeLabel(search.distanceKm, DISTANCE_FILTER_MAX_KM, 'km', 'Toutes distances'))
+const gainLabel = computed(() => rangeLabel(search.gainM, GAIN_FILTER_MAX_M, 'm D+', 'Tout dénivelé'))
+
+// The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort.
+const LIMIT_LABELS: Record<SearchSort, string> = {
+  nearest: 'les plus proches du centre de la carte',
+  recent: 'les plus récents de la zone',
+  shortest: 'les plus courts de la zone',
+  longest: 'les plus longs de la zone',
+}
 
 const resultsLabel = computed(() => {
   const count = search.results.length
   if (count === 0) return 'Aucun parcours dans cette zone'
-  if (count >= MAX_SEARCH_RESULTS) return `Les ${count} parcours les plus proches du centre de la carte`
+  if (count >= MAX_SEARCH_RESULTS) return `Les ${count} parcours ${LIMIT_LABELS[search.sort]}`
   return count === 1 ? '1 parcours dans cette zone' : `${count} parcours dans cette zone`
 })
 </script>
@@ -52,6 +66,13 @@ const resultsLabel = computed(() => {
 
       <div class="grid grid-cols-2 gap-3">
         <USelect v-model="search.sport" :items="sportItems" aria-label="Sport" class="w-full" />
+        <USelect
+          v-model="search.sort"
+          :items="sortItems"
+          icon="i-lucide-arrow-down-wide-narrow"
+          aria-label="Trier par"
+          class="w-full"
+        />
         <div class="space-y-2">
           <p class="text-sm text-muted">{{ distanceLabel }}</p>
           <USlider
@@ -62,7 +83,19 @@ const resultsLabel = computed(() => {
             aria-label="Distance du parcours, en kilomètres"
           />
         </div>
+        <div class="space-y-2">
+          <p class="text-sm text-muted">{{ gainLabel }}</p>
+          <USlider
+            v-model="search.gainM"
+            :min="0"
+            :max="GAIN_FILTER_MAX_M"
+            :step="50"
+            aria-label="Dénivelé positif du parcours, en mètres"
+          />
+        </div>
       </div>
+
+      <USwitch v-model="search.loopsOnly" label="Boucles uniquement" description="Arrivée à moins de 200 m du départ." />
 
       <USeparator />
 

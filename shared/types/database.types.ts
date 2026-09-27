@@ -123,6 +123,7 @@ export type Database = {
           elevation_profile: Json | null
           geom: unknown
           id: string
+          is_loop: boolean
           is_public: boolean
           name: string
           owner_id: string
@@ -143,6 +144,7 @@ export type Database = {
           elevation_profile?: Json | null
           geom: unknown
           id?: string
+          is_loop?: boolean
           is_public?: boolean
           name: string
           owner_id: string
@@ -162,6 +164,7 @@ export type Database = {
           elevation_profile?: Json | null
           geom?: unknown
           id?: string
+          is_loop?: boolean
           is_public?: boolean
           name?: string
           owner_id?: string
@@ -193,13 +196,17 @@ export type Database = {
       }
       search_routes: {
         Args: {
+          loops_only?: boolean
           max_distance_m?: number
+          max_gain_m?: number
           max_lat: number
           max_lng: number
           max_results?: number
           min_distance_m?: number
+          min_gain_m?: number
           min_lat: number
           min_lng: number
+          sort?: string
           sport?: Database["public"]["Enums"]["sport_type"]
         }
         Returns: {
@@ -207,6 +214,7 @@ export type Database = {
           distance_m: number
           elevation_gain_m: number
           id: string
+          is_loop: boolean
           name: string
           owner_username: string
           sport_type: Database["public"]["Enums"]["sport_type"]

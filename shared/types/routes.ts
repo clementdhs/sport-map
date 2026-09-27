@@ -33,6 +33,8 @@ export type RouteListItem = {
   distance_m: number
   elevation_gain_m: number | null
   is_public: boolean
+  // Ends less than 200 m from its start
+  is_loop: boolean
   owner_username: string
   created_at: string
 }

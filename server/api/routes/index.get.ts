@@ -16,6 +16,10 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     sport: query.sport,
     min_distance_m: query.minKm !== undefined ? query.minKm * 1000 : undefined,
     max_distance_m: query.maxKm !== undefined ? query.maxKm * 1000 : undefined,
+    min_gain_m: query.minGain,
+    max_gain_m: query.maxGain,
+    loops_only: query.loops ?? false,
+    sort: query.sort,
     max_results: MAX_SEARCH_RESULTS,
   })
 

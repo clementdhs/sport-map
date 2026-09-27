@@ -1,4 +1,4 @@
-import { E2E_USER, SEEDED_ROUTE_NAME } from './fixtures'
+import { E2E_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME } from './fixtures'
 
 // Plain REST calls to the local Supabase admin APIs: loading @supabase/supabase-js from Playwright's
 // CommonJS runner hits a Node 22 require(esm) bug.
@@ -29,20 +29,34 @@ export default async function globalSetup() {
     }),
   })
 
+  // A ~6.5 km point-to-point route, and a longer loop with more climbing (both running, both near Annecy).
   const [route] = await supabaseAdmin<{ id: string }[]>('/rest/v1/routes?select=id', {
     method: 'POST',
     headers: { Prefer: 'return=representation' },
-    body: JSON.stringify({
-      owner_id: user.id,
-      name: SEEDED_ROUTE_NAME,
-      description: 'Parcours créé par les tests de bout en bout.',
-      sport_type: 'running',
-      is_public: true,
-      geom: 'SRID=4326;LINESTRING(6.129 45.899,6.14 45.87,6.16 45.85)',
-      elevation_profile: [450, 470, 520],
-      elevation_gain_m: 70,
-      elevation_loss_m: 0,
-    }),
+    body: JSON.stringify([
+      {
+        owner_id: user.id,
+        name: SEEDED_ROUTE_NAME,
+        description: 'Parcours créé par les tests de bout en bout.',
+        sport_type: 'running',
+        is_public: true,
+        geom: 'SRID=4326;LINESTRING(6.129 45.899,6.14 45.87,6.16 45.85)',
+        elevation_profile: [450, 470, 520],
+        elevation_gain_m: 70,
+        elevation_loss_m: 0,
+      },
+      {
+        owner_id: user.id,
+        name: SEEDED_LOOP_NAME,
+        description: 'Boucle créée par les tests de bout en bout.',
+        sport_type: 'running',
+        is_public: true,
+        geom: 'SRID=4326;LINESTRING(6.2 45.9,6.28 45.95,6.35 45.9,6.28 45.85,6.2 45.9)',
+        elevation_profile: [500, 900, 1100, 800, 500],
+        elevation_gain_m: 650,
+        elevation_loss_m: 650,
+      },
+    ]),
   })
 
   process.env.E2E_ROUTE_ID = route!.id

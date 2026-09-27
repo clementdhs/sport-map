@@ -1,5 +1,5 @@
 import type { RouteSummary } from '#shared/types/routes'
-import type { LngLat, RouteSearchQuery, SportType } from '#shared/utils/routes'
+import type { LngLat, RouteSearchQuery, SearchSort, SportType } from '#shared/utils/routes'
 
 export type Bounds = [minLng: number, minLat: number, maxLng: number, maxLat: number]
 
@@ -15,12 +15,16 @@ export interface MapFocus {
   bbox?: Bounds
 }
 
-// Top of the distance slider: selecting it means "no maximum".
+// Top of the distance and elevation sliders: selecting it means "no maximum".
 export const DISTANCE_FILTER_MAX_KM = 100
+export const GAIN_FILTER_MAX_M = 2000
 
 export const useRouteSearchStore = defineStore('routeSearch', () => {
   const sport = ref<SportType | 'all'>('all')
   const distanceKm = ref<[number, number]>([0, DISTANCE_FILTER_MAX_KM])
+  const gainM = ref<[number, number]>([0, GAIN_FILTER_MAX_M])
+  const loopsOnly = ref(false)
+  const sort = ref<SearchSort>('nearest')
   // Last map view, restored when coming back to the page.
   const view = ref<Omit<MapViewState, 'bounds'>>({ center: [2.35, 46.6], zoom: 5 })
   const bounds = ref<Bounds | null>(null)
@@ -35,11 +39,16 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     if (!bounds.value) return null
     const [minLng, minLat, maxLng, maxLat] = bounds.value
     const [minKm, maxKm] = distanceKm.value
+    const [minGain, maxGain] = gainM.value
     return {
       minLng, minLat, maxLng, maxLat,
       sport: sport.value === 'all' ? undefined : sport.value,
       minKm: minKm > 0 ? minKm : undefined,
       maxKm: maxKm < DISTANCE_FILTER_MAX_KM ? maxKm : undefined,
+      minGain: minGain > 0 ? minGain : undefined,
+      maxGain: maxGain < GAIN_FILTER_MAX_M ? maxGain : undefined,
+      loops: loopsOnly.value ? 'true' : undefined,
+      sort: sort.value,
     }
   })
 
@@ -74,5 +83,5 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     view.value = { center, zoom }
   }
 
-  return { sport, distanceKm, view, results, loading, failed, setView }
+  return { sport, distanceKm, gainM, loopsOnly, sort, view, results, loading, failed, setView }
 })

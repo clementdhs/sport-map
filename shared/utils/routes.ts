@@ -104,6 +104,16 @@ export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
 
 export const MAX_SEARCH_RESULTS = 50
 
+export const SEARCH_SORTS = ['nearest', 'recent', 'shortest', 'longest'] as const
+export type SearchSort = typeof SEARCH_SORTS[number]
+
+export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
+  nearest: 'Plus proches',
+  recent: 'Plus récents',
+  shortest: 'Plus courts',
+  longest: 'Plus longs',
+}
+
 export const routeSearchSchema = z.object({
   minLng: z.coerce.number().min(-180).max(180),
   minLat: z.coerce.number().min(-90).max(90),
@@ -112,9 +122,14 @@ export const routeSearchSchema = z.object({
   sport: z.enum(SPORT_TYPES).optional(),
   minKm: z.coerce.number().min(0).optional(),
   maxKm: z.coerce.number().min(0).optional(),
+  minGain: z.coerce.number().min(0).optional(),
+  maxGain: z.coerce.number().min(0).optional(),
+  // "true" / "false" in the query string (z.coerce.boolean would read "false" as true).
+  loops: z.stringbool().optional(),
+  sort: z.enum(SEARCH_SORTS).default('nearest'),
 })
 
-export type RouteSearchQuery = z.infer<typeof routeSearchSchema>
+export type RouteSearchQuery = z.input<typeof routeSearchSchema>
 
 export const ROUTING_MODES = ['snap', 'straight'] as const
 export type RoutingMode = typeof ROUTING_MODES[number]

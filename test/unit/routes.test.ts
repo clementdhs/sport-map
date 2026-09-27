@@ -108,9 +108,20 @@ describe('routeCreateSchema', () => {
 })
 
 describe('routeSearchSchema', () => {
-  it('reads numbers from query strings', () => {
-    const query = routeSearchSchema.parse({ minLng: '5', minLat: '45', maxLng: '7', maxLat: '47', sport: 'hiking', maxKm: '20' })
-    expect(query).toEqual({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'hiking', maxKm: 20 })
+  const bounds = { minLng: '5', minLat: '45', maxLng: '7', maxLat: '47' }
+
+  it('reads numbers from query strings and sorts by proximity by default', () => {
+    const query = routeSearchSchema.parse({ ...bounds, sport: 'hiking', maxKm: '20', minGain: '300' })
+    expect(query).toEqual({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'hiking', maxKm: 20, minGain: 300, sort: 'nearest' })
+  })
+
+  it('reads the loop filter as a real boolean', () => {
+    expect(routeSearchSchema.parse({ ...bounds, loops: 'true' }).loops).toBe(true)
+    expect(routeSearchSchema.parse({ ...bounds, loops: 'false' }).loops).toBe(false)
+  })
+
+  it('rejects an unknown sort', () => {
+    expect(routeSearchSchema.safeParse({ ...bounds, sort: 'random' }).success).toBe(false)
   })
 
   it('rejects an unknown sport', () => {

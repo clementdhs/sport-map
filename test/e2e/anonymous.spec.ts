@@ -1,4 +1,4 @@
-import { expect, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
 test('finds a public route on the home map and opens it', async ({ page }) => {
   await page.goto('/')
@@ -26,11 +26,31 @@ test('filters the search by sport', async ({ page }) => {
   await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
 })
 
+test('keeps only loops and sorts the results', async ({ page }) => {
+  await page.goto('/')
+  await waitForMap(page)
+  const cards = page.locator('aside li a')
+  await expect(cards).toHaveCount(2)
+
+  await page.getByRole('combobox', { name: 'Trier par' }).click()
+  await page.getByRole('option', { name: 'Plus longs' }).click()
+  await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
+  await expect(cards.first()).toContainText('boucle')
+
+  await page.getByRole('combobox', { name: 'Trier par' }).click()
+  await page.getByRole('option', { name: 'Plus courts' }).click()
+  await expect(cards.first()).toContainText(SEEDED_ROUTE_NAME)
+
+  await page.getByRole('switch', { name: /Boucles uniquement/ }).click()
+  await expect(cards).toHaveCount(1)
+  await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
+})
+
 test('exports a public route as GPX', async ({ request }) => {
   const response = await request.get(`/api/routes/${process.env.E2E_ROUTE_ID}/gpx`)
   expect(response.status()).toBe(200)
   expect(response.headers()['content-type']).toContain('application/gpx+xml')
-  expect(response.headers()['content-disposition']).toContain('boucle-e2e-du-lac.gpx')
+  expect(response.headers()['content-disposition']).toContain('traversee-e2e-du-lac.gpx')
   const gpx = await response.text()
   expect(gpx).toContain('<trkpt lat="45.899" lon="6.129"><ele>450</ele></trkpt>')
 })

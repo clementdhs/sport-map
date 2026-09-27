@@ -28,6 +28,11 @@ export default defineNuxtConfig({
     },
   },
 
+  nitro: {
+    // Server functions next to the Supabase database (eu-west-1, Dublin): each query stays in the same region.
+    vercel: { functions: { regions: ['dub1'] } },
+  },
+
   supabase: {
     // Auth gating is handled per page with our own middleware.
     redirect: false,

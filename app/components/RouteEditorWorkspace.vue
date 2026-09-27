@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FetchError } from 'ofetch'
+import type { LngLat } from '#shared/utils/routes'
 
 // Map + side panel of the route editor, shared by the create and edit pages.
 defineProps<{
@@ -8,6 +9,7 @@ defineProps<{
 
 const editor = useRouteEditorStore()
 const hasLockedTrack = computed(() => editor.segments.some(segment => segment.mode === 'locked'))
+const hoverPoint = ref<LngLat | null>(null)
 const toast = useToast()
 const saving = ref(false)
 
@@ -68,7 +70,7 @@ async function onSubmit() {
   <div class="flex h-[calc(100dvh-var(--ui-header-height))] flex-col md:flex-row">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteEditor />
+        <MapRouteEditor :hover-point="hoverPoint" />
       </ClientOnly>
     </div>
 
@@ -142,6 +144,7 @@ async function onSubmit() {
         v-if="editor.track.elevations && editor.track.coordinates.length >= 2"
         :coordinates="editor.track.coordinates"
         :elevations="editor.track.elevations"
+        @hover="hoverPoint = $event"
       />
 
       <p v-if="editor.waypoints.length < 2" class="text-sm text-muted">

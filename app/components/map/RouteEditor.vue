@@ -3,6 +3,11 @@ import { lineString, nearestPointOnLine } from '@turf/turf'
 import type { Map, MapMouseEvent, MapTouchEvent, PointLike } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
 
+const props = defineProps<{
+  // Position hovered on the elevation profile
+  hoverPoint?: LngLat | null
+}>()
+
 const editor = useRouteEditorStore()
 const map = shallowRef<Map>()
 
@@ -156,6 +161,10 @@ watch(layerData, (data) => {
 
 watch(() => editor.replacedCount, () => {
   map.value?.fitBounds(routeBounds(editor.track.coordinates), { padding: 48 })
+})
+
+watch(() => props.hoverPoint, (point) => {
+  if (map.value) setRouteHover(map.value, point ?? null)
 })
 </script>
 

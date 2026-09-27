@@ -17,6 +17,7 @@ if (error.value || !parcours.value) {
 }
 
 const coordinates = computed(() => (parcours.value?.geometry.coordinates ?? []) as LngLat[])
+const hoverPoint = ref<LngLat | null>(null)
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
 const summary = computed(() => {
   const p = parcours.value!
@@ -76,7 +77,7 @@ useSeoMeta({
   <div v-if="parcours" class="flex h-[calc(100dvh-var(--ui-header-height))] flex-col md:flex-row">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteDisplay :coordinates="coordinates" />
+        <MapRouteDisplay :coordinates="coordinates" :hover-point="hoverPoint" />
       </ClientOnly>
     </div>
 
@@ -148,6 +149,7 @@ useSeoMeta({
         v-if="parcours.elevation_profile?.length === coordinates.length"
         :coordinates="coordinates"
         :elevations="parcours.elevation_profile"
+        @hover="hoverPoint = $event"
       />
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>

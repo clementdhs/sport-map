@@ -7,6 +7,11 @@ const props = defineProps<{
   elevations: number[]
 }>()
 
+const emit = defineEmits<{
+  // Track position under the cursor, so the map can show it; null when leaving the profile.
+  hover: [point: LngLat | null]
+}>()
+
 // Plot space: x from 0 to WIDTH, y from 0 (top) to HEIGHT (bottom); stretched to the container.
 const WIDTH = 1000
 const HEIGHT = 100
@@ -43,6 +48,11 @@ const areaPath = computed(() => `${linePath.value}L${WIDTH},${HEIGHT}L0,${HEIGHT
 
 const plot = useTemplateRef('plot')
 const activeIndex = ref<number | null>(null)
+
+watch(activeIndex, index => emit('hover', index === null ? null : props.coordinates[index]!))
+onBeforeUnmount(() => {
+  if (activeIndex.value !== null) emit('hover', null)
+})
 
 const active = computed(() => {
   if (activeIndex.value === null) return null

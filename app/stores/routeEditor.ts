@@ -1,7 +1,7 @@
 import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail } from '#shared/types/routes'
-import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
+import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
@@ -59,7 +59,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const history = shallowRef<Snapshot[]>([])
   // Set when editing a saved route: saving then updates it instead of creating a new one.
   const editingId = ref<string | null>(null)
-  const editingSource = ref<'drawn' | 'gpx_import'>('drawn')
+  const editingSource = ref<RouteSource>('drawn')
   let nextSegmentId = 0
   // Segments with a routing request in flight: lets undo restart the ones whose request already finished.
   const inFlight = new Set<number>()

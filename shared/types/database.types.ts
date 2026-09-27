@@ -107,24 +107,33 @@ export type Database = {
           activity_type: Database["public"]["Enums"]["activity_type"]
           completed_at: string | null
           created_at: string
+          duration_s: number | null
           id: string
+          moving_s: number | null
           route_id: string
+          started_at: string | null
           user_id: string
         }
         Insert: {
           activity_type: Database["public"]["Enums"]["activity_type"]
           completed_at?: string | null
           created_at?: string
+          duration_s?: number | null
           id?: string
+          moving_s?: number | null
           route_id: string
+          started_at?: string | null
           user_id: string
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
           completed_at?: string | null
           created_at?: string
+          duration_s?: number | null
           id?: string
+          moving_s?: number | null
           route_id?: string
+          started_at?: string | null
           user_id?: string
         }
         Relationships: [
@@ -354,7 +363,7 @@ export type Database = {
     }
     Enums: {
       activity_type: "saved" | "completed"
-      route_source: "drawn" | "gpx_import"
+      route_source: "drawn" | "gpx_import" | "recorded"
       sport_type: "running" | "hiking" | "cycling"
     }
     CompositeTypes: {
@@ -487,7 +496,7 @@ export const Constants = {
   public: {
     Enums: {
       activity_type: ["saved", "completed"],
-      route_source: ["drawn", "gpx_import"],
+      route_source: ["drawn", "gpx_import", "recorded"],
       sport_type: ["running", "hiking", "cycling"],
     },
   },

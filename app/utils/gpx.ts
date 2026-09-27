@@ -15,7 +15,7 @@ const MIN_SPACING_M = 5
 
 // Keeps a point once the track has moved far enough from the last kept one; spacing grows until the
 // track fits the point limit.
-function resample(positions: Position[]): Position[] {
+export function resampleTrack(positions: Position[]): Position[] {
   const along = [0]
   for (let i = 1; i < positions.length; i++) {
     along.push(along[i - 1]! + distance(positions[i - 1]!, positions[i]!, { units: 'meters' }))
@@ -48,7 +48,7 @@ export async function readGpxFile(file: File): Promise<ImportedTrack> {
     : first.geometry.coordinates.flat()
   if (positions.length < 2) throw new Error('La trace contient moins de 2 points.')
 
-  const points = resample(positions)
+  const points = resampleTrack(positions)
   const round = (value: number) => Math.round(value * 1e6) / 1e6
   const hasElevations = points.every(point => typeof point[2] === 'number')
 

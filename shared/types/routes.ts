@@ -9,6 +9,12 @@ import type { Tables } from './database.types'
 export type ViewerActivity = {
   saved: boolean
   completed_at: string | null
+} & OutingTimes
+
+// Times of an outing recorded with the GPS (s), null when the route was just marked as done.
+export type OutingTimes = {
+  duration_s: number | null
+  moving_s: number | null
 }
 
 export type RouteDetail = Pick<
@@ -62,7 +68,7 @@ export type MyProfile = {
   profile: ProfileInfo
   created: RouteListItem[]
   saved: RouteListItem[]
-  completed: (RouteListItem & { completed_at: string })[]
+  completed: (RouteListItem & OutingTimes & { completed_at: string })[]
 }
 
 export type PublicProfile = {

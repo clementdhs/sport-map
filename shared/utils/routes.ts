@@ -108,13 +108,17 @@ export const poiSchema = z.object({
 
 export type Poi = z.infer<typeof poiSchema>
 
+// drawn in the editor, imported from a GPX file, or recorded with the phone's GPS
+export const ROUTE_SOURCES = ['drawn', 'gpx_import', 'recorded'] as const
+export type RouteSource = typeof ROUTE_SOURCES[number]
+
 export const routeCreateSchema = routeDetailsSchema.extend({
   coordinates: z.array(coordinateSchema)
     .min(2, 'Un parcours doit contenir au moins 2 points')
     .max(MAX_ROUTE_POINTS, `${MAX_ROUTE_POINTS} points maximum`),
   // One elevation per coordinate, in meters.
   elevations: z.array(z.number().min(-500).max(9000)).optional(),
-  source: z.enum(['drawn', 'gpx_import']).default('drawn'),
+  source: z.enum(ROUTE_SOURCES).default('drawn'),
   editor_state: editorStateSchema.optional(),
   pois: z.array(poiSchema).max(MAX_POIS, `${MAX_POIS} points d'intérêt maximum`).optional(),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
@@ -260,3 +264,17 @@ export const reviewSchema = z.object({
 })
 
 export type ReviewInput = z.infer<typeof reviewSchema>
+
+// An outing recorded with the phone's GPS: its track, saved as a new route, and its times (s).
+// duration_s is the elapsed time, pauses included; moving_s only counts time spent moving.
+export const recordingSchema = z.object({
+  route: routeCreateSchema,
+  started_at: z.iso.datetime({ offset: true }),
+  duration_s: z.number().int().min(0).max(7 * 24 * 3600),
+  moving_s: z.number().int().min(0),
+}).refine(recording => recording.moving_s <= recording.duration_s, {
+  message: 'Le temps en mouvement dépasse la durée de la sortie',
+  path: ['moving_s'],
+})
+
+export type RecordingPayload = z.infer<typeof recordingSchema>

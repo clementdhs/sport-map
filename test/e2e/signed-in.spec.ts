@@ -199,3 +199,64 @@ test('moderates the reviews of its own route', async ({ page, playwright }) => {
   expect((await asVisitor()).reviews).toHaveLength(1)
   await visitor.dispose()
 })
+
+test.describe('recording an outing', () => {
+  const START = { latitude: 45.9, longitude: 6.12, accuracy: 5 }
+  test.use({ permissions: ['geolocation'], geolocation: START })
+
+  test('records an outing, survives a page reload, and saves it as a completed route', async ({ page, context }) => {
+    // Fake clock: the recorder times fixes with Date.now().
+    await page.clock.install({ time: new Date('2026-09-28T08:00:00Z') })
+    page.on('dialog', dialog => dialog.accept()) // "leave the page?" prompts
+    // `meters` north of the start, one fix per simulated minute.
+    const walkTo = async (meters: number) => {
+      await page.clock.runFor(60_000)
+      await context.setGeolocation({ ...START, latitude: START.latitude + meters / 111_194.93 })
+    }
+    const distance = page.getByTestId('distance')
+
+    await page.goto('/record')
+    await waitForMap(page)
+    await expect(page.getByText(/Précision GPS/)).toBeVisible()
+    await page.getByRole('button', { name: 'Démarrer' }).click()
+    await expect(page.getByText('Enregistrement', { exact: true })).toBeVisible()
+
+    for (let i = 1; i <= 4; i++) {
+      await walkTo(i * 100)
+      await expect(distance).toHaveText(`${i}00 m`)
+    }
+
+    // Paused: moving doesn't count.
+    await page.getByRole('button', { name: 'Pause' }).click()
+    await walkTo(450)
+    await expect(distance).toHaveText('400 m')
+    await page.getByRole('button', { name: 'Reprendre' }).click()
+
+    // The page closes by accident: the outing is kept on the phone.
+    await page.reload()
+    await waitForMap(page)
+    await expect(page.getByText(/n'est pas terminée/)).toBeVisible()
+    await page.getByRole('button', { name: 'Reprendre' }).click()
+    await expect(distance).toHaveText('400 m')
+
+    for (let i = 5; i <= 12; i++) await walkTo(i * 100)
+    await expect(distance).toHaveText('1,20 km')
+
+    await page.getByRole('button', { name: 'Terminer' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Terminer la sortie' })
+    await expect(dialog.getByLabel('Nom')).toHaveValue('Sortie du 28 septembre 2026')
+    await dialog.getByRole('button', { name: 'Enregistrer' }).click()
+
+    await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
+    await expect(page.getByRole('heading', { name: 'Sortie du 28 septembre 2026' })).toBeVisible()
+    await expect(page.getByText('Enregistré au GPS')).toBeVisible()
+    await expect(page.getByText('Privé', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Fait le/ })).toBeVisible()
+    await expect(page.getByText(/Ta sortie : \d+ min, dont \d+ min en mouvement/)).toBeVisible()
+
+    // Listed among the completed routes of the profile, with its times.
+    await page.goto('/profile')
+    await page.getByRole('tab', { name: /Réalisés/ }).click()
+    await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
+  })
+})

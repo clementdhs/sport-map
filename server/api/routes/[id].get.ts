@@ -32,12 +32,15 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
   if (user) {
     const { data: activity } = await supabase
       .from('route_activity')
-      .select('activity_type, completed_at')
+      .select('activity_type, completed_at, duration_s, moving_s')
       .eq('route_id', id)
       .eq('user_id', user.sub)
+    const completed = activity?.find(a => a.activity_type === 'completed')
     viewer = {
       saved: !!activity?.some(a => a.activity_type === 'saved'),
-      completed_at: activity?.find(a => a.activity_type === 'completed')?.completed_at ?? null,
+      completed_at: completed?.completed_at ?? null,
+      duration_s: completed?.duration_s ?? null,
+      moving_s: completed?.moving_s ?? null,
     }
   }
 

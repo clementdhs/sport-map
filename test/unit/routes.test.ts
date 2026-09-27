@@ -5,6 +5,7 @@ import {
   routeCreateSchema,
   routeSearchSchema,
   reviewSchema,
+  recordingSchema,
   snapToTrack,
   MAX_POIS,
   type LngLat,
@@ -177,5 +178,23 @@ describe('reviewSchema', () => {
 describe('search sorts', () => {
   it('accepts the best rated sort', () => {
     expect(routeSearchSchema.parse({ minLng: '5', minLat: '45', maxLng: '7', maxLat: '47', sort: 'best_rated' }).sort).toBe('best_rated')
+  })
+})
+
+describe('recordingSchema', () => {
+  const recording = {
+    route: { name: 'Sortie', sport_type: 'hiking', is_public: false, source: 'recorded', coordinates: [[6.1, 45.9], [6.2, 45.95]] },
+    started_at: '2026-09-28T08:00:00.000Z',
+    duration_s: 3600,
+    moving_s: 3000,
+  }
+
+  it('accepts a recorded outing', () => {
+    expect(recordingSchema.parse(recording).route.source).toBe('recorded')
+  })
+
+  it('rejects more moving time than elapsed time, or a missing start', () => {
+    expect(recordingSchema.safeParse({ ...recording, moving_s: 4000 }).success).toBe(false)
+    expect(recordingSchema.safeParse({ ...recording, started_at: 'hier' }).success).toBe(false)
   })
 })

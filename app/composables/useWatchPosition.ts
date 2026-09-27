@@ -4,10 +4,12 @@ export interface GpsFix {
   position: LngLat
   // Radius (m) the real position is likely within
   accuracyM: number
+  // GPS altitude (m), when the device provides it
+  altitudeM: number | null
 }
 
 const ERROR_MESSAGES: Record<number, string> = {
-  1: 'Autorise l\'accès à ta position pour suivre le parcours.',
+  1: 'Autorise l\'accès à ta position dans les réglages du navigateur.',
   2: 'Position indisponible : vérifie que la localisation de ton téléphone est activée.',
 }
 
@@ -25,7 +27,7 @@ export function useWatchPosition() {
     }
     watchId = navigator.geolocation.watchPosition(
       ({ coords }) => {
-        fix.value = { position: [coords.longitude, coords.latitude], accuracyM: coords.accuracy }
+        fix.value = { position: [coords.longitude, coords.latitude], accuracyM: coords.accuracy, altitudeM: coords.altitude }
         error.value = null
       },
       // Timeouts are not reported: the watch keeps trying.

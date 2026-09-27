@@ -21,7 +21,7 @@ const hoverPoint = ref<LngLat | null>(null)
 // Own state for what the page changes: useFetch data is a shallow ref, so changing a property of
 // parcours (photos, viewer) would not re-render the page.
 const photos = ref<RoutePhoto[]>(parcours.value.photos)
-const viewer = ref<ViewerActivity>(parcours.value.viewer ?? { saved: false, completed_at: null })
+const viewer = ref<ViewerActivity>(parcours.value.viewer ?? { saved: false, completed_at: null, duration_s: null, moving_s: null })
 
 // In the order they come along the track.
 const pois = computed(() => {
@@ -49,7 +49,7 @@ async function toggleActivity(type: ActivityType) {
     await $fetch(`/api/routes/${parcours.value!.id}/activity/${type}`, { method: active ? 'DELETE' : 'PUT' })
     viewer.value = type === 'saved'
       ? { ...viewer.value, saved: !active }
-      : { ...viewer.value, completed_at: active ? null : new Date().toISOString() }
+      : { ...viewer.value, completed_at: active ? null : new Date().toISOString(), duration_s: null, moving_s: null }
   }
   catch (error) {
     toast.add({ title: 'Action impossible', description: errorMessage(error), color: 'error' })
@@ -110,6 +110,7 @@ useSeoMeta({
         <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="SPORT_LABELS[parcours.sport_type]" variant="subtle" />
         <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" label="Privé" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" label="Importé d'un GPX" color="neutral" variant="subtle" />
+        <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" label="Enregistré au GPS" color="neutral" variant="subtle" />
       </div>
 
       <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
@@ -143,6 +144,12 @@ useSeoMeta({
           @click="toggleActivity('completed')"
         />
       </div>
+
+      <p v-if="viewer.completed_at && viewer.duration_s != null && viewer.moving_s != null" class="text-sm text-muted">
+        <UIcon name="i-lucide-timer" class="mr-1 align-text-bottom" />
+        Ta sortie : {{ formatElapsed(viewer.duration_s) }}, dont {{ formatElapsed(viewer.moving_s) }} en mouvement
+        · {{ formatSpeed(parcours.distance_m, viewer.moving_s) }}
+      </p>
 
       <UButton
         :to="`/routes/${parcours.id}/follow`"

@@ -6,6 +6,13 @@ import type { ProfileUpdate } from '#shared/utils/routes'
 definePageMeta({ middleware: 'auth' })
 useSeoMeta({ title: 'Mon profil — sport-map' })
 
+// "Fait le …", with the times of an outing recorded with the GPS.
+function completedNote(route: MyProfile['completed'][number]) {
+  const note = `Fait le ${formatDate(route.completed_at)}`
+  if (route.duration_s == null || route.moving_s == null) return note
+  return `${note} · ${formatElapsed(route.duration_s)} · ${formatSpeed(route.distance_m, route.moving_s)}`
+}
+
 const toast = useToast()
 const { data, error, refresh } = await useFetch<MyProfile>('/api/profile/me')
 if (error.value) {
@@ -117,7 +124,7 @@ async function saveProfile() {
       <template #completed>
         <ul v-if="data.completed.length" class="space-y-2 pt-2">
           <li v-for="route in data.completed" :key="route.id">
-            <RouteCard :route="route" :note="`Fait le ${formatDate(route.completed_at)}`" />
+            <RouteCard :route="route" :note="completedNote(route)" />
           </li>
         </ul>
         <UEmpty

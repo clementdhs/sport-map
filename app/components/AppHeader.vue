@@ -31,6 +31,15 @@ async function signOut() {
     <template #right>
       <UButton
         v-if="user"
+        to="/record"
+        icon="i-lucide-circle-dot"
+        label="Enregistrer une sortie"
+        color="neutral"
+        variant="outline"
+        :ui="{ label: 'hidden sm:inline' }"
+      />
+      <UButton
+        v-if="user"
         to="/routes/create"
         icon="i-lucide-plus"
         label="Créer un parcours"

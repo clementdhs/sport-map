@@ -30,3 +30,27 @@ export function formatDate(isoDate: string): string {
 export function formatRating(average: number): string {
   return average.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
+
+// Stopwatch, e.g. "1:05:09" or "05:09".
+export function formatStopwatch(seconds: number): string {
+  const s = Math.max(0, Math.floor(seconds))
+  const hours = Math.floor(s / 3600)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const rest = `${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`
+  return hours ? `${hours}:${rest}` : rest
+}
+
+// A measured time, to the minute, e.g. "1 h 05" or "42 min" (seconds under a minute).
+export function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `${Math.round(seconds)} s`
+  const minutes = Math.round(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  if (!hours) return `${minutes} min`
+  return `${hours} h ${String(minutes % 60).padStart(2, '0')}`
+}
+
+// Speed from meters and seconds, e.g. "8,4 km/h".
+export function formatSpeed(meters: number, seconds: number): string {
+  const kmh = seconds > 0 ? (meters / seconds) * 3.6 : 0
+  return `${kmh.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km/h`
+}

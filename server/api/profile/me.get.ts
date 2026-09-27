@@ -11,7 +11,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
     supabase.from('routes').select(ROUTE_LIST_COLUMNS).eq('owner_id', user.sub).order('created_at', { ascending: false }),
     supabase
       .from('route_activity')
-      .select(`activity_type, completed_at, route:routes(${ROUTE_LIST_COLUMNS})`)
+      .select(`activity_type, completed_at, duration_s, moving_s, route:routes(${ROUTE_LIST_COLUMNS})`)
       .eq('user_id', user.sub)
       .order('created_at', { ascending: false }),
   ])
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
     saved: activities.filter(a => a.activity_type === 'saved').map(a => toRouteListItem(a.route!)),
     completed: activities
       .filter(a => a.activity_type === 'completed')
-      .map(a => ({ ...toRouteListItem(a.route!), completed_at: a.completed_at! }))
+      .map(a => ({ ...toRouteListItem(a.route!), completed_at: a.completed_at!, duration_s: a.duration_s, moving_s: a.moving_s }))
       .sort((a, b) => b.completed_at.localeCompare(a.completed_at)),
   }
 })

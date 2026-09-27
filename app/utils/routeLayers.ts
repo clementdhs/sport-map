@@ -116,3 +116,49 @@ export function routeBounds(coordinates: LngLat[]): LngLatBoundsLike {
   const lats = coordinates.map(([, lat]) => lat)
   return [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]]
 }
+
+// Live GPS position: a dot, and a halo sized to the fix's accuracy (in meters, so it depends on the zoom).
+const GPS_SOURCE = 'gps-position'
+const GPS_COLOR = '#2563eb'
+
+export interface GpsPosition {
+  position: LngLat
+  accuracyM: number
+}
+
+function gpsData(map: Map, fix: GpsPosition | null): FeatureCollection<Point> {
+  if (!fix) return { type: 'FeatureCollection', features: [] }
+  const metersPerPixel = (40_075_016.686 * Math.cos((fix.position[1] * Math.PI) / 180)) / (512 * 2 ** map.getZoom())
+  return {
+    type: 'FeatureCollection',
+    features: [{
+      type: 'Feature',
+      properties: { halo: Math.min(fix.accuracyM / metersPerPixel, 400) },
+      geometry: { type: 'Point', coordinates: fix.position },
+    }],
+  }
+}
+
+// Returns the function to call with each new fix; the halo follows the zoom by itself.
+export function addGpsLayers(map: Map, initial: GpsPosition | null): (fix: GpsPosition | null) => void {
+  let current = initial
+  map.addSource(GPS_SOURCE, { type: 'geojson', data: gpsData(map, current) })
+  map.addLayer({
+    id: 'gps-halo',
+    type: 'circle',
+    source: GPS_SOURCE,
+    paint: { 'circle-radius': ['get', 'halo'], 'circle-color': GPS_COLOR, 'circle-opacity': 0.15 },
+  })
+  map.addLayer({
+    id: 'gps-dot',
+    type: 'circle',
+    source: GPS_SOURCE,
+    paint: { 'circle-radius': 8, 'circle-color': GPS_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 },
+  })
+  const update = () => map.getSource<GeoJSONSource>(GPS_SOURCE)?.setData(gpsData(map, current))
+  map.on('zoom', update)
+  return (fix) => {
+    current = fix
+    update()
+  }
+}

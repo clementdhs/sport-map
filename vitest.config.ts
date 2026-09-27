@@ -28,6 +28,9 @@ export default defineConfig({
           name: 'nuxt',
           include: ['test/nuxt/**/*.test.ts'],
           environment: 'nuxt',
+          // Booting the Nuxt environment can exceed the default 10 s on a loaded machine (e.g. with the local
+          // Supabase running in Docker).
+          hookTimeout: 30_000,
           environmentOptions: {
             nuxt: {
               overrides: {

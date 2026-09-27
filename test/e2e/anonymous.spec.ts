@@ -1,4 +1,5 @@
-import { expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { expect, RESET_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { passwordResetLink } from './mail'
 
 test('finds a public route on the home map and opens it', async ({ page }) => {
   await page.goto('/')
@@ -156,4 +157,57 @@ test.describe('follow mode', () => {
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
   })
+})
+
+test('resets a forgotten password from the email link, opened in another browser', async ({ page, browser }) => {
+  await page.goto('/login')
+  const origin = new URL(page.url()).origin
+  await page.getByRole('link', { name: 'Mot de passe oublié ?' }).click()
+  await expect(page).toHaveURL(/\/forgot-password$/)
+
+  // Same answer for an unknown address: the page doesn't tell which accounts exist.
+  await page.locator('input[name="email"]').fill('personne@sport-map.test')
+  await page.getByRole('button', { name: 'Recevoir un lien' }).click()
+  const sent = page.getByText('Vérifie ta boîte mail')
+  await expect(sent).toBeVisible()
+  await page.reload()
+  await page.locator('input[name="email"]').fill(RESET_USER.email)
+  await page.getByRole('button', { name: 'Recevoir un lien' }).click()
+  await expect(sent).toBeVisible()
+
+  // The link works in another browser, without the session or storage of the one that asked for it.
+  const link = await passwordResetLink(RESET_USER.email, origin)
+  const phone = await browser.newContext({ baseURL: origin })
+  const phonePage = await phone.newPage()
+  await phonePage.goto(link)
+  await phonePage.getByLabel('Nouveau mot de passe').fill('nouveau-mot-de-passe')
+  await phonePage.getByLabel('Confirme le mot de passe').fill('pas-le-meme')
+  await phonePage.getByRole('button', { name: 'Enregistrer le mot de passe' }).click()
+  await expect(phonePage.getByText('Les deux mots de passe sont différents')).toBeVisible()
+  await phonePage.getByLabel('Confirme le mot de passe').fill('nouveau-mot-de-passe')
+  // The error clears while typing: clicking while it shows would move the button under the pointer.
+  await expect(phonePage.getByText('Les deux mots de passe sont différents')).toBeHidden()
+  await phonePage.getByRole('button', { name: 'Enregistrer le mot de passe' }).click()
+  await expect(phonePage).toHaveURL(`${origin}/`)
+  await expect(phonePage.getByRole('button', { name: RESET_USER.email })).toBeVisible()
+
+  // The link only works once.
+  await phonePage.goto(link)
+  await expect(phonePage.getByText('Lien invalide ou expiré')).toBeVisible()
+
+  // Changed again from the profile, then used to sign in.
+  await phonePage.goto('/profile')
+  await phonePage.getByRole('button', { name: 'Changer mon mot de passe' }).click()
+  await phonePage.getByLabel('Nouveau mot de passe').fill('encore-un-autre')
+  await phonePage.getByLabel('Confirme le mot de passe').fill('encore-un-autre')
+  await phonePage.getByRole('button', { name: 'Changer le mot de passe' }).click()
+  // The toast, and its copy for screen readers.
+  await expect(phonePage.getByText('Mot de passe modifié').first()).toBeVisible()
+  await phone.close()
+
+  await page.goto('/login')
+  await page.locator('input[name="email"]').fill(RESET_USER.email)
+  await page.locator('input[name="password"]').fill('encore-un-autre')
+  await page.getByRole('button', { name: 'Se connecter' }).click()
+  await expect(page.getByRole('button', { name: RESET_USER.email })).toBeVisible()
 })

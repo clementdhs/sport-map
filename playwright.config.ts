@@ -15,13 +15,15 @@ function localSupabase() {
     throw new Error('Supabase local ne répond pas : lance `npm run db:start` avant `npm run test:e2e`.')
   }
   const url = status.API_URL
+  const mailUrl = status.MAILPIT_URL ?? status.INBUCKET_URL
   const publicKey = status.PUBLISHABLE_KEY ?? status.ANON_KEY
   // The service_role JWT, accepted as a bearer token by every local API.
   const secretKey = status.SERVICE_ROLE_KEY ?? status.SECRET_KEY
-  if (!url || !publicKey || !secretKey || !/^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test(url)) {
-    throw new Error(`Configuration Supabase locale inattendue : ${url}`)
+  const isLocal = (address?: string) => !!address && /^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test(address)
+  if (!isLocal(url) || !isLocal(mailUrl) || !publicKey || !secretKey) {
+    throw new Error(`Configuration Supabase locale inattendue : ${url}, ${mailUrl}`)
   }
-  return { url, publicKey, secretKey }
+  return { url, mailUrl, publicKey, secretKey }
 }
 
 const supabase = localSupabase()
@@ -30,6 +32,8 @@ process.env.E2E_SUPABASE_URL = supabase.url
 process.env.E2E_SUPABASE_SECRET_KEY = supabase.secretKey
 // Used by the tests that act as a visitor straight on the Supabase APIs.
 process.env.E2E_SUPABASE_PUBLIC_KEY = supabase.publicKey
+// Local mailbox (Mailpit) where Supabase delivers its emails, e.g. password reset links.
+process.env.E2E_MAILPIT_URL = supabase.mailUrl
 
 export default defineConfig({
   testDir: 'test/e2e',

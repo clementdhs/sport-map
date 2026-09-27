@@ -35,6 +35,12 @@ watch(editOpen, (open) => {
   }
 })
 
+const passwordOpen = ref(false)
+function onPasswordChanged() {
+  passwordOpen.value = false
+  toast.add({ title: 'Mot de passe modifié', color: 'success', icon: 'i-lucide-check' })
+}
+
 async function saveProfile() {
   saving.value = true
   try {
@@ -89,6 +95,12 @@ async function saveProfile() {
               <UButton label="Annuler" color="neutral" variant="outline" @click="editOpen = false" />
               <UButton type="submit" form="profile-form" label="Enregistrer" :loading="saving" />
             </div>
+          </template>
+        </UModal>
+        <UModal v-model:open="passwordOpen" title="Changer mon mot de passe">
+          <UButton icon="i-lucide-key-round" color="neutral" variant="outline" aria-label="Changer mon mot de passe" />
+          <template #body>
+            <NewPasswordForm submit-label="Changer le mot de passe" @done="onPasswordChanged" />
           </template>
         </UModal>
       </div>

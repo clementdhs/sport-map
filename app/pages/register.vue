@@ -5,7 +5,6 @@ type RegisterState = { username: string, email: string, password: string }
 
 // Must match the check constraint on public.profiles.username.
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,30}$/
-const MIN_PASSWORD_LENGTH = 8
 
 useSeoMeta({ title: 'Inscription — sport-map' })
 

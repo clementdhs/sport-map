@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "pwa:assets": "pwa-assets-generator",
-    "db:start": "supabase start -x realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit",
+    "db:start": "supabase start -x realtime,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor",
     "db:stop": "supabase stop",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > shared/types/database.types.ts"

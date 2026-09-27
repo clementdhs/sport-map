@@ -13,6 +13,13 @@ export const E2E_USER = {
 export const SEEDED_ROUTE_NAME = 'Traversée e2e du lac'
 export const SEEDED_LOOP_NAME = 'Tour e2e des crêtes'
 
+// Test account whose password the reset test changes, so as not to disturb the others.
+export const RESET_USER = {
+  email: 'e2e-reset@sport-map.test',
+  password: 'e2e-reset-initial',
+  username: 'e2e_reset',
+}
+
 // Other test users, created by the global setup to review and report.
 export const E2E_NEIGHBORS = [1, 2, 3].map(i => ({ email: `e2e-voisin${i}@sport-map.test`, username: `e2e_voisin${i}` }))
 

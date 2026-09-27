@@ -66,6 +66,9 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
           Pas encore de compte ?
           <ULink to="/register" class="text-primary font-medium">Inscris-toi</ULink>
         </template>
+        <template #password-hint>
+          <ULink to="/forgot-password" class="text-primary font-medium">Mot de passe oublié ?</ULink>
+        </template>
         <template #validation>
           <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
         </template>

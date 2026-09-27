@@ -195,7 +195,8 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Local only: the e2e tests send password reset emails at every run (the hosted project keeps its own limit).
+email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -241,6 +242,13 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# The recovery link carries a token hash that /reset-password verifies itself, so that it works in any
+# browser (the default PKCE link only works in the browser that asked for it). The hosted project needs the
+# same template (Authentication > Emails > Reset password).
+[auth.email.template.recovery]
+subject = "Réinitialisation de ton mot de passe sport-map"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

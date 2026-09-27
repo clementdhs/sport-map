@@ -1,5 +1,5 @@
 import { insertRows, supabaseAdmin } from './admin'
-import { E2E_NEIGHBORS, E2E_USER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME } from './fixtures'
+import { E2E_NEIGHBORS, E2E_USER, RESET_USER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME } from './fixtures'
 
 async function createUser(email: string, username: string, password: string) {
   return supabaseAdmin<{ id: string }>('/auth/v1/admin/users', {
@@ -11,16 +11,18 @@ async function createUser(email: string, username: string, password: string) {
 // Recreates the test users (deleting them cascades to their profile, routes, activity and reviews), two
 // public routes of the main test user, and a review of the first one by a neighbor.
 export default async function globalSetup() {
-  // Photo files are not deleted by the cascade: start from an empty bucket.
+  // Photo files are not deleted by the cascade: start from an empty bucket. Same for the local mailbox.
   await supabaseAdmin('/storage/v1/bucket/route-photos/empty', { method: 'POST' })
+  await fetch(`${process.env.E2E_MAILPIT_URL}/api/v1/messages`, { method: 'DELETE' })
 
   const { users } = await supabaseAdmin<{ users: { id: string, email: string }[] }>('/auth/v1/admin/users?per_page=1000')
-  const emails = [E2E_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]
+  const emails = [E2E_USER.email, RESET_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]
   for (const user of users.filter(u => emails.includes(u.email))) {
     await supabaseAdmin(`/auth/v1/admin/users/${user.id}`, { method: 'DELETE' })
   }
 
   const user = await createUser(E2E_USER.email, E2E_USER.username, E2E_USER.password)
+  await createUser(RESET_USER.email, RESET_USER.username, RESET_USER.password)
   // Other users, to review and report. They never sign in.
   const neighbors = await Promise.all(E2E_NEIGHBORS.map(n => createUser(n.email, n.username, crypto.randomUUID())))
 

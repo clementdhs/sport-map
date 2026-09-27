@@ -1,17 +1,25 @@
 import { length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
-import type { LngLat, RouteDetails, RoutingSegmentResponse } from '#shared/utils/routes'
+import type { LngLat, RouteDetails, RoutingMode, RoutingSegmentResponse } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
 interface Segment {
   id: number
+  // How the track was obtained; an imported segment is locked, since recomputing it would lose the GPX track.
+  mode: RoutingMode | 'imported'
   coordinates: LngLat[]
   // null while loading, when the elevation service could not be reached, or for a GPX without elevation
   elevations: number[] | null
   loading: boolean
-  imported: boolean
 }
+
+interface Snapshot {
+  waypoints: LngLat[]
+  segments: Segment[]
+}
+
+const MAX_HISTORY = 50
 
 const defaultDetails = (): RouteDetails => ({
   name: '',
@@ -22,6 +30,7 @@ const defaultDetails = (): RouteDetails => ({
 
 // ~10 cm precision is plenty and keeps payloads small.
 const round = (value: number) => Math.round(value * 1e6) / 1e6
+const roundPoint = ([lng, lat]: LngLat): LngLat => [round(lng), round(lat)]
 const samePoint = (a: LngLat, b: LngLat) => a[0] === b[0] && a[1] === b[1]
 
 export const useRouteEditorStore = defineStore('routeEditor', () => {
@@ -33,7 +42,10 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const snapToPaths = ref(true)
   // Incremented when the whole track is replaced, so the map can frame it.
   const replacedCount = ref(0)
+  const history = shallowRef<Snapshot[]>([])
   let nextSegmentId = 0
+  // Segments with a routing request in flight: lets undo restart the ones whose request already finished.
+  const inFlight = new Set<number>()
 
   const track = computed(() => {
     if (!segments.value.length) return { coordinates: [...waypoints.value], elevations: null }
@@ -64,26 +76,31 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     && track.value.coordinates.length >= 2
     && track.value.coordinates.length <= MAX_ROUTE_POINTS,
   )
+  const canUndo = computed(() => history.value.length > 0)
 
-  async function addWaypoint([lng, lat]: LngLat) {
-    const to: LngLat = [round(lng), round(lat)]
-    waypoints.value.push(to)
-    if (waypoints.value.length === 1) return
+  function saveSnapshot() {
+    const snapshot: Snapshot = JSON.parse(JSON.stringify({ waypoints: waypoints.value, segments: segments.value }))
+    history.value = [...history.value.slice(-(MAX_HISTORY - 1)), snapshot]
+  }
 
-    // Start from where the previous segment really ends (a snapped point), to keep the track continuous.
-    const previous = segments.value.at(-1)
-    const from = previous && !previous.loading ? previous.coordinates.at(-1)! : waypoints.value.at(-2)!
-    const mode = snapToPaths.value ? 'snap' : 'straight'
-    const id = nextSegmentId++
-    segments.value.push({ id, coordinates: [from, to], elevations: null, loading: true, imported: false })
+  function newSegment(from: LngLat, to: LngLat, mode: RoutingMode): Segment {
+    return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, loading: true }
+  }
 
+  // Fetches the track of a segment. Every edit replaces segments with new ids, so a late answer for
+  // a segment that no longer exists is simply ignored.
+  async function routeSegment({ id, mode, coordinates }: Segment) {
+    if (mode === 'imported') return
+    const from = coordinates[0]!
+    const to = coordinates.at(-1)!
+    inFlight.add(id)
     try {
       const result = await $fetch<RoutingSegmentResponse>('/api/routing/segment', {
         method: 'POST',
         body: { from, to, mode, sport_type: details.value.sport_type },
       })
       const index = segments.value.findIndex(s => s.id === id)
-      if (index === -1) return // undone while loading
+      if (index === -1) return
       const segment = segments.value[index]!
       segment.coordinates = result.coordinates
       segment.elevations = result.elevations
@@ -108,36 +125,122 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       })
     }
     finally {
+      inFlight.delete(id)
       const segment = segments.value.find(s => s.id === id)
       if (segment) segment.loading = false
     }
   }
 
-  // The imported track becomes a single segment: the user can extend it by clicking, or undo it at once.
+  // Waypoints at the end of an imported segment stay put.
+  function canEditWaypoint(index: number): boolean {
+    return segments.value[index - 1]?.mode !== 'imported' && segments.value[index]?.mode !== 'imported'
+  }
+
+  function canInsertInSegment(index: number): boolean {
+    const segment = segments.value[index]
+    return !!segment && segment.mode !== 'imported' && !segment.loading
+  }
+
+  function addWaypoint(point: LngLat) {
+    saveSnapshot()
+    const to = roundPoint(point)
+    waypoints.value.push(to)
+    if (waypoints.value.length === 1) return
+    const segment = newSegment(waypoints.value.at(-2)!, to, snapToPaths.value ? 'snap' : 'straight')
+    segments.value.push(segment)
+    routeSegment(segment)
+  }
+
+  // Each adjacent segment keeps its own mode.
+  function moveWaypoint(index: number, point: LngLat) {
+    if (!canEditWaypoint(index)) return
+    saveSnapshot()
+    const moved = roundPoint(point)
+    waypoints.value[index] = moved
+    const recomputed: Segment[] = []
+    const before = segments.value[index - 1]
+    if (before) {
+      const segment = newSegment(waypoints.value[index - 1]!, moved, before.mode as RoutingMode)
+      segments.value[index - 1] = segment
+      recomputed.push(segment)
+    }
+    const after = segments.value[index]
+    if (after) {
+      const segment = newSegment(moved, waypoints.value[index + 1]!, after.mode as RoutingMode)
+      segments.value[index] = segment
+      recomputed.push(segment)
+    }
+    recomputed.forEach(routeSegment)
+  }
+
+  // Splits a segment in two at a new waypoint; both halves keep the segment's mode.
+  function insertWaypoint(segmentIndex: number, point: LngLat) {
+    if (!canInsertInSegment(segmentIndex)) return
+    saveSnapshot()
+    const inserted = roundPoint(point)
+    const mode = segments.value[segmentIndex]!.mode as RoutingMode
+    waypoints.value.splice(segmentIndex + 1, 0, inserted)
+    const halves = [
+      newSegment(waypoints.value[segmentIndex]!, inserted, mode),
+      newSegment(inserted, waypoints.value[segmentIndex + 2]!, mode),
+    ]
+    segments.value.splice(segmentIndex, 1, ...halves)
+    halves.forEach(routeSegment)
+  }
+
+  // A middle waypoint's two segments merge into one, in the mode of the first.
+  function removeWaypoint(index: number) {
+    if (!canEditWaypoint(index)) return
+    saveSnapshot()
+    const last = waypoints.value.length - 1
+    if (index === 0) {
+      waypoints.value.shift()
+      segments.value.shift()
+    }
+    else if (index === last) {
+      waypoints.value.pop()
+      segments.value.pop()
+    }
+    else {
+      const mode = segments.value[index - 1]!.mode as RoutingMode
+      waypoints.value.splice(index, 1)
+      const merged = newSegment(waypoints.value[index - 1]!, waypoints.value[index]!, mode)
+      segments.value.splice(index - 1, 2, merged)
+      routeSegment(merged)
+    }
+  }
+
+  // The imported track becomes a single segment: the user can extend it by clicking, or undo the import.
   function importTrack({ name, coordinates, elevations }: ImportedTrack) {
+    saveSnapshot()
     waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
-    segments.value = [{ id: nextSegmentId++, coordinates, elevations, loading: false, imported: true }]
+    segments.value = [{ id: nextSegmentId++, mode: 'imported', coordinates, elevations, loading: false }]
     if (name && !details.value.name) details.value.name = name.slice(0, 120)
     replacedCount.value++
   }
 
   function undo() {
-    // Undoing an import leaves no lone start point behind.
-    if (segments.value.at(-1)?.imported && segments.value.length === 1) {
-      clearPoints()
-      return
+    const previous = history.value.at(-1)
+    if (!previous) return
+    history.value = history.value.slice(0, -1)
+    waypoints.value = previous.waypoints
+    segments.value = previous.segments
+    // A segment saved while loading whose request has since finished would otherwise stay loading forever.
+    for (const segment of segments.value) {
+      if (segment.loading && !inFlight.has(segment.id)) routeSegment(segment)
     }
-    waypoints.value.pop()
-    segments.value.pop()
   }
 
   function clearPoints() {
+    saveSnapshot()
     waypoints.value = []
     segments.value = []
   }
 
   function reset() {
-    clearPoints()
+    waypoints.value = []
+    segments.value = []
+    history.value = []
     details.value = defaultDetails()
   }
 
@@ -148,7 +251,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         ...details.value,
         coordinates: track.value.coordinates,
         elevations: track.value.elevations ?? undefined,
-        source: segments.value.some(segment => segment.imported) ? 'gpx_import' : 'drawn',
+        source: segments.value.some(segment => segment.mode === 'imported') ? 'gpx_import' : 'drawn',
       },
     })
     reset()
@@ -156,7 +259,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   }
 
   return {
-    waypoints, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, replacedCount,
-    addWaypoint, importTrack, undo, clearPoints, reset, save,
+    waypoints, segments, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
+    canEditWaypoint, canInsertInSegment,
+    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, importTrack, undo, clearPoints, reset, save,
   }
 })

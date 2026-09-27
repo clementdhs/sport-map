@@ -88,13 +88,13 @@ async function onSubmit() {
             />
           </UTooltip>
           <input ref="gpxInput" type="file" accept=".gpx,application/gpx+xml" class="hidden" @change="onGpxSelected">
-          <UTooltip text="Annuler le dernier point">
+          <UTooltip text="Annuler la dernière action">
             <UButton
               icon="i-lucide-undo-2"
               color="neutral"
               variant="outline"
-              aria-label="Annuler le dernier point"
-              :disabled="!editor.waypoints.length"
+              aria-label="Annuler la dernière action"
+              :disabled="!editor.canUndo"
               @click="editor.undo()"
             />
           </UTooltip>
@@ -139,6 +139,11 @@ async function onSubmit() {
         <UIcon name="i-lucide-mouse-pointer-click" class="mr-1 align-text-bottom" />
         Clique sur la carte pour placer les points de ton parcours, ou importe un fichier GPX.
       </p>
+      <ul v-else class="space-y-1 text-sm text-muted">
+        <li><UIcon name="i-lucide-move" class="mr-1 align-text-bottom" />Glisse un point pour le déplacer.</li>
+        <li><UIcon name="i-lucide-git-commit-horizontal" class="mr-1 align-text-bottom" />Glisse la ligne pour ajouter un point.</li>
+        <li><UIcon name="i-lucide-x" class="mr-1 align-text-bottom" />Clic droit (appui long sur mobile) sur un point pour le supprimer.</li>
+      </ul>
 
       <USeparator />
 

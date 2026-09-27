@@ -7,6 +7,10 @@ export const ROUTE_COLOR = '#ea580c'
 const LINE_SOURCE = 'route-line'
 const POINTS_SOURCE = 'route-points'
 
+// Invisible, wider copies of the line and points: easier to grab, especially with a finger.
+export const LINE_HIT_LAYER = 'route-line-hit'
+export const POINTS_HIT_LAYER = 'route-points-hit'
+
 // `line` is the drawn track; `points` are the markers on it (waypoints, or just start and end).
 export interface RouteLayerData {
   line: LngLat[]
@@ -23,6 +27,7 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
     features: coordinates.map((coordinate, index) => ({
       type: 'Feature',
       properties: {
+        index,
         role: index === 0 ? 'start' : index === coordinates.length - 1 ? 'end' : 'via',
       },
       geometry: { type: 'Point', coordinates: coordinate },
@@ -30,7 +35,7 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
   }
 }
 
-export function addRouteLayers(map: Map, { line, points }: RouteLayerData) {
+export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { editable = false } = {}) {
   map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line) })
   map.addSource(POINTS_SOURCE, { type: 'geojson', data: pointsData(points) })
 
@@ -58,6 +63,20 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData) {
       'circle-stroke-color': ['match', ['get', 'role'], 'via', ROUTE_COLOR, '#ffffff'],
       'circle-stroke-width': 2,
     },
+  })
+
+  if (!editable) return
+  map.addLayer({
+    id: LINE_HIT_LAYER,
+    type: 'line',
+    source: LINE_SOURCE,
+    paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 16 },
+  })
+  map.addLayer({
+    id: POINTS_HIT_LAYER,
+    type: 'circle',
+    source: POINTS_SOURCE,
+    paint: { 'circle-color': '#000000', 'circle-opacity': 0, 'circle-radius': 14 },
   })
 }
 

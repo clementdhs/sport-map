@@ -2,6 +2,8 @@
 
 Web app (installable PWA) to create, share and discover running / hiking / cycling routes on a map, in the spirit of OpenRunner. UI text is in French.
 
+The backlog lives in GitHub issues (milestone "V1.1" = current priorities; labels for theme and effort), managed with the `gh` CLI. Reference the issue in the commit that completes it (`Closes #N`) and file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped.
+
 ## Stack
 - Nuxt 4 (`app/` directory), Vue 3 `<script setup lang="ts">` + Composition API
 - Nuxt UI 4 (Tailwind 4) — use its components (`UButton`, `UForm`, `UAuthForm`, `UModal`…) before writing custom CSS

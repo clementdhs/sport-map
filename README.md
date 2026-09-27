@@ -48,7 +48,8 @@ Puis ouvre http://localhost:3000.
 
 | Commande | Rôle |
 | --- | --- |
-| `npm run dev` | serveur de développement |
+| `npm run dev` | serveur de développement, sur le Supabase en ligne |
+| `npm run dev:local` | serveur de développement, sur le Supabase local (après `npm run db:start`) |
 | `npm run build` / `npm run preview` | build de production / prévisualisation |
 | `npm run typecheck` | vérification TypeScript |
 | `npm test` | tests unitaires et du store (Vitest), sans réseau |
@@ -70,6 +71,15 @@ Puis ouvre http://localhost:3000.
   Tous ces tests tournent aussi automatiquement sur GitHub Actions à chaque push (`.github/workflows/ci.yml`), sans aucun secret.
 
   Les tests visent uniquement le Supabase local (jamais le projet en ligne). Ils recréent à chaque lancement un compte et un parcours de test, et simulent le fond de carte et le calcul d'itinéraire : aucun quota MapTiler ou OpenRouteService n'est consommé. Premier lancement : `npx playwright install chromium`.
+
+## Garder Supabase actif
+
+Un projet Supabase gratuit est mis en pause après 7 jours sans activité. Le workflow `.github/workflows/keep-supabase-awake.yml` lit la base une fois par jour pour l'en empêcher ; GitHub envoie un e-mail s'il échoue. Il a besoin, dans les réglages du dépôt (*Settings → Secrets and variables → Actions*) :
+
+- la **variable** `SUPABASE_URL` : l'URL du projet (`https://<ref>.supabase.co`) ;
+- le **secret** `SUPABASE_PUBLISHABLE_KEY` : la clé publishable du projet.
+
+Pour le lancer à la main : onglet *Actions* → « Garder Supabase actif » → *Run workflow*.
 
 ## Structure
 

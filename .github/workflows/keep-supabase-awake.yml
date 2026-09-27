@@ -1,0 +1,34 @@
+name: Garder Supabase actif
+
+# The free Supabase project is paused after 7 days without activity: one read a day keeps it awake.
+# It queries Supabase directly (the site itself is behind Vercel Authentication). A failure (project
+# already paused, wrong settings) fails the run, and GitHub emails the failure.
+on:
+  schedule:
+    - cron: '17 6 * * *' # every day at 06:17 UTC
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Lecture d'un parcours public
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Requête REST sur la base
+        env:
+          # Repository variable and secret, see README (never in the repository).
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::error::Variable SUPABASE_URL ou secret SUPABASE_PUBLISHABLE_KEY manquant dans les réglages du dépôt."
+            exit 1
+          fi
+          # RLS only lets the publishable key read public routes: the response may be an empty list.
+          curl --fail-with-body --silent --show-error --retry 3 --retry-delay 20 --max-time 30 \
+            --header "apikey: $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/routes?select=id&is_public=eq.true&limit=1"
+          echo
+          echo "Supabase a répondu."

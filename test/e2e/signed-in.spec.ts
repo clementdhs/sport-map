@@ -205,12 +205,15 @@ test.describe('recording an outing', () => {
   test.use({ permissions: ['geolocation'], geolocation: START })
 
   test('records an outing, survives a page reload, and saves it as a completed route', async ({ page, context }) => {
+    // Many steps and two map loads: more than the default 30 s on the CI runners.
+    test.slow()
     // Fake clock: the recorder times fixes with Date.now().
     await page.clock.install({ time: new Date('2026-09-28T08:00:00Z') })
     page.on('dialog', dialog => dialog.accept()) // "leave the page?" prompts
     // `meters` north of the start, one fix per simulated minute.
     const walkTo = async (meters: number) => {
-      await page.clock.runFor(60_000)
+      // Jumps a minute ahead (runFor would also replay every stopwatch tick in between, slowly).
+      await page.clock.fastForward(60_000)
       await context.setGeolocation({ ...START, latitude: START.latitude + meters / 111_194.93 })
     }
     const distance = page.getByTestId('distance')

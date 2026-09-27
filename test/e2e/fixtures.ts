@@ -45,6 +45,7 @@ export const test = base.extend<{ mockServices: void }>({
 
 export { expect }
 
+// Maps load slower on the CI runners than the default 5 s of expect.
 export async function waitForMap(page: Page) {
-  await expect(page.locator('[data-map-loaded]')).toBeVisible()
+  await expect(page.locator('[data-map-loaded]')).toBeVisible({ timeout: 15_000 })
 }

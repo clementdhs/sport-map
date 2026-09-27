@@ -212,21 +212,25 @@ function smoothByDistance(coordinates: LngLat[], elevations: number[]): number[]
   })
 }
 
-export function elevationStats(coordinates: LngLat[], elevations: number[]): { gain: number, loss: number } {
+// The climb (> 0) or descent (< 0) counted at each point, 0 where the variation is too small to count.
+// Summing the positive ones from a point on gives the gain left from there.
+export function elevationSteps(coordinates: LngLat[], elevations: number[]): number[] {
   const smoothed = smoothByDistance(coordinates, elevations)
+  let reference = smoothed[0] ?? 0
+  return smoothed.map((elevation) => {
+    const delta = elevation - reference
+    if (Math.abs(delta) < ELEVATION_NOISE_M) return 0
+    reference = elevation
+    return delta
+  })
+}
+
+export function elevationStats(coordinates: LngLat[], elevations: number[]): { gain: number, loss: number } {
   let gain = 0
   let loss = 0
-  let reference = smoothed[0] ?? 0
-  for (const elevation of smoothed) {
-    const delta = elevation - reference
-    if (delta >= ELEVATION_NOISE_M) {
-      gain += delta
-      reference = elevation
-    }
-    else if (delta <= -ELEVATION_NOISE_M) {
-      loss -= delta
-      reference = elevation
-    }
+  for (const step of elevationSteps(coordinates, elevations)) {
+    if (step > 0) gain += step
+    else loss -= step
   }
   return { gain, loss }
 }

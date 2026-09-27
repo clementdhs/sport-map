@@ -144,6 +144,13 @@ useSeoMeta({
         />
       </div>
 
+      <UButton
+        :to="`/routes/${parcours.id}/follow`"
+        icon="i-lucide-navigation"
+        label="Suivre le parcours"
+        block
+      />
+
       <div class="grid grid-cols-2 gap-3">
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Distance</p>

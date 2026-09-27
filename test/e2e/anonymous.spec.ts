@@ -124,3 +124,36 @@ test('shows a 404 page for an unknown route', async ({ page }) => {
   expect(response?.status()).toBe(404)
   await expect(page.getByText('Parcours introuvable').first()).toBeVisible()
 })
+
+test.describe('follow mode', () => {
+  // A fake GPS, starting at the start of the seeded route.
+  test.use({ permissions: ['geolocation'], geolocation: { latitude: 45.899, longitude: 6.129, accuracy: 10 } })
+
+  test('follows the position along the route and warns when straying from it', async ({ page, context }) => {
+    await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+    await page.getByRole('link', { name: 'Suivre le parcours' }).click()
+    await waitForMap(page)
+    const done = page.getByTestId('done')
+    const remaining = page.getByTestId('remaining')
+    await expect(done).toHaveText('0 m')
+    await expect(remaining).toHaveText('6,05 km')
+
+    // At the second point of the route, 3.34 km from the start.
+    await context.setGeolocation({ latitude: 45.87, longitude: 6.14, accuracy: 10 })
+    await expect(done).toHaveText('3,34 km')
+    await expect(remaining).toHaveText('2,71 km')
+
+    // 4 km east of it: off the track.
+    await context.setGeolocation({ latitude: 45.87, longitude: 6.19, accuracy: 10 })
+    await expect(page.getByText("Tu t'éloignes du tracé")).toBeVisible()
+
+    // Back on the track, at its end.
+    await context.setGeolocation({ latitude: 45.85, longitude: 6.16, accuracy: 10 })
+    await expect(page.getByText("Tu t'éloignes du tracé")).toBeHidden()
+    await expect(page.getByText('Tu es arrivé !')).toBeVisible()
+    await expect(remaining).toHaveText('0 m')
+
+    await page.getByRole('link', { name: 'Quitter' }).click()
+    await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
+  })
+})

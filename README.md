@@ -1,5 +1,7 @@
 # sport-map
 
+[![CI](https://github.com/clementdhs/sport-map/actions/workflows/ci.yml/badge.svg)](https://github.com/clementdhs/sport-map/actions/workflows/ci.yml)
+
 Crée, partage et découvre des parcours de course à pied, randonnée et vélo sur une carte — application web installable (PWA).
 
 **Stack** : Nuxt 4 · Nuxt UI · Pinia · Supabase (Postgres + PostGIS, Auth, Storage) · MapLibre GL + MapTiler · OpenRouteService
@@ -64,6 +66,8 @@ Puis ouvre http://localhost:3000.
   npm run db:start      # Supabase local, avec les migrations du repo
   npm run test:e2e      # build de production + navigateur Chromium
   ```
+
+  Tous ces tests tournent aussi automatiquement sur GitHub Actions à chaque push (`.github/workflows/ci.yml`), sans aucun secret.
 
   Les tests visent uniquement le Supabase local (jamais le projet en ligne). Ils recréent à chaque lancement un compte et un parcours de test, et simulent le fond de carte et le calcul d'itinéraire : aucun quota MapTiler ou OpenRouteService n'est consommé. Premier lancement : `npx playwright install chromium`.
 

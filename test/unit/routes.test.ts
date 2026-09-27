@@ -120,6 +120,12 @@ describe('routeSearchSchema', () => {
     expect(routeSearchSchema.parse({ ...bounds, loops: 'false' }).loops).toBe(false)
   })
 
+  it('reads the "passing through" option as a real boolean', () => {
+    expect(routeSearchSchema.parse({ ...bounds, through: 'true' }).through).toBe(true)
+    expect(routeSearchSchema.parse({ ...bounds, through: 'false' }).through).toBe(false)
+    expect(routeSearchSchema.parse(bounds).through).toBeUndefined()
+  })
+
   it('rejects an unknown sort', () => {
     expect(routeSearchSchema.safeParse({ ...bounds, sort: 'random' }).success).toBe(false)
   })

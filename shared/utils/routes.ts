@@ -126,6 +126,8 @@ export const routeSearchSchema = z.object({
   maxGain: z.coerce.number().min(0).optional(),
   // "true" / "false" in the query string (z.coerce.boolean would read "false" as true).
   loops: z.stringbool().optional(),
+  // Routes whose track crosses the view, not only those starting in it.
+  through: z.stringbool().optional(),
   sort: z.enum(SEARCH_SORTS).default('nearest'),
 })
 

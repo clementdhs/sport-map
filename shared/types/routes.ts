@@ -40,7 +40,9 @@ export type RouteListItem = {
 }
 
 export type RouteSummary = RouteListItem & {
-  start: [lng: number, lat: number]
+  // Where the route is pinned on the search map: its start or, when searching routes passing through the
+  // view, the point of its track closest to the view's center.
+  marker: [lng: number, lat: number]
 }
 
 export type ProfileInfo = Pick<Tables<'profiles'>, 'username' | 'display_name' | 'bio' | 'created_at'>

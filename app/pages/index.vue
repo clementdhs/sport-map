@@ -95,6 +95,11 @@ const resultsLabel = computed(() => {
         </div>
       </div>
 
+      <USwitch
+        v-model="search.passingThrough"
+        label="Passant par la zone"
+        description="Aussi les parcours qui traversent la carte sans y démarrer."
+      />
       <USwitch v-model="search.loopsOnly" label="Boucles uniquement" description="Arrivée à moins de 200 m du départ." />
 
       <USeparator />

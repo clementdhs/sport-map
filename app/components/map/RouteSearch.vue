@@ -31,7 +31,7 @@ function resultsData(results: RouteSummary[]): FeatureCollection<Point> {
     features: results.map(route => ({
       type: 'Feature',
       properties: { id: route.id, name: route.name },
-      geometry: { type: 'Point', coordinates: route.start },
+      geometry: { type: 'Point', coordinates: route.marker },
     })),
   }
 }

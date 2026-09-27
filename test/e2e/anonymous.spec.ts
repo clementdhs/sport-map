@@ -46,6 +46,24 @@ test('keeps only loops and sorts the results', async ({ page }) => {
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
 })
 
+test('finds routes passing through the view, pinned where they cross it', async ({ page, request }) => {
+  // Around the end of the seeded point-to-point route, far from its start.
+  const view = 'minLng=6.15&minLat=45.84&maxLng=6.17&maxLat=45.86'
+  expect(await (await request.get(`/api/routes?${view}`)).json()).toEqual([])
+  const passing = await (await request.get(`/api/routes?${view}&through=true`)).json() as { name: string, marker: number[] }[]
+  expect(passing.map(route => route.name)).toEqual([SEEDED_ROUTE_NAME])
+  expect(passing[0]!.marker[0]).toBeCloseTo(6.16, 3)
+  expect(passing[0]!.marker[1]).toBeCloseTo(45.85, 3)
+
+  // The switch sends the option.
+  await page.goto('/')
+  await waitForMap(page)
+  const searched = page.waitForRequest(req => req.url().includes('/api/routes?') && req.url().includes('through=true'))
+  await page.getByRole('switch', { name: /Passant par la zone/ }).click()
+  await searched
+  await expect(page.locator('aside li a')).toHaveCount(2)
+})
+
 test('exports a public route as GPX', async ({ request }) => {
   const response = await request.get(`/api/routes/${process.env.E2E_ROUTE_ID}/gpx`)
   expect(response.status()).toBe(200)

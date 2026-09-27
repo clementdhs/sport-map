@@ -19,6 +19,7 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     min_gain_m: query.minGain,
     max_gain_m: query.maxGain,
     loops_only: query.loops ?? false,
+    passing_through: query.through ?? false,
     sort: query.sort,
     max_results: MAX_SEARCH_RESULTS,
   })
@@ -27,9 +28,9 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     console.error('[GET /api/routes]', error)
     throw createError({ statusCode: 500, statusMessage: 'Impossible de rechercher les parcours' })
   }
-  return (data as SearchRow[]).map(({ start_lng, start_lat, ...route }) => ({
+  return (data as SearchRow[]).map(({ marker_lng, marker_lat, ...route }) => ({
     ...route,
     is_public: true, // the search only returns public routes
-    start: [start_lng, start_lat],
+    marker: [marker_lng, marker_lat],
   }))
 })

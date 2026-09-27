@@ -24,6 +24,7 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
   const distanceKm = ref<[number, number]>([0, DISTANCE_FILTER_MAX_KM])
   const gainM = ref<[number, number]>([0, GAIN_FILTER_MAX_M])
   const loopsOnly = ref(false)
+  const passingThrough = ref(false)
   const sort = ref<SearchSort>('nearest')
   // Last map view, restored when coming back to the page.
   const view = ref<Omit<MapViewState, 'bounds'>>({ center: [2.35, 46.6], zoom: 5 })
@@ -48,6 +49,7 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
       minGain: minGain > 0 ? minGain : undefined,
       maxGain: maxGain < GAIN_FILTER_MAX_M ? maxGain : undefined,
       loops: loopsOnly.value ? 'true' : undefined,
+      through: passingThrough.value ? 'true' : undefined,
       sort: sort.value,
     }
   })
@@ -83,5 +85,5 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     view.value = { center, zoom }
   }
 
-  return { sport, distanceKm, gainM, loopsOnly, sort, view, results, loading, failed, setView }
+  return { sport, distanceKm, gainM, loopsOnly, passingThrough, sort, view, results, loading, failed, setView }
 })

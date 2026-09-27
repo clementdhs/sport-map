@@ -16,7 +16,13 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'fr' },
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/icon.svg' }],
+      // Generated from public/icon.svg by `npm run pwa:assets`.
+      link: [
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', href: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon-180x180.png' },
+      ],
+      meta: [{ name: 'theme-color', content: '#16a34a' }],
     },
   },
 
@@ -49,7 +55,13 @@ export default defineNuxtConfig({
       theme_color: '#16a34a',
       background_color: '#ffffff',
       display: 'standalone',
-      icons: [{ src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+      // Generated from public/icon.svg by `npm run pwa:assets`.
+      icons: [
+        { src: '/pwa-64x64.png', sizes: '64x64', type: 'image/png' },
+        { src: '/pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+        { src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      ],
     },
     workbox: {
       // Pages are server-rendered: never answer navigations with a cached shell.

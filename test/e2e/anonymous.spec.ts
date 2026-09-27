@@ -35,6 +35,18 @@ test('exports a public route as GPX', async ({ request }) => {
   expect(gpx).toContain('<trkpt lat="45.899" lon="6.129"><ele>450</ele></trkpt>')
 })
 
+test('serves every icon of the PWA manifest', async ({ request }) => {
+  const manifest = await (await request.get('/manifest.webmanifest')).json() as { icons: { src: string, sizes: string, purpose?: string }[] }
+  expect(manifest.icons.map(icon => icon.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']))
+  expect(manifest.icons.some(icon => icon.purpose === 'maskable')).toBe(true)
+  for (const icon of manifest.icons) {
+    const response = await request.get(icon.src)
+    expect(response.status(), icon.src).toBe(200)
+    expect(response.headers()['content-type'], icon.src).toBe('image/png')
+  }
+  expect((await request.get('/apple-touch-icon-180x180.png')).status()).toBe(200)
+})
+
 test('sends visitors to the login page before creating a route', async ({ page }) => {
   await page.goto('/routes/create')
   await expect(page).toHaveURL(/\/login\?redirect=\/routes\/create$/)

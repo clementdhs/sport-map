@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import type { RouteSummary } from '#shared/types/routes'
+import type { RouteListItem } from '#shared/types/routes'
 
 defineProps<{
-  route: RouteSummary
+  route: RouteListItem
   highlighted?: boolean
+  // Extra line, e.g. when the route was completed
+  note?: string
 }>()
 </script>
 
@@ -14,7 +16,10 @@ defineProps<{
     :class="{ 'bg-elevated': highlighted }"
   >
     <div class="flex items-start justify-between gap-2">
-      <p class="font-medium">{{ route.name }}</p>
+      <p class="font-medium">
+        {{ route.name }}
+        <UIcon v-if="!route.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" aria-label="Privé" />
+      </p>
       <UIcon :name="SPORT_ICONS[route.sport_type]" class="size-5 shrink-0 text-muted" :aria-label="SPORT_LABELS[route.sport_type]" />
     </div>
     <p class="mt-1 text-sm text-muted">
@@ -22,5 +27,6 @@ defineProps<{
       <template v-if="route.elevation_gain_m != null"> · D+ {{ Math.round(route.elevation_gain_m) }} m</template>
       · par {{ route.owner_username }}
     </p>
+    <p v-if="note" class="mt-1 text-sm text-muted">{{ note }}</p>
   </NuxtLink>
 </template>

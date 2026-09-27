@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { FetchError } from 'ofetch'
 import type { RouteDetail } from '#shared/types/routes'
-import type { LngLat } from '#shared/utils/routes'
+import type { ActivityType, LngLat } from '#shared/utils/routes'
 
 const route = useRoute()
 const user = useSupabaseUser()
+const toast = useToast()
 
 const { data: parcours, error } = await useFetch<RouteDetail>(`/api/routes/${route.params.id}`)
 if (error.value || !parcours.value) {
@@ -20,6 +22,46 @@ const summary = computed(() => {
   const p = parcours.value!
   return `${SPORT_LABELS[p.sport_type]} · ${formatDistance(p.distance_m)}${p.description ? ` — ${p.description}` : ''}`
 })
+
+const errorMessage = (error: unknown) => (error as FetchError).data?.statusMessage ?? (error as Error).message
+
+const viewer = computed(() => parcours.value?.viewer ?? { saved: false, completed_at: null })
+const pendingActivity = ref<ActivityType | null>(null)
+
+async function toggleActivity(type: ActivityType) {
+  if (!user.value) return navigateTo({ path: '/login', query: { redirect: route.fullPath } })
+
+  const active = type === 'saved' ? viewer.value.saved : !!viewer.value.completed_at
+  pendingActivity.value = type
+  try {
+    await $fetch(`/api/routes/${parcours.value!.id}/activity/${type}`, { method: active ? 'DELETE' : 'PUT' })
+    parcours.value!.viewer = type === 'saved'
+      ? { ...viewer.value, saved: !active }
+      : { ...viewer.value, completed_at: active ? null : new Date().toISOString() }
+  }
+  catch (error) {
+    toast.add({ title: 'Action impossible', description: errorMessage(error), color: 'error' })
+  }
+  finally {
+    pendingActivity.value = null
+  }
+}
+
+const deleteOpen = ref(false)
+const deleting = ref(false)
+
+async function deleteRoute() {
+  deleting.value = true
+  try {
+    await $fetch(`/api/routes/${parcours.value!.id}`, { method: 'DELETE' })
+    toast.add({ title: 'Parcours supprimé', color: 'success', icon: 'i-lucide-check' })
+    await navigateTo('/profile')
+  }
+  catch (error) {
+    toast.add({ title: 'Suppression impossible', description: errorMessage(error), color: 'error' })
+    deleting.value = false
+  }
+}
 
 useSeoMeta({
   title: () => `${parcours.value?.name} — sport-map`,
@@ -48,10 +90,34 @@ useSeoMeta({
       <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
 
       <p class="text-sm text-muted">
-        Par <span class="font-medium text-default">{{ parcours.owner?.display_name ?? parcours.owner?.username }}</span>
+        Par
+        <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-default hover:underline">
+          {{ parcours.owner.display_name ?? parcours.owner.username }}
+        </ULink>
         <span v-if="isOwner"> (toi)</span>
         · {{ formatDate(parcours.created_at) }}
       </p>
+
+      <div class="grid grid-cols-2 gap-2">
+        <UButton
+          :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
+          :label="viewer.saved ? 'Sauvegardé' : 'Sauvegarder'"
+          :color="viewer.saved ? 'primary' : 'neutral'"
+          :variant="viewer.saved ? 'soft' : 'outline'"
+          :loading="pendingActivity === 'saved'"
+          block
+          @click="toggleActivity('saved')"
+        />
+        <UButton
+          :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
+          :label="viewer.completed_at ? `Fait le ${formatShortDate(viewer.completed_at)}` : 'Je l\'ai fait'"
+          :color="viewer.completed_at ? 'primary' : 'neutral'"
+          :variant="viewer.completed_at ? 'soft' : 'outline'"
+          :loading="pendingActivity === 'completed'"
+          block
+          @click="toggleActivity('completed')"
+        />
+      </div>
 
       <div class="grid grid-cols-3 gap-3">
         <div class="rounded-lg bg-elevated p-3">
@@ -90,6 +156,21 @@ useSeoMeta({
         variant="outline"
         block
       />
+
+      <UModal
+        v-if="isOwner"
+        v-model:open="deleteOpen"
+        title="Supprimer ce parcours ?"
+        description="Il disparaîtra aussi des parcours sauvegardés et réalisés des autres utilisateurs. Cette action est définitive."
+      >
+        <UButton label="Supprimer le parcours" icon="i-lucide-trash-2" color="error" variant="ghost" block />
+        <template #footer>
+          <div class="flex w-full justify-end gap-2">
+            <UButton label="Annuler" color="neutral" variant="outline" @click="deleteOpen = false" />
+            <UButton label="Supprimer" icon="i-lucide-trash-2" color="error" :loading="deleting" @click="deleteRoute" />
+          </div>
+        </template>
+      </UModal>
     </aside>
   </div>
 </template>

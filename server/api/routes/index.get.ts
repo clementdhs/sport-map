@@ -23,5 +23,9 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     console.error('[GET /api/routes]', error)
     throw createError({ statusCode: 500, statusMessage: 'Impossible de rechercher les parcours' })
   }
-  return (data as SearchRow[]).map(({ start_lng, start_lat, ...route }) => ({ ...route, start: [start_lng, start_lat] }))
+  return (data as SearchRow[]).map(({ start_lng, start_lat, ...route }) => ({
+    ...route,
+    is_public: true, // the search only returns public routes
+    start: [start_lng, start_lat],
+  }))
 })

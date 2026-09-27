@@ -1,6 +1,6 @@
 import type { LineString } from 'geojson'
-import { serverSupabaseClient } from '#supabase/server'
-import type { RouteDetail } from '#shared/types/routes'
+import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import type { RouteDetail, ViewerActivity } from '#shared/types/routes'
 
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
   const id = getRouteIdParam(event)
@@ -22,9 +22,25 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
   }
   // RLS hides private routes of other users: they are reported as missing too.
   if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+
+  let viewer: ViewerActivity | null = null
+  const user = await serverSupabaseUser(event)
+  if (user) {
+    const { data: activity } = await supabase
+      .from('route_activity')
+      .select('activity_type, completed_at')
+      .eq('route_id', id)
+      .eq('user_id', user.sub)
+    viewer = {
+      saved: !!activity?.some(a => a.activity_type === 'saved'),
+      completed_at: activity?.find(a => a.activity_type === 'completed')?.completed_at ?? null,
+    }
+  }
+
   return {
     ...data,
     geometry: data.geometry as unknown as LineString,
     elevation_profile: data.elevation_profile as number[] | null,
+    viewer,
   }
 })

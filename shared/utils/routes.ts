@@ -47,6 +47,16 @@ export const routeCreateSchema = routeDetailsSchema.extend({
 export type RouteDetails = z.infer<typeof routeDetailsSchema>
 export type RouteCreatePayload = z.infer<typeof routeCreateSchema>
 
+export const ACTIVITY_TYPES = ['saved', 'completed'] as const
+export type ActivityType = typeof ACTIVITY_TYPES[number]
+
+export const profileUpdateSchema = z.object({
+  display_name: z.string().trim().max(60, '60 caractères maximum'),
+  bio: z.string().trim().max(500, '500 caractères maximum'),
+})
+
+export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
+
 export const MAX_SEARCH_RESULTS = 50
 
 export const routeSearchSchema = z.object({

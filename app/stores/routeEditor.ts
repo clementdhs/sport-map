@@ -1,14 +1,16 @@
 import { length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { LngLat, RouteDetails, RoutingSegmentResponse } from '#shared/utils/routes'
+import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
 interface Segment {
   id: number
   coordinates: LngLat[]
-  // null while loading, or when the elevation service could not be reached
+  // null while loading, when the elevation service could not be reached, or for a GPX without elevation
   elevations: number[] | null
   loading: boolean
+  imported: boolean
 }
 
 const defaultDetails = (): RouteDetails => ({
@@ -29,6 +31,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const segments = ref<Segment[]>([])
   const details = ref<RouteDetails>(defaultDetails())
   const snapToPaths = ref(true)
+  // Incremented when the whole track is replaced, so the map can frame it.
+  const replacedCount = ref(0)
   let nextSegmentId = 0
 
   const track = computed(() => {
@@ -71,7 +75,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     const from = previous && !previous.loading ? previous.coordinates.at(-1)! : waypoints.value.at(-2)!
     const mode = snapToPaths.value ? 'snap' : 'straight'
     const id = nextSegmentId++
-    segments.value.push({ id, coordinates: [from, to], elevations: null, loading: true })
+    segments.value.push({ id, coordinates: [from, to], elevations: null, loading: true, imported: false })
 
     try {
       const result = await $fetch<RoutingSegmentResponse>('/api/routing/segment', {
@@ -109,7 +113,20 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     }
   }
 
+  // The imported track becomes a single segment: the user can extend it by clicking, or undo it at once.
+  function importTrack({ name, coordinates, elevations }: ImportedTrack) {
+    waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
+    segments.value = [{ id: nextSegmentId++, coordinates, elevations, loading: false, imported: true }]
+    if (name && !details.value.name) details.value.name = name.slice(0, 120)
+    replacedCount.value++
+  }
+
   function undo() {
+    // Undoing an import leaves no lone start point behind.
+    if (segments.value.at(-1)?.imported && segments.value.length === 1) {
+      clearPoints()
+      return
+    }
     waypoints.value.pop()
     segments.value.pop()
   }
@@ -131,6 +148,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         ...details.value,
         coordinates: track.value.coordinates,
         elevations: track.value.elevations ?? undefined,
+        source: segments.value.some(segment => segment.imported) ? 'gpx_import' : 'drawn',
       },
     })
     reset()
@@ -138,7 +156,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   }
 
   return {
-    waypoints, details, snapToPaths, track, distanceM, elevation, isRouting, canSave,
-    addWaypoint, undo, clearPoints, reset, save,
+    waypoints, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, replacedCount,
+    addWaypoint, importTrack, undo, clearPoints, reset, save,
   }
 })

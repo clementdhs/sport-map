@@ -20,6 +20,10 @@ function onLoad(instance: Map) {
 watch(layerData, (data) => {
   if (map.value) setRouteLayerData(map.value, data)
 })
+
+watch(() => editor.replacedCount, () => {
+  map.value?.fitBounds(routeBounds(editor.track.coordinates), { padding: 48 })
+})
 </script>
 
 <template>

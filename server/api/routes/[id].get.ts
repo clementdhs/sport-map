@@ -1,15 +1,9 @@
 import type { LineString } from 'geojson'
-import * as z from 'zod'
 import { serverSupabaseClient } from '#supabase/server'
 import type { RouteDetail } from '#shared/types/routes'
 
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
-  const id = getRouterParam(event, 'id')
-  // An invalid uuid would otherwise surface as a Postgres error.
-  if (!z.uuid().safeParse(id).success) {
-    throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
-  }
-
+  const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase
     .from('routes')
@@ -19,7 +13,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
       geometry:route_geojson,
       owner:profiles(username, display_name)
     `)
-    .eq('id', id!)
+    .eq('id', id)
     .maybeSingle()
 
   if (error) {

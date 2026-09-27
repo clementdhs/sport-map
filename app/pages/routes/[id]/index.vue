@@ -42,6 +42,7 @@ useSeoMeta({
       <div class="flex flex-wrap items-center gap-2">
         <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="SPORT_LABELS[parcours.sport_type]" variant="subtle" />
         <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" label="Privé" color="neutral" variant="subtle" />
+        <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" label="Importé d'un GPX" color="neutral" variant="subtle" />
       </div>
 
       <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
@@ -78,6 +79,17 @@ useSeoMeta({
       />
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
+
+      <UButton
+        :to="`/api/routes/${parcours.id}/gpx`"
+        external
+        download
+        icon="i-lucide-download"
+        label="Exporter en GPX"
+        color="neutral"
+        variant="outline"
+        block
+      />
     </aside>
   </div>
 </template>

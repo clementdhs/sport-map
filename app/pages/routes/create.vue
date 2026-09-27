@@ -10,6 +10,37 @@ const saving = ref(false)
 
 const sportItems = SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] }))
 
+const gpxInput = useTemplateRef('gpxInput')
+const importing = ref(false)
+
+async function onGpxSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // allow re-selecting the same file
+  if (!file) return
+  if (editor.waypoints.length && !window.confirm('Remplacer le tracé en cours par ce fichier GPX ?')) return
+
+  importing.value = true
+  try {
+    const track = await readGpxFile(file)
+    editor.importTrack(track)
+    toast.add({
+      title: 'Trace importée',
+      description: track.elevations
+        ? `${track.coordinates.length} points.`
+        : `${track.coordinates.length} points. Le fichier ne contient pas d'altitudes : le dénivelé ne sera pas calculé.`,
+      color: 'success',
+      icon: 'i-lucide-file-check',
+    })
+  }
+  catch (error) {
+    toast.add({ title: 'Import impossible', description: (error as Error).message, color: 'error' })
+  }
+  finally {
+    importing.value = false
+  }
+}
+
 async function onSubmit() {
   saving.value = true
   try {
@@ -46,6 +77,17 @@ async function onSubmit() {
           :description="editor.snapToPaths ? `Itinéraire adapté : ${SPORT_LABELS[editor.details.sport_type].toLowerCase()}` : 'Tracé en ligne droite'"
         />
         <div class="flex gap-2">
+          <UTooltip text="Importer un fichier GPX">
+            <UButton
+              icon="i-lucide-upload"
+              color="neutral"
+              variant="outline"
+              aria-label="Importer un fichier GPX"
+              :loading="importing"
+              @click="gpxInput?.click()"
+            />
+          </UTooltip>
+          <input ref="gpxInput" type="file" accept=".gpx,application/gpx+xml" class="hidden" @change="onGpxSelected">
           <UTooltip text="Annuler le dernier point">
             <UButton
               icon="i-lucide-undo-2"
@@ -95,7 +137,7 @@ async function onSubmit() {
 
       <p v-if="editor.waypoints.length < 2" class="text-sm text-muted">
         <UIcon name="i-lucide-mouse-pointer-click" class="mr-1 align-text-bottom" />
-        Clique sur la carte pour placer les points de ton parcours.
+        Clique sur la carte pour placer les points de ton parcours, ou importe un fichier GPX.
       </p>
 
       <USeparator />

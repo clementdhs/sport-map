@@ -38,6 +38,7 @@ export const routeCreateSchema = routeDetailsSchema.extend({
     .max(MAX_ROUTE_POINTS, `${MAX_ROUTE_POINTS} points maximum`),
   // One elevation per coordinate, in meters.
   elevations: z.array(z.number().min(-500).max(9000)).optional(),
+  source: z.enum(['drawn', 'gpx_import']).default('drawn'),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
   message: 'Il doit y avoir une altitude par point',
   path: ['elevations'],

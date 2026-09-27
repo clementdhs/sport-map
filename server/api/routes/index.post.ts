@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
       elevation_profile: body.elevations ?? null,
       elevation_gain_m: elevation?.gain ?? null,
       elevation_loss_m: elevation?.loss ?? null,
-      source: 'drawn',
+      source: body.source,
     })
     .select('id')
     .single()

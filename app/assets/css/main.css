@@ -1,2 +1,8 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* Map popups stay light like the map itself, whatever the app theme. */
+.maplibregl-popup-content {
+  color: #18181b;
+  font-weight: 500;
+}

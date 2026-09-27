@@ -47,6 +47,20 @@ export const routeCreateSchema = routeDetailsSchema.extend({
 export type RouteDetails = z.infer<typeof routeDetailsSchema>
 export type RouteCreatePayload = z.infer<typeof routeCreateSchema>
 
+export const MAX_SEARCH_RESULTS = 50
+
+export const routeSearchSchema = z.object({
+  minLng: z.coerce.number().min(-180).max(180),
+  minLat: z.coerce.number().min(-90).max(90),
+  maxLng: z.coerce.number().min(-180).max(180),
+  maxLat: z.coerce.number().min(-90).max(90),
+  sport: z.enum(SPORT_TYPES).optional(),
+  minKm: z.coerce.number().min(0).optional(),
+  maxKm: z.coerce.number().min(0).optional(),
+})
+
+export type RouteSearchQuery = z.infer<typeof routeSearchSchema>
+
 export const ROUTING_MODES = ['snap', 'straight'] as const
 export type RoutingMode = typeof ROUTING_MODES[number]
 

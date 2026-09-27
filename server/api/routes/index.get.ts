@@ -1,18 +1,27 @@
 import { serverSupabaseClient } from '#supabase/server'
+import type { Database } from '#shared/types/database.types'
+import type { RouteSummary } from '#shared/types/routes'
 
-export default defineEventHandler(async (event) => {
+type SearchRow = Database['public']['Functions']['search_routes']['Returns'][number]
+
+export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
+  const query = await getValidatedQuery(event, params => routeSearchSchema.parse(params))
   const supabase = await serverSupabaseClient(event)
 
-  const { data, error } = await supabase
-    .from('routes')
-    .select('id, name, description, sport_type, distance_m, elevation_gain_m, cover_image_url, created_at')
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const { data, error } = await supabase.rpc('search_routes', {
+    min_lng: query.minLng,
+    min_lat: query.minLat,
+    max_lng: query.maxLng,
+    max_lat: query.maxLat,
+    sport: query.sport,
+    min_distance_m: query.minKm !== undefined ? query.minKm * 1000 : undefined,
+    max_distance_m: query.maxKm !== undefined ? query.maxKm * 1000 : undefined,
+    max_results: MAX_SEARCH_RESULTS,
+  })
 
   if (error) {
     console.error('[GET /api/routes]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger les parcours' })
+    throw createError({ statusCode: 500, statusMessage: 'Impossible de rechercher les parcours' })
   }
-  return data
+  return (data as SearchRow[]).map(({ start_lng, start_lat, ...route }) => ({ ...route, start: [start_lng, start_lat] }))
 })

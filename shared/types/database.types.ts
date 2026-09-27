@@ -188,6 +188,29 @@ export type Database = {
           error: true
         } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
+      search_routes: {
+        Args: {
+          max_distance_m?: number
+          max_lat: number
+          max_lng: number
+          max_results?: number
+          min_distance_m?: number
+          min_lat: number
+          min_lng: number
+          sport?: Database["public"]["Enums"]["sport_type"]
+        }
+        Returns: {
+          created_at: string
+          distance_m: number
+          elevation_gain_m: number
+          id: string
+          name: string
+          owner_username: string
+          sport_type: Database["public"]["Enums"]["sport_type"]
+          start_lat: number
+          start_lng: number
+        }[]
+      }
     }
     Enums: {
       activity_type: "saved" | "completed"

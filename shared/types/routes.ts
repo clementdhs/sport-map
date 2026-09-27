@@ -13,3 +13,14 @@ export type RouteDetail = Pick<
   elevation_profile: number[] | null
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
 }
+
+export type RouteSummary = {
+  id: string
+  name: string
+  sport_type: Tables<'routes'>['sport_type']
+  distance_m: number
+  elevation_gain_m: number | null
+  start: [lng: number, lat: number]
+  owner_username: string
+  created_at: string
+}

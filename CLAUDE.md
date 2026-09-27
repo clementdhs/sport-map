@@ -34,3 +34,9 @@ The backlog lives in GitHub issues (milestone "V1.1" = current priorities; label
 - `npm run typecheck`
 - `npx supabase link --project-ref <ref>` then `npm run db:push` — apply migrations to the hosted project
 - `npm run db:types` — regenerate DB types (project must be linked)
+- `npm test` — Vitest: `test/unit` (pure functions, Node, explicit imports with `#shared` / `~` aliases) and `test/nuxt` (Nuxt environment, for stores; mock API calls with `registerEndpoint`). Run it after any change.
+- `npm run db:start` then `npm run test:e2e` — Playwright on the production build against the local Supabase (Docker). Test user and data are recreated by `test/e2e/global-setup.ts`; map style and `/api/routing/segment` are mocked in `test/e2e/fixtures.ts`. Never point e2e tests at the hosted project.
+
+## Testing
+- New logic in `shared/` or `app/utils/` gets unit tests; editor/store behaviour gets a `test/nuxt` test; user-facing flows get an e2e test.
+- Maps: wait for `[data-map-loaded]` before interacting with a map in e2e tests.

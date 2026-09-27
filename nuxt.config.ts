@@ -3,7 +3,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
 
-  modules: ['@nuxt/ui', '@pinia/nuxt', '@nuxtjs/supabase', '@vite-pwa/nuxt'],
+  modules: [
+    '@nuxt/ui',
+    '@pinia/nuxt',
+    '@nuxtjs/supabase',
+    // The PWA plugin imports a virtual module that does not exist in Vitest's Nuxt environment.
+    ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
+  ],
 
   css: ['~/assets/css/main.css'],
 

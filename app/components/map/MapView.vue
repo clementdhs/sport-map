@@ -23,6 +23,8 @@ const styleUrl = maptilerKey
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
+// Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
+const loaded = ref(false)
 
 onMounted(async () => {
   // maplibre-gl touches `window` at import time, so load it client-side only.
@@ -47,7 +49,10 @@ onMounted(async () => {
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
-  instance.once('load', () => emit('load', instance))
+  instance.once('load', () => {
+    emit('load', instance)
+    loaded.value = true
+  })
   map.value = instance
 })
 
@@ -57,5 +62,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="size-full" />
+  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" />
 </template>

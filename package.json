@@ -9,6 +9,11 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start -x realtime,storage-api,imgproxy,postgres-meta,studio,edge-runtime,logflare,vector,supavisor,mailpit",
+    "db:stop": "supabase stop",
     "db:push": "supabase db push",
     "db:types": "supabase gen types typescript --linked > shared/types/database.types.ts"
   },
@@ -29,9 +34,14 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@nuxt/test-utils": "^4.3.2",
+    "@playwright/test": "^1.63.0",
     "@types/geojson": "^7946.0.16",
+    "@vue/test-utils": "^2.5.1",
+    "happy-dom": "^20.14.5",
     "supabase": "^2.118.0",
     "typescript": "^6.0.3",
+    "vitest": "^5.0.2",
     "vue-tsc": "^3.3.11"
   }
 }

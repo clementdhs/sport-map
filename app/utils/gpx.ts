@@ -1,6 +1,7 @@
 import { gpx } from '@tmcw/togeojson'
 import { distance } from '@turf/turf'
 import type { Feature, LineString, MultiLineString, Position } from 'geojson'
+import { MAX_ROUTE_POINTS } from '#shared/utils/routes'
 import type { LngLat } from '#shared/utils/routes'
 
 export interface ImportedTrack {

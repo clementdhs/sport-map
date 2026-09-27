@@ -49,8 +49,23 @@ Puis ouvre http://localhost:3000.
 | `npm run dev` | serveur de développement |
 | `npm run build` / `npm run preview` | build de production / prévisualisation |
 | `npm run typecheck` | vérification TypeScript |
+| `npm test` | tests unitaires et du store (Vitest), sans réseau |
+| `npm run db:start` / `npm run db:stop` | démarre / arrête Supabase en local (Docker) |
+| `npm run test:e2e` | tests de bout en bout (Playwright), sur Supabase local |
 | `npm run db:push` | applique les migrations au projet Supabase lié |
 | `npm run db:types` | régénère les types de la base |
+
+## Tests
+
+- **Unitaires et store** (`test/unit`, `test/nuxt`) : `npm test`. Aucun réseau ni base de données ; les appels d'API sont simulés.
+- **De bout en bout** (`test/e2e`) : nécessite [Docker Desktop](https://www.docker.com/products/docker-desktop/) démarré.
+
+  ```bash
+  npm run db:start      # Supabase local, avec les migrations du repo
+  npm run test:e2e      # build de production + navigateur Chromium
+  ```
+
+  Les tests visent uniquement le Supabase local (jamais le projet en ligne). Ils recréent à chaque lancement un compte et un parcours de test, et simulent le fond de carte et le calcul d'itinéraire : aucun quota MapTiler ou OpenRouteService n'est consommé. Premier lancement : `npx playwright install chromium`.
 
 ## Structure
 
@@ -59,4 +74,5 @@ app/            pages, composants, layouts (Nuxt 4)
 server/api/     routes API (Nitro)
 shared/types/   types partagés app/serveur (dont types de la base)
 supabase/       config CLI et migrations SQL
+test/           unit (Vitest, Node), nuxt (Vitest, environnement Nuxt), e2e (Playwright)
 ```

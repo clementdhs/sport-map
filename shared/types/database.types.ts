@@ -117,6 +117,7 @@ export type Database = {
           created_at: string
           description: string | null
           distance_m: number
+          editor_state: Json | null
           elevation_gain_m: number | null
           elevation_loss_m: number | null
           elevation_profile: Json | null
@@ -136,6 +137,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           distance_m?: number
+          editor_state?: Json | null
           elevation_gain_m?: number | null
           elevation_loss_m?: number | null
           elevation_profile?: Json | null
@@ -154,6 +156,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           distance_m?: number
+          editor_state?: Json | null
           elevation_gain_m?: number | null
           elevation_loss_m?: number | null
           elevation_profile?: Json | null

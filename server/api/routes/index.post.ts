@@ -6,22 +6,10 @@ export default defineEventHandler(async (event) => {
 
   const body = await readValidatedBody(event, payload => routeCreateSchema.parse(payload))
   const supabase = await serverSupabaseClient(event)
-  const elevation = body.elevations ? elevationStats(body.coordinates, body.elevations) : null
 
   const { data, error } = await supabase
     .from('routes')
-    .insert({
-      owner_id: user.sub,
-      name: body.name,
-      description: body.description || null,
-      sport_type: body.sport_type,
-      is_public: body.is_public,
-      geom: toLineStringEwkt(body.coordinates),
-      elevation_profile: body.elevations ?? null,
-      elevation_gain_m: elevation?.gain ?? null,
-      elevation_loss_m: elevation?.loss ?? null,
-      source: body.source,
-    })
+    .insert({ owner_id: user.sub, ...routeRowFromPayload(body) })
     .select('id')
     .single()
 

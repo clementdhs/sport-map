@@ -1,4 +1,5 @@
 import type { LineString } from 'geojson'
+import type { EditorState } from '../utils/routes'
 import type { Tables } from './database.types'
 
 // Declared here rather than inferred from the handler: the app's TypeScript project cannot
@@ -18,6 +19,8 @@ export type RouteDetail = Pick<
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.
   elevation_profile: number[] | null
+  // null for routes saved before the editor state was stored
+  editor_state: EditorState | null
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null

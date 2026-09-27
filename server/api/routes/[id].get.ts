@@ -1,6 +1,7 @@
 import type { LineString } from 'geojson'
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { RouteDetail, ViewerActivity } from '#shared/types/routes'
+import type { EditorState } from '#shared/utils/routes'
 
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
   const id = getRouteIdParam(event)
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .from('routes')
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
-      is_public, source, created_at, owner_id, elevation_profile,
+      is_public, source, created_at, owner_id, elevation_profile, editor_state,
       geometry:route_geojson,
       owner:profiles(username, display_name)
     `)
@@ -41,6 +42,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     ...data,
     geometry: data.geometry as unknown as LineString,
     elevation_profile: data.elevation_profile as number[] | null,
+    editor_state: data.editor_state as EditorState | null,
     viewer,
   }
 })

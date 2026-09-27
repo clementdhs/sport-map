@@ -147,6 +147,16 @@ useSeoMeta({
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
 
       <UButton
+        v-if="isOwner"
+        :to="`/routes/${parcours.id}/edit`"
+        icon="i-lucide-pencil"
+        label="Modifier le parcours"
+        color="neutral"
+        variant="outline"
+        block
+      />
+
+      <UButton
         :to="`/api/routes/${parcours.id}/gpx`"
         external
         download

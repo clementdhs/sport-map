@@ -1,13 +1,14 @@
 import { length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
-import type { LngLat, RouteDetails, RoutingMode, RoutingSegmentResponse } from '#shared/utils/routes'
+import type { RouteDetail } from '#shared/types/routes'
+import type { EditorState, LngLat, RouteDetails, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
 interface Segment {
   id: number
-  // How the track was obtained; an imported segment is locked, since recomputing it would lose the GPX track.
-  mode: RoutingMode | 'imported'
+  // How the track was obtained. Imported and locked segments cannot be recomputed without losing their track.
+  mode: SegmentMode
   coordinates: LngLat[]
   // null while loading, when the elevation service could not be reached, or for a GPX without elevation
   elevations: number[] | null
@@ -32,6 +33,14 @@ const defaultDetails = (): RouteDetails => ({
 const round = (value: number) => Math.round(value * 1e6) / 1e6
 const roundPoint = ([lng, lat]: LngLat): LngLat => [round(lng), round(lat)]
 const samePoint = (a: LngLat, b: LngLat) => a[0] === b[0] && a[1] === b[1]
+const isLocked = (mode: SegmentMode) => mode === 'imported' || mode === 'locked'
+
+// A saved editor state can only be trusted if it matches the saved track.
+function isUsableState(state: EditorState | null, pointCount: number): state is EditorState {
+  return !!state
+    && state.segments.length === state.waypoints.length - 1
+    && state.segments.every(s => s.start <= s.end && s.end < pointCount)
+}
 
 export const useRouteEditorStore = defineStore('routeEditor', () => {
   const toast = useToast()
@@ -43,24 +52,31 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   // Incremented when the whole track is replaced, so the map can frame it.
   const replacedCount = ref(0)
   const history = shallowRef<Snapshot[]>([])
+  // Set when editing a saved route: saving then updates it instead of creating a new one.
+  const editingId = ref<string | null>(null)
+  const editingSource = ref<'drawn' | 'gpx_import'>('drawn')
   let nextSegmentId = 0
   // Segments with a routing request in flight: lets undo restart the ones whose request already finished.
   const inFlight = new Set<number>()
 
+  // ranges[i] locates segment i in the track, so the editor state can be saved without duplicating coordinates.
   const track = computed(() => {
-    if (!segments.value.length) return { coordinates: [...waypoints.value], elevations: null }
+    if (!segments.value.length) return { coordinates: [...waypoints.value], elevations: null, ranges: [] }
 
     const coordinates: LngLat[] = []
     const elevations: number[] = []
+    const ranges: { start: number, end: number }[] = []
     let hasElevations = true
     for (const segment of segments.value) {
       // Segments share their junction point: keep it once.
       const skipFirst = coordinates.length > 0 && samePoint(coordinates.at(-1)!, segment.coordinates[0]!)
+      const start = skipFirst ? coordinates.length - 1 : coordinates.length
       coordinates.push(...segment.coordinates.slice(skipFirst ? 1 : 0))
+      ranges.push({ start, end: coordinates.length - 1 })
       if (segment.elevations) elevations.push(...segment.elevations.slice(skipFirst ? 1 : 0))
       else hasElevations = false
     }
-    return { coordinates, elevations: hasElevations ? elevations : null }
+    return { coordinates, elevations: hasElevations ? elevations : null, ranges }
   })
 
   // Client-side estimate for live feedback; the database computes the stored distance.
@@ -90,7 +106,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   // Fetches the track of a segment. Every edit replaces segments with new ids, so a late answer for
   // a segment that no longer exists is simply ignored.
   async function routeSegment({ id, mode, coordinates }: Segment) {
-    if (mode === 'imported') return
+    if (isLocked(mode)) return
     const from = coordinates[0]!
     const to = coordinates.at(-1)!
     inFlight.add(id)
@@ -131,14 +147,16 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     }
   }
 
-  // Waypoints at the end of an imported segment stay put.
+  // Waypoints at the end of a locked segment stay put.
   function canEditWaypoint(index: number): boolean {
-    return segments.value[index - 1]?.mode !== 'imported' && segments.value[index]?.mode !== 'imported'
+    const before = segments.value[index - 1]
+    const after = segments.value[index]
+    return !(before && isLocked(before.mode)) && !(after && isLocked(after.mode))
   }
 
   function canInsertInSegment(index: number): boolean {
     const segment = segments.value[index]
-    return !!segment && segment.mode !== 'imported' && !segment.loading
+    return !!segment && !isLocked(segment.mode) && !segment.loading
   }
 
   function addWaypoint(point: LngLat) {
@@ -242,25 +260,71 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     segments.value = []
     history.value = []
     details.value = defaultDetails()
+    editingId.value = null
+    editingSource.value = 'drawn'
   }
 
-  async function save(): Promise<string> {
-    const { id } = await $fetch<{ id: string }>('/api/routes', {
-      method: 'POST',
-      body: {
-        ...details.value,
-        coordinates: track.value.coordinates,
-        elevations: track.value.elevations ?? undefined,
-        source: segments.value.some(segment => segment.mode === 'imported') ? 'gpx_import' : 'drawn',
-      },
+  // Routes saved before the editor state existed come back as one locked segment: they can be
+  // extended, or cleared and redrawn.
+  function loadRoute(route: RouteDetail) {
+    reset()
+    editingId.value = route.id
+    editingSource.value = route.source
+    details.value = {
+      name: route.name,
+      description: route.description ?? '',
+      sport_type: route.sport_type,
+      is_public: route.is_public,
+    }
+
+    const coordinates = route.geometry.coordinates as LngLat[]
+    const elevations = route.elevation_profile?.length === coordinates.length ? route.elevation_profile : null
+    const slice = (start: number, end: number) => ({
+      coordinates: coordinates.slice(start, end + 1),
+      elevations: elevations?.slice(start, end + 1) ?? null,
     })
+
+    if (isUsableState(route.editor_state, coordinates.length)) {
+      waypoints.value = route.editor_state.waypoints
+      segments.value = route.editor_state.segments.map(({ mode, start, end }) =>
+        ({ id: nextSegmentId++, mode, loading: false, ...slice(start, end) }))
+    }
+    else {
+      waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
+      segments.value = [{ id: nextSegmentId++, mode: 'locked', loading: false, ...slice(0, coordinates.length - 1) }]
+    }
+    replacedCount.value++
+  }
+
+  // A locked segment keeps the source of the route it comes from.
+  const source = computed(() => {
+    if (segments.value.some(segment => segment.mode === 'imported')) return 'gpx_import'
+    if (segments.value.some(segment => segment.mode === 'locked')) return editingSource.value
+    return 'drawn'
+  })
+
+  async function save(): Promise<string> {
+    const body = {
+      ...details.value,
+      coordinates: track.value.coordinates,
+      elevations: track.value.elevations ?? undefined,
+      source: source.value,
+      editor_state: {
+        waypoints: waypoints.value,
+        segments: segments.value.map((segment, i) => ({ mode: segment.mode, ...track.value.ranges[i]! })),
+      } satisfies EditorState,
+    }
+    const { id } = editingId.value
+      ? await $fetch<{ id: string }>(`/api/routes/${editingId.value}`, { method: 'PUT', body })
+      : await $fetch<{ id: string }>('/api/routes', { method: 'POST', body })
     reset()
     return id
   }
 
   return {
     waypoints, segments, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
+    editingId,
     canEditWaypoint, canInsertInSegment,
-    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, importTrack, undo, clearPoints, reset, save,
+    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, importTrack, loadRoute, undo, clearPoints, reset, save,
   }
 })

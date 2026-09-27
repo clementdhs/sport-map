@@ -32,6 +32,26 @@ export const routeDetailsSchema = z.object({
   is_public: z.boolean(),
 })
 
+// snap / straight: routed by the editor; imported: from a GPX file; locked: track of a route saved before the
+// editor state was stored. imported and locked segments cannot be edited.
+export const SEGMENT_MODES = ['snap', 'straight', 'imported', 'locked'] as const
+export type SegmentMode = typeof SEGMENT_MODES[number]
+
+// How the editor built the track, so a saved route can be edited again. Each segment covers
+// coordinates[start..end] of the saved track (consecutive segments usually share their junction point).
+export const editorStateSchema = z.object({
+  waypoints: z.array(coordinateSchema).max(MAX_ROUTE_POINTS),
+  segments: z.array(z.object({
+    mode: z.enum(SEGMENT_MODES),
+    start: z.number().int().min(0),
+    end: z.number().int().min(0),
+  })).max(MAX_ROUTE_POINTS),
+}).refine(state => state.segments.length === Math.max(0, state.waypoints.length - 1), {
+  message: 'Il doit y avoir un segment entre chaque paire de points',
+})
+
+export type EditorState = z.infer<typeof editorStateSchema>
+
 export const routeCreateSchema = routeDetailsSchema.extend({
   coordinates: z.array(coordinateSchema)
     .min(2, 'Un parcours doit contenir au moins 2 points')
@@ -39,9 +59,14 @@ export const routeCreateSchema = routeDetailsSchema.extend({
   // One elevation per coordinate, in meters.
   elevations: z.array(z.number().min(-500).max(9000)).optional(),
   source: z.enum(['drawn', 'gpx_import']).default('drawn'),
+  editor_state: editorStateSchema.optional(),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
   message: 'Il doit y avoir une altitude par point',
   path: ['elevations'],
+}).refine(route => !route.editor_state || route.editor_state.segments.every(segment =>
+  segment.start <= segment.end && segment.end < route.coordinates.length), {
+  message: "L'état de l'éditeur ne correspond pas au tracé",
+  path: ['editor_state'],
 })
 
 export type RouteDetails = z.infer<typeof routeDetailsSchema>

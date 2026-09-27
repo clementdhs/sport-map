@@ -25,3 +25,8 @@ export function formatDate(isoDate: string): string {
     timeZone: 'Europe/Paris',
   })
 }
+
+// Average rating with one decimal, e.g. "4,3".
+export function formatRating(average: number): string {
+  return average.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+}

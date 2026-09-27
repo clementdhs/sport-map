@@ -11,6 +11,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
       is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois,
+      rating_avg, rating_count,
       geometry:route_geojson,
       owner:profiles(username, display_name),
       photos:route_photos(id, storage_path)

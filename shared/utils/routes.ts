@@ -141,7 +141,7 @@ export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
 
 export const MAX_SEARCH_RESULTS = 50
 
-export const SEARCH_SORTS = ['nearest', 'recent', 'shortest', 'longest'] as const
+export const SEARCH_SORTS = ['nearest', 'recent', 'shortest', 'longest', 'best_rated'] as const
 export type SearchSort = typeof SEARCH_SORTS[number]
 
 export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
@@ -149,6 +149,7 @@ export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
   recent: 'Plus récents',
   shortest: 'Plus courts',
   longest: 'Plus longs',
+  best_rated: 'Mieux notés',
 }
 
 export const routeSearchSchema = z.object({
@@ -245,3 +246,13 @@ export const MAX_PHOTO_BYTES = 2 * 1024 * 1024
 export const PHOTO_MAX_SIDE_PX = 1600
 export const PHOTO_TYPES = ['image/webp', 'image/jpeg'] as const
 export type PhotoType = typeof PHOTO_TYPES[number]
+
+export const MAX_REVIEW_COMMENT_LENGTH = 1000
+
+// A user's rating (1 to 5 stars) and optional comment on someone else's route.
+export const reviewSchema = z.object({
+  rating: z.number().int().min(1, 'Choisis une note').max(5),
+  comment: z.string().trim().max(MAX_REVIEW_COMMENT_LENGTH, `${MAX_REVIEW_COMMENT_LENGTH} caractères maximum`).optional(),
+})
+
+export type ReviewInput = z.infer<typeof reviewSchema>

@@ -69,6 +69,39 @@ export type Database = {
         }
         Relationships: []
       }
+      review_reports: {
+        Row: {
+          created_at: string
+          reporter_id: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string
+          reporter_id: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string
+          reporter_id?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_reports_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "route_reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_activity: {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
@@ -140,6 +173,57 @@ export type Database = {
           },
         ]
       }
+      route_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          hidden_at: string | null
+          hidden_reason: string | null
+          id: string
+          rating: number
+          route_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          hidden_at?: string | null
+          hidden_reason?: string | null
+          id?: string
+          rating: number
+          route_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          hidden_at?: string | null
+          hidden_reason?: string | null
+          id?: string
+          rating?: number
+          route_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_reviews_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           cover_image_url: string | null
@@ -157,6 +241,8 @@ export type Database = {
           name: string
           owner_id: string
           pois: Json
+          rating_avg: number | null
+          rating_count: number
           source: Database["public"]["Enums"]["route_source"]
           sport_type: Database["public"]["Enums"]["sport_type"]
           start_point: unknown
@@ -179,6 +265,8 @@ export type Database = {
           name: string
           owner_id: string
           pois?: Json
+          rating_avg?: number | null
+          rating_count?: number
           source?: Database["public"]["Enums"]["route_source"]
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown
@@ -200,6 +288,8 @@ export type Database = {
           name?: string
           owner_id?: string
           pois?: Json
+          rating_avg?: number | null
+          rating_count?: number
           source?: Database["public"]["Enums"]["route_source"]
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown
@@ -252,8 +342,14 @@ export type Database = {
           marker_lng: number
           name: string
           owner_username: string
+          rating_avg: number
+          rating_count: number
           sport_type: Database["public"]["Enums"]["sport_type"]
         }[]
+      }
+      set_review_hidden: {
+        Args: { hidden: boolean; review_id: string }
+        Returns: boolean
       }
     }
     Enums: {

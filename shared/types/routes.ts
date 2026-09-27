@@ -14,7 +14,7 @@ export type ViewerActivity = {
 export type RouteDetail = Pick<
   Tables<'routes'>,
   | 'id' | 'name' | 'description' | 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'elevation_loss_m'
-  | 'is_public' | 'source' | 'created_at' | 'updated_at' | 'owner_id'
+  | 'is_public' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
 > & {
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.
@@ -43,6 +43,9 @@ export type RouteListItem = {
   is_public: boolean
   // Ends less than 200 m from its start
   is_loop: boolean
+  // Average of the ratings (1 to 5), null while nobody rated the route
+  rating_avg: number | null
+  rating_count: number
   owner_username: string
   created_at: string
 }
@@ -65,4 +68,25 @@ export type MyProfile = {
 export type PublicProfile = {
   profile: ProfileInfo
   routes: RouteListItem[]
+}
+
+// A review as the current viewer may see it. Hidden reviews only reach their author and the route's owner.
+export type RouteReview = {
+  id: string
+  rating: number
+  comment: string | null
+  created_at: string
+  updated_at: string
+  author: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
+  is_mine: boolean
+  hidden_reason: 'owner' | 'reports' | null
+  reported_by_me: boolean
+  // Only for the route's owner, null for everyone else
+  report_count: number | null
+}
+
+export type RouteReviews = {
+  rating_avg: number | null
+  rating_count: number
+  reviews: RouteReview[]
 }

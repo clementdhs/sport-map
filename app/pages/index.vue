@@ -35,6 +35,7 @@ const LIMIT_LABELS: Record<SearchSort, string> = {
   recent: 'les plus récents de la zone',
   shortest: 'les plus courts de la zone',
   longest: 'les plus longs de la zone',
+  best_rated: 'les mieux notés de la zone',
 }
 
 const resultsLabel = computed(() => {

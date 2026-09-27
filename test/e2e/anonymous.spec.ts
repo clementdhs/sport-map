@@ -6,13 +6,20 @@ test('finds a public route on the home map and opens it', async ({ page }) => {
 
   const card = page.getByRole('link', { name: new RegExp(SEEDED_ROUTE_NAME) })
   await expect(card).toBeVisible()
+  // Its average rating, from the seeded review.
+  await expect(card).toContainText('4,0')
+  await expect(card).toContainText('(1 avis)')
   await card.click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME })).toBeVisible()
   await expect(page.getByText('Durée estimée')).toBeVisible()
-  // Visitors can't edit or delete.
+  // Visitors can't edit or delete, and must sign in to review.
   await expect(page.getByRole('link', { name: 'Modifier le parcours' })).toHaveCount(0)
+  const reviews = page.getByRole('region', { name: 'Avis', exact: true })
+  await expect(reviews).toContainText('1 avis')
+  await expect(reviews.getByRole('link', { name: 'Connecte-toi' })).toBeVisible()
+  await expect(reviews.getByRole('button', { name: 'Signaler' })).toHaveCount(0)
 })
 
 test('filters the search by sport', async ({ page }) => {
@@ -39,6 +46,14 @@ test('keeps only loops and sorts the results', async ({ page }) => {
 
   await page.getByRole('combobox', { name: 'Trier par' }).click()
   await page.getByRole('option', { name: 'Plus courts' }).click()
+  await expect(cards.first()).toContainText(SEEDED_ROUTE_NAME)
+
+  // The loop has no rating yet: it comes after the rated route.
+  await page.getByRole('combobox', { name: 'Trier par' }).click()
+  await page.getByRole('option', { name: 'Plus longs' }).click()
+  await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
+  await page.getByRole('combobox', { name: 'Trier par' }).click()
+  await page.getByRole('option', { name: 'Mieux notés' }).click()
   await expect(cards.first()).toContainText(SEEDED_ROUTE_NAME)
 
   await page.getByRole('switch', { name: /Boucles uniquement/ }).click()

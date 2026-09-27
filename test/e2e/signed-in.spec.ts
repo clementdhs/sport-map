@@ -1,4 +1,5 @@
-import { expect, test, waitForMap } from './fixtures'
+import { insertRows, supabaseAdmin } from './admin'
+import { expect, SEEDED_REVIEW, test, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -52,6 +53,9 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Parcours e2e/ })).toBeVisible()
 })
 
+// Visitors: without it, request contexts reuse the signed-in session of the project.
+const NO_SESSION = { cookies: [], origins: [] }
+
 // A 1×1 PNG: the page converts it to WebP (or JPEG) before uploading it.
 const PNG_1PX = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -59,15 +63,11 @@ const PNG_1PX = Buffer.from(
 )
 
 // Files left in the local storage bucket for a route (admin API: the secret key bypasses the policies).
-async function storedPhotoFiles(routeId: string): Promise<unknown[]> {
-  const key = process.env.E2E_SUPABASE_SECRET_KEY!
-  const response = await fetch(`${process.env.E2E_SUPABASE_URL}/storage/v1/object/list/route-photos`, {
+function storedPhotoFiles(routeId: string): Promise<{ name: string }[]> {
+  return supabaseAdmin('/storage/v1/object/list/route-photos', {
     method: 'POST',
-    headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefix: `${routeId}/` }),
   })
-  expect(response.ok).toBe(true)
-  return response.json()
 }
 
 // Whether a visitor (publishable key only) can get a signed URL for a file, straight from the storage API.
@@ -96,10 +96,10 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   await expect(photos).toHaveCount(1)
   // Served by the private bucket through a signed URL.
   await expect.poll(() => photos.first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1)
-  const [file] = await storedPhotoFiles(id) as { name: string }[]
+  const [file] = await storedPhotoFiles(id)
 
   // Visitors see the photos of a public route.
-  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin })
+  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
   const asVisitor = await (await visitor.get(`/api/routes/${id}`)).json() as { photos: unknown[] }
   expect(asVisitor.photos).toHaveLength(1)
   await visitor.dispose()
@@ -127,4 +127,75 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect(page).toHaveURL(/\/profile$/)
   expect(await storedPhotoFiles(id)).toHaveLength(0)
+})
+
+test('reviews the route of someone else, and reports an abusive comment', async ({ page }) => {
+  const [author, reporter, otherReporter] = process.env.E2E_NEIGHBOR_IDS!.split(',')
+  // A neighbor's route (far from the seeded ones, not to disturb the search tests), already reviewed by another.
+  const [route] = await insertRows<{ id: string }>('routes', [{
+    owner_id: author,
+    name: 'Belvédère e2e du voisin',
+    sport_type: 'hiking',
+    is_public: true,
+    geom: 'SRID=4326;LINESTRING(170 -45,170.1 -45.1)',
+  }])
+  const [abusive] = await insertRows<{ id: string }>('route_reviews', [
+    { route_id: route!.id, user_id: reporter, rating: 2, comment: 'Commentaire insultant e2e' },
+  ])
+  await page.goto(`/routes/${route!.id}`)
+  await waitForMap(page)
+  const reviews = page.getByRole('region', { name: 'Avis', exact: true })
+  await expect(reviews).toContainText('Commentaire insultant e2e')
+
+  await reviews.getByRole('radio', { name: '4 étoiles' }).click()
+  await reviews.getByLabel('Commentaire').fill('Belle vue au sommet')
+  await reviews.getByRole('button', { name: 'Publier mon avis' }).click()
+  await expect(reviews).toContainText('Belle vue au sommet')
+  await expect(reviews).toContainText('3,0· 2 avis')
+
+  await reviews.getByRole('button', { name: 'Modifier' }).click()
+  await reviews.getByRole('radio', { name: '5 étoiles' }).click()
+  await reviews.getByRole('button', { name: 'Enregistrer' }).click()
+  await expect(reviews).toContainText('3,5· 2 avis')
+
+  page.once('dialog', dialog => dialog.accept())
+  await reviews.getByRole('button', { name: 'Signaler' }).click()
+  await expect(reviews.getByRole('button', { name: 'Signalé' })).toBeDisabled()
+
+  // Two more reports: the comment is hidden automatically, its rating still counts.
+  await insertRows('review_reports', [
+    { review_id: abusive!.id, reporter_id: author },
+    { review_id: abusive!.id, reporter_id: otherReporter },
+  ])
+  await page.reload()
+  await expect(reviews).toContainText('Belle vue au sommet')
+  await expect(reviews).not.toContainText('Commentaire insultant e2e')
+  await expect(reviews).toContainText('3,5· 2 avis')
+
+  page.once('dialog', dialog => dialog.accept())
+  await reviews.getByRole('button', { name: 'Supprimer' }).click()
+  await expect(reviews).not.toContainText('Belle vue au sommet')
+  await expect(reviews).toContainText('2,0· 1 avis')
+})
+
+test('moderates the reviews of its own route', async ({ page, playwright }) => {
+  const id = process.env.E2E_ROUTE_ID!
+  await page.goto(`/routes/${id}`)
+  await waitForMap(page)
+  const reviews = page.getByRole('region', { name: 'Avis', exact: true })
+  await expect(reviews).toContainText(SEEDED_REVIEW.comment)
+  // No rating of one's own route.
+  await expect(reviews.getByRole('button', { name: 'Publier mon avis' })).toHaveCount(0)
+
+  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
+  const asVisitor = async () => (await visitor.get(`/api/routes/${id}/reviews`)).json() as Promise<{ rating_count: number, reviews: unknown[] }>
+
+  await reviews.getByRole('button', { name: 'Masquer le commentaire' }).click()
+  await expect(reviews).toContainText("Commentaire masqué par l'auteur du parcours")
+  expect(await asVisitor()).toMatchObject({ rating_count: 1, reviews: [] })
+
+  await reviews.getByRole('button', { name: 'Afficher le commentaire' }).click()
+  await expect(reviews).not.toContainText('Commentaire masqué')
+  expect((await asVisitor()).reviews).toHaveLength(1)
+  await visitor.dispose()
 })

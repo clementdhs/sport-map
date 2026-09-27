@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDistance, formatDuration } from '#shared/utils/format'
+import { formatDate, formatDistance, formatDuration, formatRating } from '#shared/utils/format'
 
 describe('formatDistance', () => {
   it('uses meters under 1 km', () => {
@@ -28,5 +28,13 @@ describe('formatDate', () => {
   it('uses the Paris time zone, so server and browser agree', () => {
     // 23:30 UTC is already the next day in Paris.
     expect(formatDate('2026-09-27T23:30:00Z')).toBe('28 septembre 2026')
+  })
+})
+
+describe('formatRating', () => {
+  it('keeps one decimal, French style', () => {
+    expect(formatRating(4.333)).toBe('4,3')
+    expect(formatRating(5)).toBe('5,0')
+    expect(formatRating(3.75)).toBe('3,8')
   })
 })

@@ -242,6 +242,10 @@ useSeoMeta({
           </div>
         </template>
       </UModal>
+
+      <USeparator />
+
+      <RouteReviews :route-id="parcours.id" :is-owner="isOwner" :is-public="parcours.is_public" />
     </aside>
   </div>
 </template>

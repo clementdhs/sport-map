@@ -4,6 +4,7 @@ import {
   estimateDurationMin,
   routeCreateSchema,
   routeSearchSchema,
+  reviewSchema,
   snapToTrack,
   MAX_POIS,
   type LngLat,
@@ -161,5 +162,20 @@ describe('points of interest', () => {
     expect(coordinates[1]).toBeCloseTo(track[50]![1], 6)
     // lineNorth's spacing is approximate: within a few meters.
     expect(Math.abs(distanceM - 500)).toBeLessThan(5)
+  })
+})
+
+describe('reviewSchema', () => {
+  it('needs a whole rating from 1 to 5, the comment is optional', () => {
+    expect(reviewSchema.safeParse({ rating: 4 }).success).toBe(true)
+    expect(reviewSchema.parse({ rating: 5, comment: '  Superbe  ' }).comment).toBe('Superbe')
+    for (const rating of [0, 6, 3.5]) expect(reviewSchema.safeParse({ rating }).success).toBe(false)
+    expect(reviewSchema.safeParse({ rating: 3, comment: 'x'.repeat(1001) }).success).toBe(false)
+  })
+})
+
+describe('search sorts', () => {
+  it('accepts the best rated sort', () => {
+    expect(routeSearchSchema.parse({ minLng: '5', minLat: '45', maxLng: '7', maxLat: '47', sort: 'best_rated' }).sort).toBe('best_rated')
   })
 })

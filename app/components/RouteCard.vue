@@ -29,6 +29,11 @@ defineProps<{
       · ~{{ formatDuration(estimateDurationMin(route.sport_type, route.distance_m, route.elevation_gain_m)) }}
       · par {{ route.owner_username }}
     </p>
+    <p v-if="route.rating_count" class="mt-1 flex items-center gap-1.5 text-sm">
+      <RatingStars :value="route.rating_avg ?? 0" />
+      <span class="font-medium">{{ formatRating(route.rating_avg ?? 0) }}</span>
+      <span class="text-muted">({{ route.rating_count }} avis)</span>
+    </p>
     <p v-if="note" class="mt-1 text-sm text-muted">{{ note }}</p>
   </NuxtLink>
 </template>

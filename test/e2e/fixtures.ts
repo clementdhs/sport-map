@@ -13,6 +13,12 @@ export const E2E_USER = {
 export const SEEDED_ROUTE_NAME = 'Traversée e2e du lac'
 export const SEEDED_LOOP_NAME = 'Tour e2e des crêtes'
 
+// Other test users, created by the global setup to review and report.
+export const E2E_NEIGHBORS = [1, 2, 3].map(i => ({ email: `e2e-voisin${i}@sport-map.test`, username: `e2e_voisin${i}` }))
+
+// Review of the seeded point-to-point route by the first neighbor.
+export const SEEDED_REVIEW = { rating: 4, comment: 'Très jolie balade au bord du lac.' }
+
 // A style without any source: the map loads instantly and offline.
 const EMPTY_MAP_STYLE = {
   version: 8,

@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .from('routes')
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
-      is_public, source, created_at, owner_id,
+      is_public, source, created_at, owner_id, elevation_profile,
       geometry:route_geojson,
       owner:profiles(username, display_name)
     `)
@@ -28,5 +28,9 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
   }
   // RLS hides private routes of other users: they are reported as missing too.
   if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
-  return { ...data, geometry: data.geometry as unknown as LineString }
+  return {
+    ...data,
+    geometry: data.geometry as unknown as LineString,
+    elevation_profile: data.elevation_profile as number[] | null,
+  }
 })

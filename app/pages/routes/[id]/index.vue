@@ -52,18 +52,30 @@ useSeoMeta({
         · {{ formatDate(parcours.created_at) }}
       </p>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-3 gap-3">
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Distance</p>
-          <p class="text-xl font-semibold tabular-nums">{{ formatDistance(parcours.distance_m) }}</p>
+          <p class="text-lg font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
         </div>
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Dénivelé +</p>
-          <p class="text-xl font-semibold tabular-nums">
+          <p class="text-lg font-semibold">
             {{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}
           </p>
         </div>
+        <div class="rounded-lg bg-elevated p-3">
+          <p class="text-sm text-muted">Dénivelé −</p>
+          <p class="text-lg font-semibold">
+            {{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}
+          </p>
+        </div>
       </div>
+
+      <ElevationProfile
+        v-if="parcours.elevation_profile?.length === coordinates.length"
+        :coordinates="coordinates"
+        :elevations="parcours.elevation_profile"
+      />
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
     </aside>

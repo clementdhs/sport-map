@@ -7,7 +7,10 @@ const props = defineProps<{
 }>()
 
 function onLoad(map: Map) {
-  addRouteLayers(map, props.coordinates, { showVias: false })
+  addRouteLayers(map, {
+    line: props.coordinates,
+    points: [props.coordinates[0]!, props.coordinates.at(-1)!],
+  })
   map.fitBounds(routeBounds(props.coordinates), { padding: 48, duration: 0 })
 }
 </script>

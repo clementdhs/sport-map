@@ -39,11 +39,12 @@ async function onSubmit() {
     </div>
 
     <aside class="max-h-[40dvh] shrink-0 space-y-5 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
-      <div class="flex items-end justify-between gap-4">
-        <div>
-          <p class="text-sm text-muted">Distance</p>
-          <p class="text-3xl font-semibold tabular-nums">{{ formatDistance(editor.distanceM) }}</p>
-        </div>
+      <div class="flex items-center justify-between gap-4">
+        <USwitch
+          v-model="editor.snapToPaths"
+          label="Suivre les chemins"
+          :description="editor.snapToPaths ? `Itinéraire adapté : ${SPORT_LABELS[editor.details.sport_type].toLowerCase()}` : 'Tracé en ligne droite'"
+        />
         <div class="flex gap-2">
           <UTooltip text="Annuler le dernier point">
             <UButton
@@ -51,7 +52,7 @@ async function onSubmit() {
               color="neutral"
               variant="outline"
               aria-label="Annuler le dernier point"
-              :disabled="!editor.points.length"
+              :disabled="!editor.waypoints.length"
               @click="editor.undo()"
             />
           </UTooltip>
@@ -61,14 +62,38 @@ async function onSubmit() {
               color="neutral"
               variant="outline"
               aria-label="Effacer le tracé"
-              :disabled="!editor.points.length"
+              :disabled="!editor.waypoints.length"
               @click="editor.clearPoints()"
             />
           </UTooltip>
         </div>
       </div>
 
-      <p v-if="editor.points.length < 2" class="text-sm text-muted">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="col-span-3">
+          <p class="flex items-center gap-2 text-sm text-muted">
+            Distance
+            <UIcon v-if="editor.isRouting" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-label="Calcul en cours" />
+          </p>
+          <p class="text-3xl font-semibold">{{ formatDistance(editor.distanceM) }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-muted">Dénivelé +</p>
+          <p class="text-lg font-semibold">{{ editor.elevation ? `${Math.round(editor.elevation.gain)} m` : '—' }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-muted">Dénivelé −</p>
+          <p class="text-lg font-semibold">{{ editor.elevation ? `${Math.round(editor.elevation.loss)} m` : '—' }}</p>
+        </div>
+      </div>
+
+      <ElevationProfile
+        v-if="editor.track.elevations && editor.track.coordinates.length >= 2"
+        :coordinates="editor.track.coordinates"
+        :elevations="editor.track.elevations"
+      />
+
+      <p v-if="editor.waypoints.length < 2" class="text-sm text-muted">
         <UIcon name="i-lucide-mouse-pointer-click" class="mr-1 align-text-bottom" />
         Clique sur la carte pour placer les points de ton parcours.
       </p>

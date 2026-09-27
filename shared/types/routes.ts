@@ -9,5 +9,7 @@ export type RouteDetail = Pick<
   | 'is_public' | 'source' | 'created_at' | 'owner_id'
 > & {
   geometry: LineString
+  // One elevation (m) per geometry coordinate, when known.
+  elevation_profile: number[] | null
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
 }

@@ -64,12 +64,25 @@ async function deleteRoute() {
   }
 }
 
+// Link previews need an absolute image URL. Private routes have no image (the endpoint refuses them),
+// and ?v= makes caches fetch a new image once the route is edited.
+const origin = useRequestURL().origin
+const ogImage = computed(() => parcours.value?.is_public
+  ? `${origin}/api/routes/${parcours.value.id}/og.png?v=${Date.parse(parcours.value.updated_at)}`
+  : undefined)
+
 useSeoMeta({
   title: () => `${parcours.value?.name} — sport-map`,
   description: summary,
   ogTitle: () => parcours.value?.name,
   ogDescription: summary,
   ogType: 'article',
+  ogImage,
+  ogImageType: () => (ogImage.value ? 'image/png' : undefined),
+  ogImageWidth: () => (ogImage.value ? 1200 : undefined),
+  ogImageHeight: () => (ogImage.value ? 630 : undefined),
+  ogImageAlt: () => (ogImage.value ? `Tracé du parcours ${parcours.value?.name}` : undefined),
+  twitterCard: () => (ogImage.value ? 'summary_large_image' : 'summary'),
 })
 </script>
 

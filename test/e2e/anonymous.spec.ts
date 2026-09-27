@@ -55,6 +55,20 @@ test('exports a public route as GPX', async ({ request }) => {
   expect(gpx).toContain('<trkpt lat="45.899" lon="6.129"><ele>450</ele></trkpt>')
 })
 
+test('gives a public route a link preview image', async ({ page, request }) => {
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content')
+  expect(ogImage).toMatch(new RegExp(`^https?://[^/]+/api/routes/${process.env.E2E_ROUTE_ID}/og\\.png\\?v=\\d+$`))
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image')
+
+  const response = await request.get(new URL(ogImage!).pathname)
+  expect(response.status()).toBe(200)
+  expect(response.headers()['content-type']).toBe('image/png')
+  expect(response.headers()['cache-control']).toContain('public')
+  // PNG signature
+  expect((await response.body()).subarray(1, 4).toString()).toBe('PNG')
+})
+
 test('serves every icon of the PWA manifest', async ({ request }) => {
   const manifest = await (await request.get('/manifest.webmanifest')).json() as { icons: { src: string, sizes: string, purpose?: string }[] }
   expect(manifest.icons.map(icon => icon.sizes)).toEqual(expect.arrayContaining(['192x192', '512x512']))

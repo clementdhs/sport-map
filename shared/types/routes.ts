@@ -14,7 +14,7 @@ export type ViewerActivity = {
 export type RouteDetail = Pick<
   Tables<'routes'>,
   | 'id' | 'name' | 'description' | 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'elevation_loss_m'
-  | 'is_public' | 'source' | 'created_at' | 'owner_id'
+  | 'is_public' | 'source' | 'created_at' | 'updated_at' | 'owner_id'
 > & {
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.

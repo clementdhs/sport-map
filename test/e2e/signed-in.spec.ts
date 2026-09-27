@@ -22,6 +22,8 @@ test('draws, saves, then edits a route', async ({ page }) => {
 
   // Editing reopens the same route, and saving updates it in place.
   const detailUrl = page.url()
+  const ogImageUrl = `${detailUrl.replace('/routes/', '/api/routes/')}/og.png`
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`^${ogImageUrl}\\?v=\\d+$`))
   await page.getByRole('link', { name: 'Modifier le parcours' }).click()
   await waitForMap(page)
   await expect(page.getByLabel('Nom')).toHaveValue('Parcours e2e')
@@ -30,6 +32,11 @@ test('draws, saves, then edits a route', async ({ page }) => {
 
   await expect(page).toHaveURL(detailUrl)
   await expect(page.getByText('Privé', { exact: true })).toBeVisible()
+
+  // A private route has no link preview image, not even for its owner (it could end up in a public cache).
+  await page.reload()
+  await expect(page.locator('meta[property="og:image"]')).toHaveCount(0)
+  expect((await page.request.get(ogImageUrl)).status()).toBe(404)
 
   // The private route stays listed on its owner's profile.
   await page.goto('/profile')

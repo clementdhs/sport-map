@@ -66,6 +66,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     is_public: body.is_public,
     source: body.source ?? 'drawn',
     created_at: '2026-09-28T10:00:00Z',
+    updated_at: '2026-09-28T10:00:00Z',
     owner_id: 'me',
     geometry: { type: 'LineString', coordinates: body.coordinates },
     elevation_profile: body.elevations ?? null,

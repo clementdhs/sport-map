@@ -6,7 +6,7 @@ import {
   routeSearchSchema,
   type LngLat,
 } from '#shared/utils/routes'
-import { formatDuration } from '~/utils/format'
+import { formatDuration } from '#shared/utils/format'
 
 // Points every `spacingM` meters going north, from Annecy.
 function lineNorth(count: number, spacingM = 10): LngLat[] {

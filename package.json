@@ -26,6 +26,7 @@
     "@nuxt/ui": "^4.11.2",
     "@nuxtjs/supabase": "^2.0.10",
     "@pinia/nuxt": "^1.0.2",
+    "@resvg/resvg-js": "^2.6.2",
     "@tmcw/togeojson": "^7.1.2",
     "@turf/turf": "^7.4.0",
     "@vite-pwa/nuxt": "^1.1.1",

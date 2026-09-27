@@ -12,9 +12,11 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
       is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois,
       geometry:route_geojson,
-      owner:profiles(username, display_name)
+      owner:profiles(username, display_name),
+      photos:route_photos(id, storage_path)
     `)
     .eq('id', id)
+    .order('created_at', { referencedTable: 'route_photos' })
     .maybeSingle()
 
   if (error) {
@@ -38,12 +40,14 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     }
   }
 
+  const { photos, ...route } = data
   return {
-    ...data,
+    ...route,
     geometry: data.geometry as unknown as LineString,
     elevation_profile: data.elevation_profile as number[] | null,
     editor_state: data.editor_state as EditorState | null,
     pois: data.pois as Poi[],
+    photos: await signPhotos(supabase, photos),
     viewer,
   }
 })

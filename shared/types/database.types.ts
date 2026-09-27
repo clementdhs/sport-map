@@ -111,6 +111,35 @@ export type Database = {
           },
         ]
       }
+      route_photos: {
+        Row: {
+          created_at: string
+          id: string
+          route_id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          route_id: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          route_id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_photos_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routes: {
         Row: {
           cover_image_url: string | null

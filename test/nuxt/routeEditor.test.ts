@@ -72,6 +72,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     elevation_profile: body.elevations ?? null,
     editor_state: body.editor_state ?? null,
     pois: body.pois ?? [],
+    photos: [],
     owner: { username: 'test', display_name: null },
     viewer: null,
     ...overrides,

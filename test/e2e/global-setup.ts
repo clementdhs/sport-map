@@ -14,6 +14,9 @@ async function supabaseAdmin<T>(path: string, init: RequestInit = {}): Promise<T
 
 // Recreates the test user (deleting it cascades to its profile, routes and activity) and one public route.
 export default async function globalSetup() {
+  // Photo files are not deleted by the cascade: start from an empty bucket.
+  await supabaseAdmin('/storage/v1/bucket/route-photos/empty', { method: 'POST' })
+
   const { users } = await supabaseAdmin<{ users: { id: string, email: string }[] }>('/auth/v1/admin/users?per_page=1000')
   for (const user of users.filter(u => u.email === E2E_USER.email)) {
     await supabaseAdmin(`/auth/v1/admin/users/${user.id}`, { method: 'DELETE' })

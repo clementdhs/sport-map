@@ -6,6 +6,7 @@ export default defineEventHandler(async (event) => {
 
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)
+  await removeRoutePhotoFiles(supabase, id)
   // RLS only lets owners delete: nothing deleted means the route is missing or not the caller's.
   const { data, error } = await supabase.from('routes').delete().eq('id', id).select('id')
 

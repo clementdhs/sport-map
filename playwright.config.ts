@@ -28,6 +28,8 @@ const supabase = localSupabase()
 // Read by the global setup to create the test user and data.
 process.env.E2E_SUPABASE_URL = supabase.url
 process.env.E2E_SUPABASE_SECRET_KEY = supabase.secretKey
+// Used by the tests that act as a visitor straight on the Supabase APIs.
+process.env.E2E_SUPABASE_PUBLIC_KEY = supabase.publicKey
 
 export default defineConfig({
   testDir: 'test/e2e',

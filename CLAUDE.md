@@ -26,12 +26,15 @@ The backlog lives in GitHub issues (milestone "V1.1" = current priorities; label
 - MapLibre is imported only client-side (dynamic import in `onMounted`), and its worker URL is set via `?worker&url` (required by MapLibre 6 with Vite). In dev only, the console shows `ReferenceError: document is not defined` from Vite's client injected in that worker: harmless, absent from production builds.
 - Testing maps in the desktop app's browser pane: MapLibre only finishes loading while the pane is visible (hidden tabs pause rendering).
 - `routes.pois` holds the route's points of interest (`[{ type, coordinates, note? }]`, validated by `poiSchema`), saved with the route so they share its visibility. They are snapped onto the track when placed; on the map they are HTML markers (`MapPoiMarkers`) whose content is teleported so it can use Nuxt UI icons.
+- Route photos: the owner uploads them from the route page. The browser resizes and re-encodes them (`compressPhoto`, WebP or JPEG, EXIF dropped), `POST /api/routes/:id/photos` checks the real type and the per-route limit, stores the file in the private `route-photos` bucket under `<route_id>/` and adds a `route_photos` row. Rows and files follow the route's visibility (RLS and storage policies); pages get signed URLs (1 h). Deleting a route removes its files first (the cascade only deletes rows).
+- `useFetch` data is a shallow ref (Nuxt 4 default): state a page changes after loading (e.g. photos, viewer activity) gets its own `ref`, since assigning a property of the fetched object doesn't re-render.
 - Link previews: `GET /api/routes/:id/og.png` draws the track and key figures as SVG (`server/utils/ogImage.ts`) and renders it to PNG with `@resvg/resvg-js`, using the Inter fonts from `server/assets/fonts` (no map tiles: MapTiler static maps need a paid plan). It only serves public routes, whoever asks, because the image is cached publicly.
 - Free-tier quotas matter: debounce OpenRouteService calls, serve images straight from Supabase Storage.
 - APIs of Nuxt 4 / Nuxt UI 4 / MapLibre 6 / @nuxtjs/supabase 2 change fast: when unsure, check the official docs or the package's types in `node_modules` rather than relying on memory.
 
 ## Commands
-- `npm run dev` — dev server on http://localhost:3000
+- `npm run dev` — dev server on http://localhost:3000, on the hosted Supabase
+- `npm run db:start` then `npm run dev:local` — same, on the local Supabase (Docker): try new migrations before pushing them. New migration files need `npx supabase migration up --local`.
 - `npm run build` / `npm run preview`
 - `npm run typecheck`
 - `npx supabase link --project-ref <ref>` then `npm run db:push` — apply migrations to the hosted project

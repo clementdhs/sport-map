@@ -238,3 +238,10 @@ export function snapToTrack(track: LngLat[], point: LngLat): { coordinates: LngL
   const round = (value: number) => Math.round(value * 1e6) / 1e6
   return { coordinates: [round(lng), round(lat)], distanceM: snapped.properties.totalDistance }
 }
+
+// Photos are resized and compressed in the browser before upload (the free storage quota is 1 GB).
+export const MAX_ROUTE_PHOTOS = 10
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024
+export const PHOTO_MAX_SIDE_PX = 1600
+export const PHOTO_TYPES = ['image/webp', 'image/jpeg'] as const
+export type PhotoType = typeof PHOTO_TYPES[number]

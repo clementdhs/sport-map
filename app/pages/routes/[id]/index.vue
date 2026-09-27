@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FetchError } from 'ofetch'
-import type { RouteDetail } from '#shared/types/routes'
+import type { RouteDetail, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat } from '#shared/utils/routes'
 
 const route = useRoute()
@@ -18,6 +18,10 @@ if (error.value || !parcours.value) {
 
 const coordinates = computed(() => (parcours.value?.geometry.coordinates ?? []) as LngLat[])
 const hoverPoint = ref<LngLat | null>(null)
+// Own state for what the page changes: useFetch data is a shallow ref, so changing a property of
+// parcours (photos, viewer) would not re-render the page.
+const photos = ref<RoutePhoto[]>(parcours.value.photos)
+const viewer = ref<ViewerActivity>(parcours.value.viewer ?? { saved: false, completed_at: null })
 
 // In the order they come along the track.
 const pois = computed(() => {
@@ -34,7 +38,6 @@ const summary = computed(() => {
 
 const errorMessage = (error: unknown) => (error as FetchError).data?.statusMessage ?? (error as Error).message
 
-const viewer = computed(() => parcours.value?.viewer ?? { saved: false, completed_at: null })
 const pendingActivity = ref<ActivityType | null>(null)
 
 async function toggleActivity(type: ActivityType) {
@@ -44,7 +47,7 @@ async function toggleActivity(type: ActivityType) {
   pendingActivity.value = type
   try {
     await $fetch(`/api/routes/${parcours.value!.id}/activity/${type}`, { method: active ? 'DELETE' : 'PUT' })
-    parcours.value!.viewer = type === 'saved'
+    viewer.value = type === 'saved'
       ? { ...viewer.value, saved: !active }
       : { ...viewer.value, completed_at: active ? null : new Date().toISOString() }
   }
@@ -174,6 +177,8 @@ useSeoMeta({
       />
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
+
+      <RoutePhotos v-model:photos="photos" :route-id="parcours.id" :is-owner="isOwner" />
 
       <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
         <h2 id="pois-title" class="font-medium">Points d'intérêt</h2>

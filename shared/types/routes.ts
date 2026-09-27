@@ -22,9 +22,16 @@ export type RouteDetail = Pick<
   // null for routes saved before the editor state was stored
   editor_state: EditorState | null
   pois: Poi[]
+  photos: RoutePhoto[]
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null
+}
+
+// A photo of a route. The URL is signed and expires after an hour: the bucket is private.
+export type RoutePhoto = {
+  id: string
+  url: string
 }
 
 export type RouteListItem = {

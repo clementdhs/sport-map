@@ -130,6 +130,12 @@ async function onSubmit() {
           <p class="text-sm text-muted">Dénivelé −</p>
           <p class="text-lg font-semibold">{{ editor.elevation ? `${Math.round(editor.elevation.loss)} m` : '—' }}</p>
         </div>
+        <DurationEstimate
+          v-if="editor.distanceM > 0"
+          :sport="editor.details.sport_type"
+          :distance-m="editor.distanceM"
+          :elevation-gain-m="editor.elevation?.gain ?? null"
+        />
       </div>
 
       <ElevationProfile

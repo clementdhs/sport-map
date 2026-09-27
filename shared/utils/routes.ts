@@ -18,6 +18,26 @@ export const SPORT_ICONS: Record<SportType, string> = {
   cycling: 'i-lucide-bike',
 }
 
+// Estimated moving time. Elevation gain is ignored when unknown.
+// - hiking: Naismith's rule, 5 km/h plus 1 h per 600 m of gain
+// - running: "km-effort" used in trail running (100 m of gain = 1 km), at 6 min/km
+// - cycling: 20 km/h plus 1 h per 600 m of gain
+export function estimateDurationMin(sport: SportType, distanceM: number, elevationGainM: number | null): number {
+  const km = distanceM / 1000
+  const gain = elevationGainM ?? 0
+  switch (sport) {
+    case 'hiking': return (km / 5) * 60 + (gain / 600) * 60
+    case 'running': return (km + gain / 100) * 6
+    case 'cycling': return (km / 20) * 60 + (gain / 600) * 60
+  }
+}
+
+export const DURATION_METHODS: Record<SportType, string> = {
+  hiking: 'Règle de Naismith : 5 km/h, plus 1 h par 600 m de dénivelé positif.',
+  running: 'Allure de 6 min/km, chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).',
+  cycling: '20 km/h de moyenne, plus 1 h par 600 m de dénivelé positif.',
+}
+
 export const MAX_ROUTE_POINTS = 5000
 
 const coordinateSchema = z.tuple([

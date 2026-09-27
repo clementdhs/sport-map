@@ -25,6 +25,7 @@ defineProps<{
     <p class="mt-1 text-sm text-muted">
       {{ formatDistance(route.distance_m) }}
       <template v-if="route.elevation_gain_m != null"> · D+ {{ Math.round(route.elevation_gain_m) }} m</template>
+      · ~{{ formatDuration(estimateDurationMin(route.sport_type, route.distance_m, route.elevation_gain_m)) }}
       · par {{ route.owner_username }}
     </p>
     <p v-if="note" class="mt-1 text-sm text-muted">{{ note }}</p>

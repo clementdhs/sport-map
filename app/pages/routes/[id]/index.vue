@@ -119,11 +119,17 @@ useSeoMeta({
         />
       </div>
 
-      <div class="grid grid-cols-3 gap-3">
+      <div class="grid grid-cols-2 gap-3">
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Distance</p>
           <p class="text-lg font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
         </div>
+        <DurationEstimate
+          class="rounded-lg bg-elevated p-3"
+          :sport="parcours.sport_type"
+          :distance-m="parcours.distance_m"
+          :elevation-gain-m="parcours.elevation_gain_m"
+        />
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Dénivelé +</p>
           <p class="text-lg font-semibold">

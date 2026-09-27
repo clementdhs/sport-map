@@ -150,6 +150,29 @@ async function onSubmit() {
         title="Tracé verrouillé"
         description="Ce parcours a été créé avant l'édition des points : son tracé ne peut pas être modifié. Tu peux le prolonger, ou l'effacer pour le retracer."
       />
+      <div v-if="editor.waypoints.length >= 2" class="grid grid-cols-2 gap-2">
+        <UButton
+          icon="i-lucide-rotate-ccw"
+          label="Revenir au départ"
+          color="neutral"
+          variant="outline"
+          block
+          :disabled="!editor.canFinish"
+          @click="editor.returnToStart()"
+        />
+        <UButton
+          icon="i-lucide-arrow-left-right"
+          label="Aller-retour"
+          color="neutral"
+          variant="outline"
+          block
+          :disabled="!editor.canFinish"
+          @click="editor.outAndBack()"
+        />
+      </div>
+      <p v-if="editor.isLoop" class="-mt-3 text-sm text-muted">
+        <UIcon name="i-lucide-circle-check" class="mr-1 align-text-bottom" />Le parcours revient à son point de départ.
+      </p>
       <ul v-if="editor.waypoints.length >= 2" class="space-y-1 text-sm text-muted">
         <li><UIcon name="i-lucide-move" class="mr-1 align-text-bottom" />Glisse un point pour le déplacer.</li>
         <li><UIcon name="i-lucide-git-commit-horizontal" class="mr-1 align-text-bottom" />Glisse la ligne pour ajouter un point.</li>

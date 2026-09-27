@@ -1,4 +1,4 @@
-import { length, lineString } from '@turf/turf'
+import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail } from '#shared/types/routes'
 import type { EditorState, LngLat, RouteDetails, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
@@ -21,6 +21,7 @@ interface Snapshot {
 }
 
 const MAX_HISTORY = 50
+const LOOP_TOLERANCE_M = 30
 
 const defaultDetails = (): RouteDetails => ({
   name: '',
@@ -93,6 +94,10 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     && track.value.coordinates.length <= MAX_ROUTE_POINTS,
   )
   const canUndo = computed(() => history.value.length > 0)
+  // Snapping can leave the end a few meters from the start of a closed loop.
+  const isLoop = computed(() => waypoints.value.length >= 3
+    && distance(waypoints.value[0]!, waypoints.value.at(-1)!, { units: 'meters' }) < LOOP_TOLERANCE_M)
+  const canFinish = computed(() => waypoints.value.length >= 2 && !isLoop.value && !isRouting.value)
 
   function saveSnapshot() {
     const snapshot: Snapshot = JSON.parse(JSON.stringify({ waypoints: waypoints.value, segments: segments.value }))
@@ -228,6 +233,27 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     }
   }
 
+  // Routed like any new segment, in the current mode.
+  function returnToStart() {
+    if (!canFinish.value) return
+    addWaypoint(waypoints.value[0]!)
+  }
+
+  // Appends the track reversed: segments are reused as they are (same mode, no routing request), and the
+  // turnaround becomes an ordinary waypoint.
+  function outAndBack() {
+    if (!canFinish.value) return
+    saveSnapshot()
+    const reversed = [...segments.value].reverse().map(segment => ({
+      ...segment,
+      id: nextSegmentId++,
+      coordinates: [...segment.coordinates].reverse(),
+      elevations: segment.elevations ? [...segment.elevations].reverse() : null,
+    }))
+    waypoints.value = [...waypoints.value, ...waypoints.value.slice(0, -1).reverse()]
+    segments.value = [...segments.value, ...reversed]
+  }
+
   // The imported track becomes a single segment: the user can extend it by clicking, or undo the import.
   function importTrack({ name, coordinates, elevations }: ImportedTrack) {
     saveSnapshot()
@@ -323,8 +349,9 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
   return {
     waypoints, segments, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
-    editingId,
+    editingId, isLoop, canFinish,
     canEditWaypoint, canInsertInSegment,
-    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, importTrack, loadRoute, undo, clearPoints, reset, save,
+    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack,
+    importTrack, loadRoute, undo, clearPoints, reset, save,
   }
 })

@@ -1,4 +1,4 @@
-import { distance } from '@turf/turf'
+import { distance, lineString, nearestPointOnLine } from '@turf/turf'
 import * as z from 'zod'
 
 export type LngLat = [lng: number, lat: number]
@@ -72,6 +72,42 @@ export const editorStateSchema = z.object({
 
 export type EditorState = z.infer<typeof editorStateSchema>
 
+// Points of interest placed on the track.
+export const POI_TYPES = ['water', 'viewpoint', 'parking', 'danger'] as const
+export type PoiType = typeof POI_TYPES[number]
+
+export const POI_LABELS: Record<PoiType, string> = {
+  water: "Point d'eau",
+  viewpoint: 'Point de vue',
+  parking: 'Parking',
+  danger: 'Passage difficile',
+}
+
+export const POI_ICONS: Record<PoiType, string> = {
+  water: 'i-lucide-droplet',
+  viewpoint: 'i-lucide-binoculars',
+  parking: 'i-lucide-square-parking',
+  danger: 'i-lucide-triangle-alert',
+}
+
+export const POI_COLORS: Record<PoiType, string> = {
+  water: '#0284c7',
+  viewpoint: '#7c3aed',
+  parking: '#475569',
+  danger: '#dc2626',
+}
+
+export const MAX_POIS = 50
+export const MAX_POI_NOTE_LENGTH = 140
+
+export const poiSchema = z.object({
+  type: z.enum(POI_TYPES),
+  coordinates: coordinateSchema,
+  note: z.string().trim().max(MAX_POI_NOTE_LENGTH, `${MAX_POI_NOTE_LENGTH} caractères maximum`).optional(),
+})
+
+export type Poi = z.infer<typeof poiSchema>
+
 export const routeCreateSchema = routeDetailsSchema.extend({
   coordinates: z.array(coordinateSchema)
     .min(2, 'Un parcours doit contenir au moins 2 points')
@@ -80,6 +116,7 @@ export const routeCreateSchema = routeDetailsSchema.extend({
   elevations: z.array(z.number().min(-500).max(9000)).optional(),
   source: z.enum(['drawn', 'gpx_import']).default('drawn'),
   editor_state: editorStateSchema.optional(),
+  pois: z.array(poiSchema).max(MAX_POIS, `${MAX_POIS} points d'intérêt maximum`).optional(),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
   message: 'Il doit y avoir une altitude par point',
   path: ['elevations'],
@@ -191,4 +228,13 @@ export function elevationStats(coordinates: LngLat[], elevations: number[]): { g
     }
   }
   return { gain, loss }
+}
+
+// The point of the track closest to `point`, and how far along the track it is.
+export function snapToTrack(track: LngLat[], point: LngLat): { coordinates: LngLat, distanceM: number } {
+  const snapped = nearestPointOnLine(lineString(track), point, { units: 'meters' })
+  const [lng, lat] = snapped.geometry.coordinates as LngLat
+  // ~10 cm precision, like the rest of the track.
+  const round = (value: number) => Math.round(value * 1e6) / 1e6
+  return { coordinates: [round(lng), round(lat)], distanceM: snapped.properties.totalDistance }
 }

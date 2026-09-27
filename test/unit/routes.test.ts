@@ -4,6 +4,8 @@ import {
   estimateDurationMin,
   routeCreateSchema,
   routeSearchSchema,
+  snapToTrack,
+  MAX_POIS,
   type LngLat,
 } from '#shared/utils/routes'
 import { formatDuration } from '#shared/utils/format'
@@ -132,5 +134,32 @@ describe('routeSearchSchema', () => {
 
   it('rejects an unknown sport', () => {
     expect(routeSearchSchema.safeParse({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'swimming' }).success).toBe(false)
+  })
+})
+
+describe('points of interest', () => {
+  const route = {
+    name: 'Tour du lac',
+    sport_type: 'running',
+    is_public: true,
+    coordinates: [[6.1, 45.9], [6.2, 45.95]],
+  }
+  const poi = { type: 'water', coordinates: [6.15, 45.925] }
+
+  it('are optional and validated', () => {
+    expect(routeCreateSchema.safeParse(route).success).toBe(true)
+    expect(routeCreateSchema.safeParse({ ...route, pois: [{ ...poi, note: 'Fontaine' }] }).success).toBe(true)
+    expect(routeCreateSchema.safeParse({ ...route, pois: [{ ...poi, type: 'bar' }] }).success).toBe(false)
+    expect(routeCreateSchema.safeParse({ ...route, pois: [{ ...poi, note: 'x'.repeat(141) }] }).success).toBe(false)
+    expect(routeCreateSchema.safeParse({ ...route, pois: Array(MAX_POIS + 1).fill(poi) }).success).toBe(false)
+  })
+
+  it('snap onto the track and tell how far along it they are', () => {
+    const track = lineNorth(101) // 1 km going north
+    const { coordinates, distanceM } = snapToTrack(track, [6.121, track[50]![1]])
+    expect(coordinates[0]).toBe(6.12)
+    expect(coordinates[1]).toBeCloseTo(track[50]![1], 6)
+    // lineNorth's spacing is approximate: within a few meters.
+    expect(Math.abs(distanceM - 500)).toBeLessThan(5)
   })
 })

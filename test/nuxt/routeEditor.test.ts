@@ -71,6 +71,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     geometry: { type: 'LineString', coordinates: body.coordinates },
     elevation_profile: body.elevations ?? null,
     editor_state: body.editor_state ?? null,
+    pois: body.pois ?? [],
     owner: { username: 'test', display_name: null },
     viewer: null,
     ...overrides,
@@ -231,5 +232,53 @@ describe('saving and editing again', () => {
     expect(editor.waypoints).toEqual([A, C])
     expect(editor.segments.map(segment => segment.mode)).toEqual(['locked'])
     expect(editor.canEditWaypoint(0)).toBe(false)
+  })
+})
+
+describe('points of interest', () => {
+  it('places them on the track, saves them, and reloads them', async () => {
+    const editor = await drawABC()
+    editor.placingPoi = true
+    // Clicked a little off the track, near the middle of A → B.
+    editor.addPoi([6.15, 45.93], 'viewpoint')
+    expect(editor.placingPoi).toBe(false)
+    expect(editor.pois).toHaveLength(1)
+    const [lng, lat] = editor.pois[0]!.coordinates
+    // Moved onto the track: the fake routing draws A → B as a straight line.
+    expect((lat - A[1]) / (lng - A[0])).toBeCloseTo((B[1] - A[1]) / (B[0] - A[0]), 3)
+
+    editor.pois[0]!.note = '  Vue sur le lac  '
+    editor.addPoi(C)
+    await editor.save()
+    expect(createdBody!.pois).toEqual([
+      { type: 'viewpoint', coordinates: [lng, lat], note: 'Vue sur le lac' },
+      // An empty note is not sent.
+      { type: 'water', coordinates: C },
+    ])
+
+    editor.loadRoute(routeDetail(createdBody!))
+    expect(editor.pois.map(poi => poi.type)).toEqual(['viewpoint', 'water'])
+  })
+
+  it('undoes adding and removing them, and clears them with the track', async () => {
+    const editor = await drawABC()
+    editor.addPoi(B)
+    editor.removePoi(0)
+    expect(editor.pois).toHaveLength(0)
+    editor.undo()
+    expect(editor.pois).toHaveLength(1)
+    editor.undo()
+    expect(editor.pois).toHaveLength(0)
+
+    editor.addPoi(B)
+    editor.clearPoints()
+    expect(editor.pois).toHaveLength(0)
+  })
+
+  it('needs a track', () => {
+    const editor = useRouteEditorStore()
+    editor.addWaypoint(A)
+    editor.addPoi(A)
+    expect(editor.pois).toHaveLength(0)
   })
 })

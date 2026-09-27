@@ -14,11 +14,20 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page.getByText('Profil altimétrique')).toBeVisible()
   await expect(page.getByText('0 m', { exact: true })).toHaveCount(0)
 
+  // A point of interest, placed by clicking near the first segment.
+  await page.getByRole('button', { name: 'Ajouter' }).click()
+  await map.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } })
+  await page.getByRole('textbox', { name: "Note du point d'intérêt 1" }).fill('Fontaine')
+
   await page.getByLabel('Nom').fill('Parcours e2e')
   await page.getByRole('button', { name: 'Enregistrer le parcours' }).click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: 'Parcours e2e' })).toBeVisible()
+  const pois = page.getByRole('region', { name: "Points d'intérêt" })
+  await expect(pois).toContainText("Point d'eau")
+  await expect(pois).toContainText('Fontaine')
+  await expect(page.locator('[data-poi-marker]')).toHaveCount(1)
 
   // Editing reopens the same route, and saving updates it in place.
   const detailUrl = page.url()

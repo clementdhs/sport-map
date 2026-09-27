@@ -14,5 +14,6 @@ export function routeRowFromPayload(body: RouteCreatePayload) {
     elevation_loss_m: elevation?.loss ?? null,
     source: body.source,
     editor_state: body.editor_state ?? null,
+    pois: body.pois ?? [],
   }
 }

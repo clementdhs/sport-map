@@ -1,7 +1,7 @@
 import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail } from '#shared/types/routes'
-import type { EditorState, LngLat, RouteDetails, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
+import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
@@ -18,6 +18,7 @@ interface Segment {
 interface Snapshot {
   waypoints: LngLat[]
   segments: Segment[]
+  pois: Poi[]
 }
 
 const MAX_HISTORY = 50
@@ -48,6 +49,9 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
   const waypoints = ref<LngLat[]>([])
   const segments = ref<Segment[]>([])
+  const pois = ref<Poi[]>([])
+  // True while the next click on the map places a point of interest.
+  const placingPoi = ref(false)
   const details = ref<RouteDetails>(defaultDetails())
   const snapToPaths = ref(true)
   // Incremented when the whole track is replaced, so the map can frame it.
@@ -100,7 +104,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const canFinish = computed(() => waypoints.value.length >= 2 && !isLoop.value && !isRouting.value)
 
   function saveSnapshot() {
-    const snapshot: Snapshot = JSON.parse(JSON.stringify({ waypoints: waypoints.value, segments: segments.value }))
+    const snapshot: Snapshot = JSON.parse(JSON.stringify({ waypoints: waypoints.value, segments: segments.value, pois: pois.value }))
     history.value = [...history.value.slice(-(MAX_HISTORY - 1)), snapshot]
   }
 
@@ -259,8 +263,23 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     saveSnapshot()
     waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
     segments.value = [{ id: nextSegmentId++, mode: 'imported', coordinates, elevations, loading: false }]
+    // They were placed on the replaced track.
+    pois.value = []
     if (name && !details.value.name) details.value.name = name.slice(0, 120)
     replacedCount.value++
+  }
+
+  // Points of interest sit on the track: the clicked spot is moved onto it.
+  function addPoi(point: LngLat, type: PoiType = 'water') {
+    placingPoi.value = false
+    if (track.value.coordinates.length < 2 || pois.value.length >= MAX_POIS) return
+    saveSnapshot()
+    pois.value.push({ type, coordinates: snapToTrack(track.value.coordinates, point).coordinates, note: '' })
+  }
+
+  function removePoi(index: number) {
+    saveSnapshot()
+    pois.value.splice(index, 1)
   }
 
   function undo() {
@@ -269,6 +288,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     history.value = history.value.slice(0, -1)
     waypoints.value = previous.waypoints
     segments.value = previous.segments
+    pois.value = previous.pois
     // A segment saved while loading whose request has since finished would otherwise stay loading forever.
     for (const segment of segments.value) {
       if (segment.loading && !inFlight.has(segment.id)) routeSegment(segment)
@@ -279,11 +299,15 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     saveSnapshot()
     waypoints.value = []
     segments.value = []
+    pois.value = []
+    placingPoi.value = false
   }
 
   function reset() {
     waypoints.value = []
     segments.value = []
+    pois.value = []
+    placingPoi.value = false
     history.value = []
     details.value = defaultDetails()
     editingId.value = null
@@ -302,6 +326,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       sport_type: route.sport_type,
       is_public: route.is_public,
     }
+    pois.value = route.pois.map(poi => ({ ...poi, note: poi.note ?? '' }))
 
     const coordinates = route.geometry.coordinates as LngLat[]
     const elevations = route.elevation_profile?.length === coordinates.length ? route.elevation_profile : null
@@ -339,6 +364,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         waypoints: waypoints.value,
         segments: segments.value.map((segment, i) => ({ mode: segment.mode, ...track.value.ranges[i]! })),
       } satisfies EditorState,
+      pois: pois.value.map(({ note, ...poi }) => (note?.trim() ? { ...poi, note: note.trim() } : poi)),
     }
     const { id } = editingId.value
       ? await $fetch<{ id: string }>(`/api/routes/${editingId.value}`, { method: 'PUT', body })
@@ -348,10 +374,10 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   }
 
   return {
-    waypoints, segments, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
+    waypoints, segments, pois, placingPoi, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
     editingId, isLoop, canFinish,
     canEditWaypoint, canInsertInSegment,
     addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack,
-    importTrack, loadRoute, undo, clearPoints, reset, save,
+    addPoi, removePoi, importTrack, loadRoute, undo, clearPoints, reset, save,
   }
 })

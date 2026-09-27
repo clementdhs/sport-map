@@ -127,6 +127,7 @@ export type Database = {
           is_public: boolean
           name: string
           owner_id: string
+          pois: Json
           source: Database["public"]["Enums"]["route_source"]
           sport_type: Database["public"]["Enums"]["sport_type"]
           start_point: unknown
@@ -148,6 +149,7 @@ export type Database = {
           is_public?: boolean
           name: string
           owner_id: string
+          pois?: Json
           source?: Database["public"]["Enums"]["route_source"]
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown
@@ -168,6 +170,7 @@ export type Database = {
           is_public?: boolean
           name?: string
           owner_id?: string
+          pois?: Json
           source?: Database["public"]["Enums"]["route_source"]
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown

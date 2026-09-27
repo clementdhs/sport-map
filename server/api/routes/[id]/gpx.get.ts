@@ -1,6 +1,6 @@
 import type { LineString } from 'geojson'
 import { serverSupabaseClient } from '#supabase/server'
-import type { LngLat } from '#shared/utils/routes'
+import type { LngLat, Poi } from '#shared/utils/routes'
 
 export default defineEventHandler(async (event) => {
   const id = getRouteIdParam(event)
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from('routes')
-    .select('name, description, sport_type, elevation_profile, geometry:route_geojson')
+    .select('name, description, sport_type, elevation_profile, pois, geometry:route_geojson')
     .eq('id', id)
     .maybeSingle()
 
@@ -32,5 +32,6 @@ export default defineEventHandler(async (event) => {
     type: data.sport_type,
     coordinates,
     elevations: elevations?.length === coordinates.length ? elevations : null,
+    pois: data.pois as Poi[],
   })
 })

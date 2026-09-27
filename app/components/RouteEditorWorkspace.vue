@@ -14,6 +14,7 @@ const toast = useToast()
 const saving = ref(false)
 
 const sportItems = SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] }))
+const poiItems = POI_TYPES.map(value => ({ value, label: POI_LABELS[value], icon: POI_ICONS[value] }))
 
 const gpxInput = useTemplateRef('gpxInput')
 const importing = ref(false)
@@ -187,6 +188,60 @@ async function onSubmit() {
         <li><UIcon name="i-lucide-git-commit-horizontal" class="mr-1 align-text-bottom" />Glisse la ligne pour ajouter un point.</li>
         <li><UIcon name="i-lucide-x" class="mr-1 align-text-bottom" />Clic droit (appui long sur mobile) sur un point pour le supprimer.</li>
       </ul>
+
+      <section v-if="editor.track.coordinates.length >= 2" class="space-y-3" aria-labelledby="pois-title">
+        <div class="flex items-center justify-between gap-2">
+          <h2 id="pois-title" class="font-medium">Points d'intérêt</h2>
+          <UButton
+            v-if="!editor.placingPoi"
+            icon="i-lucide-map-pin-plus"
+            label="Ajouter"
+            size="sm"
+            color="neutral"
+            variant="outline"
+            :disabled="editor.pois.length >= MAX_POIS"
+            @click="editor.placingPoi = true"
+          />
+          <UButton v-else label="Annuler" size="sm" color="neutral" variant="ghost" @click="editor.placingPoi = false" />
+        </div>
+        <p v-if="editor.placingPoi" class="text-sm text-primary">
+          <UIcon name="i-lucide-mouse-pointer-click" class="mr-1 align-text-bottom" />Clique sur la carte : le point se place sur le tracé.
+        </p>
+        <p v-else-if="!editor.pois.length" class="text-sm text-muted">
+          Signale un point d'eau, un point de vue, un parking ou un passage difficile.
+        </p>
+        <ul v-if="editor.pois.length" class="space-y-3">
+          <li
+            v-for="(poi, i) in editor.pois"
+            :key="i"
+            class="grid grid-cols-[1fr_auto] gap-2"
+            @mouseenter="hoverPoint = poi.coordinates"
+            @mouseleave="hoverPoint = null"
+          >
+            <USelect
+              v-model="poi.type"
+              :items="poiItems"
+              :icon="POI_ICONS[poi.type]"
+              :aria-label="`Type du point d'intérêt ${i + 1}`"
+              class="w-full"
+            />
+            <UButton
+              icon="i-lucide-x"
+              color="neutral"
+              variant="ghost"
+              :aria-label="`Supprimer le point d'intérêt ${i + 1}`"
+              @click="editor.removePoi(i)"
+            />
+            <UInput
+              v-model="poi.note"
+              placeholder="Note (facultatif)"
+              :maxlength="MAX_POI_NOTE_LENGTH"
+              :aria-label="`Note du point d'intérêt ${i + 1}`"
+              class="col-span-2 w-full"
+            />
+          </li>
+        </ul>
+      </section>
 
       <USeparator />
 

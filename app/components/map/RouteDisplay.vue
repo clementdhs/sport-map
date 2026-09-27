@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Map } from 'maplibre-gl'
-import type { LngLat } from '#shared/utils/routes'
+import type { LngLat, Poi } from '#shared/utils/routes'
 
 const props = defineProps<{
   coordinates: LngLat[]
+  pois?: Poi[]
   // Position hovered on the elevation profile
   hoverPoint?: LngLat | null
 }>()
@@ -26,4 +27,5 @@ watch(() => props.hoverPoint, (point) => {
 
 <template>
   <MapView @load="onLoad" />
+  <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
 </template>

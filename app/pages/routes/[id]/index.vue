@@ -18,6 +18,14 @@ if (error.value || !parcours.value) {
 
 const coordinates = computed(() => (parcours.value?.geometry.coordinates ?? []) as LngLat[])
 const hoverPoint = ref<LngLat | null>(null)
+
+// In the order they come along the track.
+const pois = computed(() => {
+  if (coordinates.value.length < 2) return []
+  return (parcours.value?.pois ?? [])
+    .map(poi => ({ ...poi, distanceM: snapToTrack(coordinates.value, poi.coordinates).distanceM }))
+    .sort((a, b) => a.distanceM - b.distanceM)
+})
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
 const summary = computed(() => {
   const p = parcours.value!
@@ -90,7 +98,7 @@ useSeoMeta({
   <div v-if="parcours" class="flex h-[calc(100dvh-var(--ui-header-height))] flex-col md:flex-row">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteDisplay :coordinates="coordinates" :hover-point="hoverPoint" />
+        <MapRouteDisplay :coordinates="coordinates" :pois="parcours.pois" :hover-point="hoverPoint" />
       </ClientOnly>
     </div>
 
@@ -166,6 +174,33 @@ useSeoMeta({
       />
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
+
+      <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
+        <h2 id="pois-title" class="font-medium">Points d'intérêt</h2>
+        <ul class="space-y-1">
+          <li
+            v-for="(poi, i) in pois"
+            :key="i"
+            class="flex items-start gap-3 rounded-md p-2 hover:bg-elevated"
+            @mouseenter="hoverPoint = poi.coordinates"
+            @mouseleave="hoverPoint = null"
+          >
+            <span
+              class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-white"
+              :style="{ backgroundColor: POI_COLORS[poi.type] }"
+            >
+              <UIcon :name="POI_ICONS[poi.type]" class="size-4" />
+            </span>
+            <div class="min-w-0 text-sm">
+              <p>
+                <span class="font-medium">{{ POI_LABELS[poi.type] }}</span>
+                <span class="text-muted"> · km {{ (poi.distanceM / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) }}</span>
+              </p>
+              <p v-if="poi.note" class="break-words text-muted">{{ poi.note }}</p>
+            </div>
+          </li>
+        </ul>
+      </section>
 
       <UButton
         v-if="isOwner"

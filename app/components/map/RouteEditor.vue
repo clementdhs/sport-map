@@ -98,15 +98,20 @@ function onDragEnd() {
   else editor.insertWaypoint(current.segmentIndex, current.position)
 }
 
+// Clicks on a point of interest marker open its popup: they must not also add a waypoint.
+function isOnPoiMarker(event: MapMouseEvent | MapTouchEvent) {
+  return !!(event.originalEvent.target as HTMLElement | null)?.closest?.('[data-poi-marker]')
+}
+
 function onPointDown(instance: Map, event: MapMouseEvent | MapTouchEvent) {
-  if (isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
+  if (editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
   const index = pointsAt(instance, event.point)[0]?.properties.index as number | undefined
   if (index === undefined || !editor.canEditWaypoint(index)) return
   startDrag(instance, event, { kind: 'move', waypointIndex: index, start: event.point, position: null })
 }
 
 function onLineDown(instance: Map, event: MapMouseEvent | MapTouchEvent) {
-  if (isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
+  if (editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
   // Points are drawn over the line: grabbing a point must not also grab the line.
   if (pointsAt(instance, event.point).length) return
   const segmentIndex = nearestSegmentIndex([event.lngLat.lng, event.lngLat.lat])
@@ -120,6 +125,11 @@ function onLoad(instance: Map) {
   canvas.style.cursor = 'crosshair'
 
   instance.on('click', (event: MapMouseEvent) => {
+    if (isOnPoiMarker(event)) return
+    if (editor.placingPoi) {
+      editor.addPoi([event.lngLat.lng, event.lngLat.lat])
+      return
+    }
     // A click on an existing point is not a new point.
     if (pointsAt(instance, event.point).length) return
     editor.addWaypoint([event.lngLat.lng, event.lngLat.lat])
@@ -139,6 +149,10 @@ function onLoad(instance: Map) {
 
   instance.on('mousemove', (event: MapMouseEvent) => {
     if (drag.value) return
+    if (editor.placingPoi) {
+      canvas.style.cursor = 'cell'
+      return
+    }
     const point = pointsAt(instance, event.point)[0]
     if (point) {
       canvas.style.cursor = editor.canEditWaypoint(point.properties.index) ? 'grab' : 'not-allowed'
@@ -170,4 +184,5 @@ watch(() => props.hoverPoint, (point) => {
 
 <template>
   <MapView @load="onLoad" />
+  <MapPoiMarkers v-if="map" :map="map" :pois="editor.pois" />
 </template>

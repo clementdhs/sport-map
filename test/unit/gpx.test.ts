@@ -86,3 +86,19 @@ describe('readGpxFile', () => {
     await expect(readGpxFile(gpxFile('ceci n\'est pas du xml <<<'))).rejects.toThrow()
   })
 })
+
+describe('buildGpx with points of interest', () => {
+  it('writes them as waypoints before the track', () => {
+    const xml = buildGpx({
+      name: 'Boucle',
+      description: null,
+      type: 'hiking',
+      coordinates: track,
+      elevations: null,
+      pois: [{ type: 'water', coordinates: [6.11, 45.91], note: 'Fontaine <potable>' }, { type: 'parking', coordinates: [6.1, 45.9] }],
+    })
+    expect(xml).toContain('<wpt lat="45.91" lon="6.11"><name>Point d&apos;eau</name><desc>Fontaine &lt;potable&gt;</desc><type>water</type></wpt>')
+    expect(xml).toContain('<wpt lat="45.9" lon="6.1"><name>Parking</name><type>parking</type></wpt>')
+    expect(xml.indexOf('<wpt')).toBeLessThan(xml.indexOf('<trk>'))
+  })
+})

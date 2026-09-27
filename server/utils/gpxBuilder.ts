@@ -1,4 +1,4 @@
-import type { LngLat } from '#shared/utils/routes'
+import { POI_LABELS, type LngLat, type Poi } from '#shared/utils/routes'
 
 interface GpxTrack {
   name: string
@@ -6,6 +6,7 @@ interface GpxTrack {
   type: string
   coordinates: LngLat[]
   elevations: number[] | null
+  pois?: Poi[]
 }
 
 function escapeXml(value: string): string {
@@ -17,8 +18,13 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
-export function buildGpx({ name, description, type, coordinates, elevations }: GpxTrack): string {
+export function buildGpx({ name, description, type, coordinates, elevations, pois = [] }: GpxTrack): string {
   const desc = description ? `\n    <desc>${escapeXml(description)}</desc>` : ''
+  // Points of interest as waypoints, which GPS devices show along the track.
+  const waypoints = pois.map(({ type: poiType, coordinates: [lng, lat], note }) => {
+    const poiDesc = note ? `<desc>${escapeXml(note)}</desc>` : ''
+    return `  <wpt lat="${lat}" lon="${lng}"><name>${escapeXml(POI_LABELS[poiType])}</name>${poiDesc}<type>${poiType}</type></wpt>\n`
+  })
   const points = coordinates.map(([lng, lat], i) => {
     const ele = elevations?.[i]
     return ele === undefined
@@ -31,7 +37,7 @@ export function buildGpx({ name, description, type, coordinates, elevations }: G
   <metadata>
     <name>${escapeXml(name)}</name>${desc}
   </metadata>
-  <trk>
+${waypoints.join('')}  <trk>
     <name>${escapeXml(name)}</name>
     <type>${escapeXml(type)}</type>
     <trkseg>

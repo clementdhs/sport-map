@@ -28,7 +28,6 @@ function layerData(coordinates: LngLat[]) {
 
 function onLoad(instance: Map) {
   addRouteLayers(instance, layerData(props.coordinates))
-  if (props.coordinates.length >= 2) instance.fitBounds(routeBounds(props.coordinates), { padding: 48, duration: 0 })
 
   setGps = addGpsLayers(instance, props.fix)
   // Only gestures (originalEvent) stop the following, not the map's own easing.
@@ -66,5 +65,5 @@ watch(() => props.follow, (follow) => {
 </script>
 
 <template>
-  <MapView @load="onLoad" />
+  <MapView :bounds="coordinates.length >= 2 ? routeBounds(coordinates) : undefined" @load="onLoad" />
 </template>

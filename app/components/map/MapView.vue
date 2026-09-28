@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { LngLatLike, Map } from 'maplibre-gl'
+import type { LngLatBoundsLike, LngLatLike, Map } from 'maplibre-gl'
 
 const props = withDefaults(defineProps<{
   center?: LngLatLike
   zoom?: number
+  // Initial view framing these bounds, rather than center and zoom: the first tiles loaded are the right
+  // ones (which matters offline, where only the prepared ones exist).
+  bounds?: LngLatBoundsLike
 }>(), {
   center: () => [2.35, 46.6],
   zoom: 5,
@@ -16,10 +19,7 @@ const emit = defineEmits<{
 
 const { maptilerKey } = useRuntimeConfig().public
 
-// Keyless fallback so the app runs before a MapTiler key is configured (low-detail tiles).
-const styleUrl = maptilerKey
-  ? `https://api.maptiler.com/maps/outdoor-v2/style.json?key=${maptilerKey}`
-  : 'https://demotiles.maplibre.org/style.json'
+const styleUrl = mapStyleUrl(maptilerKey)
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
@@ -45,6 +45,7 @@ onMounted(async () => {
     style: styleUrl,
     center: props.center,
     zoom: props.zoom,
+    ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: 48 } } : {}),
   })
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')

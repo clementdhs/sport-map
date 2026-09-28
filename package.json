@@ -12,7 +12,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
-    "typecheck": "nuxt typecheck",
+    "typecheck": "nuxt typecheck && tsc -p service-worker",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

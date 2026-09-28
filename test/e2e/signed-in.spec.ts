@@ -263,3 +263,38 @@ test.describe('recording an outing', () => {
     await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
   })
 })
+
+test.describe('offline follow mode', () => {
+  // The other tests block the service worker, which would hide requests from page.route().
+  test.use({ serviceWorkers: 'allow' })
+
+  test('prepares a route, follows it without network, then removes it from the phone', async ({ page, context }) => {
+    // The map style, for requests the service worker makes too (page.route doesn't see those).
+    await context.route('**/demotiles.maplibre.org/**', route => route.fulfill({
+      json: { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e8efe6' } }] },
+    }))
+    const id = process.env.E2E_ROUTE_ID!
+    await page.goto(`/routes/${id}`)
+    // Pages load under the service worker once it is active.
+    await page.evaluate(() => navigator.serviceWorker.ready)
+    await page.reload()
+    await waitForMap(page)
+
+    await page.getByRole('button', { name: 'Préparer pour le hors-ligne' }).click()
+    await expect(page.getByText('Disponible hors-ligne', { exact: true })).toBeVisible()
+    // The startup cleanup (5 s after loading) must keep a route prepared in the meantime.
+    await page.waitForTimeout(6000)
+
+    await context.setOffline(true)
+    await page.goto(`/routes/${id}/follow`)
+    await waitForMap(page)
+    await expect(page.getByText('Parcouru')).toBeVisible()
+    await expect(page.getByTestId('remaining')).toHaveText('6,05 km')
+    await context.setOffline(false)
+
+    await page.goto(`/routes/${id}`)
+    await page.getByRole('button', { name: 'Supprimer du téléphone' }).click()
+    await expect(page.getByRole('button', { name: 'Préparer pour le hors-ligne' })).toBeVisible()
+    expect(await page.evaluate(async () => (await caches.keys()).filter(n => n.startsWith('sport-map-offline-')))).toEqual([])
+  })
+})

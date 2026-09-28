@@ -64,6 +64,11 @@ export default defineNuxtConfig({
   },
 
   pwa: {
+    // Our own service worker (service-worker/sw.ts): it also serves the routes prepared for offline use.
+    // Relative to Vite's root, the app/ directory.
+    strategies: 'injectManifest',
+    srcDir: '../service-worker',
+    filename: 'sw.ts',
     registerType: 'autoUpdate',
     manifest: {
       name: 'sport-map',
@@ -81,10 +86,10 @@ export default defineNuxtConfig({
         { src: '/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
-    workbox: {
-      // Pages are server-rendered: never answer navigations with a cached shell.
-      navigateFallback: null,
-      globPatterns: ['**/*.{js,css,svg,ico,png,woff2}'],
+    injectManifest: {
+      // App files, and the build manifest Nuxt reads when the app starts (needed offline). Pages are
+      // server-rendered: they are not precached.
+      globPatterns: ['**/*.{js,css,svg,ico,png,woff2}', '_nuxt/builds/meta/*.json'],
     },
     client: {
       installPrompt: true,

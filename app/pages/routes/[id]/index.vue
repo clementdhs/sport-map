@@ -160,6 +160,8 @@ useSeoMeta({
 
       <RouteOffline :route-id="parcours.id" :name="parcours.name" :coordinates="coordinates" />
 
+      <RouteWeather :route-id="parcours.id" />
+
       <div class="grid grid-cols-2 gap-3">
         <div class="rounded-lg bg-elevated p-3">
           <p class="text-sm text-muted">Distance</p>

@@ -1,4 +1,5 @@
 import { insertRows, supabaseAdmin } from './admin'
+import { startFakeWeather } from './fake-weather'
 import { E2E_NEIGHBORS, E2E_USER, RESET_USER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME } from './fixtures'
 
 async function createUser(email: string, username: string, password: string) {
@@ -55,4 +56,7 @@ export default async function globalSetup() {
 
   process.env.E2E_ROUTE_ID = route!.id
   process.env.E2E_NEIGHBOR_IDS = neighbors.map(n => n.id).join(',')
+
+  // Returned: Playwright calls it once the tests are done.
+  return startFakeWeather()
 }

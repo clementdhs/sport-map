@@ -96,3 +96,27 @@ export type RouteReviews = {
   rating_count: number
   reviews: RouteReview[]
 }
+
+// Forecast of one half-day at the start of a route (local time of the route).
+export type HalfDayForecast = {
+  // YYYY-MM-DD
+  date: string
+  period: 'morning' | 'afternoon'
+  tempMin: number
+  tempMax: number
+  precipitationMm: number
+  // Highest chance of rain in the half-day (%), when known
+  precipitationProbability: number | null
+  windMaxKmh: number
+  gustMaxKmh: number
+  // WMO weather code of the most severe weather of the half-day
+  weatherCode: number
+}
+
+export type RouteWeather = {
+  // Local date at the route's start (YYYY-MM-DD), to label "today" and "tomorrow"
+  today: string
+  // Elevation of the start used for the forecast (m), when known
+  elevationM: number | null
+  halfDays: HalfDayForecast[]
+}

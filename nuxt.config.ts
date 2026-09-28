@@ -27,9 +27,12 @@ export default defineNuxtConfig({
     },
   },
 
-  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_PUBLIC_MAPTILER_KEY / NUXT_PUBLIC_SENTRY_DSN.
+  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_OPEN_METEO_URL / NUXT_PUBLIC_MAPTILER_KEY /
+  // NUXT_PUBLIC_SENTRY_DSN.
   runtimeConfig: {
     openrouteserviceKey: '',
+    // Weather forecast API (free, no key). The e2e tests point it at a local fake.
+    openMeteoUrl: 'https://api.open-meteo.com/v1/forecast',
     public: {
       maptilerKey: '',
       // Error reporting is off without a DSN (locally, in tests).

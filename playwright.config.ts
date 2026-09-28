@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process'
 import { defineConfig, devices } from '@playwright/test'
+import { FAKE_WEATHER_PORT } from './test/e2e/fake-weather'
 import { AUTH_FILE } from './test/e2e/fixtures'
 
 const PORT = 3100
@@ -74,6 +75,8 @@ export default defineConfig({
       NUXT_SUPABASE_SECRET_KEY: '',
       NUXT_PUBLIC_MAPTILER_KEY: '',
       NUXT_OPENROUTESERVICE_KEY: '',
+      // Fake Open-Meteo, started by the global setup.
+      NUXT_OPEN_METEO_URL: `http://127.0.0.1:${FAKE_WEATHER_PORT}/v1/forecast`,
     },
   },
 })

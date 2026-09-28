@@ -23,6 +23,16 @@ test('finds a public route on the home map and opens it', async ({ page }) => {
   await expect(reviews.getByRole('button', { name: 'Signaler' })).toHaveCount(0)
 })
 
+test('shows the weather at the start of a route, crediting Open-Meteo', async ({ page }) => {
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  const weather = page.getByRole('region', { name: 'Météo au départ' })
+  // From the fake Open-Meteo of the global setup: rain on the second afternoon, at the start's elevation.
+  const rainyAfternoon = weather.getByRole('row').filter({ hasText: 'Demain' }).filter({ hasText: 'Après-midi' })
+  await expect(rainyAfternoon).toContainText('6 mm (90 %)')
+  await expect(weather).toContainText('à 450 m')
+  await expect(weather.getByRole('link', { name: 'Open-Meteo.com' })).toHaveAttribute('href', 'https://open-meteo.com/')
+})
+
 test('filters the search by sport', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

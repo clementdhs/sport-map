@@ -81,6 +81,20 @@ Un projet Supabase gratuit est mis en pause après 7 jours sans activité. Le wo
 
 Pour le lancer à la main : onglet *Actions* → « Garder Supabase actif » → *Run workflow*.
 
+## Suivi des erreurs (Sentry)
+
+Les erreurs du navigateur et du serveur remontent à [Sentry](https://sentry.io) en production, sans donnée personnelle (ni cookies, ni en-têtes, ni paramètres d'URL, ni utilisateur). Les erreurs « normales » (404, connexion requise…) sont ignorées. Sans DSN, rien n'est envoyé : c'est le cas en local et dans les tests.
+
+Variables d'environnement Vercel (*Settings → Environment Variables*) :
+
+| Variable | Rôle |
+| --- | --- |
+| `NUXT_PUBLIC_SENTRY_DSN` | active l'envoi des erreurs (le DSN du projet Sentry, public par nature) |
+| `SENTRY_AUTH_TOKEN` | secret, au build : envoie les cartes des sources pour des piles d'appels lisibles |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | identifiants (slugs) de l'organisation et du projet Sentry |
+
+Pour vérifier : connecté au site, ouvre `/api/_sentry-test` ; l'erreur « Test Sentry : erreur serveur volontaire » doit apparaître dans Sentry.
+
 ## Structure
 
 ```

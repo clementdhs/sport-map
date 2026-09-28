@@ -7,8 +7,9 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@pinia/nuxt',
     '@nuxtjs/supabase',
-    // The PWA plugin imports a virtual module that does not exist in Vitest's Nuxt environment.
-    ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt']),
+    // The PWA plugin imports a virtual module that does not exist in Vitest's Nuxt environment; Sentry is
+    // useless there.
+    ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt', '@sentry/nuxt/module']),
   ],
 
   css: ['~/assets/css/main.css'],
@@ -26,11 +27,28 @@ export default defineNuxtConfig({
     },
   },
 
-  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_PUBLIC_MAPTILER_KEY.
+  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_PUBLIC_MAPTILER_KEY / NUXT_PUBLIC_SENTRY_DSN.
   runtimeConfig: {
     openrouteserviceKey: '',
     public: {
       maptilerKey: '',
+      // Error reporting is off without a DSN (locally, in tests).
+      sentry: {
+        dsn: '',
+        environment: process.env.VERCEL_ENV ?? 'development',
+      },
+    },
+  },
+
+  // Client source maps for readable Sentry stack traces, not referenced by the served files.
+  sourcemap: { client: 'hidden' },
+
+  // Source maps are uploaded when SENTRY_AUTH_TOKEN, SENTRY_ORG and SENTRY_PROJECT are set (Vercel builds),
+  // then deleted so that they are not served.
+  sentry: {
+    telemetry: false,
+    sourcemaps: {
+      filesToDeleteAfterUpload: ['.output/public/**/*.map', '.vercel/output/static/**/*.map'],
     },
   },
 

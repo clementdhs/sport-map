@@ -124,7 +124,7 @@ const everyOther = computed(() => buckets.value.length > 6)
               @mouseenter="hovered = i"
             >
               <div
-                class="w-full max-w-6 rounded-t bg-green-600 transition-opacity"
+                class="w-full max-w-6 rounded-t bg-primary transition-opacity"
                 :class="{ 'opacity-60': hovered !== null && hovered !== i }"
                 :style="{ height: `${(metricValue(bucket, metric) / axis.top) * 100}%` }"
               />

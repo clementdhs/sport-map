@@ -127,6 +127,33 @@ test('finds routes by name or description, anywhere, ignoring accents and case',
   await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
 })
 
+test('lets visitors pick the light or dark mode and an accent color, kept after a reload', async ({ page }) => {
+  await page.goto('/')
+  const html = page.locator('html')
+  await expect(html).toHaveAttribute('data-accent', 'indigo')
+
+  await page.getByRole('button', { name: 'Apparence' }).click()
+  await page.getByRole('button', { name: 'Sombre' }).click()
+  await expect(html).toHaveClass(/dark/)
+  await page.getByRole('button', { name: 'Clair' }).click()
+  await expect(html).toHaveClass(/light/)
+  await page.getByRole('button', { name: 'Violet' }).click()
+  await expect(page.getByRole('button', { name: 'Violet' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'violet')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7c3aed')
+
+  // Rendered by the server with the chosen accent (cookie), the mode restored from localStorage.
+  const response = await page.reload()
+  expect(await response!.text()).toContain('data-accent="violet"')
+  await expect(html).toHaveClass(/light/)
+  // Light mode uses the 600 shade, for readable white text on buttons.
+  const [primary, shade600] = await page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement)
+    return [style.getPropertyValue('--ui-primary'), style.getPropertyValue('--ui-color-primary-600')]
+  })
+  expect(primary).toBe(shade600)
+})
+
 test('exports a public route as GPX', async ({ request }) => {
   const response = await request.get(`/api/routes/${process.env.E2E_ROUTE_ID}/gpx`)
   expect(response.status()).toBe(200)

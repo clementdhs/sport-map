@@ -23,12 +23,13 @@ async function signOut() {
   <UHeader to="/" :toggle="false">
     <template #title>
       <span class="flex items-center gap-2">
-        <img src="/icon.svg" alt="" class="size-7">
+        <AppLogo class="size-7" />
         <span>sport-map</span>
       </span>
     </template>
 
     <template #right>
+      <ThemePicker />
       <UButton
         v-if="user"
         to="/record"

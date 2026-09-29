@@ -23,7 +23,6 @@ export default defineNuxtConfig({
         { rel: 'icon', href: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon-180x180.png' },
       ],
-      meta: [{ name: 'theme-color', content: '#16a34a' }],
     },
   },
 
@@ -81,7 +80,7 @@ export default defineNuxtConfig({
       short_name: 'sport-map',
       description: 'Crée, partage et découvre des parcours de course, randonnée et vélo.',
       lang: 'fr',
-      theme_color: '#16a34a',
+      theme_color: '#4f46e5',
       background_color: '#ffffff',
       display: 'standalone',
       // Generated from public/icon.svg by `npm run pwa:assets`.

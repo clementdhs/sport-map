@@ -1,0 +1,10 @@
+<!-- public/icon.svg, in the visitor's accent color. -->
+<template>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true">
+    <rect width="512" height="512" rx="112" fill="var(--ui-primary)" />
+    <path d="M112 384c48-8 72-56 112-88s96-8 128-56 16-96 48-120" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round" stroke-dasharray="1 56" />
+    <circle cx="112" cy="384" r="36" fill="#fff" />
+    <path d="M400 72c-35 0-64 28-64 63 0 47 64 113 64 113s64-66 64-113c0-35-29-63-64-63z" fill="#fff" />
+    <circle cx="400" cy="135" r="22" fill="var(--ui-primary)" />
+  </svg>
+</template>

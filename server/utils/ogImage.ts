@@ -20,10 +20,13 @@ const COLORS = {
   background: '#f5f7f2',
   map: '#e8efe6',
   grid: '#d9e4d5',
-  brand: '#16a34a',
-  brandSoft: '#dcfce7',
-  brandText: '#15803d',
+  // The default accent (BRAND_COLOR): a shared image can't follow each visitor's choice.
+  brand: '#4f46e5',
+  brandSoft: '#e0e7ff',
+  brandText: '#3730a3',
   route: '#ea580c',
+  // Same as the start marker on the map.
+  start: '#16a34a',
   text: '#111827',
   muted: '#6b7280',
   end: '#1f2937',
@@ -161,7 +164,7 @@ function track(coordinates: LngLat[]): string {
     `<path d="${d}" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>`,
     `<path d="${d}" fill="none" stroke="${COLORS.route}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`,
     isLoop ? '' : `<circle cx="${end[0]}" cy="${end[1]}" r="12" fill="${COLORS.end}" stroke="#ffffff" stroke-width="5"/>`,
-    `<circle cx="${start[0]}" cy="${start[1]}" r="12" fill="${COLORS.brand}" stroke="#ffffff" stroke-width="5"/>`,
+    `<circle cx="${start[0]}" cy="${start[1]}" r="12" fill="${COLORS.start}" stroke="#ffffff" stroke-width="5"/>`,
   ].join('')
 }
 

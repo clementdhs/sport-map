@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
-import { expect, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -36,7 +36,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
   const detailUrl = page.url()
   const ogImageUrl = `${detailUrl.replace('/routes/', '/api/routes/')}/og.png`
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`^${ogImageUrl}\\?v=\\d+$`))
-  await page.getByRole('link', { name: 'Modifier le parcours' }).click()
+  await routeAction(page, 'Modifier le parcours')
   await waitForMap(page)
   await expect(page.getByLabel('Nom')).toHaveValue('Parcours e2e')
   await page.getByRole('switch', { name: 'Parcours public' }).click()
@@ -92,6 +92,7 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   await page.getByRole('button', { name: 'Sauvegarder' }).click()
   await expect(page.getByRole('button', { name: 'Sauvegardé' })).toBeVisible()
 
+  await page.getByRole('tab', { name: /Photos/ }).click()
   const upload = () => page.getByLabel('Choisir des photos').setInputFiles({ name: 'sommet.png', mimeType: 'image/png', buffer: PNG_1PX })
   const photos = page.getByRole('region', { name: 'Photos' }).locator('img')
   await upload()
@@ -125,7 +126,7 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   // Deleting the route also deletes the files of its photos.
   await upload()
   await expect(photos).toHaveCount(1)
-  await page.getByRole('button', { name: 'Supprimer le parcours' }).click()
+  await routeAction(page, 'Supprimer le parcours')
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect(page).toHaveURL(/\/profile$/)
   expect(await storedPhotoFiles(id)).toHaveLength(0)
@@ -146,6 +147,7 @@ test('reviews the route of someone else, and reports an abusive comment', async 
   ])
   await page.goto(`/routes/${route!.id}`)
   await waitForMap(page)
+  await page.getByRole('tab', { name: /Avis/ }).click()
   const reviews = page.getByRole('region', { name: 'Avis', exact: true })
   await expect(reviews).toContainText('Commentaire insultant e2e')
 
@@ -184,6 +186,7 @@ test('moderates the reviews of its own route', async ({ page, playwright }) => {
   const id = process.env.E2E_ROUTE_ID!
   await page.goto(`/routes/${id}`)
   await waitForMap(page)
+  await page.getByRole('tab', { name: /Avis/ }).click()
   const reviews = page.getByRole('region', { name: 'Avis', exact: true })
   await expect(reviews).toContainText(SEEDED_REVIEW.comment)
   // No rating of one's own route.
@@ -282,7 +285,7 @@ test.describe('offline follow mode', () => {
     await page.reload()
     await waitForMap(page)
 
-    await page.getByRole('button', { name: 'Préparer pour le hors-ligne' }).click()
+    await routeAction(page, 'Préparer pour le hors-ligne')
     await expect(page.getByText('Disponible hors-ligne', { exact: true })).toBeVisible()
     // The startup cleanup (5 s after loading) must keep a route prepared in the meantime.
     await page.waitForTimeout(6000)
@@ -296,7 +299,8 @@ test.describe('offline follow mode', () => {
 
     await page.goto(`/routes/${id}`)
     await page.getByRole('button', { name: 'Supprimer du téléphone' }).click()
-    await expect(page.getByRole('button', { name: 'Préparer pour le hors-ligne' })).toBeVisible()
+    await page.getByRole('button', { name: "Plus d'actions" }).click()
+    await expect(page.getByRole('menuitem', { name: 'Préparer pour le hors-ligne' })).toBeVisible()
     expect(await page.evaluate(async () => (await caches.keys()).filter(n => n.startsWith('sport-map-offline-')))).toEqual([])
   })
 })
@@ -308,7 +312,7 @@ test('groups routes in a public collection, which only shows its public routes t
 
   // Created from the page of the seeded (public) route, which it then holds.
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
-  await page.getByRole('button', { name: 'Ajouter à une collection' }).click()
+  await routeAction(page, 'Ajouter à une collection')
   const dialog = page.getByRole('dialog', { name: 'Ajouter à une collection' })
   await dialog.getByRole('button', { name: 'Nouvelle collection' }).click()
   await dialog.getByLabel('Nom').fill('Week-end e2e')
@@ -319,7 +323,7 @@ test('groups routes in a public collection, which only shows its public routes t
 
   // Added from the private route's page.
   await page.goto(`/routes/${privateId}`)
-  await page.getByRole('button', { name: 'Ajouter à une collection' }).click()
+  await routeAction(page, 'Ajouter à une collection')
   const checkbox = page.getByRole('dialog').getByRole('checkbox', { name: 'Week-end e2e' })
   await expect(checkbox).not.toBeChecked()
   await checkbox.click()

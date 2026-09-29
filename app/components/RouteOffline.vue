@@ -2,7 +2,8 @@
 import type { LngLat } from '#shared/utils/routes'
 import type { OfflineRouteInfo } from '~/utils/offlineRoute'
 
-// Prepares the follow mode of a route for use without network (see app/utils/offlineRoute.ts).
+// Prepares the follow mode of a route for use without network (see app/utils/offlineRoute.ts). The route page starts
+// it from its actions menu (exposed `prepare`); this shows the download progress, then the stored copy.
 const props = defineProps<{
   routeId: string
   name: string
@@ -51,10 +52,14 @@ async function remove() {
   await removeOfflineRoute(props.routeId)
   info.value = null
 }
+
+const available = computed(() => !!info.value)
+const preparing = computed(() => !!progress.value)
+defineExpose({ supported, available, preparing, prepare })
 </script>
 
 <template>
-  <div v-if="supported" class="space-y-2 rounded-lg border border-default p-3">
+  <div v-if="supported && (progress || info)" class="space-y-2 rounded-lg border border-default p-3">
     <div v-if="progress" class="space-y-2" aria-live="polite">
       <p class="text-sm">Téléchargement de la carte… {{ percent }} %</p>
       <UProgress :model-value="percent" size="sm" />
@@ -71,20 +76,6 @@ async function remove() {
         <UButton label="Mettre à jour" icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="outline" @click="prepare" />
         <UButton label="Supprimer du téléphone" icon="i-lucide-trash-2" size="xs" color="neutral" variant="ghost" @click="remove" />
       </div>
-    </template>
-    <template v-else>
-      <UButton
-        label="Préparer pour le hors-ligne"
-        icon="i-lucide-cloud-download"
-        color="neutral"
-        variant="outline"
-        block
-        @click="prepare"
-      />
-      <p class="text-xs text-muted">
-        Garde sur ce téléphone la carte autour du tracé et le mode suivi, pour t'en servir sans réseau.
-        Compte 20 à 30 Mo pour 30 km : de préférence en Wi-Fi.
-      </p>
     </template>
   </div>
 </template>

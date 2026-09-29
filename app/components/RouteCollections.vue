@@ -3,15 +3,13 @@ import type { FetchError } from 'ofetch'
 import type { CollectionSummary } from '#shared/types/routes'
 import type { CollectionInput } from '#shared/utils/collections'
 
-// "Add to a collection" on a route page: the viewer's collections, each with a checkbox, and a form to create one
-// that holds the route.
+// "Add to a collection" dialog of a route page (opened from its actions menu, signed-in viewers only): the viewer's
+// collections, each with a checkbox, and a form to create one that holds the route.
 const props = defineProps<{ routeId: string }>()
+const open = defineModel<boolean>('open', { default: false })
 
-const route = useRoute()
-const user = useSupabaseUser()
 const toast = useToast()
 
-const open = ref(false)
 const collections = ref<CollectionSummary[] | null>(null)
 const loading = ref(false)
 const pending = ref<string | null>(null)
@@ -34,11 +32,6 @@ async function load() {
 watch(open, (isOpen) => {
   if (isOpen) load()
 })
-
-function onOpen() {
-  if (!user.value) return navigateTo({ path: '/login', query: { redirect: route.fullPath } })
-  open.value = true
-}
 
 async function toggle(collection: CollectionSummary) {
   pending.value = collection.id
@@ -81,14 +74,6 @@ const inCount = computed(() => collections.value?.filter(collection => collectio
 </script>
 
 <template>
-  <UButton
-    icon="i-lucide-folder-plus"
-    label="Ajouter à une collection"
-    color="neutral"
-    variant="outline"
-    block
-    @click="onOpen"
-  />
   <UModal v-model:open="open" title="Ajouter à une collection" :description="inCount ? `Dans ${inCount} de tes collections` : undefined">
     <template #body>
       <div class="space-y-4">

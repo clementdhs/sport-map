@@ -14,9 +14,13 @@ test('finds a public route on the home map and opens it', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME })).toBeVisible()
-  await expect(page.getByText('Durée estimée')).toBeVisible()
+  await expect(page.getByText('Durée', { exact: true })).toBeVisible()
   // Visitors can't edit or delete, and must sign in to review.
-  await expect(page.getByRole('link', { name: 'Modifier le parcours' })).toHaveCount(0)
+  await page.getByRole('button', { name: "Plus d'actions" }).click()
+  await expect(page.getByRole('menuitem', { name: 'Exporter en GPX' })).toBeVisible()
+  await expect(page.getByRole('menuitem', { name: 'Modifier le parcours' })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await page.getByRole('tab', { name: /Avis/ }).click()
   const reviews = page.getByRole('region', { name: 'Avis', exact: true })
   await expect(reviews).toContainText('1 avis')
   await expect(reviews.getByRole('link', { name: 'Connecte-toi' })).toBeVisible()

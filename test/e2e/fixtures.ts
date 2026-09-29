@@ -56,3 +56,9 @@ export { expect }
 export async function waitForMap(page: Page) {
   await expect(page.locator('[data-map-loaded]')).toBeVisible({ timeout: 15_000 })
 }
+
+// Secondary actions of a route page are in its "…" menu.
+export async function routeAction(page: Page, name: string) {
+  await page.getByRole('button', { name: "Plus d'actions" }).click()
+  await page.getByRole('menuitem', { name }).click()
+}

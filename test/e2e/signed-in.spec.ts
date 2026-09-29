@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
 import { expect, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
@@ -354,6 +356,95 @@ test('groups routes in a public collection, which only shows its public routes t
   expect((await visitor.get(collectionApi)).status()).toBe(404)
   expect((await visitor.get(`/api/routes/${process.env.E2E_ROUTE_ID}`)).ok()).toBe(true)
   await visitor.dispose()
+})
+
+// Only its first bytes matter: the server checks the type from them.
+const JPEG_BYTES = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0xFF, 0xD9])
+
+test('exports the data of a throwaway account, then deletes it without leaving anything behind', async ({ page, context }) => {
+  const suffix = Date.now().toString(36)
+  const account = { email: `jetable-${suffix}@sport-map.test`, username: `jetable_${suffix}`, password: `jetable-${suffix}-local` }
+  const { id: userId } = await supabaseAdmin<{ id: string }>('/auth/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify({ email: account.email, password: account.password, email_confirm: true, user_metadata: { username: account.username } }),
+  })
+  const [neighbor] = process.env.E2E_NEIGHBOR_IDS!.split(',')
+  const [neighborRoute] = await insertRows<{ id: string }>('routes', [{
+    owner_id: neighbor, name: 'Parcours e2e du voisin, noté puis oublié', sport_type: 'running', is_public: true,
+    geom: 'SRID=4326;LINESTRING(171 -45,171.1 -45.1)',
+  }])
+  const ratingCount = async () =>
+    (await supabaseAdmin<{ rating_count: number }[]>(`/rest/v1/routes?id=eq.${neighborRoute!.id}&select=rating_count`))[0]!.rating_count
+
+  // Signed in as the throwaway account rather than the test account.
+  await context.clearCookies()
+  await page.goto('/login')
+  await page.locator('input[name="email"]').fill(account.email)
+  await page.locator('input[name="password"]').fill(account.password)
+  await page.getByRole('button', { name: 'Se connecter' }).click()
+  await expect(page.getByRole('button', { name: account.email })).toBeVisible()
+
+  // A private route with a photo, a review and an outing on the neighbor's route, a collection.
+  const { id: routeId } = await (await page.request.post('/api/routes', {
+    data: { name: 'Parcours RGPD e2e', sport_type: 'hiking', is_public: false, coordinates: [[6.1, 45.9], [6.2, 45.95]] },
+  })).json() as { id: string }
+  expect((await page.request.post(`/api/routes/${routeId}/photos`, {
+    multipart: { photo: { name: 'sommet.jpg', mimeType: 'image/jpeg', buffer: JPEG_BYTES } },
+  })).ok()).toBe(true)
+  expect((await page.request.put(`/api/routes/${neighborRoute!.id}/reviews`, { data: { rating: 2, comment: 'Avis RGPD e2e' } })).ok()).toBe(true)
+  expect((await page.request.put(`/api/routes/${neighborRoute!.id}/activity/completed`)).ok()).toBe(true)
+  expect((await page.request.post('/api/collections', { data: { name: 'Collection RGPD e2e', is_public: false, route_id: routeId } })).ok()).toBe(true)
+  expect(await ratingCount()).toBe(1)
+
+  // The archive holds all of it.
+  await page.goto('/profile')
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Télécharger mes données' }).click(),
+  ])
+  expect(download.suggestedFilename()).toMatch(new RegExp(`^sport-map-${account.username}-\\d{4}-\\d{2}-\\d{2}\\.zip$`))
+  const files = unzipSync(readFileSync((await download.path())!))
+  const text = (path: string) => strFromU8(files[path]!)
+  const base = `parcours-rgpd-e2e-${routeId.slice(0, 8)}`
+  expect(Object.keys(files)).toEqual(expect.arrayContaining([
+    'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'collections.json', 'signalements.json', `parcours/${base}.gpx`,
+  ]))
+  const photos = Object.keys(files).filter(path => path.startsWith(`photos/${base}/`))
+  expect(photos).toHaveLength(1)
+  expect([...files[photos[0]!]!.subarray(0, 3)]).toEqual([0xFF, 0xD8, 0xFF])
+  expect(JSON.parse(text('profil.json'))).toMatchObject({ username: account.username, email: account.email })
+  expect(text(`parcours/${base}.gpx`)).toContain('<name>Parcours RGPD e2e</name>')
+  expect(text('avis.json')).toContain('Avis RGPD e2e')
+  expect(JSON.parse(text('activite.json'))).toMatchObject([{ route_id: neighborRoute!.id, activity_type: 'completed' }])
+  expect(text('collections.json')).toContain('Collection RGPD e2e')
+
+  // Deleting asks for the username, typed again.
+  await page.getByRole('button', { name: 'Supprimer mon compte' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Supprimer mon compte ?' })
+  const confirm = dialog.getByRole('button', { name: 'Supprimer définitivement' })
+  await expect(confirm).toBeDisabled()
+  await dialog.getByLabel(/Pour confirmer/).fill('quelqu_un_d_autre')
+  await expect(confirm).toBeDisabled()
+  await dialog.getByLabel(/Pour confirmer/).fill(account.username)
+  await confirm.click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByRole('link', { name: 'Connexion' })).toBeVisible()
+
+  // Nothing left: rows, photo files, auth user; the neighbor's route no longer counts the rating.
+  for (const [table, filter] of [
+    ['profiles', `id=eq.${userId}`],
+    ['routes', `owner_id=eq.${userId}`],
+    ['route_photos', `route_id=eq.${routeId}`],
+    ['route_reviews', `user_id=eq.${userId}`],
+    ['review_reports', `reporter_id=eq.${userId}`],
+    ['route_activity', `user_id=eq.${userId}`],
+    ['collections', `owner_id=eq.${userId}`],
+  ]) {
+    expect(await supabaseAdmin(`/rest/v1/${table}?${filter}&select=*`), table).toEqual([])
+  }
+  expect(await storedPhotoFiles(routeId)).toEqual([])
+  expect(await ratingCount()).toBe(0)
+  await expect(supabaseAdmin(`/auth/v1/admin/users/${userId}`)).rejects.toThrow(/404/)
 })
 
 test('counts a completed route in the profile statistics', async ({ page }) => {

@@ -72,7 +72,8 @@ export default defineConfig({
       PORT: String(PORT),
       NUXT_PUBLIC_SUPABASE_URL: supabase.url,
       NUXT_PUBLIC_SUPABASE_KEY: supabase.publicKey,
-      NUXT_SUPABASE_SECRET_KEY: '',
+      // The local one, for account deletion.
+      NUXT_SUPABASE_SECRET_KEY: supabase.secretKey,
       NUXT_PUBLIC_MAPTILER_KEY: '',
       NUXT_OPENROUTESERVICE_KEY: '',
       // Fake Open-Meteo, started by the global setup.

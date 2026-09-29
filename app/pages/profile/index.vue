@@ -183,5 +183,7 @@ async function saveProfile() {
         />
       </template>
     </UTabs>
+
+    <AccountData :username="data.profile.username" />
   </UContainer>
 </template>

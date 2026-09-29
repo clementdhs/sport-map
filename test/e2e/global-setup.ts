@@ -18,7 +18,8 @@ export default async function globalSetup() {
 
   const { users } = await supabaseAdmin<{ users: { id: string, email: string }[] }>('/auth/v1/admin/users?per_page=1000')
   const emails = [E2E_USER.email, RESET_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]
-  for (const user of users.filter(u => emails.includes(u.email))) {
+  // Throwaway accounts are deleted by their test, unless it failed halfway.
+  for (const user of users.filter(u => emails.includes(u.email) || u.email.startsWith('jetable-'))) {
     await supabaseAdmin(`/auth/v1/admin/users/${user.id}`, { method: 'DELETE' })
   }
 

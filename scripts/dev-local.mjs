@@ -26,8 +26,8 @@ const child = spawn('npx', ['nuxt', 'dev'], {
     ...process.env,
     NUXT_PUBLIC_SUPABASE_URL: url,
     NUXT_PUBLIC_SUPABASE_KEY: status.PUBLISHABLE_KEY ?? status.ANON_KEY,
-    // The hosted secret key must not be used against the local database.
-    NUXT_SUPABASE_SECRET_KEY: '',
+    // The local secret key (account deletion), never the hosted one.
+    NUXT_SUPABASE_SECRET_KEY: status.SERVICE_ROLE_KEY ?? status.SECRET_KEY ?? '',
   },
 })
 child.on('exit', code => process.exit(code ?? 0))

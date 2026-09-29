@@ -31,6 +31,22 @@ export async function signPhotos(supabase: Supabase, rows: { id: string, storage
   return rows.flatMap((row, i) => (data[i]?.signedUrl ? [{ id: row.id, url: data[i].signedUrl }] : []))
 }
 
+// Before deleting an account (with the secret key: its session is about to go). Storage files aren't tied
+// to users, so each of their routes' folders is emptied, including files an interrupted upload may have
+// left without a row. Any failure stops the deletion rather than leave files behind.
+export async function removeUserPhotoFiles(admin: Supabase, userId: string) {
+  const { data: routes, error } = await admin.from('routes').select('id').eq('owner_id', userId)
+  if (error) throw error
+  for (const { id } of routes) {
+    const bucket = admin.storage.from(PHOTOS_BUCKET)
+    const { data: files, error: listError } = await bucket.list(id, { limit: 1000 })
+    if (listError) throw listError
+    if (!files.length) continue
+    const { error: removeError } = await bucket.remove(files.map(file => `${id}/${file.name}`))
+    if (removeError) throw removeError
+  }
+}
+
 // Deleting a route deletes its photo rows (cascade) but not the files: they are removed first, while the
 // storage policies can still check that the caller owns the route.
 export async function removeRoutePhotoFiles(supabase: Supabase, routeId: string) {

@@ -11,23 +11,7 @@ const search = useRouteSearchStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
 
-const sportItems = [
-  { value: 'all', label: 'Tous les sports', icon: 'i-lucide-list' },
-  ...SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] })),
-]
-
 const sortItems = SEARCH_SORTS.map(value => ({ value, label: SEARCH_SORT_LABELS[value] }))
-
-// "unit" follows the numbers, e.g. "km" or "m D+".
-function rangeLabel([min, max]: [number, number], top: number, unit: string, all: string) {
-  if (min === 0 && max === top) return all
-  if (max === top) return `Plus de ${min} ${unit}`
-  if (min === 0) return `Moins de ${max} ${unit}`
-  return `De ${min} à ${max} ${unit}`
-}
-
-const distanceLabel = computed(() => rangeLabel(search.distanceKm, DISTANCE_FILTER_MAX_KM, 'km', 'Toutes distances'))
-const gainLabel = computed(() => rangeLabel(search.gainM, GAIN_FILTER_MAX_M, 'm D+', 'Tout dénivelé'))
 
 // The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort.
 const LIMIT_LABELS: Record<SearchSort, string> = {
@@ -91,48 +75,16 @@ watch(() => search.results, (results) => {
     <aside class="max-h-[45dvh] shrink-0 space-y-4 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
       <SearchBox @place="focus = $event" />
 
-      <div class="grid grid-cols-2 gap-3">
-        <USelect v-model="search.sport" :items="sportItems" aria-label="Sport" class="w-full" />
+      <div class="flex gap-2">
+        <SearchFilters />
         <USelect
           v-model="search.sort"
           :items="sortItems"
           icon="i-lucide-arrow-down-wide-narrow"
           aria-label="Trier par"
-          class="w-full"
+          class="min-w-0 flex-1"
         />
-        <div class="space-y-2">
-          <p class="text-sm text-muted">{{ distanceLabel }}</p>
-          <USlider
-            v-model="search.distanceKm"
-            :min="0"
-            :max="DISTANCE_FILTER_MAX_KM"
-            :step="5"
-            aria-label="Distance du parcours, en kilomètres"
-          />
-        </div>
-        <div class="space-y-2">
-          <p class="text-sm text-muted">{{ gainLabel }}</p>
-          <USlider
-            v-model="search.gainM"
-            :min="0"
-            :max="GAIN_FILTER_MAX_M"
-            :step="50"
-            aria-label="Dénivelé positif du parcours, en mètres"
-          />
-        </div>
       </div>
-
-      <USwitch
-        v-model="search.passingThrough"
-        label="Passant par la zone"
-        :description="search.textQuery
-          ? 'Sans effet pendant une recherche par nom, qui porte sur tous les parcours.'
-          : 'Aussi les parcours qui traversent la carte sans y démarrer.'"
-        :disabled="!!search.textQuery"
-      />
-      <USwitch v-model="search.loopsOnly" label="Boucles uniquement" description="Arrivée à moins de 200 m du départ." />
-
-      <USeparator />
 
       <p class="flex items-center gap-2 text-sm text-muted" aria-live="polite">
         {{ search.failed ? 'La recherche a échoué, déplace la carte pour réessayer.' : resultsLabel }}

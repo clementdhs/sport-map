@@ -61,6 +61,23 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     }
   })
 
+  // The sort isn't a filter: it stays next to the results.
+  const activeFilterCount = computed(() => [
+    sport.value !== 'all',
+    distanceKm.value[0] > 0 || distanceKm.value[1] < DISTANCE_FILTER_MAX_KM,
+    gainM.value[0] > 0 || gainM.value[1] < GAIN_FILTER_MAX_M,
+    loopsOnly.value,
+    passingThrough.value,
+  ].filter(Boolean).length)
+
+  function resetFilters() {
+    sport.value = 'all'
+    distanceKm.value = [0, DISTANCE_FILTER_MAX_KM]
+    gainM.value = [0, GAIN_FILTER_MAX_M]
+    loopsOnly.value = false
+    passingThrough.value = false
+  }
+
   async function search() {
     if (!query.value) return
     // Map moves can overlap: only the latest request may update the results.
@@ -92,5 +109,8 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     view.value = { center, zoom }
   }
 
-  return { sport, distanceKm, gainM, loopsOnly, passingThrough, sort, text, textQuery, view, results, loading, failed, setView }
+  return {
+    sport, distanceKm, gainM, loopsOnly, passingThrough, activeFilterCount, resetFilters,
+    sort, text, textQuery, view, results, loading, failed, setView,
+  }
 })

@@ -47,15 +47,40 @@ test('summarises the slopes of a route and colours them on demand', async ({ pag
   await expect(legend).toContainText('Plus de 15 %')
 })
 
-test('filters the search by sport', async ({ page }) => {
+test('filters the search from the filters popover, counts and resets them', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)
   await expect(page.getByRole('link', { name: new RegExp(SEEDED_ROUTE_NAME) })).toBeVisible()
 
+  await page.getByRole('button', { name: 'Filtres' }).click()
   await page.getByRole('combobox', { name: 'Sport' }).click()
   await page.getByRole('option', { name: 'Randonnée' }).click()
+  await page.getByRole('switch', { name: /Boucles uniquement/ }).click()
 
   await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Filtres, 2 actifs' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Réinitialiser' }).click()
+  await expect(page.getByRole('button', { name: 'Filtres', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Réinitialiser' })).toBeDisabled()
+  await expect(page.locator('aside li a')).toHaveCount(2)
+})
+
+test('shows the results without scrolling on a phone, filters in a drawer', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/')
+  await waitForMap(page)
+  const cards = page.locator('aside li a')
+  await expect(cards).toHaveCount(2)
+  await expect(cards.first()).toBeInViewport()
+
+  await page.getByRole('button', { name: 'Filtres' }).click()
+  const drawer = page.getByRole('dialog', { name: 'Filtres' })
+  await drawer.getByRole('switch', { name: /Boucles uniquement/ }).click()
+  await drawer.getByRole('button', { name: 'Voir les parcours' }).click()
+  await expect(drawer).toBeHidden()
+  await expect(cards).toHaveCount(1)
+  await expect(page.getByRole('button', { name: 'Filtres, 1 actif' })).toBeVisible()
 })
 
 test('keeps only loops and sorts the results', async ({ page }) => {
@@ -81,6 +106,7 @@ test('keeps only loops and sorts the results', async ({ page }) => {
   await page.getByRole('option', { name: 'Mieux notés' }).click()
   await expect(cards.first()).toContainText(SEEDED_ROUTE_NAME)
 
+  await page.getByRole('button', { name: 'Filtres' }).click()
   await page.getByRole('switch', { name: /Boucles uniquement/ }).click()
   await expect(cards).toHaveCount(1)
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
@@ -99,6 +125,7 @@ test('finds routes passing through the view, pinned where they cross it', async 
   await page.goto('/')
   await waitForMap(page)
   const searched = page.waitForRequest(req => req.url().includes('/api/routes?') && req.url().includes('through=true'))
+  await page.getByRole('button', { name: 'Filtres' }).click()
   await page.getByRole('switch', { name: /Passant par la zone/ }).click()
   await searched
   await expect(page.locator('aside li a')).toHaveCount(2)
@@ -136,9 +163,11 @@ test('finds routes by name or description, anywhere, ignoring accents and case',
   await expect(cards).toHaveCount(1)
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
   // Combined with the filters.
+  await page.getByRole('button', { name: 'Filtres' }).click()
   await page.getByRole('combobox', { name: 'Sport' }).click()
   await page.getByRole('option', { name: 'Randonnée' }).click()
   await expect(page.getByText('Aucun parcours pour « crêtes »')).toBeVisible()
+  await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Effacer la recherche' }).click()
   await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()

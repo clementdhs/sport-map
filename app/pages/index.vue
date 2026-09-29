@@ -89,27 +89,7 @@ watch(() => search.results, (results) => {
     </div>
 
     <aside class="max-h-[45dvh] shrink-0 space-y-4 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
-      <UInput
-        v-model="search.text"
-        type="search"
-        icon="i-lucide-search"
-        placeholder="Rechercher un parcours…"
-        aria-label="Rechercher un parcours par son nom"
-        class="w-full"
-        :ui="{ trailing: 'pe-1' }"
-      >
-        <template v-if="search.text" #trailing>
-          <UButton
-            icon="i-lucide-x"
-            color="neutral"
-            variant="link"
-            size="sm"
-            aria-label="Effacer la recherche"
-            @click="search.text = ''"
-          />
-        </template>
-      </UInput>
-      <PlaceSearch @select="focus = $event" />
+      <SearchBox @place="focus = $event" />
 
       <div class="grid grid-cols-2 gap-3">
         <USelect v-model="search.sport" :items="sportItems" aria-label="Sport" class="w-full" />

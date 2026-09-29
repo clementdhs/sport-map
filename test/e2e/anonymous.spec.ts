@@ -100,6 +100,33 @@ test('finds routes passing through the view, pinned where they cross it', async 
   await expect(page.locator('aside li a')).toHaveCount(2)
 })
 
+test('finds routes by name or description, anywhere, ignoring accents and case', async ({ page, request }) => {
+  // Far from both seeded routes: a text search doesn't depend on the view.
+  const farAway = 'minLng=-5&minLat=40&maxLng=-4&maxLat=41'
+  const names = async (q: string) => ((await (await request.get(`/api/routes?${farAway}&q=${encodeURIComponent(q)}`)).json()) as { name: string }[]).map(route => route.name)
+  expect(await names('CRETES')).toEqual([SEEDED_LOOP_NAME])
+  // Every word, in any order, in the name or the description ("…créé par les tests de bout en bout.").
+  expect(await names('lac traversee')).toEqual([SEEDED_ROUTE_NAME])
+  expect((await names('bout tests')).sort()).toEqual([SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME].sort())
+  expect(await names('crêtes lac')).toEqual([])
+
+  await page.goto('/')
+  await waitForMap(page)
+  const cards = page.locator('aside li a')
+  await expect(cards).toHaveCount(2)
+  await page.getByRole('searchbox', { name: 'Rechercher un parcours par son nom' }).fill('crêtes')
+  await expect(page.getByText('1 parcours pour « crêtes »')).toBeVisible()
+  await expect(cards).toHaveCount(1)
+  await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
+  // Combined with the filters.
+  await page.getByRole('combobox', { name: 'Sport' }).click()
+  await page.getByRole('option', { name: 'Randonnée' }).click()
+  await expect(page.getByText('Aucun parcours pour « crêtes »')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Effacer la recherche' }).click()
+  await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
+})
+
 test('exports a public route as GPX', async ({ request }) => {
   const response = await request.get(`/api/routes/${process.env.E2E_ROUTE_ID}/gpx`)
   expect(response.status()).toBe(200)

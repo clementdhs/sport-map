@@ -40,9 +40,35 @@ const LIMIT_LABELS: Record<SearchSort, string> = {
 
 const resultsLabel = computed(() => {
   const count = search.results.length
+  if (search.textQuery) {
+    const words = `« ${search.textQuery} »`
+    if (count === 0) return `Aucun parcours pour ${words}`
+    if (count >= MAX_SEARCH_RESULTS) return `Les ${count} premiers parcours pour ${words}`
+    return `${count} parcours pour ${words}`
+  }
   if (count === 0) return 'Aucun parcours dans cette zone'
   if (count >= MAX_SEARCH_RESULTS) return `Les ${count} parcours ${LIMIT_LABELS[search.sort]}`
   return count === 1 ? '1 parcours dans cette zone' : `${count} parcours dans cette zone`
+})
+
+// A text search looks everywhere: once its first results arrive, frame them on the map.
+let fitResults = false
+watch(() => search.textQuery, (textQuery) => {
+  fitResults = !!textQuery
+})
+watch(() => search.results, (results) => {
+  if (!fitResults || !results.length) return
+  fitResults = false
+  if (results.length === 1) {
+    focus.value = { center: results[0]!.marker }
+    return
+  }
+  const lngs = results.map(({ marker }) => marker[0])
+  const lats = results.map(({ marker }) => marker[1])
+  focus.value = {
+    center: results[0]!.marker,
+    bbox: [Math.min(...lngs), Math.min(...lats), Math.max(...lngs), Math.max(...lats)],
+  }
 })
 </script>
 
@@ -63,6 +89,26 @@ const resultsLabel = computed(() => {
     </div>
 
     <aside class="max-h-[45dvh] shrink-0 space-y-4 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
+      <UInput
+        v-model="search.text"
+        type="search"
+        icon="i-lucide-search"
+        placeholder="Rechercher un parcours…"
+        aria-label="Rechercher un parcours par son nom"
+        class="w-full"
+        :ui="{ trailing: 'pe-1' }"
+      >
+        <template v-if="search.text" #trailing>
+          <UButton
+            icon="i-lucide-x"
+            color="neutral"
+            variant="link"
+            size="sm"
+            aria-label="Effacer la recherche"
+            @click="search.text = ''"
+          />
+        </template>
+      </UInput>
       <PlaceSearch @select="focus = $event" />
 
       <div class="grid grid-cols-2 gap-3">
@@ -99,7 +145,10 @@ const resultsLabel = computed(() => {
       <USwitch
         v-model="search.passingThrough"
         label="Passant par la zone"
-        description="Aussi les parcours qui traversent la carte sans y démarrer."
+        :description="search.textQuery
+          ? 'Sans effet pendant une recherche par nom, qui porte sur tous les parcours.'
+          : 'Aussi les parcours qui traversent la carte sans y démarrer.'"
+        :disabled="!!search.textQuery"
       />
       <USwitch v-model="search.loopsOnly" label="Boucles uniquement" description="Arrivée à moins de 200 m du départ." />
 
@@ -120,6 +169,9 @@ const resultsLabel = computed(() => {
           <RouteCard :route="route" :highlighted="highlightedId === route.id" />
         </li>
       </ul>
+      <p v-else-if="!search.loading && !search.failed && search.textQuery" class="text-sm text-muted">
+        Essaie d'autres mots ou élargis les filtres.
+      </p>
       <p v-else-if="!search.loading && !search.failed" class="text-sm text-muted">
         Déplace la carte, change les filtres, ou
         <ULink to="/routes/create" class="font-medium text-primary">crée le premier parcours</ULink>.

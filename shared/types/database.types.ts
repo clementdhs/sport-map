@@ -418,6 +418,7 @@ export type Database = {
           passing_through?: boolean
           sort?: string
           sport?: Database["public"]["Enums"]["sport_type"]
+          text_query?: string
         }
         Returns: {
           created_at: string
@@ -434,6 +435,7 @@ export type Database = {
           sport_type: Database["public"]["Enums"]["sport_type"]
         }[]
       }
+      search_text: { Args: { value: string }; Returns: string }
       set_review_hidden: {
         Args: { hidden: boolean; review_id: string }
         Returns: boolean

@@ -171,7 +171,12 @@ export const routeSearchSchema = z.object({
   // Routes whose track crosses the view, not only those starting in it.
   through: z.stringbool().optional(),
   sort: z.enum(SEARCH_SORTS).default('nearest'),
+  // Words of the name or description, wherever the route is: the view then only serves the "nearest" sort.
+  q: z.string().trim().max(100).optional(),
 })
+
+// Shorter texts would match too many routes to be useful.
+export const MIN_SEARCH_TEXT_LENGTH = 2
 
 export type RouteSearchQuery = z.input<typeof routeSearchSchema>
 

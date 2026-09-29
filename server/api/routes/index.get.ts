@@ -22,6 +22,7 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     passing_through: query.through ?? false,
     sort: query.sort,
     max_results: MAX_SEARCH_RESULTS,
+    text_query: query.q || undefined,
   })
 
   if (error) {

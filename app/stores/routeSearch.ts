@@ -26,6 +26,12 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
   const loopsOnly = ref(false)
   const passingThrough = ref(false)
   const sort = ref<SearchSort>('nearest')
+  // Name or description; searched everywhere, not only in the map view.
+  const text = ref('')
+  const textQuery = computed(() => {
+    const trimmed = text.value.trim()
+    return trimmed.length >= MIN_SEARCH_TEXT_LENGTH ? trimmed : undefined
+  })
   // Last map view, restored when coming back to the page.
   const view = ref<Omit<MapViewState, 'bounds'>>({ center: [2.35, 46.6], zoom: 5 })
   const bounds = ref<Bounds | null>(null)
@@ -51,6 +57,7 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
       loops: loopsOnly.value ? 'true' : undefined,
       through: passingThrough.value ? 'true' : undefined,
       sort: sort.value,
+      q: textQuery.value,
     }
   })
 
@@ -85,5 +92,5 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     view.value = { center, zoom }
   }
 
-  return { sport, distanceKm, gainM, loopsOnly, passingThrough, sort, view, results, loading, failed, setView }
+  return { sport, distanceKm, gainM, loopsOnly, passingThrough, sort, text, textQuery, view, results, loading, failed, setView }
 })

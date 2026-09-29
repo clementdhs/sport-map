@@ -137,6 +137,12 @@ describe('routeSearchSchema', () => {
   it('rejects an unknown sport', () => {
     expect(routeSearchSchema.safeParse({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'swimming' }).success).toBe(false)
   })
+
+  it('trims the text to search and limits its length', () => {
+    expect(routeSearchSchema.parse({ ...bounds, q: '  lac d\'Annecy ' }).q).toBe('lac d\'Annecy')
+    expect(routeSearchSchema.parse(bounds).q).toBeUndefined()
+    expect(routeSearchSchema.safeParse({ ...bounds, q: 'a'.repeat(101) }).success).toBe(false)
+  })
 })
 
 describe('points of interest', () => {

@@ -27,6 +27,7 @@ const data: AccountData = {
   activity: [],
   collections: [],
   reports: [],
+  routingUsage: [{ day: '2026-09-29', count: 12 }],
 }
 
 describe('accountArchive', () => {
@@ -34,9 +35,10 @@ describe('accountArchive', () => {
   const file = (path: string) => archive.files.find(entry => entry.path === path)?.content
 
   it('holds a readme and one JSON file per kind of data', () => {
-    expect(archive.files.slice(0, 7).map(entry => entry.path)).toEqual([
-      'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'collections.json', 'signalements.json',
+    expect(archive.files.slice(0, 8).map(entry => entry.path)).toEqual([
+      'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'collections.json', 'signalements.json', 'calculs.json',
     ])
+    expect(JSON.parse(file('calculs.json')!)).toEqual(data.routingUsage)
     expect(file('LISEZMOI.txt')).toContain('Données de clem')
     expect(JSON.parse(file('profil.json')!)).toMatchObject({ email: 'clem@example.test' })
     expect(JSON.parse(file('avis.json')!)).toEqual(data.reviews)

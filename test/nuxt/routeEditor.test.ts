@@ -1,20 +1,30 @@
-import { readBody } from 'h3'
+import { createError, readBody } from 'h3'
 import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteDetail } from '#shared/types/routes'
 import type { LngLat, RouteCreatePayload, RoutingSegmentRequest } from '#shared/utils/routes'
 
-// Fake routing service: a straight line through the midpoint, 100 m → 150 m → 200 m of elevation.
+// Fake routing service: a straight line through the midpoint, 100 m → 150 m → 200 m of elevation. With a
+// quota set, it counts down and answers 429 once it is used up, like the real one.
 const routingCalls: RoutingSegmentRequest[] = []
+let routingQuota: number | null = null
 registerEndpoint('/api/routing/segment', {
   method: 'POST',
   handler: async (event) => {
     const body = await readBody<RoutingSegmentRequest>(event)
     routingCalls.push(body)
+    if (routingQuota !== null && routingQuota <= 0) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: 'Limite de 300 calculs d\'itinéraire par jour atteinte',
+        data: { reason: ROUTING_QUOTA_REASON },
+      })
+    }
+    if (routingQuota !== null) routingQuota--
     const { from, to } = body
     const mid: LngLat = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2]
-    return { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true }
+    return { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true, quota_remaining: routingQuota ?? undefined }
   },
 })
 
@@ -84,6 +94,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
 beforeEach(() => {
   setActivePinia(createPinia())
   routingCalls.length = 0
+  routingQuota = null
   createdBody = undefined
   updatedBody = undefined
 })
@@ -107,6 +118,41 @@ describe('drawing', () => {
     editor.addWaypoint(B)
     await settled(editor)
     expect(routingCalls[0]!.mode).toBe('straight')
+  })
+})
+
+describe('daily routing quota', () => {
+  it('counts down what is left, then draws straight lines without asking again, warning once', async () => {
+    const { toasts } = useToast()
+    const quotaToasts = () => toasts.value.filter(toast => toast.title === 'Limite quotidienne atteinte')
+    routingQuota = 2
+    const editor = useRouteEditorStore()
+    editor.addWaypoint(A)
+    editor.addWaypoint(B)
+    await settled(editor)
+    expect(editor.routingQuotaRemaining).toBe(1)
+    expect(editor.routingQuotaReached).toBe(false)
+
+    editor.addWaypoint(C)
+    editor.addWaypoint([6.4, 45.95])
+    await settled(editor)
+    // The second call used the last one; the third was refused.
+    expect(routingCalls).toHaveLength(3)
+    expect(editor.routingQuotaReached).toBe(true)
+    expect(editor.routingQuotaRemaining).toBe(0)
+    const refused = editor.segments[2]!
+    expect(refused.coordinates).toEqual([C, [6.4, 45.95]])
+    expect(refused.elevations).toBeNull()
+    expect(quotaToasts()).toHaveLength(1)
+    expect(quotaToasts()[0]!.description).toContain("Limite de 300 calculs d'itinéraire par jour atteinte. Les segments sont tracés en ligne droite")
+
+    // No more requests, no more warnings: the segment just stays straight.
+    editor.addWaypoint([6.5, 45.9])
+    await settled(editor)
+    expect(routingCalls).toHaveLength(3)
+    expect(editor.segments).toHaveLength(4)
+    expect(editor.track.coordinates.at(-1)).toEqual([6.5, 45.9])
+    expect(quotaToasts()).toHaveLength(1)
   })
 })
 

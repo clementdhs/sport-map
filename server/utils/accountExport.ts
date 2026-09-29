@@ -27,6 +27,7 @@ export interface AccountData {
   activity: object[]
   collections: object[]
   reports: object[]
+  routingUsage: object[]
 }
 
 export interface AccountArchive {
@@ -48,6 +49,7 @@ avis.json           les avis que tu as laissés sur des parcours
 activite.json       les parcours que tu as sauvegardés ou réalisés, avec les temps de tes sorties enregistrées
 collections.json    tes collections de parcours
 signalements.json   les avis que tu as signalés
+calculs.json        ton nombre de calculs d'itinéraire du jour (limité par personne)
 
 Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.
 `
@@ -90,6 +92,7 @@ export function accountArchive(data: AccountData): AccountArchive {
     { path: 'activite.json', content: json(data.activity) },
     { path: 'collections.json', content: json(data.collections) },
     { path: 'signalements.json', content: json(data.reports) },
+    { path: 'calculs.json', content: json(data.routingUsage) },
   )
   return { files, photos }
 }

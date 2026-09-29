@@ -31,6 +31,9 @@ export default defineNuxtConfig({
   // NUXT_PUBLIC_SENTRY_DSN.
   runtimeConfig: {
     openrouteserviceKey: '',
+    // Routing requests per user and per day (NUXT_ROUTING_DAILY_LIMIT): the free OpenRouteService quota is
+    // 2,000 a day for the whole app.
+    routingDailyLimit: 300,
     // Weather forecast API (free, no key). The e2e tests point it at a local fake.
     openMeteoUrl: 'https://api.open-meteo.com/v1/forecast',
     public: {

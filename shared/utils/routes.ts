@@ -197,7 +197,16 @@ export type RoutingSegmentResponse = {
   elevations: number[]
   // false when snapping was requested but no path was found, so a straight line was used instead
   snapped: boolean
+  // Routing requests the user has left today.
+  quota_remaining?: number
 }
+
+// Reason given with the 429 of /api/routing/segment once the user's daily quota is used up (a 429 without
+// it is OpenRouteService's own per-minute limit).
+export const ROUTING_QUOTA_REASON = 'daily_quota'
+
+// The editor warns when this few requests are left.
+export const ROUTING_QUOTA_WARNING = 30
 
 // The elevation model (SRTM) has spikes of tens of meters around bridges and valley floors: summing raw
 // values inflated gains by about 20% on test routes. Averaging over a distance window, then ignoring small

@@ -153,6 +153,21 @@ async function onSubmit() {
         Clique sur la carte pour placer les points de ton parcours, ou importe un fichier GPX.
       </p>
       <UAlert
+        v-if="editor.routingQuotaReached"
+        color="warning"
+        variant="subtle"
+        icon="i-lucide-gauge"
+        title="Limite de calculs atteinte pour aujourd'hui"
+        description="Pour préserver le service gratuit de calcul d'itinéraire, chacun a un nombre limité de calculs par jour. D'ici demain, les nouveaux segments sont tracés en ligne droite, sans dénivelé."
+      />
+      <p
+        v-else-if="editor.routingQuotaRemaining !== null && editor.routingQuotaRemaining <= ROUTING_QUOTA_WARNING"
+        class="text-sm text-warning"
+      >
+        <UIcon name="i-lucide-gauge" class="mr-1 align-text-bottom" />
+        Plus que {{ editor.routingQuotaRemaining }} calcul{{ editor.routingQuotaRemaining > 1 ? 's' : '' }} d'itinéraire aujourd'hui.
+      </p>
+      <UAlert
         v-if="hasLockedTrack"
         color="neutral"
         variant="subtle"

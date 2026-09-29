@@ -76,6 +76,8 @@ export default defineConfig({
       NUXT_SUPABASE_SECRET_KEY: supabase.secretKey,
       NUXT_PUBLIC_MAPTILER_KEY: '',
       NUXT_OPENROUTESERVICE_KEY: '',
+      // Small, so a test reaches the per-user routing quota quickly.
+      NUXT_ROUTING_DAILY_LIMIT: '3',
       // Fake Open-Meteo, started by the global setup.
       NUXT_OPEN_METEO_URL: `http://127.0.0.1:${FAKE_WEATHER_PORT}/v1/forecast`,
     },

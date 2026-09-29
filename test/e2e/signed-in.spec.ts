@@ -472,3 +472,23 @@ test('counts a completed route in the profile statistics', async ({ page }) => {
   await expect(page.getByText('Sur les 5 dernières années', { exact: true })).toBeVisible()
   expect(Number(await outings.textContent())).toBeGreaterThanOrEqual(1)
 })
+
+// Last: it uses up the test account's routing quota for the day (the other tests mock routing).
+test('caps routing requests per user and per day', async ({ page, playwright, baseURL }) => {
+  const segment = { from: [6.1, 45.9], to: [6.2, 45.95], mode: 'straight', sport_type: 'running' }
+  // The e2e server allows 3 a day and has no OpenRouteService key: counted requests then answer 503.
+  for (let i = 0; i < 3; i++) {
+    expect((await page.request.post('/api/routing/segment', { data: segment })).status()).toBe(503)
+  }
+  const refused = await page.request.post('/api/routing/segment', { data: segment })
+  expect(refused.status()).toBe(429)
+  expect(await refused.json()).toMatchObject({
+    statusMessage: "Limite de 3 calculs d'itinéraire par jour atteinte",
+    data: { reason: 'daily_quota' },
+  })
+
+  // Visitors can't use routing at all.
+  const visitor = await playwright.request.newContext({ baseURL, storageState: NO_SESSION })
+  expect((await visitor.post('/api/routing/segment', { data: segment })).status()).toBe(401)
+  await visitor.dispose()
+})

@@ -386,11 +386,38 @@ export type Database = {
           },
         ]
       }
+      routing_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routing_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      consume_routing_quota: { Args: { daily_limit: number }; Returns: number }
       route_geojson: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {

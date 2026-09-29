@@ -10,7 +10,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
   const supabase = await serverSupabaseClient(event)
 
-  const [profile, routes, reviews, activity, collections, reports] = await Promise.all([
+  const [profile, routes, reviews, activity, collections, reports, routingUsage] = await Promise.all([
     supabase.from('profiles').select('username, display_name, bio, created_at').eq('id', user.sub).single(),
     supabase
       .from('routes')
@@ -33,8 +33,9 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .eq('owner_id', user.sub)
       .order('created_at'),
     supabase.from('review_reports').select('review_id, created_at').eq('reporter_id', user.sub).order('created_at'),
+    supabase.from('routing_usage').select('day, count').eq('user_id', user.sub),
   ])
-  const failed = [profile, routes, reviews, activity, collections, reports].find(result => result.error)
+  const failed = [profile, routes, reviews, activity, collections, reports, routingUsage].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
     throw createError({ statusCode: 500, statusMessage: "Impossible de préparer l'export" })
@@ -66,6 +67,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     activity: activity.data!,
     collections: collections.data!,
     reports: reports.data!,
+    routingUsage: routingUsage.data!,
   })
 
   // Signed with the caller's session: storage policies let owners read their route photos.

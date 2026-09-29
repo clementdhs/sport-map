@@ -63,6 +63,9 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   let nextSegmentId = 0
   // Segments with a routing request in flight: lets undo restart the ones whose request already finished.
   const inFlight = new Set<number>()
+  // The user's daily routing quota (server-side): once used up, new segments stay straight lines.
+  const routingQuotaReached = ref(false)
+  const routingQuotaRemaining = ref<number | null>(null)
 
   // ranges[i] locates segment i in the track, so the editor state can be saved without duplicating coordinates.
   const track = computed(() => {
@@ -116,6 +119,12 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   // a segment that no longer exists is simply ignored.
   async function routeSegment({ id, mode, coordinates }: Segment) {
     if (isLocked(mode)) return
+    // Daily quota used up: straight line, without asking the server again.
+    if (routingQuotaReached.value) {
+      const segment = segments.value.find(s => s.id === id)
+      if (segment) segment.loading = false
+      return
+    }
     const from = coordinates[0]!
     const to = coordinates.at(-1)!
     inFlight.add(id)
@@ -124,6 +133,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         method: 'POST',
         body: { from, to, mode, sport_type: details.value.sport_type },
       })
+      if (result.quota_remaining !== undefined) routingQuotaRemaining.value = result.quota_remaining
       const index = segments.value.findIndex(s => s.id === id)
       if (index === -1) return
       const segment = segments.value[index]!
@@ -142,6 +152,21 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       }
     }
     catch (error) {
+      const data = (error as FetchError<{ statusMessage?: string, data?: { reason?: string } }>).data
+      if (data?.data?.reason === ROUTING_QUOTA_REASON) {
+        // Several segments can be in flight: warn once.
+        if (!routingQuotaReached.value) {
+          toast.add({
+            title: 'Limite quotidienne atteinte',
+            description: `${data.statusMessage}. Les segments sont tracés en ligne droite, sans dénivelé, jusqu'à demain.`,
+            color: 'warning',
+            icon: 'i-lucide-gauge',
+          })
+        }
+        routingQuotaReached.value = true
+        routingQuotaRemaining.value = 0
+        return
+      }
       if (!segments.value.some(s => s.id === id)) return
       toast.add({
         title: "Calcul de l'itinéraire impossible",
@@ -375,7 +400,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
   return {
     waypoints, segments, pois, placingPoi, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
-    editingId, isLoop, canFinish,
+    editingId, isLoop, canFinish, routingQuotaReached, routingQuotaRemaining,
     canEditWaypoint, canInsertInSegment,
     addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack,
     addPoi, removePoi, importTrack, loadRoute, undo, clearPoints, reset, save,

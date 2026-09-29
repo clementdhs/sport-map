@@ -298,3 +298,29 @@ test.describe('offline follow mode', () => {
     expect(await page.evaluate(async () => (await caches.keys()).filter(n => n.startsWith('sport-map-offline-')))).toEqual([])
   })
 })
+
+test('counts a completed route in the profile statistics', async ({ page }) => {
+  const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')
+  const openStats = async () => {
+    await page.goto('/profile')
+    await page.getByRole('tab', { name: 'Statistiques' }).click()
+  }
+  await openStats()
+  // Other tests of this file may have completed routes already: compare with the count before.
+  const empty = await page.getByText('Marque des parcours comme faits').isVisible()
+  const before = empty ? 0 : Number(await outings.textContent())
+
+  const { id } = await (await page.request.post('/api/routes', {
+    data: { name: 'Parcours stats e2e', sport_type: 'cycling', is_public: false, coordinates: [[6.1, 45.9], [6.2, 45.95]] },
+  })).json() as { id: string }
+  expect((await page.request.put(`/api/routes/${id}/activity/completed`)).ok()).toBe(true)
+
+  await openStats()
+  await expect(outings).toHaveText(String(before + 1))
+  // Switching the period is immediate, and cycling alone shows at least this route.
+  await page.getByRole('combobox', { name: 'Sport' }).click()
+  await page.getByRole('option', { name: 'Vélo' }).click()
+  await page.getByRole('tab', { name: 'Années' }).click()
+  await expect(page.getByText('Sur les 5 dernières années', { exact: true })).toBeVisible()
+  expect(Number(await outings.textContent())).toBeGreaterThanOrEqual(1)
+})

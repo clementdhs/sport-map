@@ -23,6 +23,7 @@ const tabs = computed(() => [
   { label: 'Mes parcours', slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
   { label: 'Sauvegardés', slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
   { label: 'Réalisés', slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
+  { label: 'Statistiques', slot: 'stats' as const, icon: 'i-lucide-chart-column' },
 ])
 
 const editOpen = ref(false)
@@ -133,6 +134,9 @@ async function saveProfile() {
         />
       </template>
 
+      <template #stats>
+        <ProfileStats :completed="data.completed" />
+      </template>
       <template #completed>
         <ul v-if="data.completed.length" class="space-y-2 pt-2">
           <li v-for="route in data.completed" :key="route.id">

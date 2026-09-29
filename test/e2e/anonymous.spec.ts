@@ -33,6 +33,16 @@ test('shows the weather at the start of a route, crediting Open-Meteo', async ({
   await expect(weather.getByRole('link', { name: 'Open-Meteo.com' })).toHaveAttribute('href', 'https://open-meteo.com/')
 })
 
+test('summarises the slopes of a route and colours them on demand', async ({ page }) => {
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  await waitForMap(page)
+  await expect(page.getByText(/Pente max : \d+ %/)).toBeVisible()
+  const legend = page.getByRole('list', { name: 'Légende des pentes' })
+  await expect(legend).toHaveCount(0)
+  await page.getByRole('switch', { name: 'Pentes sur la carte et le profil' }).click()
+  await expect(legend).toContainText('Plus de 15 %')
+})
+
 test('filters the search by sport', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

@@ -18,6 +18,20 @@ if (error.value || !parcours.value) {
 
 const coordinates = computed(() => (parcours.value?.geometry.coordinates ?? []) as LngLat[])
 const hoverPoint = ref<LngLat | null>(null)
+
+// Slopes, when the route has elevations: steepest grade, main climb, and colours for the map and the profile.
+const slopes = computed(() => {
+  const elevations = parcours.value?.elevation_profile
+  if (!elevations || elevations.length !== coordinates.value.length || coordinates.value.length < 2) return null
+  const profile = slopeProfile(coordinates.value, elevations)
+  return {
+    profile,
+    steepest: steepestGrade(profile),
+    climb: mainClimb(coordinates.value, elevations, profile.along),
+    gradient: slopeGradient(slopeRuns(profile), profile.along.at(-1)!),
+  }
+})
+const showSlopes = ref(false)
 // Own state for what the page changes: useFetch data is a shallow ref, so changing a property of
 // parcours (photos, viewer) would not re-render the page.
 const photos = ref<RoutePhoto[]>(parcours.value.photos)
@@ -101,7 +115,12 @@ useSeoMeta({
   <div v-if="parcours" class="flex h-[calc(100dvh-var(--ui-header-height))] flex-col md:flex-row">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteDisplay :coordinates="coordinates" :pois="parcours.pois" :hover-point="hoverPoint" />
+        <MapRouteDisplay
+          :coordinates="coordinates"
+          :pois="parcours.pois"
+          :slope-gradient="showSlopes ? slopes?.gradient : null"
+          :hover-point="hoverPoint"
+        />
       </ClientOnly>
     </div>
 
@@ -191,8 +210,25 @@ useSeoMeta({
         v-if="parcours.elevation_profile?.length === coordinates.length"
         :coordinates="coordinates"
         :elevations="parcours.elevation_profile"
+        :grades="showSlopes ? slopes?.profile.grades : null"
         @hover="hoverPoint = $event"
       />
+
+      <div v-if="slopes" class="space-y-2">
+        <p class="text-sm text-muted">
+          Pente max : <span class="font-medium text-default">{{ slopes.steepest }} %</span>
+          <template v-if="slopes.climb">
+            · Montée principale : <span class="font-medium text-default">{{ formatDistance(slopes.climb.endM - slopes.climb.startM) }}
+              à {{ Math.round(slopes.climb.averageGrade) }} %</span> (+{{ Math.round(slopes.climb.gainM) }} m)
+          </template>
+        </p>
+        <USwitch v-model="showSlopes" label="Pentes sur la carte et le profil" />
+        <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" aria-label="Légende des pentes">
+          <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.label" class="flex items-center gap-1">
+            <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ slopeClass.label }}
+          </li>
+        </ul>
+      </div>
 
       <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
 

@@ -1,5 +1,5 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
-import type { GeoJSONSource, LngLatBoundsLike, Map } from 'maplibre-gl'
+import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
 
 export const ROUTE_COLOR = '#ea580c'
@@ -44,7 +44,8 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
 }
 
 export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { editable = false } = {}) {
-  map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line) })
+  // lineMetrics: needed by line-gradient, to colour the track by slope.
+  map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line), lineMetrics: true })
   map.addSource(POINTS_SOURCE, { type: 'geojson', data: pointsData(points) })
 
   map.addLayer({
@@ -105,6 +106,11 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
 export function setRouteLayerData(map: Map, { line, points }: RouteLayerData) {
   map.getSource<GeoJSONSource>(LINE_SOURCE)?.setData(lineData(line))
   map.getSource<GeoJSONSource>(POINTS_SOURCE)?.setData(pointsData(points))
+}
+
+// Colours the track by slope (a line-gradient expression, see shared/utils/slopes.ts), or back to the route colour.
+export function setRouteSlopes(map: Map, gradient: unknown[] | null) {
+  map.setPaintProperty('route-line', 'line-gradient', (gradient ?? undefined) as ExpressionSpecification | undefined)
 }
 
 export function setRouteHover(map: Map, point: LngLat | null) {

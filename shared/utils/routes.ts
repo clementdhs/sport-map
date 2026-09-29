@@ -200,7 +200,7 @@ export type RoutingSegmentResponse = {
 const SMOOTHING_WINDOW_M = 100
 const ELEVATION_NOISE_M = 3
 
-function smoothByDistance(coordinates: LngLat[], elevations: number[]): number[] {
+export function smoothByDistance(coordinates: LngLat[], elevations: number[]): number[] {
   const along = [0]
   for (let i = 1; i < coordinates.length; i++) {
     along.push(along[i - 1]! + distance(coordinates[i - 1]!, coordinates[i]!, { units: 'meters' }))

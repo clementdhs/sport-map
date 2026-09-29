@@ -1,0 +1,140 @@
+import { distance } from '@turf/turf'
+import { type LngLat, smoothByDistance } from './routes'
+
+// Slopes along a route: grades computed on smoothed elevations (the elevation model is noisy), classes to
+// colour the track and the elevation profile, the steepest grade and the main climb.
+
+// Grades are measured over this distance, centred on each point. 100 m still let elevation model artefacts through
+// (45 % where a hollow and a jump of the model follow each other on a real route); 200 m reads real steep paths.
+const GRADE_WINDOW_M = 200
+// A climb goes on through dips smaller than this.
+const CLIMB_TOLERANCE_M = 20
+// Below this gain, a route has no climb worth a summary.
+const MIN_CLIMB_GAIN_M = 30
+
+// One hue from light to dark (dataviz ordinal ramp, validated on white and on the dark surface).
+export const SLOPE_CLASSES = [
+  { max: 5, label: 'Moins de 5 %', color: '#fe9a00' },
+  { max: 10, label: '5 à 10 %', color: '#f54900' },
+  { max: 15, label: '10 à 15 %', color: '#c10007' },
+  { max: Infinity, label: 'Plus de 15 %', color: '#9f0712' },
+] as const
+
+export interface SlopeProfile {
+  // Distance from the start (m) at each point
+  along: number[]
+  // Signed grade (%) at each point: positive uphill
+  grades: number[]
+}
+
+export interface SlopeRun {
+  startM: number
+  endM: number
+  // Index in SLOPE_CLASSES
+  slopeClass: number
+}
+
+export interface Climb {
+  startM: number
+  endM: number
+  gainM: number
+  averageGrade: number
+}
+
+export function slopeClass(grade: number): number {
+  return SLOPE_CLASSES.findIndex(c => Math.abs(grade) < c.max)
+}
+
+// Smoothed elevation at any distance along the track, interpolated between the points around it.
+function elevationAt(along: number[], smoothed: number[], meters: number): number {
+  let low = 0
+  let high = along.length - 1
+  while (high - low > 1) {
+    const mid = (low + high) >> 1
+    if (along[mid]! <= meters) low = mid
+    else high = mid
+  }
+  const span = along[high]! - along[low]!
+  const t = span > 0 ? Math.min(1, Math.max(0, (meters - along[low]!) / span)) : 0
+  return smoothed[low]! + (smoothed[high]! - smoothed[low]!) * t
+}
+
+// Grades over a fixed GRADE_WINDOW_M, interpolated: with points far apart, measuring between the nearest
+// points only would divide a steep step by a few meters and report absurd grades (95 % on a real route).
+export function slopeProfile(coordinates: LngLat[], elevations: number[]): SlopeProfile {
+  const along = [0]
+  for (let i = 1; i < coordinates.length; i++) along.push(along[i - 1]! + distance(coordinates[i - 1]!, coordinates[i]!, { units: 'meters' }))
+  const smoothed = smoothByDistance(coordinates, elevations)
+  const totalM = along.at(-1)!
+  const half = GRADE_WINDOW_M / 2
+  const grades = along.map((position) => {
+    const from = Math.max(0, position - half)
+    const to = Math.min(totalM, position + half)
+    return to > from ? ((elevationAt(along, smoothed, to) - elevationAt(along, smoothed, from)) / (to - from)) * 100 : 0
+  })
+  return { along, grades }
+}
+
+// Consecutive stretches of the same slope class, to colour the track.
+export function slopeRuns({ along, grades }: SlopeProfile): SlopeRun[] {
+  const runs: SlopeRun[] = []
+  grades.forEach((grade, i) => {
+    const cls = slopeClass(grade)
+    const last = runs.at(-1)
+    if (last && last.slopeClass === cls) last.endM = along[i]!
+    else runs.push({ startM: last ? last.endM : 0, endM: along[i]!, slopeClass: cls })
+  })
+  return runs
+}
+
+// The steepest uphill grade (%), rounded.
+export function steepestGrade({ grades }: SlopeProfile): number {
+  return Math.round(Math.max(0, ...grades))
+}
+
+// The climb with the largest gain: it starts at a low point and goes on until the elevation falls more than
+// CLIMB_TOLERANCE_M below its highest point. null when no climb gains MIN_CLIMB_GAIN_M.
+export function mainClimb(coordinates: LngLat[], elevations: number[], along: number[]): Climb | null {
+  const smoothed = smoothByDistance(coordinates, elevations)
+  let best: Climb | null = null
+  let start = 0
+  let top = 0
+  const close = () => {
+    const gainM = smoothed[top]! - smoothed[start]!
+    const lengthM = along[top]! - along[start]!
+    if (gainM >= MIN_CLIMB_GAIN_M && lengthM > 0 && (!best || gainM > best.gainM)) {
+      best = { startM: along[start]!, endM: along[top]!, gainM, averageGrade: (gainM / lengthM) * 100 }
+    }
+  }
+  for (let i = 1; i < smoothed.length; i++) {
+    if (smoothed[i]! > smoothed[top]!) top = i
+    else if (smoothed[top]! - smoothed[i]! > CLIMB_TOLERANCE_M) {
+      close()
+      start = i
+      top = i
+    }
+    // A lower point before any real gain: the climb starts there instead.
+    if (smoothed[i]! < smoothed[start]!) {
+      start = i
+      top = i
+    }
+  }
+  close()
+  return best
+}
+
+// MapLibre line-gradient colouring the track by slope class (requires lineMetrics on the source).
+export function slopeGradient(runs: SlopeRun[], totalM: number): unknown[] {
+  if (!runs.length || totalM <= 0) return ['literal', SLOPE_CLASSES[0].color]
+  const expression: unknown[] = ['step', ['line-progress'], SLOPE_CLASSES[runs[0]!.slopeClass]!.color]
+  let lastStop = 0
+  for (const run of runs.slice(1)) {
+    const progress = Math.min(1, Math.max(0, run.startM / totalM))
+    // Stops must strictly increase: a run shorter than the rounding is merged into the previous one.
+    if (progress > lastStop) {
+      expression.push(progress, SLOPE_CLASSES[run.slopeClass]!.color)
+      lastStop = progress
+    }
+  }
+  return expression
+}

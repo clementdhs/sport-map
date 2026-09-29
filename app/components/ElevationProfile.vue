@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import { distance } from '@turf/turf'
 import type { LngLat } from '#shared/utils/routes'
+import { SLOPE_CLASSES, slopeClass } from '#shared/utils/slopes'
 
 const props = defineProps<{
   coordinates: LngLat[]
   elevations: number[]
+  // Signed grade (%) at each point: colours the line by slope and adds it to the tooltip
+  grades?: number[] | null
 }>()
 
 const emit = defineEmits<{
@@ -44,6 +47,26 @@ const toY = (elevation: number) => HEIGHT - ((elevation - axis.value.low) / (axi
 const linePath = computed(() => props.elevations
   .map((elevation, i) => `${i ? 'L' : 'M'}${toX(distances.value[i]!).toFixed(1)},${toY(elevation).toFixed(1)}`)
   .join(''))
+// Line pieces of one slope class each, sharing their end points so the line stays continuous.
+const slopePaths = computed(() => {
+  const grades = props.grades
+  if (!grades || grades.length !== props.elevations.length) return []
+  const point = (i: number) => `${toX(distances.value[i]!).toFixed(1)},${toY(props.elevations[i]!).toFixed(1)}`
+  const pieces: { color: string, d: string }[] = []
+  let current = -1
+  grades.forEach((grade, i) => {
+    const cls = slopeClass(grade)
+    if (cls !== current) {
+      const last = pieces.at(-1)
+      pieces.push({ color: SLOPE_CLASSES[cls]!.color, d: `M${point(i > 0 ? i - 1 : i)}` })
+      if (last && i > 0) last.d += `L${point(i)}`
+      current = cls
+    }
+    pieces.at(-1)!.d += `L${point(i)}`
+  })
+  return pieces
+})
+
 const areaPath = computed(() => `${linePath.value}L${WIDTH},${HEIGHT}L0,${HEIGHT}Z`)
 
 const plot = useTemplateRef('plot')
@@ -60,6 +83,7 @@ const active = computed(() => {
   return {
     elevation: props.elevations[i]!,
     distance: distances.value[i]!,
+    grade: props.grades?.[i] ?? null,
     left: (toX(distances.value[i]!) / WIDTH) * 100,
     top: (toY(props.elevations[i]!) / HEIGHT) * 100,
   }
@@ -138,6 +162,18 @@ const summary = computed(() =>
           />
           <path :d="areaPath" :fill="ROUTE_COLOR" fill-opacity="0.1" />
           <path
+            v-for="(piece, i) in slopePaths"
+            :key="i"
+            :d="piece.d"
+            fill="none"
+            :stroke="piece.color"
+            stroke-width="3"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            vector-effect="non-scaling-stroke"
+          />
+          <path
+            v-if="!slopePaths.length"
             :d="linePath"
             fill="none"
             :stroke="ROUTE_COLOR"
@@ -162,6 +198,7 @@ const summary = computed(() =>
           >
             <p class="font-semibold text-highlighted tabular-nums">{{ formatElevation(active.elevation) }}</p>
             <p class="text-muted tabular-nums">à {{ formatDistance(active.distance) }}</p>
+            <p v-if="active.grade !== null" class="text-muted tabular-nums">Pente : {{ Math.round(active.grade) }} %</p>
           </div>
         </template>
       </div>

@@ -1,5 +1,5 @@
 import { insertRows, supabaseAdmin } from './admin'
-import { expect, SEEDED_REVIEW, test, waitForMap } from './fixtures'
+import { expect, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -297,6 +297,63 @@ test.describe('offline follow mode', () => {
     await expect(page.getByRole('button', { name: 'Préparer pour le hors-ligne' })).toBeVisible()
     expect(await page.evaluate(async () => (await caches.keys()).filter(n => n.startsWith('sport-map-offline-')))).toEqual([])
   })
+})
+
+test('groups routes in a public collection, which only shows its public routes to visitors', async ({ page, playwright }) => {
+  const { id: privateId } = await (await page.request.post('/api/routes', {
+    data: { name: 'Parcours privé collection e2e', sport_type: 'hiking', is_public: false, coordinates: [[6.3, 45.8], [6.35, 45.82]] },
+  })).json() as { id: string }
+
+  // Created from the page of the seeded (public) route, which it then holds.
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  await page.getByRole('button', { name: 'Ajouter à une collection' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Ajouter à une collection' })
+  await dialog.getByRole('button', { name: 'Nouvelle collection' }).click()
+  await dialog.getByLabel('Nom').fill('Week-end e2e')
+  await dialog.getByRole('switch', { name: 'Collection publique' }).click()
+  await dialog.getByRole('button', { name: 'Créer et ajouter' }).click()
+  await expect(dialog.getByRole('checkbox', { name: 'Week-end e2e' })).toBeChecked()
+  await page.keyboard.press('Escape')
+
+  // Added from the private route's page.
+  await page.goto(`/routes/${privateId}`)
+  await page.getByRole('button', { name: 'Ajouter à une collection' }).click()
+  const checkbox = page.getByRole('dialog').getByRole('checkbox', { name: 'Week-end e2e' })
+  await expect(checkbox).not.toBeChecked()
+  await checkbox.click()
+  await expect(checkbox).toBeChecked()
+  await page.keyboard.press('Escape')
+
+  await page.goto('/profile')
+  await page.getByRole('tab', { name: /Collections/ }).click()
+  await page.getByRole('link', { name: /Week-end e2e/ }).click()
+  await expect(page).toHaveURL(/\/collections\/[0-9a-f-]{36}$/)
+  await waitForMap(page)
+  const routes = page.getByRole('list', { name: 'Parcours de la collection' })
+  await expect(routes.getByRole('listitem')).toHaveCount(2)
+  await expect(page.getByText('Publique', { exact: true })).toBeVisible()
+
+  // A visitor sees the collection, without the private route.
+  const collectionApi = page.url().replace('/collections/', '/api/collections/')
+  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
+  const asVisitor = async () => (await visitor.get(collectionApi)).json() as Promise<{ is_mine: boolean, routes: { name: string }[] }>
+  expect(await asVisitor()).toMatchObject({ is_mine: false, routes: [{ name: SEEDED_ROUTE_NAME }] })
+
+  // Deleting a route takes it out of the collection.
+  expect((await page.request.delete(`/api/routes/${privateId}`)).ok()).toBe(true)
+  await page.reload()
+  await waitForMap(page)
+  await expect(routes.getByRole('listitem')).toHaveCount(1)
+
+  // Removing the last route, then deleting the collection, keeps the route.
+  await page.getByRole('button', { name: `Retirer ${SEEDED_ROUTE_NAME} de la collection` }).click()
+  await expect(page.getByText('Collection vide')).toBeVisible()
+  await page.getByRole('button', { name: 'Supprimer la collection' }).click()
+  await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
+  await expect(page).toHaveURL(/\/profile$/)
+  expect((await visitor.get(collectionApi)).status()).toBe(404)
+  expect((await visitor.get(`/api/routes/${process.env.E2E_ROUTE_ID}`)).ok()).toBe(true)
+  await visitor.dispose()
 })
 
 test('counts a completed route in the profile statistics', async ({ page }) => {

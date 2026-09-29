@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FetchError } from 'ofetch'
-import type { MyProfile } from '#shared/types/routes'
+import type { CollectionSummary, MyProfile } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
 definePageMeta({ middleware: 'auth' })
@@ -19,9 +19,12 @@ if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
 
+const { data: collections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
+
 const tabs = computed(() => [
   { label: 'Mes parcours', slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
   { label: 'Sauvegardés', slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
+  { label: 'Collections', slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
   { label: 'Réalisés', slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
   { label: 'Statistiques', slot: 'stats' as const, icon: 'i-lucide-chart-column' },
 ])
@@ -130,6 +133,35 @@ async function saveProfile() {
           icon="i-lucide-bookmark"
           title="Aucun parcours sauvegardé"
           description="Sauvegarde des parcours depuis leur page pour les retrouver ici."
+          :actions="[{ label: 'Découvrir des parcours', icon: 'i-lucide-map', to: '/' }]"
+        />
+      </template>
+
+      <template #collections>
+        <ul v-if="collections.length" class="space-y-2 pt-2">
+          <li v-for="collection in collections" :key="collection.id">
+            <NuxtLink
+              :to="`/collections/${collection.id}`"
+              class="flex items-center gap-3 rounded-lg border border-default p-3 transition-colors hover:bg-elevated focus-visible:bg-elevated"
+            >
+              <UIcon name="i-lucide-folder" class="size-5 shrink-0 text-muted" />
+              <div class="min-w-0 flex-1">
+                <p class="font-medium">
+                  {{ collection.name }}
+                  <UIcon v-if="!collection.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" aria-label="Privée" />
+                </p>
+                <p class="truncate text-sm text-muted">
+                  {{ collection.route_count }} parcours<template v-if="collection.description"> · {{ collection.description }}</template>
+                </p>
+              </div>
+            </NuxtLink>
+          </li>
+        </ul>
+        <UEmpty
+          v-else
+          icon="i-lucide-folder"
+          title="Aucune collection"
+          description="Regroupe des parcours (un séjour, tes boucles favorites) avec « Ajouter à une collection » sur leur page."
           :actions="[{ label: 'Découvrir des parcours', icon: 'i-lucide-map', to: '/' }]"
         />
       </template>

@@ -170,6 +170,8 @@ useSeoMeta({
         · {{ formatSpeed(parcours.distance_m, viewer.moving_s) }}
       </p>
 
+      <RouteCollections :route-id="parcours.id" />
+
       <UButton
         :to="`/routes/${parcours.id}/follow`"
         icon="i-lucide-navigation"

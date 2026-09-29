@@ -120,3 +120,27 @@ export type RouteWeather = {
   elevationM: number | null
   halfDays: HalfDayForecast[]
 }
+
+// One of the viewer's collections, e.g. in the "add to a collection" menu of a route.
+export type CollectionSummary = {
+  id: string
+  name: string
+  description: string | null
+  is_public: boolean
+  // Routes the viewer can see in it
+  route_count: number
+  // Whether it holds the route the list was asked for (GET /api/collections?route=)
+  contains: boolean
+}
+
+export type CollectionDetail = {
+  id: string
+  name: string
+  description: string | null
+  is_public: boolean
+  created_at: string
+  owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
+  is_mine: boolean
+  // Only the routes the viewer may see, with a simplified track for the map
+  routes: (RouteListItem & { preview: LineString })[]
+}

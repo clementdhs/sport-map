@@ -39,6 +39,77 @@ export type Database = {
   }
   public: {
     Tables: {
+      collection_routes: {
+        Row: {
+          added_at: string
+          collection_id: string
+          route_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          route_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_routes_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_routes_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -257,6 +328,7 @@ export type Database = {
           start_point: unknown
           updated_at: string
           route_geojson: Json | null
+          route_preview: Json | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -324,6 +396,12 @@ export type Database = {
         Returns: {
           error: true
         } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_preview: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_preview with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
       search_routes: {
         Args: {

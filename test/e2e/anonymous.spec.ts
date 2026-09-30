@@ -1,4 +1,4 @@
-import { expect, RESET_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { E2E_USER, expect, RESET_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 import { passwordResetLink } from './mail'
 
 test('finds a public route on the home map and opens it', async ({ page }) => {
@@ -10,6 +10,8 @@ test('finds a public route on the home map and opens it', async ({ page }) => {
   // Its average rating, from the seeded review.
   await expect(card).toContainText('4,0')
   await expect(card).toContainText('(1 avis)')
+  // Its author by display name, not username.
+  await expect(card).toContainText(`par ${E2E_USER.displayName}`)
   await card.click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)

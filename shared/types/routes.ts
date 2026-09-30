@@ -52,7 +52,8 @@ export type RouteListItem = {
   // Average of the ratings (1 to 5), null while nobody rated the route
   rating_avg: number | null
   rating_count: number
-  owner_username: string
+  // Display name of the owner, or their username when they chose none
+  owner_name: string
   created_at: string
 }
 

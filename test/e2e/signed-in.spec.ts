@@ -338,6 +338,7 @@ test('groups routes in a public collection, which only shows its public routes t
   const routes = page.getByRole('list', { name: 'Parcours de la collection' })
   await expect(routes.getByRole('listitem')).toHaveCount(2)
   await expect(page.getByText('Publique', { exact: true })).toBeVisible()
+  await expect(routes.getByRole('listitem').first()).toContainText(`par ${E2E_USER.displayName}`)
 
   // A visitor sees the collection, without the private route.
   const collectionApi = page.url().replace('/collections/', '/api/collections/')
@@ -460,8 +461,9 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page).toHaveURL(/\/settings$/)
   await expect(page.getByRole('heading', { name: 'Paramètres', level: 1 })).toBeVisible()
 
-  // Global setup recreates the account for each run: no need to restore these.
-  await page.getByLabel('Nom affiché').fill('Coureur e2e')
+  // Global setup recreates the account for each run: no need to restore these. The display name stays the
+  // seeded one, which other tests expect on route cards.
+  await page.getByLabel('Nom affiché').fill(E2E_USER.displayName)
   await page.getByLabel('Bio').fill('Bio mise à jour depuis les paramètres')
   await page.getByRole('button', { name: 'Enregistrer le profil' }).click()
   await expect(page.getByText('Profil mis à jour').first()).toBeVisible()
@@ -472,8 +474,9 @@ test('edits the profile and the appearance from the settings, reached through th
 
   // The profile keeps the routes and statistics only, with a way back to the settings.
   await page.getByRole('link', { name: 'Mon profil' }).click()
-  await expect(page.getByRole('heading', { name: 'Coureur e2e', level: 1 })).toBeVisible()
+  await expect(page.getByRole('heading', { name: E2E_USER.displayName, level: 1 })).toBeVisible()
   await expect(page.getByText('Bio mise à jour depuis les paramètres')).toBeVisible()
+  await expect(page.getByRole('link', { name: new RegExp(SEEDED_ROUTE_NAME) })).toContainText(`par ${E2E_USER.displayName}`)
   await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })

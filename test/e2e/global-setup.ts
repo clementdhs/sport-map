@@ -9,8 +9,8 @@ async function createUser(email: string, username: string, password: string) {
   })
 }
 
-// Recreates the test users (deleting them cascades to their profile, routes, activity and reviews), two
-// public routes of the main test user, and a review of the first one by a neighbor.
+// Recreates the test users (deleting them cascades to their profile, routes, activity and reviews), the main
+// one with a display name, two public routes of the main test user, and a review of the first one by a neighbor.
 export default async function globalSetup() {
   // Photo files are not deleted by the cascade: start from an empty bucket. Same for the local mailbox.
   await supabaseAdmin('/storage/v1/bucket/route-photos/empty', { method: 'POST' })
@@ -24,6 +24,7 @@ export default async function globalSetup() {
   }
 
   const user = await createUser(E2E_USER.email, E2E_USER.username, E2E_USER.password)
+  await supabaseAdmin(`/rest/v1/profiles?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ display_name: E2E_USER.displayName }) })
   await createUser(RESET_USER.email, RESET_USER.username, RESET_USER.password)
   // Other users, to review and report. They never sign in.
   const neighbors = await Promise.all(E2E_NEIGHBORS.map(n => createUser(n.email, n.username, crypto.randomUUID())))

@@ -8,6 +8,8 @@ export const E2E_USER = {
   email: 'e2e@sport-map.test',
   password: 'e2e-local-password',
   username: 'e2e_user',
+  // Set by the global setup, so route cards show it instead of the username
+  displayName: 'Coureur e2e',
 }
 
 export const SEEDED_ROUTE_NAME = 'Traversée e2e du lac'

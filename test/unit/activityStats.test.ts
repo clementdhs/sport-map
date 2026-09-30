@@ -17,7 +17,7 @@ function done(completedAt: string, extra: Partial<Completed> = {}): Completed {
     is_loop: false,
     rating_avg: null,
     rating_count: 0,
-    owner_username: 'moi',
+    owner_name: 'moi',
     created_at: completedAt,
     completed_at: completedAt,
     duration_s: null,

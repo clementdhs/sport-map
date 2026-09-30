@@ -27,7 +27,7 @@ defineProps<{
       <template v-if="route.is_loop"> · <UIcon name="i-lucide-refresh-cw" class="size-3.5 align-[-0.15em]" aria-hidden="true" /> boucle</template>
       <template v-if="route.elevation_gain_m != null"> · D+ {{ Math.round(route.elevation_gain_m) }} m</template>
       · ~{{ formatDuration(estimateDurationMin(route.sport_type, route.distance_m, route.elevation_gain_m)) }}
-      · par {{ route.owner_username }}
+      · par {{ route.owner_name }}
     </p>
     <p v-if="route.rating_count" class="mt-1 flex items-center gap-1.5 text-sm">
       <RatingStars :value="route.rating_avg ?? 0" />

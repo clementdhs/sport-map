@@ -456,7 +456,7 @@ export type Database = {
           marker_lat: number
           marker_lng: number
           name: string
-          owner_username: string
+          owner_name: string
           rating_avg: number
           rating_count: number
           sport_type: Database["public"]["Enums"]["sport_type"]

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Light / dark mode (Nuxt UI's color mode, kept in localStorage) and accent color (cookie):
-// in the header's popover for everyone, and on the settings page.
+// in the header's popover for visitors, and on the settings page for signed-in users.
 const colorMode = useColorMode()
 const { accent, setAccent } = useAccent()
 

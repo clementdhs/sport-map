@@ -32,7 +32,8 @@ async function signOut() {
     </template>
 
     <template #right>
-      <ThemePicker />
+      <!-- Signed-in users find it in the settings. -->
+      <ThemePicker v-if="!user" />
       <UButton
         v-if="user"
         to="/record"

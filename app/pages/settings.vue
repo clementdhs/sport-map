@@ -72,6 +72,7 @@ function onPasswordChanged() {
     <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-appearance-title">
       <h2 id="settings-appearance-title" class="font-medium">Apparence</h2>
       <p class="text-sm text-muted">Gardée sur cet appareil.</p>
+      <LanguageSelect />
       <ThemeSettings />
     </section>
 

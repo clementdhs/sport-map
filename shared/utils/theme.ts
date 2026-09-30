@@ -5,13 +5,6 @@ export type Accent = typeof ACCENTS[number]
 // Indigo stands out from the map (forests, water) and from the orange tracks.
 export const DEFAULT_ACCENT: Accent = 'indigo'
 
-export const ACCENT_LABELS: Record<Accent, string> = {
-  indigo: 'Indigo',
-  violet: 'Violet',
-  sky: 'Bleu ciel',
-  green: 'Vert',
-}
-
 // The shade primary buttons use in light mode: the darkest needed for white text to pass WCAG AA
 // (sky and green 600 don't). Dark mode keeps Nuxt UI's 400 with dark text.
 export const ACCENT_LIGHT_SHADES: Record<Accent, 600 | 700> = { indigo: 600, violet: 600, sky: 700, green: 700 }

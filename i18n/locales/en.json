@@ -1,0 +1,31 @@
+{
+  "header": {
+    "record": "Record an outing",
+    "create": "Create a route",
+    "login": "Sign in",
+    "register": "Sign up",
+    "profile": "My profile",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "signOutFailed": "Couldn't sign out"
+  },
+  "language": {
+    "label": "Language"
+  },
+  "theme": {
+    "label": "Appearance",
+    "mode": "Theme",
+    "modes": {
+      "system": "System",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "accent": "Colour",
+    "accents": {
+      "indigo": "Indigo",
+      "violet": "Violet",
+      "sky": "Sky blue",
+      "green": "Green"
+    }
+  }
+}

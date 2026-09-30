@@ -3,24 +3,25 @@
 // in the header's popover for visitors, and on the settings page for signed-in users.
 const colorMode = useColorMode()
 const { accent, setAccent } = useAccent()
+const { t } = useI18n()
 
 const modes = [
-  { value: 'system', label: 'Système', icon: 'i-lucide-monitor' },
-  { value: 'light', label: 'Clair', icon: 'i-lucide-sun' },
-  { value: 'dark', label: 'Sombre', icon: 'i-lucide-moon' },
+  { value: 'system', icon: 'i-lucide-monitor' },
+  { value: 'light', icon: 'i-lucide-sun' },
+  { value: 'dark', icon: 'i-lucide-moon' },
 ] as const
 </script>
 
 <template>
   <div class="space-y-4">
     <fieldset class="space-y-2">
-      <legend class="text-sm font-medium">Thème</legend>
+      <legend class="text-sm font-medium">{{ t('theme.mode') }}</legend>
       <div class="grid max-w-56 grid-cols-3 gap-1">
         <UButton
           v-for="mode in modes"
           :key="mode.value"
           :icon="mode.icon"
-          :label="mode.label"
+          :label="t(`theme.modes.${mode.value}`)"
           size="sm"
           :color="colorMode.preference === mode.value ? 'primary' : 'neutral'"
           :variant="colorMode.preference === mode.value ? 'soft' : 'ghost'"
@@ -31,14 +32,14 @@ const modes = [
       </div>
     </fieldset>
     <fieldset class="space-y-2">
-      <legend class="text-sm font-medium">Couleur</legend>
+      <legend class="text-sm font-medium">{{ t('theme.accent') }}</legend>
       <div class="flex gap-3">
         <button
           v-for="value in ACCENTS"
           :key="value"
           type="button"
-          :title="ACCENT_LABELS[value]"
-          :aria-label="ACCENT_LABELS[value]"
+          :title="t(`theme.accents.${value}`)"
+          :aria-label="t(`theme.accents.${value}`)"
           :aria-pressed="accent === value"
           class="flex size-8 items-center justify-center rounded-full text-white ring-offset-2 ring-offset-(--ui-bg) focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--ui-primary)"
           :class="{ 'ring-2 ring-(--ui-text-highlighted)': accent === value }"

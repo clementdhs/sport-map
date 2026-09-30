@@ -1,0 +1,31 @@
+{
+  "header": {
+    "record": "Enregistrer une sortie",
+    "create": "Créer un parcours",
+    "login": "Connexion",
+    "register": "Inscription",
+    "profile": "Mon profil",
+    "settings": "Paramètres",
+    "signOut": "Se déconnecter",
+    "signOutFailed": "Déconnexion impossible"
+  },
+  "language": {
+    "label": "Langue"
+  },
+  "theme": {
+    "label": "Apparence",
+    "mode": "Thème",
+    "modes": {
+      "system": "Système",
+      "light": "Clair",
+      "dark": "Sombre"
+    },
+    "accent": "Couleur",
+    "accents": {
+      "indigo": "Indigo",
+      "violet": "Violet",
+      "sky": "Bleu ciel",
+      "green": "Vert"
+    }
+  }
+}

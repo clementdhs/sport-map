@@ -214,7 +214,7 @@ test('exports a public route as GPX', async ({ request }) => {
 test('gives a public route a link preview image', async ({ page, request }) => {
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
   const ogImage = await page.locator('meta[property="og:image"]').getAttribute('content')
-  expect(ogImage).toMatch(new RegExp(`^https?://[^/]+/api/routes/${process.env.E2E_ROUTE_ID}/og\\.png\\?v=\\d+$`))
+  expect(ogImage).toMatch(new RegExp(`^https?://[^/]+/api/routes/${process.env.E2E_ROUTE_ID}/og\\.png\\?v=\\d+&lang=fr$`))
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image')
 
   const response = await request.get(new URL(ogImage!).pathname)

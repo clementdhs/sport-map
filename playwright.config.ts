@@ -60,6 +60,14 @@ export default defineConfig({
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
     },
+    // The main flows again (search, route page, creation) in a browser set to English, the detected language.
+    { name: 'anonymous-en', testMatch: /anonymous\.en\.spec\.ts/, use: { ...devices['Desktop Chrome'], locale: 'en-GB' } },
+    {
+      name: 'signed-in-en',
+      testMatch: /signed-in\.en\.spec\.ts/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE, locale: 'en-GB' },
+    },
   ],
   // The production build, as deployed, pointed at the local Supabase. No map or routing key: the tests
   // mock those requests, so they run offline and never use the free-tier quotas.

@@ -35,7 +35,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
   // Editing reopens the same route, and saving updates it in place.
   const detailUrl = page.url()
   const ogImageUrl = `${detailUrl.replace('/routes/', '/api/routes/')}/og.png`
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`^${ogImageUrl}\\?v=\\d+$`))
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', new RegExp(`^${ogImageUrl}\\?v=\\d+&lang=fr$`))
   await routeAction(page, 'Modifier le parcours')
   await waitForMap(page)
   await expect(page.getByLabel('Nom')).toHaveValue('Parcours e2e')

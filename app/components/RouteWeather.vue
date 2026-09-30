@@ -30,8 +30,20 @@ function rain(forecast: HalfDayForecast): string {
       <span v-if="data?.elevationM != null" class="text-xs text-muted">à {{ data.elevationM }} m</span>
     </div>
 
-    <div v-if="status === 'pending' || status === 'idle'" class="space-y-2" aria-busy="true">
-      <USkeleton v-for="i in 3" :key="i" class="h-6 w-full" />
+    <!-- Same height as the table (6 half-days of two lines) and the credit line. -->
+    <div v-if="status === 'pending' || status === 'idle'" class="space-y-2">
+      <span class="sr-only">Chargement de la météo…</span>
+      <div aria-hidden="true">
+        <div v-for="i in WEATHER_HALF_DAY_COUNT" :key="i" class="flex items-center gap-3 border-b border-default py-1.5 last:border-0">
+          <div class="flex h-9 w-24 flex-col justify-center gap-1">
+            <USkeleton class="h-4 w-20" />
+            <USkeleton class="h-3 w-14" />
+          </div>
+          <USkeleton class="size-5 rounded-full" />
+          <USkeleton class="h-4 flex-1" />
+        </div>
+      </div>
+      <USkeleton class="h-4 w-44" aria-hidden="true" />
     </div>
     <p v-else-if="status === 'error' || !data?.halfDays.length" class="text-sm text-muted">
       Météo indisponible pour le moment.

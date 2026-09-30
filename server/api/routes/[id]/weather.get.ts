@@ -66,6 +66,6 @@ export default defineEventHandler(async (event): Promise<RouteWeather> => {
   return {
     today: nowLocal.slice(0, 10),
     elevationM: elevation,
-    halfDays: halfDayForecasts(forecast.hourly, nowLocal, 6),
+    halfDays: halfDayForecasts(forecast.hourly, nowLocal, WEATHER_HALF_DAY_COUNT),
   }
 })

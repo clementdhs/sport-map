@@ -77,8 +77,19 @@ const inCount = computed(() => collections.value?.filter(collection => collectio
   <UModal v-model:open="open" title="Ajouter à une collection" :description="inCount ? `Dans ${inCount} de tes collections` : undefined">
     <template #body>
       <div class="space-y-4">
-        <div v-if="loading && !collections" class="flex justify-center py-4">
-          <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" />
+        <!-- Rows shaped like the checkboxes below (name, then route count). -->
+        <div v-if="loading && !collections" class="space-y-1">
+          <span class="sr-only">Chargement de tes collections…</span>
+          <div v-for="i in 2" :key="i" class="flex items-center gap-2 p-2" aria-hidden="true">
+            <div class="flex flex-1 gap-2">
+              <USkeleton class="mt-0.5 size-4 rounded-sm" />
+              <div class="flex-1 space-y-1 py-0.5">
+                <USkeleton class="h-4 w-1/2" />
+                <USkeleton class="h-4 w-1/4" />
+              </div>
+            </div>
+            <USkeleton class="size-8" />
+          </div>
         </div>
         <ul v-else-if="collections?.length" class="space-y-1" aria-label="Mes collections">
           <li v-for="collection in collections" :key="collection.id" class="flex items-center gap-2 rounded-md p-2 hover:bg-elevated">

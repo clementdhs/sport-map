@@ -23,6 +23,7 @@ const LIMIT_LABELS: Record<SearchSort, string> = {
 }
 
 const resultsLabel = computed(() => {
+  if (!search.searched) return 'Recherche des parcours…'
   const count = search.results.length
   if (search.textQuery) {
     const words = `« ${search.textQuery} »`
@@ -91,7 +92,14 @@ watch(() => search.results, (results) => {
         <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-label="Recherche en cours" />
       </p>
 
-      <ul v-if="search.results.length" class="space-y-2" :class="{ 'opacity-60': search.loading }">
+      <!-- Placeholders only for the first search; later ones keep the previous results or hint, dimmed,
+           so the list doesn't jump at each map move. -->
+      <ul v-if="!search.searched" class="space-y-2" aria-hidden="true">
+        <li v-for="i in 3" :key="i">
+          <RouteCardSkeleton />
+        </li>
+      </ul>
+      <ul v-else-if="search.results.length" class="space-y-2" :class="{ 'opacity-60': search.loading }">
         <li
           v-for="route in search.results"
           :key="route.id"
@@ -101,10 +109,10 @@ watch(() => search.results, (results) => {
           <RouteCard :route="route" :highlighted="highlightedId === route.id" />
         </li>
       </ul>
-      <p v-else-if="!search.loading && !search.failed && search.textQuery" class="text-sm text-muted">
+      <p v-else-if="!search.failed && search.textQuery" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
         Essaie d'autres mots ou élargis les filtres.
       </p>
-      <p v-else-if="!search.loading && !search.failed" class="text-sm text-muted">
+      <p v-else-if="!search.failed" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
         Déplace la carte, change les filtres, ou
         <ULink to="/routes/create" class="font-medium text-primary">crée le premier parcours</ULink>.
       </p>

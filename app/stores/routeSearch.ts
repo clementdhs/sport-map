@@ -39,6 +39,8 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
   const results = ref<RouteSummary[]>([])
   const loading = ref(false)
   const failed = ref(false)
+  // False until the first search ends: before that, an empty list doesn't mean there is nothing here.
+  const searched = ref(false)
   let latestRequest = 0
   let debounceTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -94,7 +96,10 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
       if (request === latestRequest) failed.value = true
     }
     finally {
-      if (request === latestRequest) loading.value = false
+      if (request === latestRequest) {
+        loading.value = false
+        searched.value = true
+      }
     }
   }
 
@@ -111,6 +116,6 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
 
   return {
     sport, distanceKm, gainM, loopsOnly, passingThrough, activeFilterCount, resetFilters,
-    sort, text, textQuery, view, results, loading, failed, setView,
+    sort, text, textQuery, view, results, loading, failed, searched, setView,
   }
 })

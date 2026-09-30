@@ -5,6 +5,9 @@ import type { HalfDayForecast } from '../types/routes'
 
 export const HALF_DAYS = { morning: [6, 12], afternoon: [12, 18] } as const
 export type HalfDay = keyof typeof HALF_DAYS
+
+// Half-days shown on a route page (three days).
+export const WEATHER_HALF_DAY_COUNT = 6
 export const HALF_DAY_LABELS: Record<HalfDay, string> = { morning: 'Matin', afternoon: 'Après-midi' }
 
 export interface OpenMeteoHourly {

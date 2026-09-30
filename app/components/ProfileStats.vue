@@ -9,29 +9,27 @@ const props = defineProps<{
   completed: MyProfile['completed']
 }>()
 
+const { t } = useI18n()
 const period = ref<StatsPeriod>('week')
 const sport = ref<SportType | 'all'>('all')
 const metric = ref<StatsMetric>('distance')
 
-const periodItems = [
-  { label: 'Semaines', value: 'week' },
-  { label: 'Mois', value: 'month' },
-  { label: 'Années', value: 'year' },
-]
-const metricItems = [
-  { label: 'Distance', value: 'distance' },
-  { label: 'Dénivelé', value: 'gain' },
-  { label: 'Temps', value: 'time' },
-]
-const sportItems = [
-  { value: 'all', label: 'Tous les sports', icon: 'i-lucide-list' },
+const periodItems = computed(() => [
+  { label: t('stats.periods.week'), value: 'week' },
+  { label: t('stats.periods.month'), value: 'month' },
+  { label: t('stats.periods.year'), value: 'year' },
+])
+const metricItems = computed(() => [
+  { label: t('stats.metrics.distance'), value: 'distance' },
+  { label: t('stats.metrics.gain'), value: 'gain' },
+  { label: t('stats.metrics.time'), value: 'time' },
+])
+const sportItems = computed(() => [
+  { value: 'all', label: t('filters.allSports'), icon: 'i-lucide-list' },
   ...SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] })),
-]
-const RANGE_LABELS: Record<StatsPeriod, string> = {
-  week: `Sur les ${WEEKS_SHOWN} dernières semaines`,
-  month: `Sur les ${MONTHS_SHOWN} derniers mois`,
-  year: `Sur les ${YEARS_SHOWN} dernières années`,
-}
+])
+const SHOWN: Record<StatsPeriod, number> = { week: WEEKS_SHOWN, month: MONTHS_SHOWN, year: YEARS_SHOWN }
+const rangeLabel = computed(() => t(`stats.ranges.${period.value}`, { count: SHOWN[period.value] }))
 
 const buckets = computed(() => activityStats(props.completed, period.value, sport.value))
 const totals = computed(() => buckets.value.reduce((sum, b) => ({
@@ -68,38 +66,38 @@ const everyOther = computed(() => buckets.value.length > 6)
 <template>
   <div class="space-y-4 pt-2">
     <div class="flex flex-wrap items-center gap-2">
-      <USelect v-model="sport" :items="sportItems" aria-label="Sport" class="w-44" />
-      <UTabs v-model="period" :items="periodItems" :content="false" size="sm" aria-label="Période" />
-      <UTabs v-model="metric" :items="metricItems" :content="false" size="sm" aria-label="Mesure" />
+      <USelect v-model="sport" :items="sportItems" :aria-label="t('filters.sport')" class="w-44" />
+      <UTabs v-model="period" :items="periodItems" :content="false" size="sm" :aria-label="t('stats.period')" />
+      <UTabs v-model="metric" :items="metricItems" :content="false" size="sm" :aria-label="t('stats.metric')" />
     </div>
 
     <p v-if="!completed.length" class="text-sm text-muted">
-      Marque des parcours comme faits, ou enregistre une sortie, pour voir tes statistiques ici.
+      {{ t('stats.empty') }}
     </p>
 
     <template v-else>
       <div>
-        <p class="mb-2 text-sm text-muted">{{ RANGE_LABELS[period] }}</p>
+        <p class="mb-2 text-sm text-muted">{{ rangeLabel }}</p>
         <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div class="rounded-lg bg-elevated p-3">
-            <dt class="text-xs text-muted">Sorties</dt>
+            <dt class="text-xs text-muted">{{ t('stats.outings') }}</dt>
             <dd class="text-lg font-semibold">{{ totals.outings }}</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
-            <dt class="text-xs text-muted">Distance</dt>
+            <dt class="text-xs text-muted">{{ t('route.distance') }}</dt>
             <dd class="text-lg font-semibold">{{ formatDistance(totals.distanceM) }}</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
-            <dt class="text-xs text-muted">Dénivelé +</dt>
+            <dt class="text-xs text-muted">{{ t('route.gain') }}</dt>
             <dd class="text-lg font-semibold">{{ Math.round(totals.gainM).toLocaleString('fr-FR') }} m</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
-            <dt class="text-xs text-muted">Temps en mouvement</dt>
+            <dt class="text-xs text-muted">{{ t('stats.movingTime') }}</dt>
             <dd class="text-lg font-semibold">{{ totals.movingS ? formatElapsed(totals.movingS) : '—' }}</dd>
           </div>
         </dl>
         <p v-if="metric === 'time'" class="mt-2 text-xs text-muted">
-          Le temps ne compte que les sorties enregistrées avec le GPS.
+          {{ t('stats.timeHint') }}
         </p>
       </div>
 
@@ -135,8 +133,8 @@ const everyOther = computed(() => buckets.value.length > 6)
               >
                 <p class="font-medium">{{ bucket.fullLabel }}</p>
                 <p class="text-muted">
-                  {{ bucket.outings }} sortie{{ bucket.outings > 1 ? 's' : '' }} · {{ formatMetric(bucket, 'distance') }}
-                  · D+ {{ formatMetric(bucket, 'gain') }} · {{ formatMetric(bucket, 'time') }}
+                  {{ t('stats.outingCount', bucket.outings) }} · {{ formatMetric(bucket, 'distance') }}
+                  · {{ t('stats.gainValue', { gain: formatMetric(bucket, 'gain') }) }} · {{ formatMetric(bucket, 'time') }}
                 </p>
               </div>
             </div>
@@ -152,13 +150,13 @@ const everyOther = computed(() => buckets.value.length > 6)
             {{ bucket.label }}
           </span>
         </div>
-        <figcaption class="text-right text-xs text-muted">en {{ UNITS[metric] }}</figcaption>
+        <figcaption class="text-right text-xs text-muted">{{ t('stats.unit', { unit: UNITS[metric] }) }}</figcaption>
       </figure>
 
       <table class="sr-only">
-        <caption>Statistiques {{ RANGE_LABELS[period].toLowerCase() }}</caption>
+        <caption>{{ t('stats.caption', { range: rangeLabel.toLowerCase() }) }}</caption>
         <thead>
-          <tr><th>Période</th><th>Sorties</th><th>Distance</th><th>Dénivelé +</th><th>Temps en mouvement</th></tr>
+          <tr><th>{{ t('stats.period') }}</th><th>{{ t('stats.outings') }}</th><th>{{ t('route.distance') }}</th><th>{{ t('route.gain') }}</th><th>{{ t('stats.movingTime') }}</th></tr>
         </thead>
         <tbody>
           <tr v-for="bucket in buckets" :key="bucket.key">

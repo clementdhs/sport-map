@@ -2,11 +2,12 @@
 import type { CollectionSummary, MyProfile } from '#shared/types/routes'
 
 definePageMeta({ middleware: 'auth' })
-useSeoMeta({ title: 'Mon profil — sport-map' })
+const { t } = useI18n()
+useSeoMeta({ title: () => `${t('header.profile')} — sport-map` })
 
-// "Fait le …", with the times of an outing recorded with the GPS.
+// "Done on …", with the times of an outing recorded with the GPS.
 function completedNote(route: MyProfile['completed'][number]) {
-  const note = `Fait le ${formatDate(route.completed_at)}`
+  const note = t('route.completedOn', { date: formatDate(route.completed_at) })
   if (route.duration_s == null || route.moving_s == null) return note
   return `${note} · ${formatElapsed(route.duration_s)} · ${formatSpeed(route.distance_m, route.moving_s)}`
 }
@@ -19,11 +20,11 @@ if (error.value) {
 const { data: collections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
 
 const tabs = computed(() => [
-  { label: 'Mes parcours', slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
-  { label: 'Sauvegardés', slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
-  { label: 'Collections', slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
-  { label: 'Réalisés', slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
-  { label: 'Statistiques', slot: 'stats' as const, icon: 'i-lucide-chart-column' },
+  { label: t('profile.tabs.created'), slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
+  { label: t('profile.tabs.saved'), slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
+  { label: t('profile.tabs.collections'), slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
+  { label: t('profile.tabs.completed'), slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
+  { label: t('profile.tabs.stats'), slot: 'stats' as const, icon: 'i-lucide-chart-column' },
 ])
 </script>
 
@@ -32,7 +33,7 @@ const tabs = computed(() => [
     <div class="flex items-start justify-between gap-4">
       <div class="space-y-1">
         <h1 class="text-2xl font-semibold">{{ data.profile.display_name ?? data.profile.username }}</h1>
-        <p class="text-sm text-muted">@{{ data.profile.username }} · membre depuis le {{ formatDate(data.profile.created_at) }}</p>
+        <p class="text-sm text-muted">@{{ data.profile.username }} · {{ t('profile.memberSince', { date: formatDate(data.profile.created_at) }) }}</p>
         <p v-if="data.profile.bio" class="whitespace-pre-line pt-2">{{ data.profile.bio }}</p>
       </div>
       <div class="flex shrink-0 gap-2">
@@ -41,9 +42,9 @@ const tabs = computed(() => [
           icon="i-lucide-eye"
           color="neutral"
           variant="outline"
-          aria-label="Voir mon profil public"
+          :aria-label="t('profile.viewPublic')"
         />
-        <UButton to="/settings" icon="i-lucide-settings" label="Paramètres" aria-label="Paramètres" color="neutral" variant="outline" :ui="{ label: 'hidden sm:inline' }" />
+        <UButton to="/settings" icon="i-lucide-settings" :label="t('header.settings')" :aria-label="t('header.settings')" color="neutral" variant="outline" :ui="{ label: 'hidden sm:inline' }" />
       </div>
     </div>
 
@@ -55,9 +56,9 @@ const tabs = computed(() => [
         <UEmpty
           v-else
           icon="i-lucide-route"
-          title="Aucun parcours créé"
-          description="Trace ton premier parcours ou importe un fichier GPX."
-          :actions="[{ label: 'Créer un parcours', icon: 'i-lucide-plus', to: '/routes/create' }]"
+          :title="t('profile.noCreated')"
+          :description="t('profile.noCreatedHint')"
+          :actions="[{ label: t('header.create'), icon: 'i-lucide-plus', to: '/routes/create' }]"
         />
       </template>
 
@@ -68,9 +69,9 @@ const tabs = computed(() => [
         <UEmpty
           v-else
           icon="i-lucide-bookmark"
-          title="Aucun parcours sauvegardé"
-          description="Sauvegarde des parcours depuis leur page pour les retrouver ici."
-          :actions="[{ label: 'Découvrir des parcours', icon: 'i-lucide-map', to: '/' }]"
+          :title="t('profile.noSaved')"
+          :description="t('profile.noSavedHint')"
+          :actions="[{ label: t('profile.discover'), icon: 'i-lucide-map', to: '/' }]"
         />
       </template>
 
@@ -85,10 +86,10 @@ const tabs = computed(() => [
               <div class="min-w-0 flex-1">
                 <p class="font-medium">
                   {{ collection.name }}
-                  <UIcon v-if="!collection.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" aria-label="Privée" />
+                  <UIcon v-if="!collection.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" :aria-label="t('profile.privateCollection')" />
                 </p>
                 <p class="truncate text-sm text-muted">
-                  {{ collection.route_count }} parcours<template v-if="collection.description"> · {{ collection.description }}</template>
+                  {{ t('collections.routeCount', collection.route_count) }}<template v-if="collection.description"> · {{ collection.description }}</template>
                 </p>
               </div>
             </NuxtLink>
@@ -97,9 +98,9 @@ const tabs = computed(() => [
         <UEmpty
           v-else
           icon="i-lucide-folder"
-          title="Aucune collection"
-          description="Regroupe des parcours (un séjour, tes boucles favorites) avec « Ajouter à une collection » sur leur page."
-          :actions="[{ label: 'Découvrir des parcours', icon: 'i-lucide-map', to: '/' }]"
+          :title="t('profile.noCollections')"
+          :description="t('profile.noCollectionsHint')"
+          :actions="[{ label: t('profile.discover'), icon: 'i-lucide-map', to: '/' }]"
         />
       </template>
 
@@ -115,8 +116,8 @@ const tabs = computed(() => [
         <UEmpty
           v-else
           icon="i-lucide-flag"
-          title="Aucun parcours réalisé"
-          description="Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties."
+          :title="t('profile.noCompleted')"
+          :description="t('profile.noCompletedHint')"
         />
       </template>
     </UTabs>

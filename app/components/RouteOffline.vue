@@ -11,6 +11,8 @@ const props = defineProps<{
 }>()
 
 const toast = useToast()
+const { t } = useI18n()
+const errorMessage = useErrorMessage()
 const { maptilerKey } = useRuntimeConfig().public
 
 // Browser-only (Cache Storage, service worker): decided after mounting.
@@ -37,11 +39,11 @@ async function prepare() {
       mapStyleUrl(maptilerKey),
       (done, total) => (progress.value = { done, total }),
     )
-    toast.add({ title: 'Parcours disponible hors-ligne', color: 'success', icon: 'i-lucide-check' })
+    toast.add({ title: t('offline.ready'), color: 'success', icon: 'i-lucide-check' })
   }
   catch (error) {
     await removeOfflineRoute(props.routeId)
-    toast.add({ title: 'Préparation impossible', description: (error as Error).message, color: 'error' })
+    toast.add({ title: t('offline.failed'), description: errorMessage(error), color: 'error' })
   }
   finally {
     progress.value = null
@@ -61,20 +63,20 @@ defineExpose({ supported, available, preparing, prepare })
 <template>
   <div v-if="supported && (progress || info)" class="space-y-2 rounded-lg border border-default p-3">
     <div v-if="progress" class="space-y-2" aria-live="polite">
-      <p class="text-sm">Téléchargement de la carte… {{ percent }} %</p>
+      <p class="text-sm">{{ t('offline.downloading', { percent }) }}</p>
       <UProgress :model-value="percent" size="sm" />
     </div>
     <template v-else-if="info">
       <p class="flex items-center gap-2 text-sm">
         <UIcon name="i-lucide-cloud-check" class="size-4 text-primary" />
         <span>
-          <span class="font-medium">Disponible hors-ligne</span>
-          <span class="text-muted"> · {{ sizeLabel }} · jusqu'au {{ formatShortDate(offlineExpiry(info).toISOString()) }}</span>
+          <span class="font-medium">{{ t('offline.available') }}</span>
+          <span class="text-muted"> · {{ sizeLabel }} · {{ t('offline.until', { date: formatShortDate(offlineExpiry(info).toISOString()) }) }}</span>
         </span>
       </p>
       <div class="flex gap-2">
-        <UButton label="Mettre à jour" icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="outline" @click="prepare" />
-        <UButton label="Supprimer du téléphone" icon="i-lucide-trash-2" size="xs" color="neutral" variant="ghost" @click="remove" />
+        <UButton :label="t('offline.update')" icon="i-lucide-refresh-cw" size="xs" color="neutral" variant="outline" @click="prepare" />
+        <UButton :label="t('offline.remove')" icon="i-lucide-trash-2" size="xs" color="neutral" variant="ghost" @click="remove" />
       </div>
     </template>
   </div>

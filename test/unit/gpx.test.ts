@@ -79,7 +79,7 @@ describe('readGpxFile', () => {
 
   it('rejects a file without track', async () => {
     const xml = '<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><wpt lat="45.9" lon="6.1"/></gpx>'
-    await expect(readGpxFile(gpxFile(xml))).rejects.toThrow('aucune trace')
+    await expect(readGpxFile(gpxFile(xml))).rejects.toThrow('errors.gpxNoTrack')
   })
 
   it('rejects something that is not XML', async () => {

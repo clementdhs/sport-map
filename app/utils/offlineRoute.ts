@@ -136,7 +136,7 @@ export async function prepareOfflineRoute(
 ): Promise<OfflineRouteInfo> {
   const mapUrls = await mapResourceUrls(styleUrl, route.coordinates, async url => (await fetch(url)).json())
   if (mapUrls.length > OFFLINE_MAX_FILES) {
-    throw new Error('Parcours trop long pour être préparé : il épuiserait le quota mensuel de la carte.')
+    throw new LocalizedError('errors.offlineTooLong')
   }
 
   const name = offlineCacheName(route.id)

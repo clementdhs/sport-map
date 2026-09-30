@@ -2,9 +2,10 @@
 import type { SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
 
+const { t } = useI18n()
 useSeoMeta({
-  title: 'sport-map — parcours de course, rando et vélo',
-  description: 'Découvre, crée et partage des parcours de course à pied, randonnée et vélo près de chez toi.',
+  title: () => t('home.seoTitle'),
+  description: () => t('home.seoDescription'),
 })
 
 const search = useRouteSearchStore()
@@ -13,27 +14,19 @@ const focus = ref<MapFocus | null>(null)
 
 const sortItems = SEARCH_SORTS.map(value => ({ value, label: SEARCH_SORT_LABELS[value] }))
 
-// The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort.
-const LIMIT_LABELS: Record<SearchSort, string> = {
-  nearest: 'les plus proches du centre de la carte',
-  recent: 'les plus récents de la zone',
-  shortest: 'les plus courts de la zone',
-  longest: 'les plus longs de la zone',
-  best_rated: 'les mieux notés de la zone',
-}
-
+// The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort (home.limit.<sort>).
 const resultsLabel = computed(() => {
-  if (!search.searched) return 'Recherche des parcours…'
+  if (!search.searched) return t('home.searching')
   const count = search.results.length
   if (search.textQuery) {
-    const words = `« ${search.textQuery} »`
-    if (count === 0) return `Aucun parcours pour ${words}`
-    if (count >= MAX_SEARCH_RESULTS) return `Les ${count} premiers parcours pour ${words}`
-    return `${count} parcours pour ${words}`
+    const query = search.textQuery
+    if (count === 0) return t('home.textNone', { query })
+    if (count >= MAX_SEARCH_RESULTS) return t('home.textFirst', { count, query })
+    return t('home.textCount', { query, count }, count)
   }
-  if (count === 0) return 'Aucun parcours dans cette zone'
-  if (count >= MAX_SEARCH_RESULTS) return `Les ${count} parcours ${LIMIT_LABELS[search.sort]}`
-  return count === 1 ? '1 parcours dans cette zone' : `${count} parcours dans cette zone`
+  if (count === 0) return t('home.zoneNone')
+  if (count >= MAX_SEARCH_RESULTS) return t(`home.limit.${search.sort satisfies SearchSort}`, { count })
+  return t('home.zoneCount', count)
 })
 
 // A text search looks everywhere: once its first results arrive, frame them on the map.
@@ -82,14 +75,14 @@ watch(() => search.results, (results) => {
           v-model="search.sort"
           :items="sortItems"
           icon="i-lucide-arrow-down-wide-narrow"
-          aria-label="Trier par"
+          :aria-label="t('home.sortBy')"
           class="min-w-0 flex-1"
         />
       </div>
 
       <p class="flex items-center gap-2 text-sm text-muted" aria-live="polite">
-        {{ search.failed ? 'La recherche a échoué, déplace la carte pour réessayer.' : resultsLabel }}
-        <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-label="Recherche en cours" />
+        {{ search.failed ? t('home.failed') : resultsLabel }}
+        <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" :aria-label="t('home.loading')" />
       </p>
 
       <!-- Placeholders only for the first search; later ones keep the previous results or hint, dimmed,
@@ -110,11 +103,14 @@ watch(() => search.results, (results) => {
         </li>
       </ul>
       <p v-else-if="!search.failed && search.textQuery" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
-        Essaie d'autres mots ou élargis les filtres.
+        {{ t('home.textEmptyHint') }}
       </p>
       <p v-else-if="!search.failed" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
-        Déplace la carte, change les filtres, ou
-        <ULink to="/routes/create" class="font-medium text-primary">crée le premier parcours</ULink>.
+        <i18n-t keypath="home.zoneEmptyHint" scope="global">
+          <template #link>
+            <ULink to="/routes/create" class="font-medium text-primary">{{ t('home.createFirst') }}</ULink>
+          </template>
+        </i18n-t>
       </p>
     </aside>
   </div>

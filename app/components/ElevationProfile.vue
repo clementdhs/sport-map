@@ -16,6 +16,8 @@ const emit = defineEmits<{
 }>()
 
 // Plot space: x from 0 to WIDTH, y from 0 (top) to HEIGHT (bottom); stretched to the container.
+const { t } = useI18n()
+
 const WIDTH = 1000
 const HEIGHT = 100
 const NICE_STEPS = [5, 10, 20, 50, 100, 200, 250, 500, 1000, 2000]
@@ -120,12 +122,16 @@ function onKeydown(event: KeyboardEvent) {
 
 const formatElevation = (meters: number) => `${Math.round(meters).toLocaleString('fr-FR')} m`
 const summary = computed(() =>
-  `Profil altimétrique : altitude de ${formatElevation(axis.value.min)} à ${formatElevation(axis.value.max)} sur ${formatDistance(totalM.value)}`)
+  t('elevationProfile.summary', {
+    min: formatElevation(axis.value.min),
+    max: formatElevation(axis.value.max),
+    distance: formatDistance(totalM.value),
+  }))
 </script>
 
 <template>
   <figure class="space-y-1">
-    <figcaption class="text-sm font-medium">Profil altimétrique</figcaption>
+    <figcaption class="text-sm font-medium">{{ t('elevationProfile.title') }}</figcaption>
 
     <div class="flex gap-2">
       <div class="relative h-32 w-12 shrink-0 text-xs text-muted tabular-nums" aria-hidden="true">
@@ -197,8 +203,8 @@ const summary = computed(() =>
             aria-live="polite"
           >
             <p class="font-semibold text-highlighted tabular-nums">{{ formatElevation(active.elevation) }}</p>
-            <p class="text-muted tabular-nums">à {{ formatDistance(active.distance) }}</p>
-            <p v-if="active.grade !== null" class="text-muted tabular-nums">Pente : {{ Math.round(active.grade) }} %</p>
+            <p class="text-muted tabular-nums">{{ t('elevationProfile.at', { distance: formatDistance(active.distance) }) }}</p>
+            <p v-if="active.grade !== null" class="text-muted tabular-nums">{{ t('elevationProfile.grade', { grade: Math.round(active.grade) }) }}</p>
           </div>
         </template>
       </div>

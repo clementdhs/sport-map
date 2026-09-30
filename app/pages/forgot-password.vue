@@ -3,20 +3,21 @@ import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
 
 type ForgotState = { email: string }
 
-useSeoMeta({ title: 'Mot de passe oublié — sport-map' })
+const { t } = useI18n()
+useSeoMeta({ title: () => `${t('auth.forgot.title')} — sport-map` })
 
 const supabase = useSupabaseClient()
 
-const fields: AuthFormField[] = [
-  { name: 'email', type: 'email', label: 'Email', placeholder: 'toi@exemple.fr', required: true },
-]
+const fields = computed<AuthFormField[]>(() => [
+  { name: 'email', type: 'email', label: t('auth.email'), placeholder: t('auth.emailPlaceholder'), required: true },
+])
 
 const loading = ref(false)
 const sent = ref(false)
 const errorMessage = ref('')
 
 function validate(state: Partial<ForgotState>): FormError[] {
-  return state.email ? [] : [{ name: 'email', message: 'Email requis' }]
+  return state.email ? [] : [{ name: 'email', message: t('auth.emailRequired') }]
 }
 
 async function onSubmit(event: FormSubmitEvent<ForgotState>) {
@@ -31,7 +32,7 @@ async function onSubmit(event: FormSubmitEvent<ForgotState>) {
   // Supabase answers the same for unknown addresses: only rate limits and outages are errors.
   if (error) {
     errorMessage.value = error.code === 'over_email_send_rate_limit'
-      ? 'Trop de demandes pour le moment : réessaie dans quelques minutes.'
+      ? t('auth.forgot.rateLimited')
       : error.message
     return
   }
@@ -47,29 +48,29 @@ async function onSubmit(event: FormSubmitEvent<ForgotState>) {
           color="success"
           variant="subtle"
           icon="i-lucide-mail-check"
-          title="Vérifie ta boîte mail"
-          description="Si un compte existe pour cette adresse, tu vas recevoir un lien pour choisir un nouveau mot de passe. Pense aux courriers indésirables."
+          :title="t('auth.forgot.sentTitle')"
+          :description="t('auth.forgot.sentDescription')"
         />
-        <UButton to="/login" label="Retour à la connexion" color="neutral" variant="outline" block />
+        <UButton to="/login" :label="t('auth.forgot.backToLogin')" color="neutral" variant="outline" block />
       </div>
       <UAuthForm
         v-else
-        title="Mot de passe oublié"
+        :title="t('auth.forgot.title')"
         icon="i-lucide-key-round"
         :fields="fields"
         :validate="validate"
         :loading="loading"
-        :submit="{ label: 'Recevoir un lien', block: true }"
+        :submit="{ label: t('auth.forgot.submit'), block: true }"
         @submit="onSubmit"
       >
         <template #description>
-          Indique l'adresse de ton compte : on t'envoie un lien pour choisir un nouveau mot de passe.
+          {{ t('auth.forgot.description') }}
         </template>
         <template #validation>
           <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
         </template>
         <template #footer>
-          <ULink to="/login" class="text-primary font-medium">Retour à la connexion</ULink>
+          <ULink to="/login" class="text-primary font-medium">{{ t('auth.forgot.backToLogin') }}</ULink>
         </template>
       </UAuthForm>
     </UPageCard>

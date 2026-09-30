@@ -8,16 +8,17 @@ import type { TrackProgress } from '~/utils/trackFollower'
 definePageMeta({ layout: false })
 
 const route = useRoute()
+const { t } = useI18n()
 const { data: parcours, error } = await useFetch<RouteDetail>(`/api/routes/${route.params.id}`)
 if (error.value || !parcours.value) {
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: error.value?.statusMessage ?? 'Parcours introuvable',
+    statusMessage: error.value?.statusMessage ?? t('route.notFound'),
     fatal: true,
   })
 }
 
-useSeoMeta({ title: () => `Suivre « ${parcours.value?.name} » — sport-map` })
+useSeoMeta({ title: () => `${t('follow.title', { name: parcours.value?.name })} — sport-map` })
 
 const coordinates = computed(() => parcours.value!.geometry.coordinates as LngLat[])
 const model = computed(() => {
@@ -68,7 +69,7 @@ const follow = ref(true)
           <UButton
             :to="`/routes/${parcours.id}`"
             icon="i-lucide-x"
-            label="Quitter"
+            :label="t('record.quit')"
             color="neutral"
             variant="solid"
             class="shadow-md"
@@ -87,22 +88,22 @@ const follow = ref(true)
           class="pointer-events-auto"
           color="error"
           icon="i-lucide-triangle-alert"
-          title="Tu t'éloignes du tracé"
-          :description="`À ${formatDistance(progress.offTrackM)} du parcours.`"
+          :title="t('follow.offTrack')"
+          :description="t('follow.offTrackDistance', { distance: formatDistance(progress.offTrackM) })"
         />
         <UAlert
           v-else-if="arrived"
           class="pointer-events-auto"
           color="success"
           icon="i-lucide-flag"
-          title="Tu es arrivé !"
+          :title="t('follow.arrived')"
         />
       </div>
 
       <UButton
         v-if="!follow && fix"
         icon="i-lucide-locate-fixed"
-        label="Recentrer"
+        :label="t('follow.recenter')"
         color="neutral"
         variant="solid"
         class="absolute right-3 bottom-10 shadow-md"
@@ -113,33 +114,33 @@ const follow = ref(true)
     <div class="shrink-0 space-y-3 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
       <div class="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p class="text-xs text-muted">Parcouru</p>
+          <p class="text-xs text-muted">{{ t('follow.done') }}</p>
           <p class="text-lg font-semibold" data-testid="done">{{ progress ? formatDistance(progress.doneM) : '—' }}</p>
         </div>
         <div>
-          <p class="text-xs text-muted">Restant</p>
+          <p class="text-xs text-muted">{{ t('follow.remaining') }}</p>
           <p class="text-lg font-semibold" data-testid="remaining">
             {{ formatDistance(progress ? progress.remainingM : model.totalM) }}
           </p>
         </div>
         <div>
-          <p class="text-xs text-muted">D+ restant</p>
+          <p class="text-xs text-muted">{{ t('follow.remainingGain') }}</p>
           <p class="text-lg font-semibold">
             {{ progress?.remainingGainM != null ? `${Math.round(progress.remainingGainM)} m` : '—' }}
           </p>
         </div>
       </div>
-      <UProgress :model-value="percentDone" size="sm" :aria-label="`${percentDone} % du parcours`" />
+      <UProgress :model-value="percentDone" size="sm" :aria-label="t('follow.percent', { percent: percentDone })" />
       <p class="flex flex-wrap justify-between gap-x-3 text-xs text-muted">
         <span>
           <UIcon name="i-lucide-satellite" class="mr-1 align-text-bottom" />
-          {{ fix ? `Précision GPS : ± ${Math.round(fix.accuracyM)} m` : 'Recherche de ta position…' }}
+          {{ fix ? t('follow.accuracy', { accuracy: Math.round(fix.accuracyM) }) : t('follow.searchingPosition') }}
         </span>
         <span v-if="screenKeptOn">
-          <UIcon name="i-lucide-sun" class="mr-1 align-text-bottom" />Écran maintenu allumé
+          <UIcon name="i-lucide-sun" class="mr-1 align-text-bottom" />{{ t('follow.screenOn') }}
         </span>
         <span v-else-if="!wakeLockSupported">
-          <UIcon name="i-lucide-sun-dim" class="mr-1 align-text-bottom" />Garde l'écran allumé pendant le suivi
+          <UIcon name="i-lucide-sun-dim" class="mr-1 align-text-bottom" />{{ t('follow.keepScreenOn') }}
         </span>
       </p>
     </div>

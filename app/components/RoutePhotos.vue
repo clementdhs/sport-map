@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { FetchError } from 'ofetch'
 import type { RoutePhoto } from '#shared/types/routes'
 
 // Gallery of a route; its owner can add and delete photos.
@@ -11,11 +10,12 @@ const props = defineProps<{
 const photos = defineModel<RoutePhoto[]>('photos', { required: true })
 
 const toast = useToast()
+const { t } = useI18n()
 const input = useTemplateRef('input')
 const uploading = ref(false)
 const deletingId = ref<string | null>(null)
 
-const errorMessage = (error: unknown) => (error as FetchError).data?.statusMessage ?? (error as Error).message
+const errorMessage = useErrorMessage()
 
 // One at a time: each photo is compressed in the browser, then sent on its own (small) request.
 async function onSelected(event: Event) {
@@ -25,8 +25,8 @@ async function onSelected(event: Event) {
   const room = MAX_ROUTE_PHOTOS - photos.value.length
   if (files.length > room) {
     toast.add({
-      title: `${MAX_ROUTE_PHOTOS} photos maximum`,
-      description: room ? `Seules les ${room} premières photos sont ajoutées.` : undefined,
+      title: t('photos.max', { count: MAX_ROUTE_PHOTOS }),
+      description: room ? t('photos.onlyFirst', room) : undefined,
       color: 'warning',
     })
   }
@@ -40,21 +40,21 @@ async function onSelected(event: Event) {
       photos.value = [...photos.value, photo]
     }
     catch (error) {
-      toast.add({ title: 'Photo non ajoutée', description: errorMessage(error), color: 'error' })
+      toast.add({ title: t('photos.addFailed'), description: errorMessage(error), color: 'error' })
     }
   }
   uploading.value = false
 }
 
 async function remove(photo: RoutePhoto) {
-  if (!window.confirm('Supprimer cette photo ?')) return
+  if (!window.confirm(t('photos.deleteConfirm'))) return
   deletingId.value = photo.id
   try {
     await $fetch(`/api/routes/${props.routeId}/photos/${photo.id}`, { method: 'DELETE' })
     photos.value = photos.value.filter(p => p.id !== photo.id)
   }
   catch (error) {
-    toast.add({ title: 'Suppression impossible', description: errorMessage(error), color: 'error' })
+    toast.add({ title: t('route.deleteFailed'), description: errorMessage(error), color: 'error' })
   }
   finally {
     deletingId.value = null
@@ -85,11 +85,11 @@ defineShortcuts({
 <template>
   <section v-if="photos.length || isOwner" class="space-y-2" aria-labelledby="photos-title">
     <div class="flex items-center justify-between gap-2">
-      <h2 id="photos-title" class="font-medium">Photos</h2>
+      <h2 id="photos-title" class="font-medium">{{ t('route.tabs.photos') }}</h2>
       <template v-if="isOwner">
         <UButton
           icon="i-lucide-image-plus"
-          label="Ajouter des photos"
+          :label="t('photos.add')"
           size="sm"
           color="neutral"
           variant="outline"
@@ -103,24 +103,24 @@ defineShortcuts({
           accept="image/*"
           multiple
           class="hidden"
-          aria-label="Choisir des photos"
+          :aria-label="t('photos.choose')"
           @change="onSelected"
         >
       </template>
     </div>
 
     <p v-if="!photos.length" class="text-sm text-muted">
-      Ajoute jusqu'à {{ MAX_ROUTE_PHOTOS }} photos de ton parcours. Elles suivent sa visibilité : privées si le parcours l'est.
+      {{ t('photos.empty', { count: MAX_ROUTE_PHOTOS }) }}
     </p>
     <ul v-else class="grid grid-cols-3 gap-2">
       <li v-for="(photo, i) in photos" :key="photo.id" class="relative">
         <button
           type="button"
           class="block aspect-square w-full cursor-zoom-in overflow-hidden rounded-md bg-elevated"
-          :aria-label="`Agrandir la photo ${i + 1}`"
+          :aria-label="t('photos.enlarge', { n: i + 1 })"
           @click="openAt(i)"
         >
-          <img :src="photo.url" :alt="`Photo ${i + 1} du parcours`" loading="lazy" class="size-full object-cover">
+          <img :src="photo.url" :alt="t('photos.alt', { n: i + 1 })" loading="lazy" class="size-full object-cover">
         </button>
         <UButton
           v-if="isOwner"
@@ -128,7 +128,7 @@ defineShortcuts({
           size="xs"
           color="neutral"
           class="absolute top-1 right-1"
-          :aria-label="`Supprimer la photo ${i + 1}`"
+          :aria-label="t('photos.delete', { n: i + 1 })"
           :loading="deletingId === photo.id"
           @click="remove(photo)"
         />
@@ -137,7 +137,7 @@ defineShortcuts({
 
     <UModal
       v-model:open="viewerOpen"
-      :title="`Photo ${current + 1} sur ${photos.length}`"
+      :title="t('photos.viewerTitle', { n: current + 1, total: photos.length })"
       :ui="{ content: 'sm:max-w-5xl' }"
     >
       <template #body>
@@ -145,7 +145,7 @@ defineShortcuts({
           <img
             v-if="currentPhoto"
             :src="currentPhoto.url"
-            :alt="`Photo ${current + 1} du parcours`"
+            :alt="t('photos.alt', { n: current + 1 })"
             class="max-h-[75dvh] w-full rounded-md object-contain"
           >
           <template v-if="photos.length > 1">
@@ -153,14 +153,14 @@ defineShortcuts({
               icon="i-lucide-chevron-left"
               color="neutral"
               class="absolute top-1/2 left-2 -translate-y-1/2 rounded-full"
-              aria-label="Photo précédente"
+              :aria-label="t('photos.previous')"
               @click="step(-1)"
             />
             <UButton
               icon="i-lucide-chevron-right"
               color="neutral"
               class="absolute top-1/2 right-2 -translate-y-1/2 rounded-full"
-              aria-label="Photo suivante"
+              :aria-label="t('photos.next')"
               @click="step(1)"
             />
           </template>

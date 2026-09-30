@@ -2,25 +2,23 @@
 import type { PublicProfile } from '#shared/types/routes'
 
 const route = useRoute()
+const { t } = useI18n()
 
 const { data, error } = await useFetch<PublicProfile>(`/api/profile/${encodeURIComponent(String(route.params.username))}`)
 if (error.value || !data.value) {
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: error.value?.statusMessage ?? 'Profil introuvable',
+    statusMessage: error.value?.statusMessage ?? t('profile.notFound'),
     fatal: true,
   })
 }
 
 const displayName = computed(() => data.value!.profile.display_name ?? data.value!.profile.username)
-const routeCount = computed(() => {
-  const count = data.value!.routes.length
-  return count === 1 ? '1 parcours public' : `${count} parcours publics`
-})
+const routeCount = computed(() => t('profile.publicRoutes', data.value!.routes.length))
 
 useSeoMeta({
   title: () => `${displayName.value} — sport-map`,
-  description: () => data.value?.profile.bio ?? `${routeCount.value} de ${displayName.value} sur sport-map.`,
+  description: () => data.value?.profile.bio ?? t('profile.seoDescription', { routes: routeCount.value, name: displayName.value }),
   ogTitle: displayName,
   ogType: 'profile',
 })
@@ -31,7 +29,7 @@ useSeoMeta({
     <div class="space-y-1">
       <h1 class="text-2xl font-semibold">{{ displayName }}</h1>
       <p class="text-sm text-muted">
-        @{{ data.profile.username }} · membre depuis le {{ formatDate(data.profile.created_at) }} · {{ routeCount }}
+        @{{ data.profile.username }} · {{ t('profile.memberSince', { date: formatDate(data.profile.created_at) }) }} · {{ routeCount }}
       </p>
       <p v-if="data.profile.bio" class="whitespace-pre-line pt-2">{{ data.profile.bio }}</p>
     </div>
@@ -39,6 +37,6 @@ useSeoMeta({
     <ul v-if="data.routes.length" class="space-y-2">
       <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" /></li>
     </ul>
-    <UEmpty v-else icon="i-lucide-route" title="Aucun parcours public pour l'instant" />
+    <UEmpty v-else icon="i-lucide-route" :title="t('profile.noPublic')" />
   </UContainer>
 </template>

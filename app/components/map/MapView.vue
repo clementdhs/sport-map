@@ -18,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const { maptilerKey } = useRuntimeConfig().public
+const { t } = useI18n()
 
 const styleUrl = mapStyleUrl(maptilerKey)
 
@@ -45,6 +46,16 @@ onMounted(async () => {
     style: styleUrl,
     center: props.center,
     zoom: props.zoom,
+    // MapLibre's own control labels (English by default).
+    locale: {
+      'Map.Title': t('map.title'),
+      'NavigationControl.ZoomIn': t('map.zoomIn'),
+      'NavigationControl.ZoomOut': t('map.zoomOut'),
+      'NavigationControl.ResetBearing': t('map.resetBearing'),
+      'GeolocateControl.FindMyLocation': t('map.findMyLocation'),
+      'GeolocateControl.LocationNotAvailable': t('map.locationNotAvailable'),
+      'AttributionControl.ToggleAttribution': t('map.toggleAttribution'),
+    },
     ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: 48 } } : {}),
   })
   instance.addControl(new NavigationControl(), 'top-right')

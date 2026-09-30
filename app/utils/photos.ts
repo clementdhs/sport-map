@@ -24,6 +24,6 @@ export async function compressPhoto(file: File): Promise<Blob> {
   if (!blob || blob.type !== 'image/jpeg' && blob.type !== 'image/webp') {
     throw new Error(`${file.name} : compression impossible`)
   }
-  if (blob.size > MAX_PHOTO_BYTES) throw new Error(`${file.name} : photo trop lourde, même compressée`)
+  if (blob.size > MAX_PHOTO_BYTES) throw new LocalizedError('errors.photoTooLarge', { name: file.name })
   return blob
 }

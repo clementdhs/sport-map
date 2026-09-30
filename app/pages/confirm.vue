@@ -1,5 +1,6 @@
 <script setup lang="ts">
-useSeoMeta({ title: 'Confirmation — sport-map' })
+const { t } = useI18n()
+useSeoMeta({ title: () => `${t('auth.confirm.title')} — sport-map` })
 
 const user = useSupabaseUser()
 const route = useRoute()
@@ -29,24 +30,24 @@ onMounted(() => {
           color="error"
           variant="subtle"
           icon="i-lucide-circle-alert"
-          title="Lien de confirmation invalide ou expiré"
+          :title="t('auth.confirm.invalidTitle')"
           :description="errorDescription"
         />
-        <UButton to="/login" label="Aller à la connexion" block />
+        <UButton to="/login" :label="t('auth.confirm.goToLogin')" block />
       </template>
       <template v-else-if="needsLogin">
         <UAlert
           color="success"
           variant="subtle"
           icon="i-lucide-mail-check"
-          title="Adresse email confirmée"
-          description="Connecte-toi pour continuer."
+          :title="t('auth.confirm.confirmedTitle')"
+          :description="t('auth.confirm.confirmedDescription')"
         />
-        <UButton to="/login" label="Se connecter" block />
+        <UButton to="/login" :label="t('auth.login.submit')" block />
       </template>
       <div v-else class="flex items-center gap-3">
         <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
-        <span>Confirmation de ton compte…</span>
+        <span>{{ t('auth.confirm.confirming') }}</span>
       </div>
     </UPageCard>
   </UContainer>

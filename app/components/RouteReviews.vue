@@ -14,6 +14,7 @@ const props = defineProps<{
 const user = useSupabaseUser()
 const route = useRoute()
 const toast = useToast()
+const { t } = useI18n()
 
 const base = `/api/routes/${props.routeId}/reviews`
 const { data } = await useFetch<RouteReviews>(base)
@@ -52,7 +53,7 @@ function startEditing() {
 
 async function submit() {
   const body: ReviewInput = { rating: form.rating, comment: form.comment }
-  const saved = await mutate('save', () => $fetch<RouteReviews>(base, { method: 'PUT', body }), "Impossible d'enregistrer ton avis")
+  const saved = await mutate('save', () => $fetch<RouteReviews>(base, { method: 'PUT', body }), t('reviews.saveFailed'))
   if (saved) {
     editing.value = false
     form.rating = 0
@@ -61,63 +62,57 @@ async function submit() {
 }
 
 function removeMine() {
-  if (!window.confirm('Supprimer ton avis ?')) return
-  mutate('delete', () => $fetch<RouteReviews>(base, { method: 'DELETE' }), 'Impossible de supprimer ton avis')
+  if (!window.confirm(t('reviews.deleteConfirm'))) return
+  mutate('delete', () => $fetch<RouteReviews>(base, { method: 'DELETE' }), t('reviews.deleteFailed'))
 }
 
 function report(review: RouteReview) {
-  if (!window.confirm('Signaler ce commentaire comme abusif ? Il sera masqué après 3 signalements.')) return
-  mutate(`report-${review.id}`, () => $fetch<RouteReviews>(`${base}/${review.id}/report`, { method: 'POST' }), 'Signalement impossible')
+  if (!window.confirm(t('reviews.reportConfirm'))) return
+  mutate(`report-${review.id}`, () => $fetch<RouteReviews>(`${base}/${review.id}/report`, { method: 'POST' }), t('reviews.reportFailed'))
 }
 
 function setHidden(review: RouteReview, hidden: boolean) {
   mutate(
     `hide-${review.id}`,
     () => $fetch<RouteReviews>(`${base}/${review.id}/hidden`, { method: 'PUT', body: { hidden } }),
-    "Impossible de modifier l'avis",
+    t('reviews.hideFailed'),
   )
 }
 
-const HIDDEN_LABELS = {
-  owner: "Commentaire masqué par l'auteur du parcours",
-  reports: 'Commentaire masqué après plusieurs signalements',
-} as const
-
 const showForm = computed(() => canReview.value && (!myReview.value || editing.value))
-const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
 </script>
 
 <template>
   <section id="avis" class="space-y-3" aria-labelledby="reviews-title">
     <div class="flex items-baseline justify-between gap-2">
-      <h2 id="reviews-title" class="font-medium">Avis</h2>
+      <h2 id="reviews-title" class="font-medium">{{ t('route.tabs.reviews') }}</h2>
       <p v-if="data?.rating_count" class="flex items-center gap-1.5 text-sm">
         <RatingStars :value="data.rating_avg ?? 0" />
         <span class="font-medium">{{ formatRating(data.rating_avg ?? 0) }}</span>
-        <span class="text-muted">· {{ data.rating_count }} avis</span>
+        <span class="text-muted">· {{ t('routeCard.reviews', data.rating_count) }}</span>
       </p>
     </div>
 
     <UForm v-if="showForm" :schema="reviewSchema" :state="form" class="space-y-3 rounded-lg bg-elevated p-3" @submit="submit">
-      <UFormField name="rating" :label="myReview ? 'Modifier ta note' : 'Ta note'">
-        <div class="flex items-center gap-1" role="radiogroup" aria-label="Ta note">
+      <UFormField name="rating" :label="myReview ? t('reviews.editRating') : t('reviews.yourRating')">
+        <div class="flex items-center gap-1" role="radiogroup" :aria-label="t('reviews.yourRating')">
           <button
             v-for="n in 5"
             :key="n"
             type="button"
             role="radio"
             :aria-checked="form.rating === n"
-            :aria-label="`${n} étoile${n > 1 ? 's' : ''}`"
+            :aria-label="t('reviews.stars', n)"
             class="text-2xl leading-none transition-colors"
             :class="n <= form.rating ? 'text-amber-500' : 'text-muted/40 hover:text-amber-300'"
             @click="form.rating = n"
           >
             ★
           </button>
-          <span v-if="form.rating" class="ml-2 text-sm text-muted">{{ ratingLabels[form.rating] }}</span>
+          <span v-if="form.rating" class="ml-2 text-sm text-muted">{{ t(`reviews.ratingLabels.${form.rating}`) }}</span>
         </div>
       </UFormField>
-      <UFormField name="comment" label="Commentaire" hint="Facultatif">
+      <UFormField name="comment" :label="t('reviews.comment')" :hint="t('reviews.optional')">
         <!-- Fixed id: generated ones differ between server and browser in this async component, which
              unlinked the label from the field. -->
         <UTextarea
@@ -126,22 +121,25 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
           :rows="3"
           autoresize
           :maxlength="MAX_REVIEW_COMMENT_LENGTH"
-          placeholder="État des chemins, balisage, points forts…"
+          :placeholder="t('reviews.commentPlaceholder')"
           class="w-full"
         />
       </UFormField>
       <div class="flex justify-end gap-2">
-        <UButton v-if="editing" label="Annuler" color="neutral" variant="ghost" @click="editing = false" />
-        <UButton type="submit" :label="myReview ? 'Enregistrer' : 'Publier mon avis'" :loading="pending === 'save'" />
+        <UButton v-if="editing" :label="t('common.cancel')" color="neutral" variant="ghost" @click="editing = false" />
+        <UButton type="submit" :label="myReview ? t('common.save') : t('reviews.publish')" :loading="pending === 'save'" />
       </div>
     </UForm>
 
     <p v-else-if="!user && isPublic" class="text-sm text-muted">
-      <ULink :to="{ path: '/login', query: { redirect: route.fullPath } }" class="font-medium text-primary">Connecte-toi</ULink>
-      pour donner ton avis.
+      <i18n-t keypath="reviews.signInToReview" scope="global">
+        <template #link>
+          <ULink :to="{ path: '/login', query: { redirect: route.fullPath } }" class="font-medium text-primary">{{ t('reviews.signInLink') }}</ULink>
+        </template>
+      </i18n-t>
     </p>
 
-    <p v-if="!data?.reviews.length && !showForm" class="text-sm text-muted">Aucun avis pour le moment.</p>
+    <p v-if="!data?.reviews.length && !showForm" class="text-sm text-muted">{{ t('reviews.none') }}</p>
 
     <ul v-if="data?.reviews.length" class="space-y-3">
       <li v-for="review in data.reviews" :key="review.id" class="space-y-1 border-b border-default pb-3 last:border-0">
@@ -154,11 +152,11 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
           >
             {{ review.author.display_name ?? review.author.username }}
           </ULink>
-          <span v-if="review.is_mine" class="text-muted">(toi)</span>
+          <span v-if="review.is_mine" class="text-muted">{{ t('route.you') }}</span>
           <span class="text-muted">· {{ formatShortDate(review.created_at) }}</span>
           <UBadge
             v-if="review.report_count"
-            :label="`Signalé ${review.report_count} fois`"
+            :label="t('reviews.reportCount', review.report_count)"
             color="warning"
             variant="subtle"
             size="sm"
@@ -166,7 +164,7 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
         </div>
 
         <p v-if="review.hidden_reason" class="text-sm text-muted italic">
-          <UIcon name="i-lucide-eye-off" class="mr-1 align-text-bottom" />{{ HIDDEN_LABELS[review.hidden_reason] }}
+          <UIcon name="i-lucide-eye-off" class="mr-1 align-text-bottom" />{{ t(`reviews.hidden.${review.hidden_reason}`) }}
         </p>
         <p v-if="review.comment" class="text-sm break-words whitespace-pre-line" :class="{ 'text-muted': review.hidden_reason }">
           {{ review.comment }}
@@ -174,9 +172,9 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
 
         <div class="flex flex-wrap gap-1">
           <template v-if="review.is_mine && !editing">
-            <UButton label="Modifier" icon="i-lucide-pencil" size="xs" color="neutral" variant="ghost" @click="startEditing" />
+            <UButton :label="t('reviews.edit')" icon="i-lucide-pencil" size="xs" color="neutral" variant="ghost" @click="startEditing" />
             <UButton
-              label="Supprimer"
+              :label="t('common.delete')"
               icon="i-lucide-trash-2"
               size="xs"
               color="neutral"
@@ -187,7 +185,7 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
           </template>
           <UButton
             v-if="isOwner && review.comment"
-            :label="review.hidden_reason ? 'Afficher le commentaire' : 'Masquer le commentaire'"
+            :label="review.hidden_reason ? t('reviews.show') : t('reviews.hide')"
             :icon="review.hidden_reason ? 'i-lucide-eye' : 'i-lucide-eye-off'"
             size="xs"
             color="neutral"
@@ -197,7 +195,7 @@ const ratingLabels = ['', 'Mauvais', 'Moyen', 'Bien', 'Très bien', 'Excellent']
           />
           <UButton
             v-else-if="user && !review.is_mine && review.comment && !isOwner"
-            :label="review.reported_by_me ? 'Signalé' : 'Signaler'"
+            :label="review.reported_by_me ? t('reviews.reported') : t('reviews.report')"
             icon="i-lucide-flag"
             size="xs"
             color="neutral"

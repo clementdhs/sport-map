@@ -7,12 +7,13 @@ import type { ActivityType, LngLat } from '#shared/utils/routes'
 const route = useRoute()
 const user = useSupabaseUser()
 const toast = useToast()
+const { t } = useI18n()
 
 const { data: parcours, error } = await useFetch<RouteDetail>(`/api/routes/${route.params.id}`)
 if (error.value || !parcours.value) {
   throw createError({
     statusCode: error.value?.statusCode ?? 404,
-    statusMessage: error.value?.statusMessage ?? 'Parcours introuvable',
+    statusMessage: error.value?.statusMessage ?? t('route.notFound'),
     fatal: true,
   })
 }
@@ -67,7 +68,7 @@ async function toggleActivity(type: ActivityType) {
       : { ...viewer.value, completed_at: active ? null : new Date().toISOString(), duration_s: null, moving_s: null }
   }
   catch (error) {
-    toast.add({ title: 'Action impossible', description: errorMessage(error), color: 'error' })
+    toast.add({ title: t('route.actionFailed'), description: errorMessage(error), color: 'error' })
   }
   finally {
     pendingActivity.value = null
@@ -84,18 +85,18 @@ const moreActions = computed(() => {
   const id = parcours.value!.id
   const actions: DropdownMenuItem[][] = [[
     {
-      label: 'Ajouter à une collection',
+      label: t('route.addToCollection'),
       icon: 'i-lucide-folder-plus',
       onSelect: () => user.value
         ? (collectionsOpen.value = true)
         : navigateTo({ path: '/login', query: { redirect: route.fullPath } }),
     },
-    { label: 'Exporter en GPX', icon: 'i-lucide-download', to: `/api/routes/${id}/gpx`, external: true, download: true },
+    { label: t('route.exportGpx'), icon: 'i-lucide-download', to: `/api/routes/${id}/gpx`, external: true, download: true },
   ]]
   if (offline.value?.supported && !offline.value.available) {
     actions[0]!.push({
-      label: 'Préparer pour le hors-ligne',
-      description: 'Carte et suivi sans réseau · 20 à 30 Mo pour 30 km, de préférence en Wi-Fi',
+      label: t('route.prepareOffline'),
+      description: t('route.prepareOfflineHint'),
       icon: 'i-lucide-cloud-download',
       disabled: offline.value.preparing,
       ui: { itemDescription: 'whitespace-normal' },
@@ -104,19 +105,19 @@ const moreActions = computed(() => {
   }
   if (isOwner.value) {
     actions.push([
-      { label: 'Modifier le parcours', icon: 'i-lucide-pencil', to: `/routes/${id}/edit` },
-      { label: 'Supprimer le parcours', icon: 'i-lucide-trash-2', color: 'error', onSelect: () => (deleteOpen.value = true) },
+      { label: t('route.edit'), icon: 'i-lucide-pencil', to: `/routes/${id}/edit` },
+      { label: t('route.delete'), icon: 'i-lucide-trash-2', color: 'error', onSelect: () => (deleteOpen.value = true) },
     ])
   }
   return actions
 })
 
 const tabs = computed(() => [
-  { label: 'Aperçu', value: 'overview', slot: 'overview' as const },
+  { label: t('route.tabs.overview'), value: 'overview', slot: 'overview' as const },
   ...(photos.value.length || isOwner.value
-    ? [{ label: 'Photos', value: 'photos', slot: 'photos' as const, badge: photos.value.length || undefined }]
+    ? [{ label: t('route.tabs.photos'), value: 'photos', slot: 'photos' as const, badge: photos.value.length || undefined }]
     : []),
-  { label: 'Avis', value: 'reviews', slot: 'reviews' as const, badge: parcours.value?.rating_count || undefined },
+  { label: t('route.tabs.reviews'), value: 'reviews', slot: 'reviews' as const, badge: parcours.value?.rating_count || undefined },
 ] satisfies TabsItem[])
 // The open tab is kept in the URL (?tab=reviews), so that a reload or a shared link shows it.
 const activeTab = computed({
@@ -128,11 +129,11 @@ async function deleteRoute() {
   deleting.value = true
   try {
     await $fetch(`/api/routes/${parcours.value!.id}`, { method: 'DELETE' })
-    toast.add({ title: 'Parcours supprimé', color: 'success', icon: 'i-lucide-check' })
+    toast.add({ title: t('route.deleted'), color: 'success', icon: 'i-lucide-check' })
     await navigateTo('/profile')
   }
   catch (error) {
-    toast.add({ title: 'Suppression impossible', description: errorMessage(error), color: 'error' })
+    toast.add({ title: t('route.deleteFailed'), description: errorMessage(error), color: 'error' })
     deleting.value = false
   }
 }
@@ -154,7 +155,7 @@ useSeoMeta({
   ogImageType: () => (ogImage.value ? 'image/png' : undefined),
   ogImageWidth: () => (ogImage.value ? 1200 : undefined),
   ogImageHeight: () => (ogImage.value ? 630 : undefined),
-  ogImageAlt: () => (ogImage.value ? `Tracé du parcours ${parcours.value?.name}` : undefined),
+  ogImageAlt: () => (ogImage.value ? t('route.ogImageAlt', { name: parcours.value?.name }) : undefined),
   twitterCard: () => (ogImage.value ? 'summary_large_image' : 'summary'),
 })
 </script>
@@ -176,26 +177,26 @@ useSeoMeta({
       <div class="space-y-1">
         <div class="flex flex-wrap items-center gap-2">
           <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="SPORT_LABELS[parcours.sport_type]" variant="subtle" />
-          <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" label="Privé" color="neutral" variant="subtle" />
-          <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" label="Importé d'un GPX" color="neutral" variant="subtle" />
-          <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" label="Enregistré au GPS" color="neutral" variant="subtle" />
+          <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
+          <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
+          <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
         </div>
 
         <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
 
         <p class="text-sm text-muted">
-          Par
+          {{ t('route.by') }}
           <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-default hover:underline">
             {{ parcours.owner.display_name ?? parcours.owner.username }}
           </ULink>
-          <span v-if="isOwner"> (toi)</span>
+          <span v-if="isOwner" class="ms-1">{{ t('route.you') }}</span>
           · {{ formatDate(parcours.created_at) }}
         </p>
       </div>
 
       <div class="grid grid-cols-4 divide-x divide-default rounded-lg bg-elevated py-2 text-center">
         <div class="px-1">
-          <p class="text-xs text-muted">Distance</p>
+          <p class="text-xs text-muted">{{ t('route.distance') }}</p>
           <p class="font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
         </div>
         <DurationEstimate
@@ -206,11 +207,11 @@ useSeoMeta({
           :elevation-gain-m="parcours.elevation_gain_m"
         />
         <div class="px-1">
-          <p class="text-xs text-muted">Dénivelé +</p>
+          <p class="text-xs text-muted">{{ t('route.gain') }}</p>
           <p class="font-semibold">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
         </div>
         <div class="px-1">
-          <p class="text-xs text-muted">Dénivelé −</p>
+          <p class="text-xs text-muted">{{ t('route.loss') }}</p>
           <p class="font-semibold">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
         </div>
       </div>
@@ -219,13 +220,13 @@ useSeoMeta({
         <UButton
           :to="`/routes/${parcours.id}/follow`"
           icon="i-lucide-navigation"
-          label="Suivre le parcours"
+          :label="t('route.follow')"
           block
         />
         <div class="flex gap-2">
           <UButton
             :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
-            :label="viewer.saved ? 'Sauvegardé' : 'Sauvegarder'"
+            :label="viewer.saved ? t('route.saved') : t('route.save')"
             :color="viewer.saved ? 'primary' : 'neutral'"
             :variant="viewer.saved ? 'soft' : 'outline'"
             :loading="pendingActivity === 'saved'"
@@ -234,7 +235,7 @@ useSeoMeta({
           />
           <UButton
             :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
-            :label="viewer.completed_at ? `Fait le ${formatShortDate(viewer.completed_at)}` : 'Je l\'ai fait'"
+            :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.complete')"
             :color="viewer.completed_at ? 'primary' : 'neutral'"
             :variant="viewer.completed_at ? 'soft' : 'outline'"
             :loading="pendingActivity === 'completed'"
@@ -242,14 +243,14 @@ useSeoMeta({
             @click="toggleActivity('completed')"
           />
           <UDropdownMenu :items="moreActions" :content="{ align: 'end' }" :ui="{ content: 'w-72' }">
-            <UButton icon="i-lucide-ellipsis" color="neutral" variant="outline" aria-label="Plus d'actions" />
+            <UButton icon="i-lucide-ellipsis" color="neutral" variant="outline" :aria-label="t('route.moreActions')" />
           </UDropdownMenu>
         </div>
       </div>
 
       <p v-if="viewer.completed_at && viewer.duration_s != null && viewer.moving_s != null" class="text-sm text-muted">
         <UIcon name="i-lucide-timer" class="mr-1 align-text-bottom" />
-        Ta sortie : {{ formatElapsed(viewer.duration_s) }}, dont {{ formatElapsed(viewer.moving_s) }} en mouvement
+        {{ t('route.yourOuting', { total: formatElapsed(viewer.duration_s), moving: formatElapsed(viewer.moving_s) }) }}
         · {{ formatSpeed(parcours.distance_m, viewer.moving_s) }}
       </p>
 
@@ -270,14 +271,16 @@ useSeoMeta({
 
             <div v-if="slopes" class="space-y-2">
               <p class="text-sm text-muted">
-                Pente max : <span class="font-medium text-default">{{ slopes.steepest }} %</span>
+                {{ t('route.maxGrade') }} <span class="font-medium text-default">{{ slopes.steepest }} %</span>
                 <template v-if="slopes.climb">
-                  · Montée principale : <span class="font-medium text-default">{{ formatDistance(slopes.climb.endM - slopes.climb.startM) }}
-                    à {{ Math.round(slopes.climb.averageGrade) }} %</span> (+{{ Math.round(slopes.climb.gainM) }} m)
+                  · {{ t('route.mainClimb') }} <span class="font-medium text-default">{{ t('route.climbValue', {
+                    length: formatDistance(slopes.climb.endM - slopes.climb.startM),
+                    grade: Math.round(slopes.climb.averageGrade),
+                  }) }}</span> (+{{ Math.round(slopes.climb.gainM) }} m)
                 </template>
               </p>
-              <USwitch v-model="showSlopes" label="Pentes sur la carte et le profil" />
-              <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" aria-label="Légende des pentes">
+              <USwitch v-model="showSlopes" :label="t('route.showSlopes')" />
+              <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
                 <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.label" class="flex items-center gap-1">
                   <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ slopeClass.label }}
                 </li>
@@ -287,7 +290,7 @@ useSeoMeta({
             <RouteWeather :route-id="parcours.id" />
 
             <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
-              <h2 id="pois-title" class="font-medium">Points d'intérêt</h2>
+              <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>
               <ul class="space-y-1">
                 <li
                   v-for="(poi, i) in pois"
@@ -329,13 +332,13 @@ useSeoMeta({
       <UModal
         v-if="isOwner"
         v-model:open="deleteOpen"
-        title="Supprimer ce parcours ?"
-        description="Il disparaîtra aussi des parcours sauvegardés et réalisés des autres utilisateurs. Cette action est définitive."
+        :title="t('route.deleteTitle')"
+        :description="t('route.deleteDescription')"
       >
         <template #footer>
           <div class="flex w-full justify-end gap-2">
-            <UButton label="Annuler" color="neutral" variant="outline" @click="deleteOpen = false" />
-            <UButton label="Supprimer" icon="i-lucide-trash-2" color="error" :loading="deleting" @click="deleteRoute" />
+            <UButton :label="t('common.cancel')" color="neutral" variant="outline" @click="deleteOpen = false" />
+            <UButton :label="t('common.delete')" icon="i-lucide-trash-2" color="error" :loading="deleting" @click="deleteRoute" />
           </div>
         </template>
       </UModal>

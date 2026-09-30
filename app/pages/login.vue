@@ -3,7 +3,8 @@ import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
 
 type LoginState = { email: string, password: string }
 
-useSeoMeta({ title: 'Connexion — sport-map' })
+const { t } = useI18n()
+useSeoMeta({ title: () => `${t('auth.login.title')} — sport-map` })
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
@@ -19,18 +20,18 @@ watch(user, (value) => {
   if (value) navigateTo(redirectTo.value)
 }, { immediate: true })
 
-const fields: AuthFormField[] = [
-  { name: 'email', type: 'email', label: 'Email', placeholder: 'toi@exemple.fr', required: true },
-  { name: 'password', type: 'password', label: 'Mot de passe', required: true },
-]
+const fields = computed<AuthFormField[]>(() => [
+  { name: 'email', type: 'email', label: t('auth.email'), placeholder: t('auth.emailPlaceholder'), required: true },
+  { name: 'password', type: 'password', label: t('auth.password'), required: true },
+])
 
 const loading = ref(false)
 const errorMessage = ref('')
 
 function validate(state: Partial<LoginState>): FormError[] {
   const errors: FormError[] = []
-  if (!state.email) errors.push({ name: 'email', message: 'Email requis' })
-  if (!state.password) errors.push({ name: 'password', message: 'Mot de passe requis' })
+  if (!state.email) errors.push({ name: 'email', message: t('auth.emailRequired') })
+  if (!state.password) errors.push({ name: 'password', message: t('auth.passwordRequired') })
   return errors
 }
 
@@ -42,9 +43,9 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 
   if (error) {
     errorMessage.value = error.code === 'email_not_confirmed'
-      ? 'Confirme ton adresse email avant de te connecter.'
+      ? t('auth.login.emailNotConfirmed')
       : error.code === 'invalid_credentials'
-        ? 'Email ou mot de passe incorrect.'
+        ? t('auth.login.invalidCredentials')
         : error.message
   }
 }
@@ -54,20 +55,20 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
   <UContainer class="flex justify-center py-12">
     <UPageCard class="w-full max-w-md">
       <UAuthForm
-        title="Connexion"
+        :title="t('auth.login.title')"
         icon="i-lucide-log-in"
         :fields="fields"
         :validate="validate"
         :loading="loading"
-        :submit="{ label: 'Se connecter', block: true }"
+        :submit="{ label: t('auth.login.submit'), block: true }"
         @submit="onSubmit"
       >
         <template #description>
-          Pas encore de compte ?
-          <ULink to="/register" class="text-primary font-medium">Inscris-toi</ULink>
+          {{ t('auth.login.noAccount') }}
+          <ULink to="/register" class="text-primary font-medium">{{ t('auth.login.registerLink') }}</ULink>
         </template>
         <template #password-hint>
-          <ULink to="/forgot-password" class="text-primary font-medium">Mot de passe oublié ?</ULink>
+          <ULink to="/forgot-password" class="text-primary font-medium">{{ t('auth.login.forgotLink') }}</ULink>
         </template>
         <template #validation>
           <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />

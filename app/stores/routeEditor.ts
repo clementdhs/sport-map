@@ -46,6 +46,7 @@ function isUsableState(state: EditorState | null, pointCount: number): state is 
 
 export const useRouteEditorStore = defineStore('routeEditor', () => {
   const toast = useToast()
+  const { t } = useNuxtApp().$i18n
 
   const waypoints = ref<LngLat[]>([])
   const segments = ref<Segment[]>([])
@@ -144,8 +145,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       if (index === 0) waypoints.value[0] = result.coordinates[0]!
       if (mode === 'snap' && !result.snapped) {
         toast.add({
-          title: 'Aucun chemin trouvé',
-          description: 'Ce segment est tracé en ligne droite.',
+          title: t('editor.noPath'),
+          description: t('editor.noPathHint'),
           color: 'warning',
           icon: 'i-lucide-route-off',
         })
@@ -157,8 +158,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         // Several segments can be in flight: warn once.
         if (!routingQuotaReached.value) {
           toast.add({
-            title: 'Limite quotidienne atteinte',
-            description: `${data.statusMessage}. Les segments sont tracés en ligne droite, sans dénivelé, jusqu'à demain.`,
+            title: t('editor.dailyLimit'),
+            description: t('editor.dailyLimitHint', { message: data.statusMessage }),
             color: 'warning',
             icon: 'i-lucide-gauge',
           })
@@ -169,8 +170,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       }
       if (!segments.value.some(s => s.id === id)) return
       toast.add({
-        title: "Calcul de l'itinéraire impossible",
-        description: `${(error as FetchError).data?.statusMessage ?? (error as Error).message}. Le segment reste en ligne droite, sans dénivelé.`,
+        title: t('editor.routingFailed'),
+        description: t('editor.routingFailedHint', { message: (error as FetchError).data?.statusMessage ?? (error as Error).message }),
         color: 'error',
       })
     }

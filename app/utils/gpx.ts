@@ -3,6 +3,7 @@ import { distance } from '@turf/turf'
 import type { Feature, LineString, MultiLineString, Position } from 'geojson'
 import { MAX_ROUTE_POINTS } from '#shared/utils/routes'
 import type { LngLat } from '#shared/utils/routes'
+import { LocalizedError } from '~/utils/localizedError'
 
 export interface ImportedTrack {
   name: string | null
@@ -40,7 +41,7 @@ export async function readGpxFile(file: File): Promise<ImportedTrack> {
 
   const first = gpx(document).features.find((feature): feature is Feature<LineString | MultiLineString> =>
     feature.geometry?.type === 'LineString' || feature.geometry?.type === 'MultiLineString')
-  if (!first) throw new Error('Ce fichier ne contient aucune trace ni itinéraire.')
+  if (!first) throw new LocalizedError('errors.gpxNoTrack')
 
   // A track can be split into several segments (pauses, signal loss): join them into one line.
   const positions = first.geometry.type === 'LineString'

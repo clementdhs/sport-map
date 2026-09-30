@@ -11,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const supabase = useSupabaseClient()
+const { t } = useI18n()
 const state = reactive<NewPassword>({ password: '', confirm: '' })
 const saving = ref(false)
 const errorMessage = ref('')
@@ -23,7 +24,7 @@ async function onSubmit() {
 
   if (error) {
     errorMessage.value = error.code === 'same_password'
-      ? 'C\'est déjà ton mot de passe actuel.'
+      ? t('auth.newPassword.samePassword')
       : error.message
     return
   }
@@ -35,12 +36,12 @@ async function onSubmit() {
 
 <template>
   <UForm :schema="newPasswordSchema" :state="state" class="space-y-4" @submit="onSubmit">
-    <UFormField label="Nouveau mot de passe" name="password" :description="`${MIN_PASSWORD_LENGTH} caractères minimum`" required>
+    <UFormField :label="t('auth.newPassword.password')" name="password" :description="t('auth.passwordMin', { n: MIN_PASSWORD_LENGTH })" required>
       <UInput id="new-password" v-model="state.password" type="password" autocomplete="new-password" class="w-full" />
     </UFormField>
     <!-- Validated while typing: otherwise a stale "different" error only clears on blur, i.e. when clicking the
          submit button, which then moves under the pointer and misses the click. -->
-    <UFormField label="Confirme le mot de passe" name="confirm" eager-validation required>
+    <UFormField :label="t('auth.newPassword.confirm')" name="confirm" eager-validation required>
       <UInput id="new-password-confirm" v-model="state.confirm" type="password" autocomplete="new-password" class="w-full" />
     </UFormField>
     <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />

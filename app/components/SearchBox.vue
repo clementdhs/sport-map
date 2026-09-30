@@ -16,6 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const search = useRouteSearchStore()
+const { t, locale } = useI18n()
 const { maptilerKey } = useRuntimeConfig().public
 
 const routesSuggestion = (text: string): Suggestion => ({ kind: 'routes', label: text, icon: 'i-lucide-route' })
@@ -32,8 +33,8 @@ const term = computed(() => searchTerm.value.trim())
 
 const items = computed(() => {
   if (term.value.length < MIN_SEARCH_TEXT_LENGTH) return []
-  const groups = [[{ type: 'label' as const, label: 'Parcours' }, routesSuggestion(term.value)]]
-  if (places.value.length) groups.push([{ type: 'label' as const, label: 'Lieux' }, ...places.value])
+  const groups = [[{ type: 'label' as const, label: t('searchBox.routes') }, routesSuggestion(term.value)]]
+  if (places.value.length) groups.push([{ type: 'label' as const, label: t('searchBox.places') }, ...places.value])
   return groups
 })
 
@@ -43,7 +44,7 @@ async function geocode(text: string) {
   try {
     const { features } = await $fetch<GeocodingResponse>(
       `https://api.maptiler.com/geocoding/${encodeURIComponent(text)}.json`,
-      { query: { key: maptilerKey, language: 'fr', limit: 5 } },
+      { query: { key: maptilerKey, language: locale.value, limit: 5 } },
     )
     if (request === latestRequest) {
       places.value = features.map(f => ({
@@ -107,21 +108,21 @@ function clear() {
       :loading="loading"
       icon="i-lucide-search"
       trailing-icon=""
-      placeholder="Rechercher un lieu ou un parcours…"
-      aria-label="Rechercher un lieu ou un parcours"
+      :placeholder="t('searchBox.placeholder')"
+      :aria-label="t('searchBox.label')"
       class="w-full"
       :ui="{ base: 'pe-9' }"
     >
       <template #item-label="{ item }">
         <template v-if="'kind' in item && item.kind === 'routes'">
-          Parcours contenant « {{ item.label }} »
+          {{ t('searchBox.routesContaining', { text: item.label }) }}
         </template>
         <template v-else>
           {{ item.label }}
         </template>
       </template>
       <template #empty>
-        Tape au moins {{ MIN_SEARCH_TEXT_LENGTH }} lettres
+        {{ t('searchBox.minLength', { count: MIN_SEARCH_TEXT_LENGTH }) }}
       </template>
     </UInputMenu>
     <UButton
@@ -130,7 +131,7 @@ function clear() {
       color="neutral"
       variant="link"
       size="sm"
-      aria-label="Effacer la recherche"
+      :aria-label="t('searchBox.clear')"
       class="absolute inset-y-0 end-1 my-auto h-fit"
       @click="clear"
     />

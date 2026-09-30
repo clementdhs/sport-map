@@ -9,16 +9,17 @@ const props = defineProps<{
   compact?: boolean
 }>()
 
+const { t } = useI18n()
 const minutes = computed(() => estimateDurationMin(props.sport, props.distanceM, props.elevationGainM))
 const method = computed(() => props.elevationGainM === null
-  ? `${DURATION_METHODS[props.sport]} Dénivelé inconnu : non pris en compte.`
+  ? `${DURATION_METHODS[props.sport]} ${t('duration.unknownGain')}`
   : DURATION_METHODS[props.sport])
 </script>
 
 <template>
   <div>
     <p class="flex items-center gap-1 text-muted" :class="compact ? 'text-xs' : 'text-sm'">
-      {{ compact ? 'Durée' : 'Durée estimée' }}
+      {{ compact ? t('duration.short') : t('duration.estimated') }}
       <UTooltip :text="method" :ui="{ content: 'h-auto max-w-64 py-1.5', text: 'whitespace-normal' }">
         <UIcon name="i-lucide-info" class="size-3.5" tabindex="0" :aria-label="method" />
       </UTooltip>

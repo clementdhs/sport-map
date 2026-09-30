@@ -35,6 +35,8 @@ export default defineConfig({
             nuxt: {
               overrides: {
                 supabase: { url: 'http://localhost:54321', key: 'test-key' },
+                // French, as in the e2e tests: the simulated browser would otherwise select English.
+                i18n: { detectBrowserLanguage: false },
               },
             },
           },

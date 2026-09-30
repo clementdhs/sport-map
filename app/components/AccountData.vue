@@ -3,7 +3,7 @@ import type { FetchError } from 'ofetch'
 import type { AccountExport } from '#shared/types/account'
 import type { AccountDeletion } from '#shared/utils/account'
 
-// RGPD, on the profile page: download everything as an archive, or delete the account.
+// RGPD, on the settings page: download everything as an archive, or delete the account.
 const props = defineProps<{ username: string }>()
 
 const toast = useToast()

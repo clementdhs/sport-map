@@ -5,7 +5,10 @@ const toast = useToast()
 
 const userMenu = computed(() => [
   [{ label: user.value?.email ?? '', type: 'label' as const }],
-  [{ label: 'Mon profil', icon: 'i-lucide-user', to: '/profile' }],
+  [
+    { label: 'Mon profil', icon: 'i-lucide-user', to: '/profile' },
+    { label: 'Paramètres', icon: 'i-lucide-settings', to: '/settings' },
+  ],
   [{ label: 'Se déconnecter', icon: 'i-lucide-log-out', onSelect: signOut }],
 ])
 

@@ -315,9 +315,8 @@ test('resets a forgotten password from the email link, opened in another browser
   await phonePage.goto(link)
   await expect(phonePage.getByText('Lien invalide ou expiré')).toBeVisible()
 
-  // Changed again from the profile, then used to sign in.
-  await phonePage.goto('/profile')
-  await phonePage.getByRole('button', { name: 'Changer mon mot de passe' }).click()
+  // Changed again from the settings, then used to sign in.
+  await phonePage.goto('/settings')
   await phonePage.getByLabel('Nouveau mot de passe').fill('encore-un-autre')
   await phonePage.getByLabel('Confirme le mot de passe').fill('encore-un-autre')
   await phonePage.getByRole('button', { name: 'Changer le mot de passe' }).click()

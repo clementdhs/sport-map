@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { FetchError } from 'ofetch'
 import type { CollectionSummary, MyProfile } from '#shared/types/routes'
-import type { ProfileUpdate } from '#shared/utils/routes'
 
 definePageMeta({ middleware: 'auth' })
 useSeoMeta({ title: 'Mon profil — sport-map' })
@@ -13,8 +11,7 @@ function completedNote(route: MyProfile['completed'][number]) {
   return `${note} · ${formatElapsed(route.duration_s)} · ${formatSpeed(route.distance_m, route.moving_s)}`
 }
 
-const toast = useToast()
-const { data, error, refresh } = await useFetch<MyProfile>('/api/profile/me')
+const { data, error } = await useFetch<MyProfile>('/api/profile/me')
 if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
@@ -28,42 +25,6 @@ const tabs = computed(() => [
   { label: 'Réalisés', slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
   { label: 'Statistiques', slot: 'stats' as const, icon: 'i-lucide-chart-column' },
 ])
-
-const editOpen = ref(false)
-const saving = ref(false)
-const form = ref<ProfileUpdate>({ display_name: '', bio: '' })
-
-watch(editOpen, (open) => {
-  if (open && data.value) {
-    form.value = { display_name: data.value.profile.display_name ?? '', bio: data.value.profile.bio ?? '' }
-  }
-})
-
-const passwordOpen = ref(false)
-function onPasswordChanged() {
-  passwordOpen.value = false
-  toast.add({ title: 'Mot de passe modifié', color: 'success', icon: 'i-lucide-check' })
-}
-
-async function saveProfile() {
-  saving.value = true
-  try {
-    await $fetch('/api/profile/me', { method: 'PATCH', body: form.value })
-    await refresh()
-    editOpen.value = false
-    toast.add({ title: 'Profil mis à jour', color: 'success', icon: 'i-lucide-check' })
-  }
-  catch (err) {
-    toast.add({
-      title: 'Mise à jour impossible',
-      description: (err as FetchError).data?.statusMessage ?? (err as Error).message,
-      color: 'error',
-    })
-  }
-  finally {
-    saving.value = false
-  }
-}
 </script>
 
 <template>
@@ -82,31 +43,7 @@ async function saveProfile() {
           variant="outline"
           aria-label="Voir mon profil public"
         />
-        <UModal v-model:open="editOpen" title="Modifier mon profil">
-          <UButton icon="i-lucide-pencil" label="Modifier" color="neutral" variant="outline" />
-          <template #body>
-            <UForm id="profile-form" :schema="profileUpdateSchema" :state="form" class="space-y-4" @submit="saveProfile">
-              <UFormField label="Nom affiché" name="display_name" :hint="`Sinon : ${data.profile.username}`">
-                <UInput v-model="form.display_name" class="w-full" />
-              </UFormField>
-              <UFormField label="Bio" name="bio">
-                <UTextarea v-model="form.bio" :rows="4" autoresize class="w-full" />
-              </UFormField>
-            </UForm>
-          </template>
-          <template #footer>
-            <div class="flex w-full justify-end gap-2">
-              <UButton label="Annuler" color="neutral" variant="outline" @click="editOpen = false" />
-              <UButton type="submit" form="profile-form" label="Enregistrer" :loading="saving" />
-            </div>
-          </template>
-        </UModal>
-        <UModal v-model:open="passwordOpen" title="Changer mon mot de passe">
-          <UButton icon="i-lucide-key-round" color="neutral" variant="outline" aria-label="Changer mon mot de passe" />
-          <template #body>
-            <NewPasswordForm submit-label="Changer le mot de passe" @done="onPasswordChanged" />
-          </template>
-        </UModal>
+        <UButton to="/settings" icon="i-lucide-settings" label="Paramètres" aria-label="Paramètres" color="neutral" variant="outline" :ui="{ label: 'hidden sm:inline' }" />
       </div>
     </div>
 
@@ -183,7 +120,5 @@ async function saveProfile() {
         />
       </template>
     </UTabs>
-
-    <AccountData :username="data.profile.username" />
   </UContainer>
 </template>

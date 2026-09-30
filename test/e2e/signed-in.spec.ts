@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
-import { expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { E2E_USER, expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -401,7 +401,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   expect(await ratingCount()).toBe(1)
 
   // The archive holds all of it.
-  await page.goto('/profile')
+  await page.goto('/settings')
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Télécharger mes données' }).click(),
@@ -449,6 +449,31 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   expect(await storedPhotoFiles(routeId)).toEqual([])
   expect(await ratingCount()).toBe(0)
   await expect(supabaseAdmin(`/auth/v1/admin/users/${userId}`)).rejects.toThrow(/404/)
+})
+
+test('edits the profile and the appearance from the settings, reached through the account menu', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: E2E_USER.email }).click()
+  await page.getByRole('menuitem', { name: 'Paramètres' }).click()
+  await expect(page).toHaveURL(/\/settings$/)
+  await expect(page.getByRole('heading', { name: 'Paramètres', level: 1 })).toBeVisible()
+
+  // Global setup recreates the account for each run: no need to restore these.
+  await page.getByLabel('Nom affiché').fill('Coureur e2e')
+  await page.getByLabel('Bio').fill('Bio mise à jour depuis les paramètres')
+  await page.getByRole('button', { name: 'Enregistrer le profil' }).click()
+  await expect(page.getByText('Profil mis à jour').first()).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sombre' }).click()
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await page.getByRole('button', { name: 'Système' }).click()
+
+  // The profile keeps the routes and statistics only, with a way back to the settings.
+  await page.getByRole('link', { name: 'Mon profil' }).click()
+  await expect(page.getByRole('heading', { name: 'Coureur e2e', level: 1 })).toBeVisible()
+  await expect(page.getByText('Bio mise à jour depuis les paramètres')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
+  await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })
 
 test('counts a completed route in the profile statistics', async ({ page }) => {

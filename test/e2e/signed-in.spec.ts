@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
-import { E2E_USER, expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { E2E_USER, expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -384,6 +384,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   // Signed in as the throwaway account rather than the test account.
   await context.clearCookies()
   await page.goto('/login')
+  await waitForHydration(page)
   await page.locator('input[name="email"]').fill(account.email)
   await page.locator('input[name="password"]').fill(account.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
@@ -403,6 +404,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
 
   // The archive holds all of it.
   await page.goto('/settings')
+  await waitForHydration(page)
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Télécharger mes données' }).click(),

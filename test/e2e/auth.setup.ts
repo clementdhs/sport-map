@@ -1,9 +1,10 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { AUTH_FILE, E2E_USER, expect, test } from './fixtures'
+import { AUTH_FILE, E2E_USER, expect, test, waitForHydration } from './fixtures'
 
 test('sign in with the test account', async ({ page }) => {
   await page.goto('/login')
+  await waitForHydration(page)
   // By name: the password label also matches the "Afficher le mot de passe" toggle.
   await page.locator('input[name="email"]').fill(E2E_USER.email)
   await page.locator('input[name="password"]').fill(E2E_USER.password)

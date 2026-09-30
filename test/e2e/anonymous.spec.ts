@@ -1,4 +1,4 @@
-import { E2E_USER, expect, RESET_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { E2E_USER, expect, RESET_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
 import { passwordResetLink } from './mail'
 
 test('finds a public route on the home map and opens it', async ({ page }) => {
@@ -283,6 +283,7 @@ test.describe('follow mode', () => {
 
 test('resets a forgotten password from the email link, opened in another browser', async ({ page, browser }) => {
   await page.goto('/login')
+  await waitForHydration(page)
   const origin = new URL(page.url()).origin
   await page.getByRole('link', { name: 'Mot de passe oublié ?' }).click()
   await expect(page).toHaveURL(/\/forgot-password$/)
@@ -293,6 +294,7 @@ test('resets a forgotten password from the email link, opened in another browser
   const sent = page.getByText('Vérifie ta boîte mail')
   await expect(sent).toBeVisible()
   await page.reload()
+  await waitForHydration(page)
   await page.locator('input[name="email"]').fill(RESET_USER.email)
   await page.getByRole('button', { name: 'Recevoir un lien' }).click()
   await expect(sent).toBeVisible()
@@ -302,6 +304,7 @@ test('resets a forgotten password from the email link, opened in another browser
   const phone = await browser.newContext({ baseURL: origin })
   const phonePage = await phone.newPage()
   await phonePage.goto(link)
+  await waitForHydration(phonePage)
   await phonePage.getByLabel('Nouveau mot de passe').fill('nouveau-mot-de-passe')
   await phonePage.getByLabel('Confirme le mot de passe').fill('pas-le-meme')
   await phonePage.getByRole('button', { name: 'Enregistrer le mot de passe' }).click()
@@ -319,6 +322,7 @@ test('resets a forgotten password from the email link, opened in another browser
 
   // Changed again from the settings, then used to sign in.
   await phonePage.goto('/settings')
+  await waitForHydration(phonePage)
   await phonePage.getByLabel('Nouveau mot de passe').fill('encore-un-autre')
   await phonePage.getByLabel('Confirme le mot de passe').fill('encore-un-autre')
   await phonePage.getByRole('button', { name: 'Changer le mot de passe' }).click()
@@ -327,6 +331,7 @@ test('resets a forgotten password from the email link, opened in another browser
   await phone.close()
 
   await page.goto('/login')
+  await waitForHydration(page)
   await page.locator('input[name="email"]').fill(RESET_USER.email)
   await page.locator('input[name="password"]').fill('encore-un-autre')
   await page.getByRole('button', { name: 'Se connecter' }).click()

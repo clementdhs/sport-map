@@ -1,10 +1,11 @@
-import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
 
 // The main visitor flows again, in a browser set to British English (playwright.config.ts): the language is
 // detected from it, with English formats. User content (route names, reviews) stays as written.
 
 test('detects the browser language, and keeps the one a visitor picks', async ({ page, context }) => {
   await page.goto('/')
+  await waitForHydration(page)
   const html = page.locator('html')
   await expect(html).toHaveAttribute('lang', 'en')
   await expect(page.getByRole('combobox', { name: 'Search for a place or a route' })).toBeVisible()

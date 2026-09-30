@@ -59,6 +59,12 @@ export async function waitForMap(page: Page) {
   await expect(page.locator('[data-map-loaded]')).toBeVisible({ timeout: 15_000 })
 }
 
+// Before typing in a form or opening a menu right after a navigation: hydration resets inputs filled earlier,
+// and buttons do nothing until then (app/plugins/hydrated.client.ts).
+export async function waitForHydration(page: Page) {
+  await expect(page.locator('html[data-hydrated]')).toBeAttached({ timeout: 15_000 })
+}
+
 // Secondary actions of a route page are in its "…" menu.
 export async function routeAction(page: Page, name: string) {
   await page.getByRole('button', { name: "Plus d'actions" }).click()

@@ -69,13 +69,15 @@ export default defineNuxtConfig({
   },
 
   // Same URLs in every language (a shared link opens in each visitor's language): the language comes from the
-  // cookie, else from the browser on the first visit. Messages live in i18n/locales/, loaded on demand.
+  // cookie, else from the browser on the first visit. Messages live in i18n/locales/ and are bundled by
+  // app/plugins/i18n-messages.ts: no locale files here, or the module would fetch them from its /_i18n endpoint
+  // when a page starts, delaying hydration and failing offline (follow mode).
   i18n: {
     strategy: 'no_prefix',
     defaultLocale: 'fr',
     locales: [
-      { code: 'fr', language: 'fr-FR', name: 'Français', file: 'fr.json' },
-      { code: 'en', language: 'en-GB', name: 'English', file: 'en.json' },
+      { code: 'fr', language: 'fr-FR', name: 'Français' },
+      { code: 'en', language: 'en-GB', name: 'English' },
     ],
     detectBrowserLanguage: {
       useCookie: true,

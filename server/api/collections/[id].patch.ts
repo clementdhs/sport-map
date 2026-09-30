@@ -4,7 +4,7 @@ import { serverSupabaseClient } from '#supabase/server'
 export default defineEventHandler(async (event) => {
   await requireUserId(event)
   const id = getCollectionIdParam(event)
-  const body = await readValidatedBody(event, data => collectionSchema.parse(data))
+  const body = await readLocalizedBody(event, collectionSchema)
   const supabase = await serverSupabaseClient(event)
 
   // RLS only lets owners update: nothing updated means the collection is missing or not the caller's.
@@ -15,8 +15,8 @@ export default defineEventHandler(async (event) => {
     .select('id')
   if (error) {
     console.error('[PATCH /api/collections/:id]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de modifier la collection' })
+    throw apiError(event, 500, 'api.updateCollectionFailed')
   }
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Collection introuvable' })
+  if (!data.length) throw apiError(event, 404, 'api.collectionNotFound')
   return data[0]
 })

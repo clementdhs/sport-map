@@ -4,7 +4,7 @@ import type { ProfileInfo } from '#shared/types/routes'
 // The profile alone, without the route lists of GET /api/profile/me: for the settings page.
 export default defineEventHandler(async (event): Promise<ProfileInfo> => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<ProfileInfo> => {
 
   if (!data) {
     console.error('[GET /api/profile/me/info]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger ton profil' })
+    throw apiError(event, 500, 'api.loadOwnProfileFailed')
   }
   return data
 })

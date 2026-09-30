@@ -9,7 +9,7 @@ const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber }
 const route = useRoute()
 const user = useSupabaseUser()
 const toast = useToast()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const { data: parcours, error } = await useFetch<RouteDetail>(`/api/routes/${route.params.id}`)
 if (error.value || !parcours.value) {
@@ -141,10 +141,10 @@ async function deleteRoute() {
 }
 
 // Link previews need an absolute image URL. Private routes have no image (the endpoint refuses them),
-// and ?v= makes caches fetch a new image once the route is edited.
+// ?v= makes caches fetch a new image once the route is edited, and ?lang= draws it in the page's language.
 const origin = useRequestURL().origin
 const ogImage = computed(() => parcours.value?.is_public
-  ? `${origin}/api/routes/${parcours.value.id}/og.png?v=${Date.parse(parcours.value.updated_at)}`
+  ? `${origin}/api/routes/${parcours.value.id}/og.png?v=${Date.parse(parcours.value.updated_at)}&lang=${locale.value}`
   : undefined)
 
 useSeoMeta({

@@ -3,11 +3,11 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const id = getRouteIdParam(event)
   const photoId = getRouterParam(event, 'photoId')
-  if (!z.uuid().safeParse(photoId).success) throw createError({ statusCode: 404, statusMessage: 'Photo introuvable' })
+  if (!z.uuid().safeParse(photoId).success) throw apiError(event, 404, 'api.photoNotFound')
 
   const supabase = await serverSupabaseClient(event)
   // RLS only lets the route's owner delete: nothing deleted means the photo is missing or not the caller's.
@@ -20,9 +20,9 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[DELETE /api/routes/:id/photos/:photoId]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de supprimer la photo' })
+    throw apiError(event, 500, 'api.deletePhotoFailed')
   }
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Photo introuvable' })
+  if (!data.length) throw apiError(event, 404, 'api.photoNotFound')
 
   const removal = await supabase.storage.from(PHOTOS_BUCKET).remove(data.map(row => row.storage_path))
   if (removal.error) console.error('[DELETE /api/routes/:id/photos/:photoId] file left behind', removal.error)

@@ -6,7 +6,7 @@ import type { CollectionSummary } from '#shared/types/routes'
 // that route (for the "add to a collection" menu of a route page).
 export default defineEventHandler(async (event): Promise<CollectionSummary[]> => {
   const userId = await requireUserId(event)
-  const { route } = await getValidatedQuery(event, query => z.object({ route: z.uuid().optional() }).parse(query))
+  const { route } = await getLocalizedQuery(event, z.object({ route: z.uuid().optional() }))
   const supabase = await serverSupabaseClient(event)
 
   const { data, error } = await supabase
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event): Promise<CollectionSummary[]> =>
 
   if (error) {
     console.error('[GET /api/collections]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger tes collections' })
+    throw apiError(event, 500, 'api.loadCollectionsFailed')
   }
   // RLS only returns the links to routes the caller can see.
   return data.map(({ links, ...collection }) => ({

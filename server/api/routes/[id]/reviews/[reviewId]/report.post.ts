@@ -9,9 +9,9 @@ export default defineEventHandler(async (event): Promise<RouteReviews> => {
   // 23505: already reported by this user, nothing more to do.
   if (error && error.code !== '23505') {
     // RLS: the review is the caller's own, or not visible to them.
-    if (error.code === '42501') throw createError({ statusCode: 403, statusMessage: 'Tu ne peux pas signaler cet avis' })
+    if (error.code === '42501') throw apiError(event, 403, 'api.cannotReportReview')
     console.error('[POST /api/routes/:id/reviews/:reviewId/report]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de signaler cet avis' })
+    throw apiError(event, 500, 'api.reportReviewFailed')
   }
-  return loadRouteReviews(supabase, routeId, userId)
+  return loadRouteReviews(event, supabase, routeId, userId)
 })

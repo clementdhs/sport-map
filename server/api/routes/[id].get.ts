@@ -22,10 +22,10 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
 
   if (error) {
     console.error('[GET /api/routes/:id]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger le parcours' })
+    throw apiError(event, 500, 'api.loadRouteFailed')
   }
   // RLS hides private routes of other users: they are reported as missing too.
-  if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
   let viewer: ViewerActivity | null = null
   const user = await serverSupabaseUser(event)

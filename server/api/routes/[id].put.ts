@@ -2,10 +2,10 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const id = getRouteIdParam(event)
-  const body = await readValidatedBody(event, payload => routeCreateSchema.parse(payload))
+  const body = await readLocalizedBody(event, routeCreateSchema)
   const supabase = await serverSupabaseClient(event)
 
   // RLS only lets owners update: nothing updated means the route is missing or not the caller's.
@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[PUT /api/routes/:id]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer les modifications" })
+    throw apiError(event, 500, 'api.saveChangesFailed')
   }
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data.length) throw apiError(event, 404, 'api.routeNotFound')
   return { id }
 })

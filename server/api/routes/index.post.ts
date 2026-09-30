@@ -2,9 +2,9 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const body = await readValidatedBody(event, payload => routeCreateSchema.parse(payload))
+  const body = await readLocalizedBody(event, routeCreateSchema)
   const supabase = await serverSupabaseClient(event)
 
   const { data, error } = await supabase
@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[POST /api/routes]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer le parcours" })
+    throw apiError(event, 500, 'api.saveRouteFailed')
   }
   setResponseStatus(event, 201)
   return data

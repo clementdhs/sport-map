@@ -1,3 +1,4 @@
+import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
 import type { LngLat, SportType } from '#shared/utils/routes'
 
@@ -18,10 +19,10 @@ const LIMIT_EXCEEDED_CODE = 2004
 
 export class NoRouteFoundError extends Error {}
 
-async function orsPost<T>(path: string, body: Record<string, unknown>): Promise<T> {
+async function orsPost<T>(event: H3Event, path: string, body: Record<string, unknown>): Promise<T> {
   const { openrouteserviceKey } = useRuntimeConfig()
   if (!openrouteserviceKey) {
-    throw createError({ statusCode: 503, statusMessage: "Le calcul d'itinéraire n'est pas configuré" })
+    throw apiError(event, 503, 'api.routingNotConfigured')
   }
 
   try {
@@ -37,26 +38,28 @@ async function orsPost<T>(path: string, body: Record<string, unknown>): Promise<
     const code = data?.error?.code
     if (code && NO_ROUTE_CODES.has(code)) throw new NoRouteFoundError()
     if (code === LIMIT_EXCEEDED_CODE) {
-      throw createError({ statusCode: 422, statusMessage: 'Segment trop long pour suivre les chemins' })
+      throw apiError(event, 422, 'api.segmentTooLong')
     }
     if (response?.status === 429) {
-      throw createError({ statusCode: 429, statusMessage: 'Trop de calculs en peu de temps, réessaie dans une minute' })
+      throw apiError(event, 429, 'api.routingTooFast')
     }
     console.error('[openrouteservice]', path, response?.status, data)
-    throw createError({ statusCode: 502, statusMessage: "Le service d'itinéraire ne répond pas" })
+    throw apiError(event, 502, 'api.routingUnavailable')
   }
 }
 
-export async function routeAlongPaths(from: LngLat, to: LngLat, sport: SportType): Promise<LngLatEle[]> {
+export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, sport: SportType): Promise<LngLatEle[]> {
   const result = await orsPost<{ features: { geometry: { coordinates: LngLatEle[] } }[] }>(
+    event,
     `/v2/directions/${PROFILES[sport]}/geojson`,
     { coordinates: [from, to], elevation: true, instructions: false },
   )
   return result.features[0]!.geometry.coordinates
 }
 
-export async function elevationAlong(coordinates: LngLat[]): Promise<LngLatEle[]> {
+export async function elevationAlong(event: H3Event, coordinates: LngLat[]): Promise<LngLatEle[]> {
   const result = await orsPost<{ geometry: { coordinates: LngLatEle[] } }>(
+    event,
     '/elevation/line',
     { format_in: 'polyline', format_out: 'geojson', geometry: coordinates },
   )

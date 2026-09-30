@@ -6,13 +6,13 @@ import type { Database } from '#shared/types/database.types'
 // first. Deleting an auth user takes the secret key.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
-  const { username } = await readValidatedBody(event, data => accountDeletionSchema.parse(data))
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const { username } = await readLocalizedBody(event, accountDeletionSchema)
 
   const supabase = await serverSupabaseClient(event)
   const { data: profile } = await supabase.from('profiles').select('username').eq('id', user.sub).single()
   if (profile?.username !== username) {
-    throw createError({ statusCode: 400, statusMessage: "Le nom d'utilisateur saisi ne correspond pas" })
+    throw apiError(event, 400, 'api.usernameMismatch')
   }
 
   try {
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   }
   catch (error) {
     console.error('[DELETE /api/profile/me]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de supprimer le compte, réessaie plus tard' })
+    throw apiError(event, 500, 'api.deleteAccountFailed')
   }
   setResponseStatus(event, 204)
   return null

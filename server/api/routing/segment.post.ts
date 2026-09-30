@@ -7,9 +7,9 @@ const round1 = (value: number) => Math.round(value * 10) / 10
 export default defineEventHandler(async (event): Promise<RoutingSegmentResponse> => {
   // Signed-in users only: the OpenRouteService quota is shared by the whole app.
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const { from, to, mode, sport_type } = await readValidatedBody(event, body => routingSegmentSchema.parse(body))
+  const { from, to, mode, sport_type } = await readLocalizedBody(event, routingSegmentSchema)
 
   // Counted before calling OpenRouteService, failed calls included: a loop of bad requests costs too.
   const { routingDailyLimit } = useRuntimeConfig(event)
@@ -17,28 +17,24 @@ export default defineEventHandler(async (event): Promise<RoutingSegmentResponse>
   const { data: remaining, error } = await supabase.rpc('consume_routing_quota', { daily_limit: Number(routingDailyLimit) })
   if (error) {
     console.error('[POST /api/routing/segment] quota', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible de calculer l'itinéraire" })
+    throw apiError(event, 500, 'api.routingFailed')
   }
   if (remaining < 0) {
-    throw createError({
-      statusCode: 429,
-      statusMessage: `Limite de ${routingDailyLimit} calculs d'itinéraire par jour atteinte`,
-      data: { reason: ROUTING_QUOTA_REASON },
-    })
+    throw apiError(event, 429, 'api.routingQuota', { limit: routingDailyLimit }, { reason: ROUTING_QUOTA_REASON })
   }
 
   let points = null
   let snapped = mode === 'snap'
   if (snapped) {
     try {
-      points = await routeAlongPaths(from, to, sport_type)
+      points = await routeAlongPaths(event, from, to, sport_type)
     }
     catch (error) {
       if (!(error instanceof NoRouteFoundError)) throw error
       snapped = false
     }
   }
-  points ??= await elevationAlong(sampleStraightLine(from, to))
+  points ??= await elevationAlong(event, sampleStraightLine(from, to))
 
   return {
     coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),

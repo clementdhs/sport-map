@@ -43,9 +43,9 @@ export default defineEventHandler(async (event): Promise<RouteWeather> => {
     .maybeSingle()
   if (error) {
     console.error('[GET /api/routes/:id/weather]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger le parcours' })
+    throw apiError(event, 500, 'api.loadRouteFailed')
   }
-  if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
   const [lng, lat] = (data.geometry as unknown as LineString).coordinates[0] as LngLat
   const elevations = data.elevation_profile as number[] | null
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event): Promise<RouteWeather> => {
   }
   catch (err) {
     console.error('[GET /api/routes/:id/weather] Open-Meteo', err)
-    throw createError({ statusCode: 503, statusMessage: 'Météo indisponible pour le moment' })
+    throw apiError(event, 503, 'api.weatherUnavailable')
   }
 
   const nowLocal = localTime(new Date(), forecast.utc_offset_seconds)

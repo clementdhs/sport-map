@@ -3,7 +3,7 @@ import type { MyProfile } from '#shared/types/routes'
 
 export default defineEventHandler(async (event): Promise<MyProfile> => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const supabase = await serverSupabaseClient(event)
   const [profile, created, activity] = await Promise.all([
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
 
   if (!profile.data || !created.data || !activity.data) {
     console.error('[GET /api/profile/me]', profile.error ?? created.error ?? activity.error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger ton profil' })
+    throw apiError(event, 500, 'api.loadOwnProfileFailed')
   }
 
   // A saved route its owner has since made private comes back without its route: skip it.

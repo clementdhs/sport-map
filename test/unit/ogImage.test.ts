@@ -83,6 +83,13 @@ describe('buildRouteOgSvg', () => {
     expect(svg).toContain('>~11 h 20<')
   })
 
+  it('writes labels and numbers in the given language', () => {
+    const svg = buildRouteOgSvg(route, 'en')
+    expect(svg).toContain('>Hiking<')
+    expect(svg).toContain('>Elevation +<')
+    expect(svg).toContain('>43.93 km<')
+  })
+
   it('draws the elevation profile only when elevations match the track', () => {
     expect(buildRouteOgSvg(route)).toContain('fill-opacity="0.15"')
     expect(buildRouteOgSvg({ ...route, elevations: null })).not.toContain('fill-opacity="0.15"')

@@ -6,35 +6,35 @@ import type { RoutePhoto } from '#shared/types/routes'
 // compressed it; the server checks what it really is.
 export default defineEventHandler(async (event): Promise<RoutePhoto> => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)
 
   const { data: route } = await supabase.from('routes').select('owner_id').eq('id', id).maybeSingle()
-  if (!route) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!route) throw apiError(event, 404, 'api.routeNotFound')
   if (route.owner_id !== user.sub) {
-    throw createError({ statusCode: 403, statusMessage: 'Seul le propriétaire peut ajouter des photos' })
+    throw apiError(event, 403, 'api.ownerOnlyPhotos')
   }
 
   const file = (await readMultipartFormData(event))?.find(part => part.name === 'photo')
-  if (!file?.data.length) throw createError({ statusCode: 400, statusMessage: 'Photo manquante' })
+  if (!file?.data.length) throw apiError(event, 400, 'api.photoMissing')
   if (file.data.length > MAX_PHOTO_BYTES) {
-    throw createError({ statusCode: 413, statusMessage: 'Photo trop lourde (2 Mo maximum)' })
+    throw apiError(event, 413, 'api.photoTooLarge')
   }
   const type = detectPhotoType(file.data)
-  if (!type) throw createError({ statusCode: 415, statusMessage: 'Format de photo non pris en charge' })
+  if (!type) throw apiError(event, 415, 'api.photoFormat')
 
   const { count } = await supabase.from('route_photos').select('id', { count: 'exact', head: true }).eq('route_id', id)
   if ((count ?? 0) >= MAX_ROUTE_PHOTOS) {
-    throw createError({ statusCode: 400, statusMessage: `${MAX_ROUTE_PHOTOS} photos maximum par parcours` })
+    throw apiError(event, 400, 'api.maxPhotos', { max: MAX_ROUTE_PHOTOS })
   }
 
   const path = `${id}/${randomUUID()}.${type === 'image/webp' ? 'webp' : 'jpg'}`
   const upload = await supabase.storage.from(PHOTOS_BUCKET).upload(path, file.data, { contentType: type })
   if (upload.error) {
     console.error('[POST /api/routes/:id/photos] upload', upload.error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer la photo" })
+    throw apiError(event, 500, 'api.savePhotoFailed')
   }
 
   const { data: row, error } = await supabase
@@ -45,11 +45,11 @@ export default defineEventHandler(async (event): Promise<RoutePhoto> => {
   if (error) {
     console.error('[POST /api/routes/:id/photos] insert', error)
     await supabase.storage.from(PHOTOS_BUCKET).remove([path])
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer la photo" })
+    throw apiError(event, 500, 'api.savePhotoFailed')
   }
 
   const [photo] = await signPhotos(supabase, [row])
-  if (!photo) throw createError({ statusCode: 500, statusMessage: 'Photo enregistrée mais illisible' })
+  if (!photo) throw apiError(event, 500, 'api.photoUnreadable')
   setResponseStatus(event, 201)
   return photo
 })

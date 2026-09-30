@@ -101,4 +101,9 @@ describe('buildGpx with points of interest', () => {
     expect(xml).toContain('<wpt lat="45.9" lon="6.1"><name>Parking</name><type>parking</type></wpt>')
     expect(xml.indexOf('<wpt')).toBeLessThan(xml.indexOf('<trk>'))
   })
+
+  it('names them in the given language', () => {
+    const xml = buildGpx({ name: 'Loop', description: null, type: 'hiking', coordinates: track, elevations: null, pois: [{ type: 'water', coordinates: [6.11, 45.91] }], locale: 'en' })
+    expect(xml).toContain('<name>Water point</name>')
+  })
 })

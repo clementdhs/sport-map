@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[DELETE /api/routes/:id/activity/:type]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'annuler l'action" })
+    throw apiError(event, 500, 'api.undoActionFailed')
   }
   setResponseStatus(event, 204)
   return null

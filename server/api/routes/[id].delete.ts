@@ -2,7 +2,7 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)
@@ -12,9 +12,9 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[DELETE /api/routes/:id]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de supprimer le parcours' })
+    throw apiError(event, 500, 'api.deleteRouteFailed')
   }
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data.length) throw apiError(event, 404, 'api.routeNotFound')
   setResponseStatus(event, 204)
   return null
 })

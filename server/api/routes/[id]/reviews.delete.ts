@@ -6,7 +6,7 @@ export default defineEventHandler(async (event): Promise<RouteReviews> => {
   const { error } = await supabase.from('route_reviews').delete().eq('route_id', routeId).eq('user_id', userId!)
   if (error) {
     console.error('[DELETE /api/routes/:id/reviews]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de supprimer ton avis' })
+    throw apiError(event, 500, 'api.deleteReviewFailed')
   }
-  return loadRouteReviews(supabase, routeId, userId)
+  return loadRouteReviews(event, supabase, routeId, userId)
 })

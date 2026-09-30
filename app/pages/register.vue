@@ -6,7 +6,7 @@ type RegisterState = { username: string, email: string, password: string }
 // Must match the check constraint on public.profiles.username.
 const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,30}$/
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 useSeoMeta({ title: () => `${t('auth.register.title')} — sport-map` })
 
 const supabase = useSupabaseClient()
@@ -58,7 +58,8 @@ async function onSubmit(event: FormSubmitEvent<RegisterState>) {
     email,
     password,
     options: {
-      data: { username },
+      // The account's language, for the emails Supabase sends (app/plugins/account-locale.client.ts).
+      data: { username, locale: locale.value },
       emailRedirectTo: `${window.location.origin}/confirm`,
     },
   })

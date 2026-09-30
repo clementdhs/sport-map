@@ -1,6 +1,7 @@
 import type { LineString } from 'geojson'
 import type { LngLat, Poi, SportType } from '#shared/utils/routes'
 import { buildGpx, gpxFileName } from './gpxBuilder'
+import { DEFAULT_MESSAGE_LOCALE, translate, type MessageLocale } from './messages'
 
 // Everything a user's archive holds (RGPD: the data they gave, or that was recorded about them).
 export interface AccountData {
@@ -38,24 +39,39 @@ export interface AccountArchive {
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
-function readme(data: AccountData): string {
-  return `Données de ${data.profile.username} sur sport-map, exportées le ${data.exportedAt}.
+const ARCHIVE_NAMES = [
+  'readme', 'profile', 'routes', 'reviews', 'activity', 'collections', 'reports', 'routing', 'gpxFolder', 'photosFolder',
+] as const
+type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
 
-profil.json         ton profil (nom d'utilisateur, nom affiché, bio, e-mail, date d'inscription)
-parcours.json       tes parcours : description, statistiques, points d'intérêt, visibilité
-parcours/*.gpx      le tracé de chaque parcours, à ouvrir dans une application GPS
-photos/             les photos de tes parcours, un dossier par parcours
-avis.json           les avis que tu as laissés sur des parcours
-activite.json       les parcours que tu as sauvegardés ou réalisés, avec les temps de tes sorties enregistrées
-collections.json    tes collections de parcours
-signalements.json   les avis que tu as signalés
-calculs.json        ton nombre de calculs d'itinéraire du jour (limité par personne)
+// The archive's file and folder names, in its language.
+const archiveNames = (locale: MessageLocale) =>
+  Object.fromEntries(ARCHIVE_NAMES.map(key => [key, translate(locale, `archive.files.${key}`)])) as ArchiveNames
 
-Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.
+function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames): string {
+  const t = (key: string, params?: Record<string, string>) => translate(locale, `archive.readme.${key}`, params)
+  const rows = [
+    [names.profile, t('profile')],
+    [names.routes, t('routes')],
+    [`${names.gpxFolder}/*.gpx`, t('gpx')],
+    [`${names.photosFolder}/`, t('photos')],
+    [names.reviews, t('reviews')],
+    [names.activity, t('activity')],
+    [names.collections, t('collections')],
+    [names.reports, t('reports')],
+    [names.routing, t('routing')],
+  ] as const
+  const width = Math.max(...rows.map(([path]) => path.length)) + 2
+  return `${t('intro', { username: data.profile.username, date: data.exportedAt })}
+
+${rows.map(([path, text]) => `${path.padEnd(width)}${text}`).join('\n')}
+
+${t('json')}
 `
 }
 
-export function accountArchive(data: AccountData): AccountArchive {
+export function accountArchive(data: AccountData, locale: MessageLocale = DEFAULT_MESSAGE_LOCALE): AccountArchive {
+  const names = archiveNames(locale)
   const files: AccountArchive['files'] = []
   const photos: AccountArchive['photos'] = []
 
@@ -63,7 +79,7 @@ export function accountArchive(data: AccountData): AccountArchive {
     // Unique even when two routes share a name.
     const base = `${gpxFileName(route.name).replace(/\.gpx$/, '')}-${route.id.slice(0, 8)}`
     const coordinates = route.geometry.coordinates as LngLat[]
-    const gpx = `parcours/${base}.gpx`
+    const gpx = `${names.gpxFolder}/${base}.gpx`
     files.push({
       path: gpx,
       content: buildGpx({
@@ -73,11 +89,12 @@ export function accountArchive(data: AccountData): AccountArchive {
         coordinates,
         elevations: route.elevation_profile?.length === coordinates.length ? route.elevation_profile : null,
         pois: route.pois,
+        locale,
       }),
     })
     const routePhotos = data.photos
       .filter(photo => photo.route_id === route.id)
-      .map(photo => ({ path: `photos/${base}/${photo.storage_path.split('/').at(-1)}`, storage_path: photo.storage_path }))
+      .map(photo => ({ path: `${names.photosFolder}/${base}/${photo.storage_path.split('/').at(-1)}`, storage_path: photo.storage_path }))
     photos.push(...routePhotos)
 
     const { geometry: _geometry, elevation_profile: _elevations, ...details } = route
@@ -85,14 +102,14 @@ export function accountArchive(data: AccountData): AccountArchive {
   })
 
   files.unshift(
-    { path: 'LISEZMOI.txt', content: readme(data) },
-    { path: 'profil.json', content: json(data.profile) },
-    { path: 'parcours.json', content: json(routes) },
-    { path: 'avis.json', content: json(data.reviews) },
-    { path: 'activite.json', content: json(data.activity) },
-    { path: 'collections.json', content: json(data.collections) },
-    { path: 'signalements.json', content: json(data.reports) },
-    { path: 'calculs.json', content: json(data.routingUsage) },
+    { path: names.readme, content: readme(data, locale, names) },
+    { path: names.profile, content: json(data.profile) },
+    { path: names.routes, content: json(routes) },
+    { path: names.reviews, content: json(data.reviews) },
+    { path: names.activity, content: json(data.activity) },
+    { path: names.collections, content: json(data.collections) },
+    { path: names.reports, content: json(data.reports) },
+    { path: names.routing, content: json(data.routingUsage) },
   )
   return { files, photos }
 }

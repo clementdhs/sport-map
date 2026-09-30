@@ -5,7 +5,7 @@ import type { RouteSummary } from '#shared/types/routes'
 type SearchRow = Database['public']['Functions']['search_routes']['Returns'][number]
 
 export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
-  const query = await getValidatedQuery(event, params => routeSearchSchema.parse(params))
+  const query = await getLocalizedQuery(event, routeSearchSchema)
   const supabase = await serverSupabaseClient(event)
 
   const { data, error } = await supabase.rpc('search_routes', {
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
 
   if (error) {
     console.error('[GET /api/routes]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de rechercher les parcours' })
+    throw apiError(event, 500, 'api.searchFailed')
   }
   return (data as SearchRow[]).map(({ marker_lng, marker_lat, ...route }) => ({
     ...route,

@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[PUT /api/routes/:id/activity/:type]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer l'action" })
+    throw apiError(event, 500, 'api.saveActionFailed')
   }
   setResponseStatus(event, 204)
   return null

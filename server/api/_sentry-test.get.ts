@@ -4,6 +4,6 @@ import { serverSupabaseUser } from '#supabase/server'
 // nobody else can use up the free quota.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
   throw new Error('Test Sentry : erreur serveur volontaire')
 })

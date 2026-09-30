@@ -2,9 +2,9 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const { display_name, bio } = await readValidatedBody(event, body => profileUpdateSchema.parse(body))
+  const { display_name, bio } = await readLocalizedBody(event, profileUpdateSchema)
   const supabase = await serverSupabaseClient(event)
 
   const { error } = await supabase
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[PATCH /api/profile/me]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de mettre à jour ton profil' })
+    throw apiError(event, 500, 'api.updateProfileFailed')
   }
   setResponseStatus(event, 204)
   return null

@@ -1,5 +1,5 @@
 import type { LngLat, Poi } from '#shared/utils/routes'
-import { DEFAULT_MESSAGE_LOCALE, translate } from './messages'
+import { DEFAULT_MESSAGE_LOCALE, translate, type MessageLocale } from './messages'
 
 interface GpxTrack {
   name: string
@@ -8,6 +8,8 @@ interface GpxTrack {
   coordinates: LngLat[]
   elevations: number[] | null
   pois?: Poi[]
+  // Language of the waypoint names.
+  locale?: MessageLocale
 }
 
 function escapeXml(value: string): string {
@@ -19,12 +21,12 @@ function escapeXml(value: string): string {
     .replace(/'/g, '&apos;')
 }
 
-export function buildGpx({ name, description, type, coordinates, elevations, pois = [] }: GpxTrack): string {
+export function buildGpx({ name, description, type, coordinates, elevations, pois = [], locale = DEFAULT_MESSAGE_LOCALE }: GpxTrack): string {
   const desc = description ? `\n    <desc>${escapeXml(description)}</desc>` : ''
   // Points of interest as waypoints, which GPS devices show along the track.
   const waypoints = pois.map(({ type: poiType, coordinates: [lng, lat], note }) => {
     const poiDesc = note ? `<desc>${escapeXml(note)}</desc>` : ''
-    return `  <wpt lat="${lat}" lon="${lng}"><name>${escapeXml(translate(DEFAULT_MESSAGE_LOCALE, `pois.${poiType}`))}</name>${poiDesc}<type>${poiType}</type></wpt>\n`
+    return `  <wpt lat="${lat}" lon="${lng}"><name>${escapeXml(translate(locale, `pois.${poiType}`))}</name>${poiDesc}<type>${poiType}</type></wpt>\n`
   })
   const points = coordinates.map(([lng, lat], i) => {
     const ele = elevations?.[i]

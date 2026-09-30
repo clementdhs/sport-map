@@ -4,9 +4,9 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 // completed with the outing's times.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const body = await readValidatedBody(event, payload => recordingSchema.parse(payload))
+  const body = await readLocalizedBody(event, recordingSchema)
   const supabase = await serverSupabaseClient(event)
 
   const { data: route, error } = await supabase
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     .single()
   if (error) {
     console.error('[POST /api/recordings] route', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer la sortie" })
+    throw apiError(event, 500, 'api.saveRecordingFailed')
   }
 
   const startedAt = new Date(body.started_at)
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     // No half-saved outing: the route goes too.
     console.error('[POST /api/recordings] activity', activity.error)
     await supabase.from('routes').delete().eq('id', route.id)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'enregistrer la sortie" })
+    throw apiError(event, 500, 'api.saveRecordingFailed')
   }
 
   setResponseStatus(event, 201)

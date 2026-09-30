@@ -6,15 +6,15 @@ import { serverSupabaseUser } from '#supabase/server'
 
 export async function requireUserId(event: H3Event): Promise<string> {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
   return user.sub
 }
 
-// An invalid uuid would otherwise surface as a Postgres error: report it as missing.
+// An invalid uuid would otherwise surface as a Postgres error: report it as missing (`missing`: a message key).
 export function getUuidParam(event: H3Event, name: string, missing: string): string {
   const id = getRouterParam(event, name)
-  if (!z.uuid().safeParse(id).success) throw createError({ statusCode: 404, statusMessage: missing })
+  if (!z.uuid().safeParse(id).success) throw apiError(event, 404, missing)
   return id!
 }
 
-export const getCollectionIdParam = (event: H3Event) => getUuidParam(event, 'id', 'Collection introuvable')
+export const getCollectionIdParam = (event: H3Event) => getUuidParam(event, 'id', 'api.collectionNotFound')

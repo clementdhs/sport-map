@@ -1,3 +1,12 @@
+{{ if eq (print .Data.locale) "en" }}
+<h2>Reset your password</h2>
+
+<p>You asked to change the password of your sport-map account.</p>
+
+<p><a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery">Choose a new password</a></p>
+
+<p>This link works only once and expires after an hour. If you didn't ask for anything, ignore this message: your password stays the same.</p>
+{{ else }}
 <h2>Réinitialiser ton mot de passe</h2>
 
 <p>Tu as demandé à changer le mot de passe de ton compte sport-map.</p>
@@ -5,3 +14,4 @@
 <p><a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery">Choisir un nouveau mot de passe</a></p>
 
 <p>Ce lien ne sert qu'une fois et expire au bout d'une heure. Si tu n'as rien demandé, ignore ce message : ton mot de passe ne change pas.</p>
+{{ end }}

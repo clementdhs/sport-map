@@ -4,7 +4,7 @@ import { serverSupabaseClient } from '#supabase/server'
 export default defineEventHandler(async (event) => {
   await requireUserId(event)
   const collectionId = getCollectionIdParam(event)
-  const routeId = getUuidParam(event, 'routeId', 'Parcours introuvable')
+  const routeId = getUuidParam(event, 'routeId', 'api.routeNotFound')
   const supabase = await serverSupabaseClient(event)
 
   const { error } = await supabase
@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     .eq('route_id', routeId)
   if (error) {
     console.error('[DELETE /api/collections/:id/routes/:routeId]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de retirer le parcours' })
+    throw apiError(event, 500, 'api.removeRouteFailed')
   }
   setResponseStatus(event, 204)
   return null

@@ -247,7 +247,8 @@ otp_expiry = 3600
 # browser (the default PKCE link only works in the browser that asked for it). The hosted project needs the
 # same template (Authentication > Emails > Reset password).
 [auth.email.template.recovery]
-subject = "Réinitialisation de ton mot de passe sport-map"
+# Written in the account's language (user_metadata.locale, French when missing), like the template.
+subject = "{{ if eq (print .Data.locale) \"en\" }}Reset your sport-map password{{ else }}Réinitialisation de ton mot de passe sport-map{{ end }}"
 content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template

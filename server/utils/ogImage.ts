@@ -1,6 +1,6 @@
 import { formatDistance, formatDuration } from '#shared/utils/format'
 import { estimateDurationMin, type LngLat, type SportType } from '#shared/utils/routes'
-import { DEFAULT_MESSAGE_LOCALE, translate } from './messages'
+import { DEFAULT_MESSAGE_LOCALE, FORMAT_LOCALES, translate, type MessageLocale } from './messages'
 
 // Open Graph image of a route: the track drawn on a plain background (tile servers would need a paid
 // plan for static maps), next to its name and key figures. Rendered to PNG by the og.png route.
@@ -180,7 +180,7 @@ function logo(x: number, y: number, size: number): string {
     + '</g>'
 }
 
-export function buildRouteOgSvg(route: OgRoute): string {
+export function buildRouteOgSvg(route: OgRoute, locale: MessageLocale = DEFAULT_MESSAGE_LOCALE): string {
   const hasProfile = !!route.elevations
     && route.elevations.length === route.coordinates.length
     && route.coordinates.length > 1
@@ -194,7 +194,7 @@ export function buildRouteOgSvg(route: OgRoute): string {
     `<text x="${PANEL_X + 64}" y="83" font-size="30" font-weight="700" fill="${COLORS.brand}">sport-map</text>`,
   ]
 
-  const t = (key: string) => translate(DEFAULT_MESSAGE_LOCALE, key)
+  const t = (key: string) => translate(locale, key)
   const sportLabel = t(`sports.${route.sport}`)
   const pillWidth = Math.round(estimateTextWidth(sportLabel, 24) + 40)
   parts.push(
@@ -209,7 +209,7 @@ export function buildRouteOgSvg(route: OgRoute): string {
   })
 
   const stats = [
-    [t('route.distance'), formatDistance(route.distanceM)],
+    [t('route.distance'), formatDistance(route.distanceM, FORMAT_LOCALES[locale])],
     [t('route.gain'), route.elevationGainM != null ? `${Math.round(route.elevationGainM)} m` : '—'],
     [t('duration.estimated'), `~${formatDuration(estimateDurationMin(route.sport, route.distanceM, route.elevationGainM))}`],
   ]

@@ -7,7 +7,7 @@ import type { Poi } from '#shared/utils/routes'
 // caller's session: RLS already lets them read all their own rows.
 export default defineEventHandler(async (event): Promise<AccountExport> => {
   const user = await serverSupabaseUser(event)
-  if (!user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (!user) throw apiError(event, 401, 'api.signInRequired')
   const supabase = await serverSupabaseClient(event)
 
   const [profile, routes, reviews, activity, collections, reports, routingUsage] = await Promise.all([
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   const failed = [profile, routes, reviews, activity, collections, reports, routingUsage].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible de préparer l'export" })
+    throw apiError(event, 500, 'api.exportFailed')
   }
 
   const photos = routes.data.length
@@ -50,7 +50,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     : { data: [], error: null }
   if (photos.error) {
     console.error('[GET /api/profile/me/export] photos', photos.error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible de préparer l'export" })
+    throw apiError(event, 500, 'api.exportFailed')
   }
 
   const archive = accountArchive({
@@ -68,12 +68,12 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     collections: collections.data!,
     reports: reports.data!,
     routingUsage: routingUsage.data!,
-  })
+  }, getRequestLocale(event))
 
   // Signed with the caller's session: storage policies let owners read their route photos.
   const signed = await signPhotos(supabase, archive.photos.map(photo => ({ id: photo.path, storage_path: photo.storage_path })))
   if (signed.length !== archive.photos.length) {
-    throw createError({ statusCode: 500, statusMessage: "Impossible de préparer l'export des photos" })
+    throw apiError(event, 500, 'api.exportPhotosFailed')
   }
   return {
     username: profile.data.username,

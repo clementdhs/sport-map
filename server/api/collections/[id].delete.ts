@@ -9,9 +9,9 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await supabase.from('collections').delete().eq('id', id).select('id')
   if (error) {
     console.error('[DELETE /api/collections/:id]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de supprimer la collection' })
+    throw apiError(event, 500, 'api.deleteCollectionFailed')
   }
-  if (!data.length) throw createError({ statusCode: 404, statusMessage: 'Collection introuvable' })
+  if (!data.length) throw apiError(event, 404, 'api.collectionNotFound')
   setResponseStatus(event, 204)
   return null
 })

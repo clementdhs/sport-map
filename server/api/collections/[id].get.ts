@@ -24,9 +24,9 @@ export default defineEventHandler(async (event): Promise<CollectionDetail> => {
 
   if (collection.error || links.error) {
     console.error('[GET /api/collections/:id]', collection.error ?? links.error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger la collection' })
+    throw apiError(event, 500, 'api.loadCollectionFailed')
   }
-  if (!collection.data) throw createError({ statusCode: 404, statusMessage: 'Collection introuvable' })
+  if (!collection.data) throw apiError(event, 404, 'api.collectionNotFound')
 
   const { owner_id, ...rest } = collection.data
   return {

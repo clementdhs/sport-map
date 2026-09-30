@@ -33,6 +33,8 @@ function loadFonts(): Promise<string[]> {
 // cached copy of them can ever be served publicly.
 export default defineEventHandler(async (event) => {
   const id = getRouteIdParam(event)
+  // Set by the route page to its own language: link preview bots send no cookie.
+  const { lang } = getQuery(event)
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase
     .from('routes')
@@ -43,9 +45,9 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[GET /api/routes/:id/og.png]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible de générer l'image du parcours" })
+    throw apiError(event, 500, 'api.ogImageFailed')
   }
-  if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
   const svg = buildRouteOgSvg({
     name: data.name,
@@ -54,7 +56,7 @@ export default defineEventHandler(async (event) => {
     elevationGainM: data.elevation_gain_m,
     coordinates: (data.geometry as unknown as LineString).coordinates as LngLat[],
     elevations: data.elevation_profile as number[] | null,
-  })
+  }, isMessageLocale(lang) ? lang : getRequestLocale(event))
   const png = new Resvg(svg, {
     font: { loadSystemFonts: false, fontFiles: await loadFonts(), defaultFontFamily: 'Inter' },
   }).render().asPng()

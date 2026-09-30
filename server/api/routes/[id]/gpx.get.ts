@@ -14,10 +14,10 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error('[GET /api/routes/:id/gpx]', error)
-    throw createError({ statusCode: 500, statusMessage: "Impossible d'exporter le parcours" })
+    throw apiError(event, 500, 'api.exportRouteFailed')
   }
   // RLS hides private routes of other users.
-  if (!data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
   const coordinates = (data.geometry as unknown as LineString).coordinates as LngLat[]
   const elevations = data.elevation_profile as number[] | null
@@ -33,5 +33,6 @@ export default defineEventHandler(async (event) => {
     coordinates,
     elevations: elevations?.length === coordinates.length ? elevations : null,
     pois: data.pois as Poi[],
+    locale: getRequestLocale(event),
   })
 })

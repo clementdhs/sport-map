@@ -13,9 +13,9 @@ export default defineEventHandler(async (event): Promise<PublicProfile> => {
 
   if (error) {
     console.error('[GET /api/profile/:username]', error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger le profil' })
+    throw apiError(event, 500, 'api.loadProfileFailed')
   }
-  if (!profile) throw createError({ statusCode: 404, statusMessage: 'Profil introuvable' })
+  if (!profile) throw apiError(event, 404, 'api.profileNotFound')
 
   // Explicit is_public filter: RLS would also return the viewer's own private routes.
   const { data: routes, error: routesError } = await supabase
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event): Promise<PublicProfile> => {
 
   if (routesError) {
     console.error('[GET /api/profile/:username]', routesError)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger le profil' })
+    throw apiError(event, 500, 'api.loadProfileFailed')
   }
 
   const { id: _id, ...info } = profile

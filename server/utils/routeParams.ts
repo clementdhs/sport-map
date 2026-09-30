@@ -5,7 +5,7 @@ import * as z from 'zod'
 export function getRouteIdParam(event: H3Event): string {
   const id = getRouterParam(event, 'id')
   if (!z.uuid().safeParse(id).success) {
-    throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+    throw apiError(event, 404, 'api.routeNotFound')
   }
   return id!
 }

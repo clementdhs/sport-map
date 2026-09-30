@@ -44,6 +44,18 @@ describe('accountArchive', () => {
     expect(JSON.parse(file('avis.json')!)).toEqual(data.reviews)
   })
 
+  it('names its files and writes its readme in the given language', () => {
+    const english = accountArchive(data, 'en')
+    expect(english.files.map(entry => entry.path)).toEqual([
+      'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'collections.json', 'reports.json', 'routing.json',
+      'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
+    ])
+    const readme = english.files[0]!.content
+    expect(readme).toContain('Data of clem on sport-map')
+    expect(readme).toMatch(/^routes\/\*\.gpx +the track of each route/m)
+    expect(english.photos[0]!.path).toBe('photos/tour-du-lac-bbbbbbbb/p1.webp')
+  })
+
   it('gives each route its own GPX file, even with the same name', () => {
     const gpx = archive.files.filter(entry => entry.path.endsWith('.gpx'))
     expect(gpx.map(entry => entry.path)).toEqual(['parcours/tour-du-lac-aaaaaaaa.gpx', 'parcours/tour-du-lac-bbbbbbbb.gpx'])

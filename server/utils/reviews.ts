@@ -9,20 +9,20 @@ type Supabase = Awaited<ReturnType<typeof serverSupabaseClient<Database>>>
 // Shared by the /api/routes/:id/reviews handlers. requireUser: mutations need a signed-in user.
 export async function reviewContext(event: H3Event, { requireUser = false } = {}) {
   const user = await serverSupabaseUser(event)
-  if (requireUser && !user) throw createError({ statusCode: 401, statusMessage: 'Connexion requise' })
+  if (requireUser && !user) throw apiError(event, 401, 'api.signInRequired')
   return { routeId: getRouteIdParam(event), userId: user?.sub ?? null, supabase: await serverSupabaseClient(event) }
 }
 
 export function getReviewIdParam(event: H3Event): string {
   const id = getRouterParam(event, 'reviewId')
-  if (!z.uuid().safeParse(id).success) throw createError({ statusCode: 404, statusMessage: 'Avis introuvable' })
+  if (!z.uuid().safeParse(id).success) throw apiError(event, 404, 'api.reviewNotFound')
   return id!
 }
 
 // profiles is named through its foreign key: review_reports also links reviews to profiles (reporters).
 // The reviews of a route as the viewer may see them (RLS hides the hidden ones from others), their own
 // first, then the most recent. Mutations return it too, so the page just replaces its state.
-export async function loadRouteReviews(supabase: Supabase, routeId: string, userId: string | null): Promise<RouteReviews> {
+export async function loadRouteReviews(event: H3Event, supabase: Supabase, routeId: string, userId: string | null): Promise<RouteReviews> {
   const [route, reviews] = await Promise.all([
     supabase.from('routes').select('owner_id, rating_avg, rating_count').eq('id', routeId).maybeSingle(),
     supabase
@@ -38,9 +38,9 @@ export async function loadRouteReviews(supabase: Supabase, routeId: string, user
 
   if (route.error || reviews.error) {
     console.error('[reviews] load', route.error ?? reviews.error)
-    throw createError({ statusCode: 500, statusMessage: 'Impossible de charger les avis' })
+    throw apiError(event, 500, 'api.loadReviewsFailed')
   }
-  if (!route.data) throw createError({ statusCode: 404, statusMessage: 'Parcours introuvable' })
+  if (!route.data) throw apiError(event, 404, 'api.routeNotFound')
 
   // Reports are only readable by their author and the route's owner (RLS).
   const isOwner = userId === route.data.owner_id

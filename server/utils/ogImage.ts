@@ -1,5 +1,6 @@
 import { formatDistance, formatDuration } from '#shared/utils/format'
-import { estimateDurationMin, SPORT_LABELS, type LngLat, type SportType } from '#shared/utils/routes'
+import { estimateDurationMin, type LngLat, type SportType } from '#shared/utils/routes'
+import { DEFAULT_MESSAGE_LOCALE, translate } from './messages'
 
 // Open Graph image of a route: the track drawn on a plain background (tile servers would need a paid
 // plan for static maps), next to its name and key figures. Rendered to PNG by the og.png route.
@@ -193,7 +194,8 @@ export function buildRouteOgSvg(route: OgRoute): string {
     `<text x="${PANEL_X + 64}" y="83" font-size="30" font-weight="700" fill="${COLORS.brand}">sport-map</text>`,
   ]
 
-  const sportLabel = SPORT_LABELS[route.sport]
+  const t = (key: string) => translate(DEFAULT_MESSAGE_LOCALE, key)
+  const sportLabel = t(`sports.${route.sport}`)
   const pillWidth = Math.round(estimateTextWidth(sportLabel, 24) + 40)
   parts.push(
     `<rect x="${PANEL_X}" y="128" width="${pillWidth}" height="44" rx="22" fill="${COLORS.brandSoft}"/>`,
@@ -207,9 +209,9 @@ export function buildRouteOgSvg(route: OgRoute): string {
   })
 
   const stats = [
-    ['Distance', formatDistance(route.distanceM)],
-    ['Dénivelé +', route.elevationGainM != null ? `${Math.round(route.elevationGainM)} m` : '—'],
-    ['Durée estimée', `~${formatDuration(estimateDurationMin(route.sport, route.distanceM, route.elevationGainM))}`],
+    [t('route.distance'), formatDistance(route.distanceM)],
+    [t('route.gain'), route.elevationGainM != null ? `${Math.round(route.elevationGainM)} m` : '—'],
+    [t('duration.estimated'), `~${formatDuration(estimateDurationMin(route.sport, route.distanceM, route.elevationGainM))}`],
   ]
   // Columns as wide as their content, spread over the panel, so long values ("123,45 km") don't run
   // into the next one.

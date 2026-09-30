@@ -2,6 +2,8 @@
 import type { LngLat } from '#shared/utils/routes'
 import type { OfflineRouteInfo } from '~/utils/offlineRoute'
 
+const { formatShortDate, formatNumber } = useFormat()
+
 // Prepares the follow mode of a route for use without network (see app/utils/offlineRoute.ts). The route page starts
 // it from its actions menu (exposed `prepare`); this shows the download progress, then the stored copy.
 const props = defineProps<{
@@ -28,7 +30,7 @@ onMounted(() => {
 const percent = computed(() => (progress.value ? Math.round((progress.value.done / progress.value.total) * 100) : 0))
 const sizeLabel = computed(() => {
   const megabytes = (info.value?.bytes ?? 0) / 1024 / 1024
-  return `${megabytes.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} Mo`
+  return t('offline.size', { size: formatNumber(megabytes, { maximumFractionDigits: 1 }) })
 })
 
 async function prepare() {

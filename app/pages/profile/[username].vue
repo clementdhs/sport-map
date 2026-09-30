@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { PublicProfile } from '#shared/types/routes'
 
+const { formatDate } = useFormat()
+
 const route = useRoute()
 const { t } = useI18n()
 

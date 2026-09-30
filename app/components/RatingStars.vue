@@ -4,6 +4,7 @@ const props = defineProps<{
   value: number
 }>()
 
+const { formatRating } = useFormat()
 const filled = computed(() => `${Math.max(0, Math.min(5, props.value)) * 20}%`)
 </script>
 

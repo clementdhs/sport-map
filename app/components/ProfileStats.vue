@@ -3,6 +3,8 @@ import type { MyProfile } from '#shared/types/routes'
 import type { SportType } from '#shared/utils/routes'
 import type { StatsBucket, StatsMetric, StatsPeriod } from '~/utils/activityStats'
 
+const { formatDistance, formatNumber, locale } = useFormat()
+
 // Statistics of the completed routes: totals and a chart by week, month or year. Computed in the browser from
 // the profile's completed routes, so switching period, sport or measure is instant.
 const props = defineProps<{
@@ -26,12 +28,13 @@ const metricItems = computed(() => [
 ])
 const sportItems = computed(() => [
   { value: 'all', label: t('filters.allSports'), icon: 'i-lucide-list' },
-  ...SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] })),
+  ...SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })),
 ])
 const SHOWN: Record<StatsPeriod, number> = { week: WEEKS_SHOWN, month: MONTHS_SHOWN, year: YEARS_SHOWN }
 const rangeLabel = computed(() => t(`stats.ranges.${period.value}`, { count: SHOWN[period.value] }))
 
-const buckets = computed(() => activityStats(props.completed, period.value, sport.value))
+const buckets = computed(() => activityStats(props.completed, period.value, sport.value, new Date(), locale()))
+const bucketTitle = (bucket: StatsBucket) => (period.value === 'week' ? t('stats.weekOf', { date: bucket.fullLabel }) : bucket.fullLabel)
 const totals = computed(() => buckets.value.reduce((sum, b) => ({
   outings: sum.outings + b.outings,
   distanceM: sum.distanceM + b.distanceM,
@@ -41,7 +44,7 @@ const totals = computed(() => buckets.value.reduce((sum, b) => ({
 
 function formatMetric(bucket: StatsBucket, which: StatsMetric): string {
   if (which === 'distance') return formatDistance(bucket.distanceM)
-  if (which === 'gain') return `${Math.round(bucket.gainM).toLocaleString('fr-FR')} m`
+  if (which === 'gain') return `${formatNumber(Math.round(bucket.gainM))} m`
   return bucket.movingS ? formatElapsed(bucket.movingS) : '—'
 }
 
@@ -89,7 +92,7 @@ const everyOther = computed(() => buckets.value.length > 6)
           </div>
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('route.gain') }}</dt>
-            <dd class="text-lg font-semibold">{{ Math.round(totals.gainM).toLocaleString('fr-FR') }} m</dd>
+            <dd class="text-lg font-semibold">{{ formatNumber(Math.round(totals.gainM)) }} m</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('stats.movingTime') }}</dt>
@@ -111,7 +114,7 @@ const everyOther = computed(() => buckets.value.length > 6)
             :style="{ bottom: `${(tick / axis.top) * 100}%` }"
           >
             <span class="absolute -top-2 left-0 w-9 text-right text-[10px] text-muted tabular-nums">
-              {{ tick.toLocaleString('fr-FR') }}
+              {{ formatNumber(tick) }}
             </span>
           </div>
           <div class="relative flex h-full items-end gap-0.5">
@@ -131,7 +134,7 @@ const everyOther = computed(() => buckets.value.length > 6)
                 class="pointer-events-none absolute bottom-full z-10 mb-1 w-max max-w-48 rounded-md border border-default bg-default px-2 py-1 text-xs shadow-md"
                 :class="i < buckets.length / 2 ? 'left-0' : 'right-0'"
               >
-                <p class="font-medium">{{ bucket.fullLabel }}</p>
+                <p class="font-medium">{{ bucketTitle(bucket) }}</p>
                 <p class="text-muted">
                   {{ t('stats.outingCount', bucket.outings) }} · {{ formatMetric(bucket, 'distance') }}
                   · {{ t('stats.gainValue', { gain: formatMetric(bucket, 'gain') }) }} · {{ formatMetric(bucket, 'time') }}
@@ -160,7 +163,7 @@ const everyOther = computed(() => buckets.value.length > 6)
         </thead>
         <tbody>
           <tr v-for="bucket in buckets" :key="bucket.key">
-            <td>{{ bucket.fullLabel }}</td>
+            <td>{{ bucketTitle(bucket) }}</td>
             <td>{{ bucket.outings }}</td>
             <td>{{ formatMetric(bucket, 'distance') }}</td>
             <td>{{ formatMetric(bucket, 'gain') }}</td>

@@ -4,6 +4,8 @@ import type { FetchError } from 'ofetch'
 import type { RouteDetail, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat } from '#shared/utils/routes'
 
+const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
+
 const route = useRoute()
 const user = useSupabaseUser()
 const toast = useToast()
@@ -49,7 +51,7 @@ const pois = computed(() => {
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
 const summary = computed(() => {
   const p = parcours.value!
-  return `${SPORT_LABELS[p.sport_type]} · ${formatDistance(p.distance_m)}${p.description ? ` — ${p.description}` : ''}`
+  return `${t(`sports.${p.sport_type}`)} · ${formatDistance(p.distance_m)}${p.description ? ` — ${p.description}` : ''}`
 })
 
 const errorMessage = (error: unknown) => (error as FetchError).data?.statusMessage ?? (error as Error).message
@@ -176,7 +178,7 @@ useSeoMeta({
     <aside class="max-h-[40dvh] shrink-0 space-y-4 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
       <div class="space-y-1">
         <div class="flex flex-wrap items-center gap-2">
-          <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="SPORT_LABELS[parcours.sport_type]" variant="subtle" />
+          <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="t(`sports.${parcours.sport_type}`)" variant="subtle" />
           <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
           <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
           <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
@@ -281,8 +283,8 @@ useSeoMeta({
               </p>
               <USwitch v-model="showSlopes" :label="t('route.showSlopes')" />
               <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
-                <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.label" class="flex items-center gap-1">
-                  <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ slopeClass.label }}
+                <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.key" class="flex items-center gap-1">
+                  <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ t(`slopes.${slopeClass.key}`) }}
                 </li>
               </ul>
             </div>
@@ -307,8 +309,8 @@ useSeoMeta({
                   </span>
                   <div class="min-w-0 text-sm">
                     <p>
-                      <span class="font-medium">{{ POI_LABELS[poi.type] }}</span>
-                      <span class="text-muted"> · km {{ (poi.distanceM / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) }}</span>
+                      <span class="font-medium">{{ t(`pois.${poi.type}`) }}</span>
+                      <span class="text-muted"> · km {{ formatNumber(poi.distanceM / 1000, { maximumFractionDigits: 1 }) }}</span>
                     </p>
                     <p v-if="poi.note" class="break-words text-muted">{{ poi.note }}</p>
                   </div>

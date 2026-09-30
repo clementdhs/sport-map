@@ -5,6 +5,7 @@ import type { ProfileUpdate } from '#shared/utils/routes'
 // Account settings, reached from the account menu: profile, password, appearance, data (RGPD).
 definePageMeta({ middleware: 'auth' })
 const { t } = useI18n()
+const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
 useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
 
 const toast = useToast()
@@ -55,7 +56,7 @@ function onPasswordChanged() {
         </template>
         <template #username>@{{ profile.username }}</template>
       </i18n-t>
-      <UForm :schema="profileUpdateSchema" :state="form" class="space-y-4" @submit="saveProfile">
+      <UForm :schema="profileUpdateSchemaLocalized" :state="form" class="space-y-4" @submit="saveProfile">
         <UFormField :label="t('settings.displayName')" name="display_name" :hint="t('settings.displayNameHint', { username: profile.username })">
           <UInput v-model="form.display_name" class="w-full" />
         </UFormField>

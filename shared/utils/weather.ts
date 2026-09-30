@@ -8,7 +8,6 @@ export type HalfDay = keyof typeof HALF_DAYS
 
 // Half-days shown on a route page (three days).
 export const WEATHER_HALF_DAY_COUNT = 6
-export const HALF_DAY_LABELS: Record<HalfDay, string> = { morning: 'Matin', afternoon: 'Après-midi' }
 
 export interface OpenMeteoHourly {
   time: string[]
@@ -78,17 +77,18 @@ export function worstWeather(codes: number[]): number {
   return codes.reduce((worst, code) => (severity(code) > severity(worst) ? code : worst))
 }
 
-interface WeatherKind { label: string, icon: string }
+// The kind names the message (weather.kinds.<kind>) in the language files.
+interface WeatherKind { kind: string, icon: string }
 
 // WMO weather interpretation codes, as used by Open-Meteo.
 export function weatherKind(code: number): WeatherKind {
-  if (code === 0) return { label: 'Ensoleillé', icon: 'i-lucide-sun' }
-  if (code <= 2) return { label: 'Éclaircies', icon: 'i-lucide-cloud-sun' }
-  if (code === 3) return { label: 'Couvert', icon: 'i-lucide-cloud' }
-  if (code === 45 || code === 48) return { label: 'Brouillard', icon: 'i-lucide-cloud-fog' }
-  if (code >= 51 && code <= 57) return { label: 'Bruine', icon: 'i-lucide-cloud-drizzle' }
-  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { label: 'Pluie', icon: 'i-lucide-cloud-rain' }
-  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { label: 'Neige', icon: 'i-lucide-cloud-snow' }
-  if (code >= 95) return { label: 'Orage', icon: 'i-lucide-cloud-lightning' }
-  return { label: 'Nuageux', icon: 'i-lucide-cloud' }
+  if (code === 0) return { kind: 'sunny', icon: 'i-lucide-sun' }
+  if (code <= 2) return { kind: 'sunnyIntervals', icon: 'i-lucide-cloud-sun' }
+  if (code === 3) return { kind: 'overcast', icon: 'i-lucide-cloud' }
+  if (code === 45 || code === 48) return { kind: 'fog', icon: 'i-lucide-cloud-fog' }
+  if (code >= 51 && code <= 57) return { kind: 'drizzle', icon: 'i-lucide-cloud-drizzle' }
+  if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return { kind: 'rain', icon: 'i-lucide-cloud-rain' }
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return { kind: 'snow', icon: 'i-lucide-cloud-snow' }
+  if (code >= 95) return { kind: 'storm', icon: 'i-lucide-cloud-lightning' }
+  return { kind: 'cloudy', icon: 'i-lucide-cloud' }
 }

@@ -12,8 +12,8 @@ const props = defineProps<{
 const { t } = useI18n()
 const minutes = computed(() => estimateDurationMin(props.sport, props.distanceM, props.elevationGainM))
 const method = computed(() => props.elevationGainM === null
-  ? `${DURATION_METHODS[props.sport]} ${t('duration.unknownGain')}`
-  : DURATION_METHODS[props.sport])
+  ? `${t(`duration.methods.${props.sport}`)} ${t('duration.unknownGain')}`
+  : t(`duration.methods.${props.sport}`))
 </script>
 
 <template>

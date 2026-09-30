@@ -1,4 +1,5 @@
-import { POI_LABELS, type LngLat, type Poi } from '#shared/utils/routes'
+import type { LngLat, Poi } from '#shared/utils/routes'
+import { DEFAULT_MESSAGE_LOCALE, translate } from './messages'
 
 interface GpxTrack {
   name: string
@@ -23,7 +24,7 @@ export function buildGpx({ name, description, type, coordinates, elevations, poi
   // Points of interest as waypoints, which GPS devices show along the track.
   const waypoints = pois.map(({ type: poiType, coordinates: [lng, lat], note }) => {
     const poiDesc = note ? `<desc>${escapeXml(note)}</desc>` : ''
-    return `  <wpt lat="${lat}" lon="${lng}"><name>${escapeXml(POI_LABELS[poiType])}</name>${poiDesc}<type>${poiType}</type></wpt>\n`
+    return `  <wpt lat="${lat}" lon="${lng}"><name>${escapeXml(translate(DEFAULT_MESSAGE_LOCALE, `pois.${poiType}`))}</name>${poiDesc}<type>${poiType}</type></wpt>\n`
   })
   const points = coordinates.map(([lng, lat], i) => {
     const ele = elevations?.[i]

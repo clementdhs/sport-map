@@ -261,7 +261,22 @@
     "rain": "Rain",
     "wind": "Wind",
     "gusts": "Gusts up to {speed} km/h",
-    "credit": "Weather data:"
+    "credit": "Weather data:",
+    "halfDays": {
+      "morning": "Morning",
+      "afternoon": "Afternoon"
+    },
+    "kinds": {
+      "sunny": "Sunny",
+      "sunnyIntervals": "Sunny intervals",
+      "overcast": "Overcast",
+      "fog": "Fog",
+      "drizzle": "Drizzle",
+      "rain": "Rain",
+      "snow": "Snow",
+      "storm": "Thunderstorm",
+      "cloudy": "Cloudy"
+    }
   },
   "offline": {
     "ready": "Route available offline",
@@ -270,7 +285,8 @@
     "available": "Available offline",
     "until": "until {date}",
     "update": "Update",
-    "remove": "Remove from this phone"
+    "remove": "Remove from this phone",
+    "size": "{size} MB"
   },
   "collections": {
     "unavailable": "Collections unavailable",
@@ -295,7 +311,12 @@
   "duration": {
     "short": "Time",
     "estimated": "Estimated time",
-    "unknownGain": "Unknown elevation gain: not taken into account."
+    "unknownGain": "Unknown elevation gain: not taken into account.",
+    "methods": {
+      "hiking": "Naismith's rule: 5 km/h, plus 1 h per 600 m of elevation gain.",
+      "running": "Pace of 6 min/km, each 100 m of elevation gain counting as 1 km on the flat (km-effort).",
+      "cycling": "20 km/h average, plus 1 h per 600 m of elevation gain."
+    }
   },
   "elevationProfile": {
     "title": "Elevation profile",
@@ -502,7 +523,8 @@
     "outingCount": "{count} outing | {count} outings",
     "gainValue": "+{gain}",
     "unit": "in {unit}",
-    "caption": "Statistics {range}"
+    "caption": "Statistics {range}",
+    "weekOf": "Week of {date}"
   },
   "settings": {
     "profileUpdated": "Profile updated",
@@ -515,5 +537,42 @@
     "saveProfile": "Save the profile",
     "changePassword": "Change the password",
     "appearanceHint": "Kept on this device."
+  },
+  "sports": {
+    "running": "Running",
+    "hiking": "Hiking",
+    "cycling": "Cycling"
+  },
+  "pois": {
+    "water": "Water point",
+    "viewpoint": "Viewpoint",
+    "parking": "Parking",
+    "danger": "Tricky section"
+  },
+  "sorts": {
+    "nearest": "Nearest",
+    "recent": "Most recent",
+    "shortest": "Shortest",
+    "longest": "Longest",
+    "best_rated": "Best rated"
+  },
+  "slopes": {
+    "under5": "Under 5 %",
+    "from5to10": "5 to 10 %",
+    "from10to15": "10 to 15 %",
+    "over15": "Over 15 %"
+  },
+  "validation": {
+    "usernameRequired": "Type your username",
+    "minChars": "At least {min} characters",
+    "maxChars": "{max} characters maximum",
+    "passwordsDiffer": "The two passwords are different",
+    "nameRequired": "Name required",
+    "chooseRating": "Choose a rating",
+    "segmentsMismatch": "There must be a segment between each pair of points",
+    "elevationsMismatch": "There must be one elevation per point",
+    "editorMismatch": "The editor's state doesn't match the track",
+    "movingExceedsDuration": "The moving time is longer than the outing",
+    "maxPois": "{max} points of interest maximum"
   }
 }

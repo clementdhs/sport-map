@@ -3,6 +3,8 @@ import type { RouteDetail } from '#shared/types/routes'
 import type { LngLat } from '#shared/utils/routes'
 import type { TrackProgress } from '~/utils/trackFollower'
 
+const { formatDistance } = useFormat()
+
 // Full-screen "follow the route" mode, for the phone: live position on the track, distance and climb
 // left, alert when straying from the track.
 definePageMeta({ layout: false })

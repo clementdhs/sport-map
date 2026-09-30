@@ -8,6 +8,7 @@ const props = defineProps<{ username: string }>()
 const toast = useToast()
 const supabase = useSupabaseClient()
 const { t } = useI18n()
+const accountDeletionSchemaLocalized = useLocalizedSchema(accountDeletionSchema)
 const errorMessage = useErrorMessage()
 
 const exporting = ref(false)
@@ -75,7 +76,7 @@ async function deleteAccount() {
                 <strong>{{ t('accountData.forever') }}</strong>
               </template>
             </i18n-t>
-            <UForm id="delete-account-form" :schema="accountDeletionSchema" :state="confirmation" @submit="deleteAccount">
+            <UForm id="delete-account-form" :schema="accountDeletionSchemaLocalized" :state="confirmation" @submit="deleteAccount">
               <UFormField :label="t('accountData.confirmLabel', { username })" name="username">
                 <UInput v-model="confirmation.username" class="w-full" autocomplete="off" />
               </UFormField>

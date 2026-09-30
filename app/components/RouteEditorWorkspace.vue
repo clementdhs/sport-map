@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { LngLat } from '#shared/utils/routes'
 
+const { formatDistance } = useFormat()
+
 // Map + side panel of the route editor, shared by the create and edit pages.
 defineProps<{
   submitLabel: string
@@ -11,11 +13,12 @@ const hasLockedTrack = computed(() => editor.segments.some(segment => segment.mo
 const hoverPoint = ref<LngLat | null>(null)
 const toast = useToast()
 const { t } = useI18n()
+const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
 const errorMessage = useErrorMessage()
 const saving = ref(false)
 
-const sportItems = SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] }))
-const poiItems = POI_TYPES.map(value => ({ value, label: POI_LABELS[value], icon: POI_ICONS[value] }))
+const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
+const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.${value}`), icon: POI_ICONS[value] })))
 
 const gpxInput = useTemplateRef('gpxInput')
 const importing = ref(false)
@@ -82,7 +85,7 @@ async function onSubmit() {
           v-model="editor.snapToPaths"
           :label="t('editor.snap')"
           :description="editor.snapToPaths
-            ? t('editor.snapOn', { sport: SPORT_LABELS[editor.details.sport_type].toLowerCase() })
+            ? t('editor.snapOn', { sport: t(`sports.${editor.details.sport_type}`).toLowerCase() })
             : t('editor.snapOff')"
         />
         <div class="flex gap-2">
@@ -263,7 +266,7 @@ async function onSubmit() {
 
       <USeparator />
 
-      <UForm :schema="routeDetailsSchema" :state="editor.details" class="space-y-4" @submit="onSubmit">
+      <UForm :schema="routeDetailsSchemaLocalized" :state="editor.details" class="space-y-4" @submit="onSubmit">
         <UFormField :label="t('collections.name')" name="name" required>
           <UInput v-model="editor.details.name" :placeholder="t('editor.namePlaceholder')" class="w-full" />
         </UFormField>

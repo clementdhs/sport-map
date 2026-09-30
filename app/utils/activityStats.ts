@@ -1,4 +1,5 @@
 import type { MyProfile } from '#shared/types/routes'
+import { DEFAULT_FORMAT_LOCALE } from '#shared/utils/format'
 import type { SportType } from '#shared/utils/routes'
 
 // Totals of the completed routes of the profile, by week, month or year, for the statistics tab.
@@ -45,11 +46,12 @@ function bucketKey(date: string, period: StatsPeriod): string {
   return period === 'month' ? date.slice(0, 7) : date.slice(0, 4)
 }
 
-function labels(key: string, period: StatsPeriod): { label: string, fullLabel: string } {
+// For a week, fullLabel is the date of its Monday: the component words it ("Week of …").
+function labels(key: string, period: StatsPeriod, locale: string): { label: string, fullLabel: string } {
   const format = (options: Intl.DateTimeFormatOptions, date: string) =>
-    new Date(toUtc(date)).toLocaleDateString('fr-FR', { ...options, timeZone: 'UTC' })
+    new Date(toUtc(date)).toLocaleDateString(locale, { ...options, timeZone: 'UTC' })
   if (period === 'week') {
-    return { label: format({ day: 'numeric', month: 'short' }, key), fullLabel: `Semaine du ${format({ day: 'numeric', month: 'long', year: 'numeric' }, key)}` }
+    return { label: format({ day: 'numeric', month: 'short' }, key), fullLabel: format({ day: 'numeric', month: 'long', year: 'numeric' }, key) }
   }
   if (period === 'month') {
     const month = format({ month: 'long', year: 'numeric' }, `${key}-01`)
@@ -79,10 +81,16 @@ function bucketKeys(period: StatsPeriod, today: string): string[] {
   return keys
 }
 
-export function activityStats(completed: Completed[], period: StatsPeriod, sport: SportType | 'all', now = new Date()): StatsBucket[] {
+export function activityStats(
+  completed: Completed[],
+  period: StatsPeriod,
+  sport: SportType | 'all',
+  now = new Date(),
+  locale = DEFAULT_FORMAT_LOCALE,
+): StatsBucket[] {
   const buckets = new Map(bucketKeys(period, localDate(now)).map(key => [key, {
     key,
-    ...labels(key, period),
+    ...labels(key, period, locale),
     distanceM: 0,
     gainM: 0,
     movingS: 0,

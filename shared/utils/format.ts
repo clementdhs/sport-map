@@ -1,6 +1,10 @@
-export function formatDistance(meters: number): string {
+// Numbers and dates follow the language (a BCP 47 tag such as 'fr-FR' or 'en-GB'): French by default, for
+// server-generated files. Components get these bound to the current language from useFormat().
+export const DEFAULT_FORMAT_LOCALE = 'fr-FR'
+
+export function formatDistance(meters: number, locale = DEFAULT_FORMAT_LOCALE): string {
   if (meters < 1000) return `${Math.round(meters)} m`
-  return `${(meters / 1000).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km`
+  return `${(meters / 1000).toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km`
 }
 
 // Rounded to 5 minutes: finer precision would be misleading for an estimate.
@@ -12,13 +16,13 @@ export function formatDuration(minutes: number): string {
   return rest ? `${hours} h ${String(rest).padStart(2, '0')}` : `${hours} h`
 }
 
-export function formatShortDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
+export function formatShortDate(isoDate: string, locale = DEFAULT_FORMAT_LOCALE): string {
+  return new Date(isoDate).toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
 }
 
 // Fixed time zone so server and client render the same date.
-export function formatDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString('fr-FR', {
+export function formatDate(isoDate: string, locale = DEFAULT_FORMAT_LOCALE): string {
+  return new Date(isoDate).toLocaleDateString(locale, {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -27,8 +31,8 @@ export function formatDate(isoDate: string): string {
 }
 
 // Average rating with one decimal, e.g. "4,3".
-export function formatRating(average: number): string {
-  return average.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+export function formatRating(average: number, locale = DEFAULT_FORMAT_LOCALE): string {
+  return average.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 }
 
 // Stopwatch, e.g. "1:05:09" or "05:09".
@@ -50,7 +54,12 @@ export function formatElapsed(seconds: number): string {
 }
 
 // Speed from meters and seconds, e.g. "8,4 km/h".
-export function formatSpeed(meters: number, seconds: number): string {
+export function formatSpeed(meters: number, seconds: number, locale = DEFAULT_FORMAT_LOCALE): string {
   const kmh = seconds > 0 ? (meters / seconds) * 3.6 : 0
-  return `${kmh.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km/h`
+  return `${kmh.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km/h`
+}
+
+// Any other number, e.g. "1 250" or "1,250".
+export function formatNumber(value: number, locale = DEFAULT_FORMAT_LOCALE, options?: Intl.NumberFormatOptions): string {
+  return value.toLocaleString(locale, options)
 }

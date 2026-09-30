@@ -50,7 +50,7 @@ describe('activityStats', () => {
     const [previous, current] = weeks.slice(-2)
     expect(current).toMatchObject({ key: '2026-09-28', distanceM: 10_000, gainM: 500, movingS: 7200, outings: 1 })
     expect(previous).toMatchObject({ key: '2026-09-21', distanceM: 5000, gainM: 0, outings: 1 })
-    expect(current!.fullLabel).toBe('Semaine du 28 septembre 2026')
+    expect(current!.fullLabel).toBe('28 septembre 2026')
   })
 
   it('sums up by month and year, leaving out older outings', () => {

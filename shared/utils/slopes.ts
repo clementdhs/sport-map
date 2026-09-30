@@ -13,11 +13,12 @@ const CLIMB_TOLERANCE_M = 20
 const MIN_CLIMB_GAIN_M = 30
 
 // One hue from light to dark (dataviz ordinal ramp, validated on white and on the dark surface).
+// Each class covers grades from the previous class's max up to its own (labels: slopes.<key>).
 export const SLOPE_CLASSES = [
-  { max: 5, label: 'Moins de 5 %', color: '#fe9a00' },
-  { max: 10, label: '5 à 10 %', color: '#f54900' },
-  { max: 15, label: '10 à 15 %', color: '#c10007' },
-  { max: Infinity, label: 'Plus de 15 %', color: '#9f0712' },
+  { max: 5, key: 'under5', color: '#fe9a00' },
+  { max: 10, key: 'from5to10', color: '#f54900' },
+  { max: 15, key: 'from10to15', color: '#c10007' },
+  { max: Infinity, key: 'over15', color: '#9f0712' },
 ] as const
 
 export interface SlopeProfile {

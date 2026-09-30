@@ -12,6 +12,7 @@ const emit = defineEmits<{
 
 const supabase = useSupabaseClient()
 const { t } = useI18n()
+const newPasswordSchemaLocalized = useLocalizedSchema(newPasswordSchema)
 const state = reactive<NewPassword>({ password: '', confirm: '' })
 const saving = ref(false)
 const errorMessage = ref('')
@@ -35,7 +36,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <UForm :schema="newPasswordSchema" :state="state" class="space-y-4" @submit="onSubmit">
+  <UForm :schema="newPasswordSchemaLocalized" :state="state" class="space-y-4" @submit="onSubmit">
     <UFormField :label="t('auth.newPassword.password')" name="password" :description="t('auth.passwordMin', { n: MIN_PASSWORD_LENGTH })" required>
       <UInput id="new-password" v-model="state.password" type="password" autocomplete="new-password" class="w-full" />
     </UFormField>

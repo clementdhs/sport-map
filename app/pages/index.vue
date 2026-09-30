@@ -12,7 +12,7 @@ const search = useRouteSearchStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
 
-const sortItems = SEARCH_SORTS.map(value => ({ value, label: SEARCH_SORT_LABELS[value] }))
+const sortItems = computed(() => SEARCH_SORTS.map(value => ({ value, label: t(`sorts.${value}`) })))
 
 // The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort (home.limit.<sort>).
 const resultsLabel = computed(() => {

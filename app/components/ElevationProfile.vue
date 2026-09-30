@@ -3,6 +3,8 @@ import { distance } from '@turf/turf'
 import type { LngLat } from '#shared/utils/routes'
 import { SLOPE_CLASSES, slopeClass } from '#shared/utils/slopes'
 
+const { formatDistance, formatNumber } = useFormat()
+
 const props = defineProps<{
   coordinates: LngLat[]
   elevations: number[]
@@ -120,7 +122,7 @@ function onKeydown(event: KeyboardEvent) {
   event.preventDefault()
 }
 
-const formatElevation = (meters: number) => `${Math.round(meters).toLocaleString('fr-FR')} m`
+const formatElevation = (meters: number) => `${formatNumber(Math.round(meters))} m`
 const summary = computed(() =>
   t('elevationProfile.summary', {
     min: formatElevation(axis.value.min),

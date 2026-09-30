@@ -8,19 +8,20 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const { formatNumber, locale } = useFormat()
 const { data, status } = useFetch<RouteWeather>(`/api/routes/${props.routeId}/weather`, { lazy: true, server: false })
 
 function dayLabel(date: string, today: string): string {
   const days = Math.round((Date.parse(`${date}T12:00:00Z`) - Date.parse(`${today}T12:00:00Z`)) / 86_400_000)
   if (days === 0) return t('weather.today')
   if (days === 1) return t('weather.tomorrow')
-  const weekday = new Date(`${date}T12:00:00Z`).toLocaleDateString('fr-FR', { weekday: 'long', timeZone: 'UTC' })
+  const weekday = new Date(`${date}T12:00:00Z`).toLocaleDateString(locale(), { weekday: 'long', timeZone: 'UTC' })
   return weekday.charAt(0).toUpperCase() + weekday.slice(1)
 }
 
 function rain(forecast: HalfDayForecast): string {
   const chance = forecast.precipitationProbability === null ? '' : `${forecast.precipitationProbability} %`
-  return forecast.precipitationMm > 0 ? `${forecast.precipitationMm.toLocaleString('fr-FR')} mm${chance ? ` (${chance})` : ''}` : chance || '—'
+  return forecast.precipitationMm > 0 ? `${formatNumber(forecast.precipitationMm)} mm${chance ? ` (${chance})` : ''}` : chance || '—'
 }
 </script>
 
@@ -58,10 +59,10 @@ function rain(forecast: HalfDayForecast): string {
           <tr v-for="forecast in data.halfDays" :key="`${forecast.date}-${forecast.period}`" class="border-b border-default last:border-0">
             <td class="py-1.5 pr-2">
               <span class="font-medium">{{ dayLabel(forecast.date, data.today) }}</span>
-              <span class="block text-xs text-muted">{{ HALF_DAY_LABELS[forecast.period] }}</span>
+              <span class="block text-xs text-muted">{{ t(`weather.halfDays.${forecast.period}`) }}</span>
             </td>
             <td class="py-1.5 pr-2">
-              <UIcon :name="weatherKind(forecast.weatherCode).icon" class="size-5 align-middle" :aria-label="weatherKind(forecast.weatherCode).label" />
+              <UIcon :name="weatherKind(forecast.weatherCode).icon" class="size-5 align-middle" :aria-label="t(`weather.kinds.${weatherKind(forecast.weatherCode).kind}`)" />
             </td>
             <td class="py-1.5 pr-2 whitespace-nowrap tabular-nums">{{ forecast.tempMin }}–{{ forecast.tempMax }} °C</td>
             <td class="py-1.5 pr-2 whitespace-nowrap text-muted">

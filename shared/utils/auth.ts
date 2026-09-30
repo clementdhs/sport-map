@@ -1,13 +1,15 @@
 import * as z from 'zod'
 
+// Validation messages are translation keys (i18n/locales), translated where they are shown.
+
 // Supabase only enforces 6 characters: the app asks for more, at sign-up and when changing a password.
 export const MIN_PASSWORD_LENGTH = 8
 
 export const newPasswordSchema = z.object({
-  password: z.string().min(MIN_PASSWORD_LENGTH, `${MIN_PASSWORD_LENGTH} caractères minimum`),
+  password: z.string().min(MIN_PASSWORD_LENGTH, 'validation.minChars'),
   confirm: z.string(),
 }).refine(({ password, confirm }) => password === confirm, {
-  message: 'Les deux mots de passe sont différents',
+  message: 'validation.passwordsDiffer',
   path: ['confirm'],
 })
 

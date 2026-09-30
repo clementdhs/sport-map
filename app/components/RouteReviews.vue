@@ -3,6 +3,8 @@ import type { FetchError } from 'ofetch'
 import type { RouteReview, RouteReviews } from '#shared/types/routes'
 import type { ReviewInput } from '#shared/utils/routes'
 
+const { formatShortDate, formatRating } = useFormat()
+
 // Ratings and comments of a route: signed-in users review the public routes of others, the route's owner
 // moderates, everyone can report an abusive comment.
 const props = defineProps<{
@@ -15,6 +17,7 @@ const user = useSupabaseUser()
 const route = useRoute()
 const toast = useToast()
 const { t } = useI18n()
+const reviewSchemaLocalized = useLocalizedSchema(reviewSchema)
 
 const base = `/api/routes/${props.routeId}/reviews`
 const { data } = await useFetch<RouteReviews>(base)
@@ -93,7 +96,7 @@ const showForm = computed(() => canReview.value && (!myReview.value || editing.v
       </p>
     </div>
 
-    <UForm v-if="showForm" :schema="reviewSchema" :state="form" class="space-y-3 rounded-lg bg-elevated p-3" @submit="submit">
+    <UForm v-if="showForm" :schema="reviewSchemaLocalized" :state="form" class="space-y-3 rounded-lg bg-elevated p-3" @submit="submit">
       <UFormField name="rating" :label="myReview ? t('reviews.editRating') : t('reviews.yourRating')">
         <div class="flex items-center gap-1" role="radiogroup" :aria-label="t('reviews.yourRating')">
           <button

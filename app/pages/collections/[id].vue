@@ -2,9 +2,12 @@
 import type { CollectionDetail } from '#shared/types/routes'
 import type { CollectionInput } from '#shared/utils/collections'
 
+const { formatDistance, formatDate } = useFormat()
+
 const route = useRoute()
 const toast = useToast()
 const { t } = useI18n()
+const collectionSchemaLocalized = useLocalizedSchema(collectionSchema)
 const errorMessage = useErrorMessage()
 
 const { data: collection, error } = await useFetch<CollectionDetail>(`/api/collections/${route.params.id}`)
@@ -162,7 +165,7 @@ useSeoMeta({
         <UModal v-if="collection.is_mine" v-model:open="editOpen" :title="t('collection.editTitle')">
           <UButton icon="i-lucide-pencil" :label="t('reviews.edit')" color="neutral" variant="outline" />
           <template #body>
-            <UForm id="collection-form" :schema="collectionSchema" :state="form" class="space-y-4" @submit="save">
+            <UForm id="collection-form" :schema="collectionSchemaLocalized" :state="form" class="space-y-4" @submit="save">
               <UFormField :label="t('collections.name')" name="name" required>
                 <UInput v-model="form.name" class="w-full" />
               </UFormField>

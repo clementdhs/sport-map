@@ -3,11 +3,14 @@ import type { LngLat, RecordingPayload, SportType } from '#shared/utils/routes'
 import type { GpsFix } from '~/composables/useWatchPosition'
 import type { Recording } from '~/utils/recorder'
 
+const { formatDistance, formatDate, formatSpeed } = useFormat()
+
 // Records an outing with the phone's GPS, then saves it as a new route marked as done. A web page only gets
 // positions while the screen is on: the screen is kept on, and the recording is saved on the phone after
 // every point, so that it can be resumed if the page closes.
 definePageMeta({ layout: false, middleware: 'auth' })
 const { t } = useI18n()
+const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
 useSeoMeta({ title: () => `${t('header.record')} — sport-map` })
 
 const toast = useToast()
@@ -113,7 +116,7 @@ onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
 
 // End of the outing
-const sportItems = SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] }))
+const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
 const finishOpen = ref(false)
 const form = reactive<{ name: string, sport_type: SportType, is_public: boolean }>({
   name: '',
@@ -269,7 +272,7 @@ function discard() {
 
     <UModal v-model:open="finishOpen" :title="t('record.finishTitle')" :description="t('record.finishDescription')">
       <template #body>
-        <UForm :schema="routeDetailsSchema" :state="form" class="space-y-4" @submit="save">
+        <UForm :schema="routeDetailsSchemaLocalized" :state="form" class="space-y-4" @submit="save">
           <UFormField :label="t('collections.name')" name="name" required>
             <UInput id="recording-name" v-model="form.name" class="w-full" />
           </UFormField>

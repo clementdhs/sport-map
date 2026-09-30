@@ -19,7 +19,7 @@ const panelSlot = computed(() => isDesktop.value ? 'content' : 'body')
 
 const sportItems = computed(() => [
   { value: 'all', label: t('filters.allSports'), icon: 'i-lucide-list' },
-  ...SPORT_TYPES.map(value => ({ value, label: SPORT_LABELS[value], icon: SPORT_ICONS[value] })),
+  ...SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })),
 ])
 
 // "unit" follows the numbers, e.g. "km" or "m D+".

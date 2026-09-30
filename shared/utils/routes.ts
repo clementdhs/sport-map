@@ -6,12 +6,6 @@ export type LngLat = [lng: number, lat: number]
 export const SPORT_TYPES = ['running', 'hiking', 'cycling'] as const
 export type SportType = typeof SPORT_TYPES[number]
 
-export const SPORT_LABELS: Record<SportType, string> = {
-  running: 'Course à pied',
-  hiking: 'Randonnée',
-  cycling: 'Vélo',
-}
-
 export const SPORT_ICONS: Record<SportType, string> = {
   running: 'i-lucide-footprints',
   hiking: 'i-lucide-mountain',
@@ -32,12 +26,6 @@ export function estimateDurationMin(sport: SportType, distanceM: number, elevati
   }
 }
 
-export const DURATION_METHODS: Record<SportType, string> = {
-  hiking: 'Règle de Naismith : 5 km/h, plus 1 h par 600 m de dénivelé positif.',
-  running: 'Allure de 6 min/km, chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).',
-  cycling: '20 km/h de moyenne, plus 1 h par 600 m de dénivelé positif.',
-}
-
 export const MAX_ROUTE_POINTS = 5000
 
 const coordinateSchema = z.tuple([
@@ -46,8 +34,8 @@ const coordinateSchema = z.tuple([
 ])
 
 export const routeDetailsSchema = z.object({
-  name: z.string().trim().min(1, 'Nom requis').max(120, '120 caractères maximum'),
-  description: z.string().trim().max(2000, '2000 caractères maximum').optional(),
+  name: z.string().trim().min(1, 'validation.nameRequired').max(120, 'validation.maxChars'),
+  description: z.string().trim().max(2000, 'validation.maxChars').optional(),
   sport_type: z.enum(SPORT_TYPES),
   is_public: z.boolean(),
 })
@@ -67,7 +55,7 @@ export const editorStateSchema = z.object({
     end: z.number().int().min(0),
   })).max(MAX_ROUTE_POINTS),
 }).refine(state => state.segments.length === Math.max(0, state.waypoints.length - 1), {
-  message: 'Il doit y avoir un segment entre chaque paire de points',
+  message: 'validation.segmentsMismatch',
 })
 
 export type EditorState = z.infer<typeof editorStateSchema>
@@ -75,13 +63,6 @@ export type EditorState = z.infer<typeof editorStateSchema>
 // Points of interest placed on the track.
 export const POI_TYPES = ['water', 'viewpoint', 'parking', 'danger'] as const
 export type PoiType = typeof POI_TYPES[number]
-
-export const POI_LABELS: Record<PoiType, string> = {
-  water: "Point d'eau",
-  viewpoint: 'Point de vue',
-  parking: 'Parking',
-  danger: 'Passage difficile',
-}
 
 export const POI_ICONS: Record<PoiType, string> = {
   water: 'i-lucide-droplet',
@@ -103,7 +84,7 @@ export const MAX_POI_NOTE_LENGTH = 140
 export const poiSchema = z.object({
   type: z.enum(POI_TYPES),
   coordinates: coordinateSchema,
-  note: z.string().trim().max(MAX_POI_NOTE_LENGTH, `${MAX_POI_NOTE_LENGTH} caractères maximum`).optional(),
+  note: z.string().trim().max(MAX_POI_NOTE_LENGTH, 'validation.maxChars').optional(),
 })
 
 export type Poi = z.infer<typeof poiSchema>
@@ -120,13 +101,13 @@ export const routeCreateSchema = routeDetailsSchema.extend({
   elevations: z.array(z.number().min(-500).max(9000)).optional(),
   source: z.enum(ROUTE_SOURCES).default('drawn'),
   editor_state: editorStateSchema.optional(),
-  pois: z.array(poiSchema).max(MAX_POIS, `${MAX_POIS} points d'intérêt maximum`).optional(),
+  pois: z.array(poiSchema).max(MAX_POIS, 'validation.maxPois').optional(),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
-  message: 'Il doit y avoir une altitude par point',
+  message: 'validation.elevationsMismatch',
   path: ['elevations'],
 }).refine(route => !route.editor_state || route.editor_state.segments.every(segment =>
   segment.start <= segment.end && segment.end < route.coordinates.length), {
-  message: "L'état de l'éditeur ne correspond pas au tracé",
+  message: 'validation.editorMismatch',
   path: ['editor_state'],
 })
 
@@ -137,8 +118,8 @@ export const ACTIVITY_TYPES = ['saved', 'completed'] as const
 export type ActivityType = typeof ACTIVITY_TYPES[number]
 
 export const profileUpdateSchema = z.object({
-  display_name: z.string().trim().max(60, '60 caractères maximum'),
-  bio: z.string().trim().max(500, '500 caractères maximum'),
+  display_name: z.string().trim().max(60, 'validation.maxChars'),
+  bio: z.string().trim().max(500, 'validation.maxChars'),
 })
 
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>
@@ -147,14 +128,6 @@ export const MAX_SEARCH_RESULTS = 50
 
 export const SEARCH_SORTS = ['nearest', 'recent', 'shortest', 'longest', 'best_rated'] as const
 export type SearchSort = typeof SEARCH_SORTS[number]
-
-export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
-  nearest: 'Plus proches',
-  recent: 'Plus récents',
-  shortest: 'Plus courts',
-  longest: 'Plus longs',
-  best_rated: 'Mieux notés',
-}
 
 export const routeSearchSchema = z.object({
   minLng: z.coerce.number().min(-180).max(180),
@@ -273,8 +246,8 @@ export const MAX_REVIEW_COMMENT_LENGTH = 1000
 
 // A user's rating (1 to 5 stars) and optional comment on someone else's route.
 export const reviewSchema = z.object({
-  rating: z.number().int().min(1, 'Choisis une note').max(5),
-  comment: z.string().trim().max(MAX_REVIEW_COMMENT_LENGTH, `${MAX_REVIEW_COMMENT_LENGTH} caractères maximum`).optional(),
+  rating: z.number().int().min(1, 'validation.chooseRating').max(5),
+  comment: z.string().trim().max(MAX_REVIEW_COMMENT_LENGTH, 'validation.maxChars').optional(),
 })
 
 export type ReviewInput = z.infer<typeof reviewSchema>
@@ -287,7 +260,7 @@ export const recordingSchema = z.object({
   duration_s: z.number().int().min(0).max(7 * 24 * 3600),
   moving_s: z.number().int().min(0),
 }).refine(recording => recording.moving_s <= recording.duration_s, {
-  message: 'Le temps en mouvement dépasse la durée de la sortie',
+  message: 'validation.movingExceedsDuration',
   path: ['moving_s'],
 })
 

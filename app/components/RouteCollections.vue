@@ -10,6 +10,7 @@ const open = defineModel<boolean>('open', { default: false })
 
 const toast = useToast()
 const { t } = useI18n()
+const collectionSchemaLocalized = useLocalizedSchema(collectionSchema)
 
 const collections = ref<CollectionSummary[] | null>(null)
 const loading = ref(false)
@@ -116,7 +117,7 @@ const inCount = computed(() => collections.value?.filter(collection => collectio
           {{ t('collections.noneYet') }}
         </p>
 
-        <UForm v-if="creating" :schema="collectionSchema" :state="form" class="space-y-3 rounded-lg border border-default p-3" @submit="create">
+        <UForm v-if="creating" :schema="collectionSchemaLocalized" :state="form" class="space-y-3 rounded-lg border border-default p-3" @submit="create">
           <UFormField :label="t('collections.name')" name="name" required>
             <UInput v-model="form.name" class="w-full" autofocus :placeholder="t('collections.namePlaceholder')" />
           </UFormField>

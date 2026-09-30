@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RouteListItem } from '#shared/types/routes'
 
+const { formatDistance, formatRating } = useFormat()
+
 defineProps<{
   route: RouteListItem
   highlighted?: boolean
@@ -20,7 +22,7 @@ defineProps<{
         {{ route.name }}
         <UIcon v-if="!route.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" :aria-label="$t('routeCard.private')" />
       </p>
-      <UIcon :name="SPORT_ICONS[route.sport_type]" class="size-5 shrink-0 text-muted" :aria-label="SPORT_LABELS[route.sport_type]" />
+      <UIcon :name="SPORT_ICONS[route.sport_type]" class="size-5 shrink-0 text-muted" :aria-label="$t(`sports.${route.sport_type}`)" />
     </div>
     <p class="mt-1 text-sm text-muted">
       {{ formatDistance(route.distance_m) }}

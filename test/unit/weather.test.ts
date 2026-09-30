@@ -48,9 +48,9 @@ describe('weather codes', () => {
   })
 
   it('names them in French', () => {
-    expect(weatherKind(0).label).toBe('Ensoleillé')
-    expect(weatherKind(81).label).toBe('Pluie')
-    expect(weatherKind(75).label).toBe('Neige')
+    expect(weatherKind(0).kind).toBe('sunny')
+    expect(weatherKind(81).kind).toBe('rain')
+    expect(weatherKind(75).kind).toBe('snow')
     expect(weatherKind(96).icon).toBe('i-lucide-cloud-lightning')
   })
 })

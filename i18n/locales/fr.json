@@ -261,7 +261,22 @@
     "rain": "Pluie",
     "wind": "Vent",
     "gusts": "Rafales jusqu'à {speed} km/h",
-    "credit": "Données météo :"
+    "credit": "Données météo :",
+    "halfDays": {
+      "morning": "Matin",
+      "afternoon": "Après-midi"
+    },
+    "kinds": {
+      "sunny": "Ensoleillé",
+      "sunnyIntervals": "Éclaircies",
+      "overcast": "Couvert",
+      "fog": "Brouillard",
+      "drizzle": "Bruine",
+      "rain": "Pluie",
+      "snow": "Neige",
+      "storm": "Orage",
+      "cloudy": "Nuageux"
+    }
   },
   "offline": {
     "ready": "Parcours disponible hors-ligne",
@@ -270,7 +285,8 @@
     "available": "Disponible hors-ligne",
     "until": "jusqu'au {date}",
     "update": "Mettre à jour",
-    "remove": "Supprimer du téléphone"
+    "remove": "Supprimer du téléphone",
+    "size": "{size} Mo"
   },
   "collections": {
     "unavailable": "Collections indisponibles",
@@ -295,7 +311,12 @@
   "duration": {
     "short": "Durée",
     "estimated": "Durée estimée",
-    "unknownGain": "Dénivelé inconnu : non pris en compte."
+    "unknownGain": "Dénivelé inconnu : non pris en compte.",
+    "methods": {
+      "hiking": "Règle de Naismith : 5 km/h, plus 1 h par 600 m de dénivelé positif.",
+      "running": "Allure de 6 min/km, chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).",
+      "cycling": "20 km/h de moyenne, plus 1 h par 600 m de dénivelé positif."
+    }
   },
   "elevationProfile": {
     "title": "Profil altimétrique",
@@ -502,7 +523,8 @@
     "outingCount": "{count} sortie | {count} sorties",
     "gainValue": "D+ {gain}",
     "unit": "en {unit}",
-    "caption": "Statistiques {range}"
+    "caption": "Statistiques {range}",
+    "weekOf": "Semaine du {date}"
   },
   "settings": {
     "profileUpdated": "Profil mis à jour",
@@ -515,5 +537,42 @@
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
     "appearanceHint": "Gardée sur cet appareil."
+  },
+  "sports": {
+    "running": "Course à pied",
+    "hiking": "Randonnée",
+    "cycling": "Vélo"
+  },
+  "pois": {
+    "water": "Point d'eau",
+    "viewpoint": "Point de vue",
+    "parking": "Parking",
+    "danger": "Passage difficile"
+  },
+  "sorts": {
+    "nearest": "Plus proches",
+    "recent": "Plus récents",
+    "shortest": "Plus courts",
+    "longest": "Plus longs",
+    "best_rated": "Mieux notés"
+  },
+  "slopes": {
+    "under5": "Moins de 5 %",
+    "from5to10": "5 à 10 %",
+    "from10to15": "10 à 15 %",
+    "over15": "Plus de 15 %"
+  },
+  "validation": {
+    "usernameRequired": "Saisis ton nom d'utilisateur",
+    "minChars": "{min} caractères minimum",
+    "maxChars": "{max} caractères maximum",
+    "passwordsDiffer": "Les deux mots de passe sont différents",
+    "nameRequired": "Nom requis",
+    "chooseRating": "Choisis une note",
+    "segmentsMismatch": "Il doit y avoir un segment entre chaque paire de points",
+    "elevationsMismatch": "Il doit y avoir une altitude par point",
+    "editorMismatch": "L'état de l'éditeur ne correspond pas au tracé",
+    "movingExceedsDuration": "Le temps en mouvement dépasse la durée de la sortie",
+    "maxPois": "{max} points d'intérêt maximum"
   }
 }

@@ -2,8 +2,8 @@ import * as z from 'zod'
 
 // A named list of routes ("Week-end à Annecy"), private or shared.
 export const collectionSchema = z.object({
-  name: z.string().trim().min(1, 'Nom requis').max(80, '80 caractères maximum'),
-  description: z.string().trim().max(500, '500 caractères maximum').optional(),
+  name: z.string().trim().min(1, 'validation.nameRequired').max(80, 'validation.maxChars'),
+  description: z.string().trim().max(500, 'validation.maxChars').optional(),
   is_public: z.boolean(),
 })
 

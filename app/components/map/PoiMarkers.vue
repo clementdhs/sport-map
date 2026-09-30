@@ -12,7 +12,8 @@ const props = defineProps<{
 const markers = shallowRef<{ element: HTMLElement, marker: Marker }[]>([])
 let maplibre: typeof import('maplibre-gl') | undefined
 
-const poiText = (poi: Poi) => (poi.note ? `${POI_LABELS[poi.type]} — ${poi.note}` : POI_LABELS[poi.type])
+const { t } = useI18n()
+const poiText = (poi: Poi) => (poi.note ? `${t(`pois.${poi.type}`)} — ${poi.note}` : t(`pois.${poi.type}`))
 
 async function sync(pois: Poi[]) {
   maplibre ??= await import('maplibre-gl')

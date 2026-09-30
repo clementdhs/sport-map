@@ -62,7 +62,7 @@ test('searches routes by name and filters them, in English', async ({ page }) =>
   await expect(page.getByRole('option', { name: 'Routes containing “crêtes”' })).toBeVisible()
   await searchBox.press('ArrowDown')
   await searchBox.press('Enter')
-  await expect(page.getByText('1 route for “crêtes”')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: '1 route for “crêtes”' })).toBeVisible()
   await expect(cards).toHaveCount(1)
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
   await expect(cards.first()).toContainText('loop')
@@ -70,12 +70,12 @@ test('searches routes by name and filters them, in English', async ({ page }) =>
   await page.getByRole('button', { name: 'Filters' }).click()
   await page.getByRole('combobox', { name: 'Sport' }).click()
   await page.getByRole('option', { name: 'Hiking' }).click()
-  await expect(page.getByText('No route for “crêtes”')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: 'No route for “crêtes”' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Filters, 1 active' })).toBeVisible()
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Clear the search' }).click()
-  await expect(page.getByText('No route in this area')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: 'No route in this area' })).toBeVisible()
 })
 
 test('shows server errors in English', async ({ page }) => {

@@ -12,13 +12,14 @@ const props = defineProps<{
 }>()
 
 const map = shallowRef<Map>()
+const { padding } = useMapPadding()
 
 function onLoad(instance: Map) {
   addRouteLayers(instance, {
     line: props.coordinates,
     points: [props.coordinates[0]!, props.coordinates.at(-1)!],
   })
-  instance.fitBounds(routeBounds(props.coordinates), { padding: 48, duration: 0 })
+  instance.fitBounds(routeBounds(props.coordinates), { padding: padding(48), duration: 0 })
   if (props.slopeGradient) setRouteSlopes(instance, props.slopeGradient)
   map.value = instance
 }

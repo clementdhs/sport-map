@@ -74,7 +74,8 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && node .output/server/index.mjs',
     url: baseURL,
-    timeout: 300_000,
+    // The production build alone takes about 5 minutes on a local machine.
+    timeout: 600_000,
     reuseExistingServer: false,
     env: {
       PORT: String(PORT),

@@ -19,6 +19,7 @@ const emit = defineEmits<{
 
 const { maptilerKey } = useRuntimeConfig().public
 const { t } = useI18n()
+const { padding } = useMapPadding()
 
 const styleUrl = mapStyleUrl(maptilerKey)
 
@@ -56,7 +57,7 @@ onMounted(async () => {
       'GeolocateControl.LocationNotAvailable': t('map.locationNotAvailable'),
       'AttributionControl.ToggleAttribution': t('map.toggleAttribution'),
     },
-    ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: 48 } } : {}),
+    ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: padding(48) } } : {}),
   })
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')

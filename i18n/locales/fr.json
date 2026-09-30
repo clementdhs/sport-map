@@ -436,6 +436,10 @@
     "toggleAttribution": "Afficher les crédits",
     "title": "Carte"
   },
+  "sheet": {
+    "expand": "Agrandir le panneau",
+    "collapse": "Réduire le panneau"
+  },
   "profile": {
     "tabs": {
       "created": "Mes parcours",

@@ -10,6 +10,7 @@ const props = defineProps<{
 
 const editor = useRouteEditorStore()
 const map = shallowRef<Map>()
+const { padding } = useMapPadding()
 
 // Moves under this distance (px) count as a click, not a drag.
 const DRAG_THRESHOLD_PX = 4
@@ -164,7 +165,7 @@ function onLoad(instance: Map) {
 
   // Resume a draft kept in the store: frame it instead of the default view.
   if (editor.track.coordinates.length >= 2) {
-    instance.fitBounds(routeBounds(editor.track.coordinates), { padding: 48, duration: 0 })
+    instance.fitBounds(routeBounds(editor.track.coordinates), { padding: padding(48), duration: 0 })
   }
   map.value = instance
 }
@@ -174,7 +175,7 @@ watch(layerData, (data) => {
 })
 
 watch(() => editor.replacedCount, () => {
-  map.value?.fitBounds(routeBounds(editor.track.coordinates), { padding: 48 })
+  map.value?.fitBounds(routeBounds(editor.track.coordinates), { padding: padding(48) })
 })
 
 watch(() => props.hoverPoint, (point) => {

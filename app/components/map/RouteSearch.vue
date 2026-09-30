@@ -23,6 +23,7 @@ const SOURCE = 'search-results'
 const LAYER = 'search-results'
 
 const map = shallowRef<Map>()
+const { padding, offset } = useMapPadding()
 let popup: Popup | undefined
 
 function resultsData(results: RouteSummary[]): FeatureCollection<Point> {
@@ -101,8 +102,8 @@ watch(() => props.highlightedId, (id, previousId) => {
 
 watch(() => props.focus, (focus) => {
   if (!map.value || !focus) return
-  if (focus.bbox) map.value.fitBounds(focus.bbox, { padding: 40, maxZoom: 13 })
-  else map.value.flyTo({ center: focus.center, zoom: 12 })
+  if (focus.bbox) map.value.fitBounds(focus.bbox, { padding: padding(40), maxZoom: 13 })
+  else map.value.flyTo({ center: focus.center, zoom: 12, offset: offset() })
 })
 </script>
 

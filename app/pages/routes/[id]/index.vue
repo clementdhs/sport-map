@@ -163,8 +163,8 @@ useSeoMeta({
 </script>
 
 <template>
-  <div v-if="parcours" class="flex h-[calc(100dvh-var(--ui-header-height))] flex-col md:flex-row">
-    <div class="relative min-h-0 flex-1">
+  <MapSheetLayout v-if="parcours">
+    <template #map>
       <ClientOnly>
         <MapRouteDisplay
           :coordinates="coordinates"
@@ -173,177 +173,179 @@ useSeoMeta({
           :hover-point="hoverPoint"
         />
       </ClientOnly>
+    </template>
+
+    <template #title>
+      {{ parcours.name }}
+    </template>
+
+    <div class="space-y-1">
+      <div class="flex flex-wrap items-center gap-2">
+        <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="t(`sports.${parcours.sport_type}`)" variant="subtle" />
+        <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
+        <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
+        <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
+      </div>
+
+      <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
+
+      <p class="text-sm text-muted">
+        {{ t('route.by') }}
+        <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-default hover:underline">
+          {{ parcours.owner.display_name ?? parcours.owner.username }}
+        </ULink>
+        <span v-if="isOwner" class="ms-1">{{ t('route.you') }}</span>
+        · {{ formatDate(parcours.created_at) }}
+      </p>
     </div>
 
-    <aside class="max-h-[40dvh] shrink-0 space-y-4 overflow-y-auto border-t border-default p-4 md:max-h-none md:w-96 md:border-t-0 md:border-l">
-      <div class="space-y-1">
-        <div class="flex flex-wrap items-center gap-2">
-          <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="t(`sports.${parcours.sport_type}`)" variant="subtle" />
-          <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
-          <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
-          <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
-        </div>
-
-        <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
-
-        <p class="text-sm text-muted">
-          {{ t('route.by') }}
-          <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-default hover:underline">
-            {{ parcours.owner.display_name ?? parcours.owner.username }}
-          </ULink>
-          <span v-if="isOwner" class="ms-1">{{ t('route.you') }}</span>
-          · {{ formatDate(parcours.created_at) }}
-        </p>
+    <div class="grid grid-cols-4 divide-x divide-default rounded-lg bg-elevated py-2 text-center">
+      <div class="px-1">
+        <p class="text-xs text-muted">{{ t('route.distance') }}</p>
+        <p class="font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
       </div>
-
-      <div class="grid grid-cols-4 divide-x divide-default rounded-lg bg-elevated py-2 text-center">
-        <div class="px-1">
-          <p class="text-xs text-muted">{{ t('route.distance') }}</p>
-          <p class="font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
-        </div>
-        <DurationEstimate
-          class="px-1"
-          compact
-          :sport="parcours.sport_type"
-          :distance-m="parcours.distance_m"
-          :elevation-gain-m="parcours.elevation_gain_m"
-        />
-        <div class="px-1">
-          <p class="text-xs text-muted">{{ t('route.gain') }}</p>
-          <p class="font-semibold">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
-        </div>
-        <div class="px-1">
-          <p class="text-xs text-muted">{{ t('route.loss') }}</p>
-          <p class="font-semibold">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
-        </div>
+      <DurationEstimate
+        class="px-1"
+        compact
+        :sport="parcours.sport_type"
+        :distance-m="parcours.distance_m"
+        :elevation-gain-m="parcours.elevation_gain_m"
+      />
+      <div class="px-1">
+        <p class="text-xs text-muted">{{ t('route.gain') }}</p>
+        <p class="font-semibold">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
       </div>
+      <div class="px-1">
+        <p class="text-xs text-muted">{{ t('route.loss') }}</p>
+        <p class="font-semibold">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
+      </div>
+    </div>
 
-      <div class="space-y-2">
+    <div class="space-y-2">
+      <UButton
+        :to="`/routes/${parcours.id}/follow`"
+        icon="i-lucide-navigation"
+        :label="t('route.follow')"
+        block
+      />
+      <div class="flex gap-2">
         <UButton
-          :to="`/routes/${parcours.id}/follow`"
-          icon="i-lucide-navigation"
-          :label="t('route.follow')"
-          block
+          :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
+          :label="viewer.saved ? t('route.saved') : t('route.save')"
+          :color="viewer.saved ? 'primary' : 'neutral'"
+          :variant="viewer.saved ? 'soft' : 'outline'"
+          :loading="pendingActivity === 'saved'"
+          class="flex-1 justify-center"
+          @click="toggleActivity('saved')"
         />
-        <div class="flex gap-2">
-          <UButton
-            :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
-            :label="viewer.saved ? t('route.saved') : t('route.save')"
-            :color="viewer.saved ? 'primary' : 'neutral'"
-            :variant="viewer.saved ? 'soft' : 'outline'"
-            :loading="pendingActivity === 'saved'"
-            class="flex-1 justify-center"
-            @click="toggleActivity('saved')"
-          />
-          <UButton
-            :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
-            :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.complete')"
-            :color="viewer.completed_at ? 'primary' : 'neutral'"
-            :variant="viewer.completed_at ? 'soft' : 'outline'"
-            :loading="pendingActivity === 'completed'"
-            class="flex-1 justify-center"
-            @click="toggleActivity('completed')"
-          />
-          <UDropdownMenu :items="moreActions" :content="{ align: 'end' }" :ui="{ content: 'w-72' }">
-            <UButton icon="i-lucide-ellipsis" color="neutral" variant="outline" :aria-label="t('route.moreActions')" />
-          </UDropdownMenu>
-        </div>
+        <UButton
+          :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
+          :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.complete')"
+          :color="viewer.completed_at ? 'primary' : 'neutral'"
+          :variant="viewer.completed_at ? 'soft' : 'outline'"
+          :loading="pendingActivity === 'completed'"
+          class="flex-1 justify-center"
+          @click="toggleActivity('completed')"
+        />
+        <UDropdownMenu :items="moreActions" :content="{ align: 'end' }" :ui="{ content: 'w-72' }">
+          <UButton icon="i-lucide-ellipsis" color="neutral" variant="outline" :aria-label="t('route.moreActions')" />
+        </UDropdownMenu>
       </div>
+    </div>
 
-      <p v-if="viewer.completed_at && viewer.duration_s != null && viewer.moving_s != null" class="text-sm text-muted">
-        <UIcon name="i-lucide-timer" class="mr-1 align-text-bottom" />
-        {{ t('route.yourOuting', { total: formatElapsed(viewer.duration_s), moving: formatElapsed(viewer.moving_s) }) }}
-        · {{ formatSpeed(parcours.distance_m, viewer.moving_s) }}
-      </p>
+    <p v-if="viewer.completed_at && viewer.duration_s != null && viewer.moving_s != null" class="text-sm text-muted">
+      <UIcon name="i-lucide-timer" class="mr-1 align-text-bottom" />
+      {{ t('route.yourOuting', { total: formatElapsed(viewer.duration_s), moving: formatElapsed(viewer.moving_s) }) }}
+      · {{ formatSpeed(parcours.distance_m, viewer.moving_s) }}
+    </p>
 
-      <RouteOffline ref="offline" :route-id="parcours.id" :name="parcours.name" :coordinates="coordinates" />
+    <RouteOffline ref="offline" :route-id="parcours.id" :name="parcours.name" :coordinates="coordinates" />
 
-      <UTabs v-model="activeTab" :items="tabs" variant="link" :unmount-on-hide="false" class="gap-4">
-        <template #overview>
-          <div class="space-y-4">
-            <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
+    <UTabs v-model="activeTab" :items="tabs" variant="link" :unmount-on-hide="false" class="gap-4">
+      <template #overview>
+        <div class="space-y-4">
+          <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
 
-            <ElevationProfile
-              v-if="parcours.elevation_profile?.length === coordinates.length"
-              :coordinates="coordinates"
-              :elevations="parcours.elevation_profile"
-              :grades="showSlopes ? slopes?.profile.grades : null"
-              @hover="hoverPoint = $event"
-            />
+          <ElevationProfile
+            v-if="parcours.elevation_profile?.length === coordinates.length"
+            :coordinates="coordinates"
+            :elevations="parcours.elevation_profile"
+            :grades="showSlopes ? slopes?.profile.grades : null"
+            @hover="hoverPoint = $event"
+          />
 
-            <div v-if="slopes" class="space-y-2">
-              <p class="text-sm text-muted">
-                {{ t('route.maxGrade') }} <span class="font-medium text-default">{{ slopes.steepest }} %</span>
-                <template v-if="slopes.climb">
-                  · {{ t('route.mainClimb') }} <span class="font-medium text-default">{{ t('route.climbValue', {
-                    length: formatDistance(slopes.climb.endM - slopes.climb.startM),
-                    grade: Math.round(slopes.climb.averageGrade),
-                  }) }}</span> (+{{ Math.round(slopes.climb.gainM) }} m)
-                </template>
-              </p>
-              <USwitch v-model="showSlopes" :label="t('route.showSlopes')" />
-              <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
-                <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.key" class="flex items-center gap-1">
-                  <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ t(`slopes.${slopeClass.key}`) }}
-                </li>
-              </ul>
-            </div>
+          <div v-if="slopes" class="space-y-2">
+            <p class="text-sm text-muted">
+              {{ t('route.maxGrade') }} <span class="font-medium text-default">{{ slopes.steepest }} %</span>
+              <template v-if="slopes.climb">
+                · {{ t('route.mainClimb') }} <span class="font-medium text-default">{{ t('route.climbValue', {
+                  length: formatDistance(slopes.climb.endM - slopes.climb.startM),
+                  grade: Math.round(slopes.climb.averageGrade),
+                }) }}</span> (+{{ Math.round(slopes.climb.gainM) }} m)
+              </template>
+            </p>
+            <USwitch v-model="showSlopes" :label="t('route.showSlopes')" />
+            <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
+              <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.key" class="flex items-center gap-1">
+                <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ t(`slopes.${slopeClass.key}`) }}
+              </li>
+            </ul>
+          </div>
 
-            <RouteWeather :route-id="parcours.id" />
+          <RouteWeather :route-id="parcours.id" />
 
-            <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
-              <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>
-              <ul class="space-y-1">
-                <li
-                  v-for="(poi, i) in pois"
-                  :key="i"
-                  class="flex items-start gap-3 rounded-md p-2 hover:bg-elevated"
-                  @mouseenter="hoverPoint = poi.coordinates"
-                  @mouseleave="hoverPoint = null"
+          <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
+            <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>
+            <ul class="space-y-1">
+              <li
+                v-for="(poi, i) in pois"
+                :key="i"
+                class="flex items-start gap-3 rounded-md p-2 hover:bg-elevated"
+                @mouseenter="hoverPoint = poi.coordinates"
+                @mouseleave="hoverPoint = null"
+              >
+                <span
+                  class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-white"
+                  :style="{ backgroundColor: POI_COLORS[poi.type] }"
                 >
-                  <span
-                    class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-white"
-                    :style="{ backgroundColor: POI_COLORS[poi.type] }"
-                  >
-                    <UIcon :name="POI_ICONS[poi.type]" class="size-4" />
-                  </span>
-                  <div class="min-w-0 text-sm">
-                    <p>
-                      <span class="font-medium">{{ t(`pois.${poi.type}`) }}</span>
-                      <span class="text-muted"> · km {{ formatNumber(poi.distanceM / 1000, { maximumFractionDigits: 1 }) }}</span>
-                    </p>
-                    <p v-if="poi.note" class="break-words text-muted">{{ poi.note }}</p>
-                  </div>
-                </li>
-              </ul>
-            </section>
-          </div>
-        </template>
+                  <UIcon :name="POI_ICONS[poi.type]" class="size-4" />
+                </span>
+                <div class="min-w-0 text-sm">
+                  <p>
+                    <span class="font-medium">{{ t(`pois.${poi.type}`) }}</span>
+                    <span class="text-muted"> · km {{ formatNumber(poi.distanceM / 1000, { maximumFractionDigits: 1 }) }}</span>
+                  </p>
+                  <p v-if="poi.note" class="break-words text-muted">{{ poi.note }}</p>
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+      </template>
 
-        <template #photos>
-          <RoutePhotos v-model:photos="photos" :route-id="parcours.id" :is-owner="isOwner" />
-        </template>
+      <template #photos>
+        <RoutePhotos v-model:photos="photos" :route-id="parcours.id" :is-owner="isOwner" />
+      </template>
 
-        <template #reviews>
-          <RouteReviews :route-id="parcours.id" :is-owner="isOwner" :is-public="parcours.is_public" />
-        </template>
-      </UTabs>
+      <template #reviews>
+        <RouteReviews :route-id="parcours.id" :is-owner="isOwner" :is-public="parcours.is_public" />
+      </template>
+    </UTabs>
 
-      <RouteCollections v-model:open="collectionsOpen" :route-id="parcours.id" />
+    <RouteCollections v-model:open="collectionsOpen" :route-id="parcours.id" />
 
-      <UModal
-        v-if="isOwner"
-        v-model:open="deleteOpen"
-        :title="t('route.deleteTitle')"
-        :description="t('route.deleteDescription')"
-      >
-        <template #footer>
-          <div class="flex w-full justify-end gap-2">
-            <UButton :label="t('common.cancel')" color="neutral" variant="outline" @click="deleteOpen = false" />
-            <UButton :label="t('common.delete')" icon="i-lucide-trash-2" color="error" :loading="deleting" @click="deleteRoute" />
-          </div>
-        </template>
-      </UModal>
-    </aside>
-  </div>
+    <UModal
+      v-if="isOwner"
+      v-model:open="deleteOpen"
+      :title="t('route.deleteTitle')"
+      :description="t('route.deleteDescription')"
+    >
+      <template #footer>
+        <div class="flex w-full justify-end gap-2">
+          <UButton :label="t('common.cancel')" color="neutral" variant="outline" @click="deleteOpen = false" />
+          <UButton :label="t('common.delete')" icon="i-lucide-trash-2" color="error" :loading="deleting" @click="deleteRoute" />
+        </div>
+      </template>
+    </UModal>
+  </MapSheetLayout>
 </template>

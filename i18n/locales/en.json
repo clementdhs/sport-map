@@ -436,6 +436,10 @@
     "toggleAttribution": "Toggle attribution",
     "title": "Map"
   },
+  "sheet": {
+    "expand": "Expand the panel",
+    "collapse": "Collapse the panel"
+  },
   "profile": {
     "tabs": {
       "created": "My routes",

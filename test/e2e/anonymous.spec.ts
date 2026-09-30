@@ -59,7 +59,7 @@ test('filters the search from the filters popover, counts and resets them', asyn
   await page.getByRole('option', { name: 'Randonnée' }).click()
   await page.getByRole('switch', { name: /Boucles uniquement/ }).click()
 
-  await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: 'Aucun parcours dans cette zone' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Filtres, 2 actifs' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Réinitialiser' }).click()
@@ -83,6 +83,48 @@ test('shows the results without scrolling on a phone, filters in a drawer', asyn
   await expect(drawer).toBeHidden()
   await expect(cards).toHaveCount(1)
   await expect(page.getByRole('button', { name: 'Filtres, 1 actif' })).toBeVisible()
+})
+
+test('moves the bottom sheet over the map on a phone with its buttons, the keyboard or a drag', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/')
+  await waitForMap(page)
+  const sheet = page.locator('aside[data-sheet]')
+  const collapse = sheet.getByRole('button', { name: 'Réduire le panneau' })
+  const expand = sheet.getByRole('button', { name: 'Agrandir le panneau' })
+  await expect(sheet).toHaveAttribute('data-sheet', 'half')
+  await expect(sheet).toContainText('2 parcours dans cette zone')
+
+  // Collapsed, only its title stays; the hidden content leaves the keyboard and screen reader order.
+  await collapse.click()
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  await expect(collapse).toBeDisabled()
+  await expect(sheet.locator('[inert]')).toHaveCount(1)
+
+  await expand.focus()
+  await page.keyboard.press('Enter')
+  await expect(sheet).toHaveAttribute('data-sheet', 'half')
+  await expect(sheet.locator('[inert]')).toHaveCount(0)
+  await page.keyboard.press('Enter')
+  await expect(sheet).toHaveAttribute('data-sheet', 'full')
+  await expect(expand).toBeDisabled()
+
+  // Dragging its header: to the bottom collapses it, then a third of the way up opens it at half height.
+  // Once its height animation is over, the full sheet starts right under the app header.
+  await expect(async () => expect((await sheet.boundingBox())!.y).toBeLessThan(100)).toPass()
+  const header = (await sheet.getByText('2 parcours dans cette zone').first().boundingBox())!
+  const x = header.x + 40
+  await page.mouse.move(x, header.y + 5)
+  await page.mouse.down()
+  await page.mouse.move(x, 805, { steps: 10 })
+  await page.mouse.up()
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+
+  await page.mouse.move(x, 780)
+  await page.mouse.down()
+  await page.mouse.move(x, 550, { steps: 5 })
+  await page.mouse.up()
+  await expect(sheet).toHaveAttribute('data-sheet', 'half')
 })
 
 test('keeps only loops and sorts the results', async ({ page }) => {
@@ -160,7 +202,7 @@ test('finds routes by name or description, anywhere, ignoring accents and case',
   await searchBox.fill('crêtes')
   await searchBox.press('ArrowDown')
   await searchBox.press('Enter')
-  await expect(page.getByText('1 parcours pour « crêtes »')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: '1 parcours pour « crêtes »' })).toBeVisible()
   await expect(searchBox).toHaveValue('crêtes')
   await expect(cards).toHaveCount(1)
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
@@ -168,11 +210,11 @@ test('finds routes by name or description, anywhere, ignoring accents and case',
   await page.getByRole('button', { name: 'Filtres' }).click()
   await page.getByRole('combobox', { name: 'Sport' }).click()
   await page.getByRole('option', { name: 'Randonnée' }).click()
-  await expect(page.getByText('Aucun parcours pour « crêtes »')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: 'Aucun parcours pour « crêtes »' })).toBeVisible()
   await page.keyboard.press('Escape')
 
   await page.getByRole('button', { name: 'Effacer la recherche' }).click()
-  await expect(page.getByText('Aucun parcours dans cette zone')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: 'Aucun parcours dans cette zone' })).toBeVisible()
 })
 
 test('lets visitors pick the light or dark mode and an accent color, kept after a reload', async ({ page }) => {

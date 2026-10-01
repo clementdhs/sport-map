@@ -15,7 +15,7 @@ useSeoMeta({ title: () => `${t('header.record')} — sport-map` })
 
 const toast = useToast()
 const errorMessage = useErrorMessage()
-const { fix, error: gpsError } = useWatchPosition()
+const { fix, error: gpsError, background } = useWatchPosition()
 const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock()
 
 // Local copy of the recording in progress (browser storage may be unavailable: then it's just not kept).
@@ -254,7 +254,7 @@ function discard() {
       <template v-else>
         <UButton icon="i-lucide-circle-dot" :label="t('record.start')" size="xl" block @click="start" />
         <p class="text-sm text-muted">
-          {{ t('record.keepOpen') }}
+          {{ background ? t('record.screenOffOk') : t('record.keepOpen') }}
         </p>
       </template>
 
@@ -263,7 +263,8 @@ function discard() {
           <UIcon name="i-lucide-satellite" class="mr-1 align-text-bottom" />
           {{ fix ? t('follow.accuracy', { accuracy: Math.round(fix.accuracyM) }) : t('follow.searchingGps') }}
         </span>
-        <span v-if="screenKeptOn"><UIcon name="i-lucide-sun" class="mr-1 align-text-bottom" />{{ t('follow.screenOn') }}</span>
+        <span v-if="background"><UIcon name="i-lucide-moon" class="mr-1 align-text-bottom" />{{ t('follow.backgroundGps') }}</span>
+        <span v-else-if="screenKeptOn"><UIcon name="i-lucide-sun" class="mr-1 align-text-bottom" />{{ t('follow.screenOn') }}</span>
         <span v-else-if="!wakeLockSupported">
           <UIcon name="i-lucide-sun-dim" class="mr-1 align-text-bottom" />{{ t('record.keepScreenOn') }}
         </span>

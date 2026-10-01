@@ -32,7 +32,8 @@ async function signOut() {
     <template #title>
       <span class="flex items-center gap-2">
         <AppLogo class="size-7" />
-        <span>sport-map</span>
+        <!-- On 360 px phones, visitors' buttons don't fit beside the name. -->
+        <span class="hidden min-[400px]:inline">sport-map</span>
       </span>
     </template>
 

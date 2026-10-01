@@ -379,6 +379,9 @@
   },
   "gps": {
     "denied": "Autorise l'accès à ta position dans les réglages du navigateur.",
+    "deniedApp": "Autorise l'accès à ta position dans les réglages de l'application.",
+    "notificationTitle": "sport-map suit ta position",
+    "notificationMessage": "Le GPS reste actif écran éteint jusqu'à la fin de ta sortie.",
     "unavailable": "Position indisponible : vérifie que la localisation de ton téléphone est activée.",
     "unsupported": "Ce navigateur ne donne pas accès à la position."
   },
@@ -407,6 +410,7 @@
     "start": "Démarrer",
     "keepOpen": "Garde cette page ouverte pendant ta sortie : un navigateur ne suit pas la position écran éteint.",
     "keepScreenOn": "Garde l'écran allumé pendant la sortie",
+    "screenOffOk": "Tu peux verrouiller ton téléphone : la sortie continue de s'enregistrer écran éteint.",
     "finishTitle": "Terminer la sortie",
     "finishDescription": "Elle devient un parcours de ton profil, marqué comme réalisé.",
     "discardOuting": "Abandonner la sortie"
@@ -425,6 +429,7 @@
     "searchingPosition": "Recherche de ta position…",
     "searchingGps": "Recherche du signal GPS…",
     "screenOn": "Écran maintenu allumé",
+    "backgroundGps": "GPS actif écran éteint",
     "keepScreenOn": "Garde l'écran allumé pendant le suivi"
   },
   "map": {

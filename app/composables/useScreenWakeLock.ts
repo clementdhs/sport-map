@@ -1,12 +1,14 @@
 // Keeps the screen on while the component is mounted (Screen Wake Lock API): a web page stops getting GPS
 // positions once the screen turns off. The browser releases the lock when the page is hidden, so it is
-// requested again when the page comes back.
+// requested again when the page comes back. Not requested in the Android app.
 export function useScreenWakeLock() {
   const supported = ref(true)
   const active = ref(false)
   let sentinel: WakeLockSentinel | null = null
 
   async function request() {
+    // The Android app gets positions with the screen off (useWatchPosition).
+    if (isNativeApp()) return
     if (!('wakeLock' in navigator)) {
       supported.value = false
       return

@@ -379,6 +379,9 @@
   },
   "gps": {
     "denied": "Allow access to your location in the browser settings.",
+    "deniedApp": "Allow access to your location in the app settings.",
+    "notificationTitle": "sport-map is tracking your location",
+    "notificationMessage": "GPS stays on with the screen off until your outing ends.",
     "unavailable": "Location unavailable: check that your phone's location is turned on.",
     "unsupported": "This browser doesn't give access to your location."
   },
@@ -407,6 +410,7 @@
     "start": "Start",
     "keepOpen": "Keep this page open during your outing: a browser doesn't track your location with the screen off.",
     "keepScreenOn": "Keep the screen on during the outing",
+    "screenOffOk": "You can lock your phone: the outing keeps recording with the screen off.",
     "finishTitle": "Finish the outing",
     "finishDescription": "It becomes a route on your profile, marked as done.",
     "discardOuting": "Discard the outing"
@@ -425,6 +429,7 @@
     "searchingPosition": "Finding your location…",
     "searchingGps": "Looking for a GPS signal…",
     "screenOn": "Screen kept on",
+    "backgroundGps": "GPS on with the screen off",
     "keepScreenOn": "Keep the screen on while following"
   },
   "map": {

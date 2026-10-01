@@ -28,7 +28,7 @@ const model = computed(() => {
   return buildTrackModel(coordinates.value, elevations?.length === coordinates.value.length ? elevations : null)
 })
 
-const { fix, error: gpsError } = useWatchPosition()
+const { fix, error: gpsError, background } = useWatchPosition()
 const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock()
 
 // Each fix is located from the previous progress, to follow the right leg where the track passes twice.
@@ -138,7 +138,10 @@ const follow = ref(true)
           <UIcon name="i-lucide-satellite" class="mr-1 align-text-bottom" />
           {{ fix ? t('follow.accuracy', { accuracy: Math.round(fix.accuracyM) }) : t('follow.searchingPosition') }}
         </span>
-        <span v-if="screenKeptOn">
+        <span v-if="background">
+          <UIcon name="i-lucide-moon" class="mr-1 align-text-bottom" />{{ t('follow.backgroundGps') }}
+        </span>
+        <span v-else-if="screenKeptOn">
           <UIcon name="i-lucide-sun" class="mr-1 align-text-bottom" />{{ t('follow.screenOn') }}
         </span>
         <span v-else-if="!wakeLockSupported">

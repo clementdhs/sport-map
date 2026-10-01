@@ -264,6 +264,7 @@ test.describe('recording an outing', () => {
 
     // Listed among the completed routes of the profile, with its times.
     await page.goto('/profile')
+    await waitForHydration(page)
     await page.getByRole('tab', { name: /Réalisés/ }).click()
     await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
   })
@@ -331,6 +332,7 @@ test('groups routes in a public collection, which only shows its public routes t
   await page.keyboard.press('Escape')
 
   await page.goto('/profile')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: /Collections/ }).click()
   await page.getByRole('link', { name: /Week-end e2e/ }).click()
   await expect(page).toHaveURL(/\/collections\/[0-9a-f-]{36}$/)

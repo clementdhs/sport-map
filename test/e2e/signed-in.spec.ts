@@ -485,13 +485,17 @@ test('edits the profile and the appearance from the settings, reached through th
 
 test('counts a completed route in the profile statistics', async ({ page }) => {
   const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')
+  const emptyStats = page.getByText('Marque des parcours comme faits')
   const openStats = async () => {
     await page.goto('/profile')
+    // A click before hydration is lost and the tab never opens.
+    await waitForHydration(page)
     await page.getByRole('tab', { name: 'Statistiques' }).click()
   }
   await openStats()
-  // Other tests of this file may have completed routes already: compare with the count before.
-  const empty = await page.getByText('Marque des parcours comme faits').isVisible()
+  // Other tests of this file may have completed routes already: compare with the count before, once loaded.
+  await expect(emptyStats.or(outings)).toBeVisible()
+  const empty = await emptyStats.isVisible()
   const before = empty ? 0 : Number(await outings.textContent())
 
   const { id } = await (await page.request.post('/api/routes', {

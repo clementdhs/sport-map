@@ -15,6 +15,7 @@ Clem validates every issue before it is committed. Talk to Clem in French; code,
 4. Check the change in the browser pane with the `sport-map-local-db` launch config (local Supabase). Sign in with the e2e test user from `test/e2e/fixtures.ts` (local only; don't repeat the credentials in chat). Prefer `read_page`/`get_page_text`; take screenshots only for visual checks, scaled down.
 5. If the feature has a non-obvious rule, add or update a file in `.claude/rules/` (with `paths:`), not `CLAUDE.md`.
 6. Summarise in French: what was done, tests run, what was left out. Then ask for the go. Never commit or push without it.
+7. Notify Clem's phone with `PushNotification` (load it with ToolSearch): "Issue #N prête : j'attends ton go", plus the issue title. Clem often walks away during the checks.
 
 ## 2. After the go
 
@@ -29,3 +30,6 @@ Clem validates every issue before it is committed. Talk to Clem in French; code,
 4. **CI.** Find the run with `gh run list --limit 2`, wait with `gh run watch <id> --exit-status`, and check that the issue is closed with `gh issue view N --json state`.
 5. **Memory.** Add the issue and its commit to the sport-map project memory, with anything Clem still has to do by hand (dashboard settings, field tests).
 6. **Wrap up in French.** Give the commit, the CI result and the remaining open issues. Suggest starting a new session (or `/clear`) before the next issue: everything needed is in `CLAUDE.md`, `.claude/rules/`, the issues and memory.
+7. **Notify.** `PushNotification`: "Issue #N livrée, CI verte" (or "CI en échec : <job>" when it failed).
+
+Push notifications only reach the phone when the session has Remote Control on, the "Notifications de code" account setting and "Push when Claude decides" in `/config` are enabled, and Clem isn't active in the session window (the tool then skips it). Keep messages to the issue number and title, one line.

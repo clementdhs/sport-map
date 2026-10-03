@@ -185,7 +185,7 @@ test('resets a forgotten password from the email link, opened in another browser
   await expect(phonePage.getByText('Les deux mots de passe sont différents')).toBeHidden()
   await phonePage.getByRole('button', { name: 'Enregistrer le mot de passe' }).click()
   await expect(phonePage).toHaveURL(`${origin}/`)
-  await expect(phonePage.getByRole('button', { name: RESET_USER.email })).toBeVisible()
+  await expect(phonePage.getByRole('button', { name: 'Mon compte' })).toBeVisible()
 
   // The link only works once.
   await phonePage.goto(link)
@@ -206,5 +206,5 @@ test('resets a forgotten password from the email link, opened in another browser
   await page.locator('input[name="email"]').fill(RESET_USER.email)
   await page.locator('input[name="password"]').fill('encore-un-autre')
   await page.getByRole('button', { name: 'Se connecter' }).click()
-  await expect(page.getByRole('button', { name: RESET_USER.email })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
 })

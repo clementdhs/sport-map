@@ -390,7 +390,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   await page.locator('input[name="email"]').fill(account.email)
   await page.locator('input[name="password"]').fill(account.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
-  await expect(page.getByRole('button', { name: account.email })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
 
   // A private route with a photo, a review and an outing on the neighbor's route, a collection.
   const { id: routeId } = await (await page.request.post('/api/routes', {

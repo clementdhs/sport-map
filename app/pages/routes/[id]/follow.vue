@@ -6,14 +6,17 @@ import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
 import type { GuideState } from '~/utils/voiceGuide'
 
-const { formatDistance } = useFormat()
+const { formatDistance, formatDate } = useFormat()
 
 // Full-screen "follow the route" mode, for the phone: live position on the track, distance and climb
-// left, alert when straying from the track.
+// left, alert when straying from the track. The outing can be recorded at the same time: it is then listed on
+// the route's page, without creating another route.
 definePageMeta({ layout: false })
 
 const route = useRoute()
 const { t } = useI18n()
+const toast = useToast()
+const errorMessage = useErrorMessage()
 const { data: parcours, error } = await useFetch<RouteDetail>(`/api/routes/${route.params.id}`)
 if (error.value || !parcours.value) {
   throw createError({
@@ -49,6 +52,10 @@ const offTrack = ref(false)
 
 // The outing itself, measured like a recording (kept in memory only), for the speeds and the arrival time.
 const walked = shallowRef<Recording | null>(null)
+
+// The outing recorded on request, kept on the phone like on /record (one draft per route).
+const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } =
+  useOutingRecorder(`sport-map:recording:${parcours.value.id}`, fix)
 
 watch(fix, (current) => {
   if (!current) return
@@ -94,8 +101,9 @@ let clock: ReturnType<typeof setInterval> | undefined
 onMounted(() => (clock = setInterval(() => (now.value = Date.now()), 1000)))
 onBeforeUnmount(() => clearInterval(clock))
 
+// Times and speeds come from the recording when there is one, so that they match what will be saved.
 const liveStats = computed<LiveStats>(() => {
-  const outing = walked.value
+  const outing = recording.value ?? walked.value
   const remainingM = progress.value ? progress.value.remainingM : model.value.totalM
   const totalGainM = model.value.gainLeft?.[0] ?? null
   const remainingGainM = progress.value ? progress.value.remainingGainM : totalGainM
@@ -107,11 +115,54 @@ const liveStats = computed<LiveStats>(() => {
     remainingM,
     gainM: totalGainM !== null && remainingGainM !== null ? Math.max(0, totalGainM - remainingGainM) : null,
     remainingGainM,
-    speedMs: outing ? currentSpeed(outing.points, now.value) : null,
+    speedMs: outing && !paused.value ? currentSpeed(outing.points, now.value) : null,
     averageSpeedMs: average,
     arrivalAt: estimatedArrival(now.value, remainingM, average),
   }
 })
+
+function discardDraft() {
+  if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
+}
+
+// End of the recorded outing
+const finishOpen = ref(false)
+const saving = ref(false)
+function openFinish() {
+  if (!recording.value || recording.value.points.length < 2) {
+    toast.add({ title: t('record.noTrack'), description: t('record.noTrackHint'), color: 'warning' })
+    return
+  }
+  finishOpen.value = true
+}
+const finished = computed(() => (recording.value ? outingTimes(recording.value, now.value) : null))
+
+async function saveOuting() {
+  const id = parcours.value!.id
+  saving.value = true
+  try {
+    await $fetch(`/api/routes/${id}/outings`, { method: 'POST', body: outingTimes(recording.value!, Date.now()) })
+    stop()
+    toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
+    await navigateTo({ path: `/routes/${id}`, query: { tab: 'outings' } })
+  }
+  catch (error) {
+    toast.add({
+      title: t('record.saveFailed'),
+      description: t('record.saveFailedHint', { message: errorMessage(error) }),
+      color: 'error',
+    })
+  }
+  finally {
+    saving.value = false
+  }
+}
+
+function discardOuting() {
+  if (!window.confirm(t('record.discardConfirm'))) return
+  stop()
+  finishOpen.value = false
+}
 </script>
 
 <template>
@@ -214,6 +265,45 @@ const liveStats = computed<LiveStats>(() => {
         </div>
       </div>
       <UProgress :model-value="percentDone" size="sm" :aria-label="t('follow.percent', { percent: percentDone })" />
+
+      <div v-if="recording" class="flex items-center gap-2">
+        <UIcon
+          :name="paused ? 'i-lucide-pause' : 'i-lucide-circle-dot'"
+          class="size-5 shrink-0"
+          :class="paused ? 'text-muted' : 'text-error'"
+        />
+        <p class="min-w-0 text-sm">
+          <span class="sr-only">{{ paused ? t('record.paused') : t('record.recording') }}</span>
+          <span class="text-lg font-semibold tabular-nums" data-testid="recording-elapsed">{{ formatStopwatch(elapsedMs(recording, now) / 1000) }}</span>
+        </p>
+        <UButton
+          class="ml-auto"
+          :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
+          :label="paused ? t('record.resume') : t('record.pause')"
+          color="neutral"
+          variant="outline"
+          @click="togglePause"
+        />
+        <UButton icon="i-lucide-square" :label="t('record.finish')" @click="openFinish" />
+      </div>
+      <div v-else-if="draft" class="space-y-2">
+        <p class="text-sm">
+          {{ t('record.draft', { date: formatDate(new Date(draft.startedAt).toISOString()), distance: formatDistance(draft.distanceM) }) }}
+        </p>
+        <div class="grid grid-cols-2 gap-2">
+          <UButton :label="t('record.discard')" color="neutral" variant="outline" block @click="discardDraft" />
+          <UButton icon="i-lucide-play" :label="t('record.resume')" block @click="resumeDraft" />
+        </div>
+      </div>
+      <UButton
+        v-else
+        icon="i-lucide-circle-dot"
+        :label="t('follow.record')"
+        color="neutral"
+        variant="outline"
+        block
+        @click="start"
+      />
       <p class="flex flex-wrap justify-between gap-x-3 text-xs text-muted">
         <span>
           <UIcon name="i-lucide-satellite" class="mr-1 align-text-bottom" />
@@ -230,5 +320,30 @@ const liveStats = computed<LiveStats>(() => {
         </span>
       </p>
     </div>
+
+    <UModal v-model:open="finishOpen" :title="t('record.finishTitle')" :description="t('follow.finishDescription')">
+      <template #body>
+        <dl v-if="finished" class="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <dt class="text-xs text-muted">{{ t('duration.short') }}</dt>
+            <dd class="font-semibold">{{ formatElapsed(finished.duration_s) }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">{{ t('outings.moving') }}</dt>
+            <dd class="font-semibold">{{ formatElapsed(finished.moving_s) }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-muted">{{ t('route.distance') }}</dt>
+            <dd class="font-semibold">{{ formatDistance(finished.distance_m) }}</dd>
+          </div>
+        </dl>
+      </template>
+      <template #footer>
+        <div class="flex w-full justify-between gap-2">
+          <UButton :label="t('record.discardOuting')" color="error" variant="ghost" @click="discardOuting" />
+          <UButton :label="t('common.save')" icon="i-lucide-save" :loading="saving" @click="saveOuting" />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

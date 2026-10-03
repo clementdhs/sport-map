@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import type { LngLat, RecordingPayload, SportType } from '#shared/utils/routes'
-import type { GpsFix } from '~/composables/useWatchPosition'
 import type { LiveStats } from '~/utils/liveStats'
-import type { Recording } from '~/utils/recorder'
 
 const { formatDistance, formatDate, formatSpeed } = useFormat()
 
 // Records an outing with the phone's GPS, then saves it as a new route marked as done. A web page only gets
-// positions while the screen is on: the screen is kept on, and the recording is saved on the phone after
-// every point, so that it can be resumed if the page closes.
+// positions while the screen is on: the screen is kept on, and the recording can be resumed if the page closes.
 definePageMeta({ layout: false })
 const { t } = useI18n()
 const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
@@ -19,78 +16,16 @@ const errorMessage = useErrorMessage()
 const { fix, error: gpsError, background } = useWatchPosition()
 const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock()
 
-// Local copy of the recording in progress (browser storage may be unavailable: then it's just not kept).
-const DRAFT_KEY = 'sport-map:recording'
-function loadDraft(): Recording | null {
-  try {
-    const raw = localStorage.getItem(DRAFT_KEY)
-    return raw ? JSON.parse(raw) as Recording : null
-  }
-  catch {
-    return null
-  }
-}
-function saveDraft(recording: Recording) {
-  try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(recording))
-  }
-  catch { /* storage full or blocked */ }
-}
-function clearDraft() {
-  try {
-    localStorage.removeItem(DRAFT_KEY)
-  }
-  catch { /* storage blocked */ }
-}
-
-const recording = shallowRef<Recording | null>(null)
-// An unfinished recording found on the phone, until resumed or discarded.
-const draft = shallowRef<Recording | null>(null)
-
-function update(next: Recording) {
-  if (next === recording.value) return
-  recording.value = next
-  saveDraft(next)
-}
-
-function accept(current: GpsFix) {
-  if (recording.value) update(addFix(recording.value, current, Date.now()))
-}
-
-function start() {
-  recording.value = startRecording(Date.now())
-  saveDraft(recording.value)
-  if (fix.value) accept(fix.value)
-}
-
-function resumeDraft() {
-  recording.value = draft.value
-  draft.value = null
-}
+const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } = useOutingRecorder('sport-map:recording', fix)
 
 function discardDraft() {
-  if (!window.confirm(t('record.discardDraftConfirm'))) return
-  clearDraft()
-  draft.value = null
-}
-
-watch(fix, (current) => {
-  if (current) accept(current)
-})
-
-const paused = computed(() => recording.value?.pausedAt != null)
-function togglePause() {
-  if (!recording.value) return
-  update(paused.value ? resumeRecording(recording.value) : pauseRecording(recording.value, Date.now()))
+  if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
 }
 
 // Stopwatch
 const now = ref(Date.now())
 let clock: ReturnType<typeof setInterval> | undefined
-onMounted(() => {
-  draft.value = loadDraft()
-  clock = setInterval(() => (now.value = Date.now()), 1000)
-})
+onMounted(() => (clock = setInterval(() => (now.value = Date.now()), 1000)))
 onBeforeUnmount(() => clearInterval(clock))
 
 const elapsedS = computed(() => (recording.value ? elapsedMs(recording.value, now.value) / 1000 : 0))
@@ -120,20 +55,8 @@ const liveStats = computed<LiveStats>(() => {
   }
 })
 
-// Leaving keeps the recording on the phone; warn anyway, a closed page records nothing.
-const saving = ref(false)
-onBeforeRouteLeave(() => {
-  if (recording.value && !saving.value) {
-    return window.confirm(t('record.leaveConfirm'))
-  }
-})
-function onBeforeUnload(event: BeforeUnloadEvent) {
-  if (recording.value) event.preventDefault()
-}
-onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
-onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
-
 // End of the outing
+const saving = ref(false)
 const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
 const finishOpen = ref(false)
 const form = reactive<{ name: string, sport_type: SportType, is_public: boolean }>({
@@ -154,18 +77,14 @@ function openFinish() {
 async function save() {
   const current = recording.value!
   const trackPayload = recordingTrack(current)!
-  const durationS = Math.round((Date.now() - current.startedAt) / 1000)
   const body: RecordingPayload = {
     route: { ...form, description: '', source: 'recorded', ...trackPayload },
-    started_at: new Date(current.startedAt).toISOString(),
-    duration_s: durationS,
-    moving_s: Math.min(Math.round(current.movingMs / 1000), durationS),
+    ...outingTimes(current, Date.now()),
   }
   saving.value = true
   try {
     const { id } = await $fetch<{ id: string }>('/api/recordings', { method: 'POST', body })
-    clearDraft()
-    recording.value = null
+    stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
     await navigateTo(`/routes/${id}`)
   }
@@ -183,8 +102,7 @@ async function save() {
 
 function discard() {
   if (!window.confirm(t('record.discardConfirm'))) return
-  clearDraft()
-  recording.value = null
+  stop()
   finishOpen.value = false
 }
 </script>

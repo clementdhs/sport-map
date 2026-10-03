@@ -1,5 +1,5 @@
 import { distance } from '@turf/turf'
-import type { LngLat, RouteCreatePayload } from '#shared/utils/routes'
+import type { LngLat, OutingPayload, RouteCreatePayload } from '#shared/utils/routes'
 import { resampleTrack } from '~/utils/gpx'
 
 // Recording an outing with the phone's GPS. Pure functions over a plain, serializable state, so that the
@@ -81,6 +81,17 @@ export function resumeRecording(recording: Recording): Recording {
 // Time since the start, pauses included, like a watch (ms).
 export function elapsedMs(recording: Recording, now: number): number {
   return now - recording.startedAt
+}
+
+// The times and distance of a recording ended now, as the server stores an outing (s, m).
+export function outingTimes(recording: Recording, now: number): OutingPayload {
+  const durationS = Math.round(elapsedMs(recording, now) / 1000)
+  return {
+    started_at: new Date(recording.startedAt).toISOString(),
+    duration_s: durationS,
+    moving_s: Math.min(Math.round(recording.movingMs / 1000), durationS),
+    distance_m: Math.round(recording.distanceM),
+  }
 }
 
 // The recorded track as a route payload: resampled under the point limit, with the GPS altitudes when every

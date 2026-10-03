@@ -259,6 +259,9 @@ test.describe('recording an outing', () => {
     await expect(page.getByText('Privé', { exact: true })).toBeVisible()
     await expect(page.getByRole('button', { name: /Fait le/ })).toBeVisible()
     await expect(page.getByText(/Ta sortie : \d+ min, dont \d+ min en mouvement/)).toBeVisible()
+    // Its first outing.
+    await page.getByRole('tab', { name: /Passages/ }).click()
+    await expect(page.getByTestId('outing')).toHaveCount(1)
 
     // Listed among the completed routes of the profile, with its times.
     await page.goto('/profile')

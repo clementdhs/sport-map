@@ -25,6 +25,7 @@ const data: AccountData = {
   photos: [{ route_id: 'bbbbbbbb-2222-4000-8000-000000000002', storage_path: 'bbbbbbbb-2222-4000-8000-000000000002/p1.webp', created_at: '2026-09-02T08:00:00Z' }],
   reviews: [{ route_id: 'x', rating: 4, comment: 'Belle vue' }],
   activity: [],
+  outings: [{ route_id: 'x', started_at: '2026-09-28T08:00:00Z', duration_s: 3600, moving_s: 3000, distance_m: 9800 }],
   collections: [],
   reports: [],
   routingUsage: [{ day: '2026-09-29', count: 12 }],
@@ -35,9 +36,11 @@ describe('accountArchive', () => {
   const file = (path: string) => archive.files.find(entry => entry.path === path)?.content
 
   it('holds a readme and one JSON file per kind of data', () => {
-    expect(archive.files.slice(0, 8).map(entry => entry.path)).toEqual([
-      'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'collections.json', 'signalements.json', 'calculs.json',
+    expect(archive.files.slice(0, 9).map(entry => entry.path)).toEqual([
+      'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'passages.json', 'collections.json', 'signalements.json',
+      'calculs.json',
     ])
+    expect(JSON.parse(file('passages.json')!)).toEqual(data.outings)
     expect(JSON.parse(file('calculs.json')!)).toEqual(data.routingUsage)
     expect(file('LISEZMOI.txt')).toContain('Données de clem')
     expect(JSON.parse(file('profil.json')!)).toMatchObject({ email: 'clem@example.test' })
@@ -47,7 +50,8 @@ describe('accountArchive', () => {
   it('names its files and writes its readme in the given language', () => {
     const english = accountArchive(data, 'en')
     expect(english.files.map(entry => entry.path)).toEqual([
-      'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'collections.json', 'reports.json', 'routing.json',
+      'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'outings.json', 'collections.json', 'reports.json',
+      'routing.json',
       'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
     ])
     const readme = english.files[0]!.content

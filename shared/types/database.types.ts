@@ -224,6 +224,54 @@ export type Database = {
           },
         ]
       }
+      route_outings: {
+        Row: {
+          created_at: string
+          distance_m: number
+          duration_s: number
+          id: string
+          moving_s: number
+          route_id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          distance_m: number
+          duration_s: number
+          id?: string
+          moving_s: number
+          route_id: string
+          started_at: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          distance_m?: number
+          duration_s?: number
+          id?: string
+          moving_s?: number
+          route_id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_outings_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "route_outings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_photos: {
         Row: {
           created_at: string

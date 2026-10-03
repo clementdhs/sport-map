@@ -106,7 +106,7 @@ const tabs = computed(() => [
       </template>
 
       <template #stats>
-        <ProfileStats :completed="data.completed" />
+        <ProfileStats :outings="data.outings" />
       </template>
       <template #completed>
         <ul v-if="data.completed.length" class="space-y-2 pt-2">

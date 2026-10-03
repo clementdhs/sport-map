@@ -6,6 +6,7 @@ import type { EditorState, Poi } from '#shared/utils/routes'
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)
+  const user = await serverSupabaseUser(event)
   const { data, error } = await supabase
     .from('routes')
     .select(`
@@ -14,10 +15,12 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
       rating_avg, rating_count,
       geometry:route_geojson,
       owner:profiles(username, display_name),
-      photos:route_photos(id, storage_path)
+      photos:route_photos(id, storage_path),
+      outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, user:profiles(username, display_name))
     `)
     .eq('id', id)
     .order('created_at', { referencedTable: 'route_photos' })
+    .order('started_at', { referencedTable: 'route_outings', ascending: false })
     .maybeSingle()
 
   if (error) {
@@ -28,7 +31,6 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
   if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
   let viewer: ViewerActivity | null = null
-  const user = await serverSupabaseUser(event)
   if (user) {
     const { data: activity } = await supabase
       .from('route_activity')
@@ -44,9 +46,11 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     }
   }
 
-  const { photos, ...route } = data
+  const { photos, outings, ...route } = data
   return {
     ...route,
+    // Typed by hand: inferring it here is circular for TypeScript.
+    outings: outings.map(({ user_id: userId, ...outing }: typeof outings[number]) => ({ ...outing, is_mine: userId === user?.sub })),
     geometry: data.geometry as unknown as LineString,
     elevation_profile: data.elevation_profile as number[] | null,
     editor_state: data.editor_state as EditorState | null,

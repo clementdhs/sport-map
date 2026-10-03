@@ -252,16 +252,28 @@ export const reviewSchema = z.object({
 
 export type ReviewInput = z.infer<typeof reviewSchema>
 
-// An outing recorded with the phone's GPS: its track, saved as a new route, and its times (s).
-// duration_s is the elapsed time, pauses included; moving_s only counts time spent moving.
-export const recordingSchema = z.object({
-  route: routeCreateSchema,
+// The times of an outing recorded with the GPS (s): duration_s is the elapsed time, pauses included; moving_s
+// only counts time spent moving. distance_m is the distance covered according to the GPS.
+const outingFields = {
   started_at: z.iso.datetime({ offset: true }),
   duration_s: z.number().int().min(0).max(7 * 24 * 3600),
   moving_s: z.number().int().min(0),
-}).refine(recording => recording.moving_s <= recording.duration_s, {
-  message: 'validation.movingExceedsDuration',
-  path: ['moving_s'],
-})
+  distance_m: z.number().min(0).max(2_000_000),
+}
+const movingWithinDuration = (outing: { duration_s: number, moving_s: number }) => outing.moving_s <= outing.duration_s
+const movingExceedsDuration = { message: 'validation.movingExceedsDuration', path: ['moving_s'] }
+
+// An outing recorded on an existing route, while following it.
+export const outingSchema = z.object(outingFields).refine(movingWithinDuration, movingExceedsDuration)
+
+export type OutingPayload = z.infer<typeof outingSchema>
+
+// An outing recorded from /record: its track, saved as a new route, and its times. distance_m is optional for
+// pages loaded before it existed (the route's distance is used instead).
+export const recordingSchema = z.object({
+  route: routeCreateSchema,
+  ...outingFields,
+  distance_m: outingFields.distance_m.optional(),
+}).refine(movingWithinDuration, movingExceedsDuration)
 
 export type RecordingPayload = z.infer<typeof recordingSchema>

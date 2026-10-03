@@ -3,6 +3,7 @@ import { MAX_ROUTE_POINTS, type LngLat } from '#shared/utils/routes'
 import {
   addFix,
   elapsedMs,
+  outingTimes,
   pauseRecording,
   recordingTrack,
   resumeRecording,
@@ -70,6 +71,19 @@ describe('addFix', () => {
     expect(r.movingMs).toBe(10_000)
     // The watch kept running during the pause.
     expect(elapsedMs(r, T0 + 190_000)).toBe(190_000)
+  })
+})
+
+describe('outingTimes', () => {
+  it('gives the elapsed and moving times, and the distance, as the server stores them', () => {
+    let r = addFix(startRecording(T0), fix(0), T0)
+    r = walk(r, 0, 10, 20, 10, T0) // 200 m in 100 s
+    expect(outingTimes(r, T0 + 600_400)).toEqual({
+      started_at: '2026-09-28T08:00:00.000Z',
+      duration_s: 600,
+      moving_s: 100,
+      distance_m: 200,
+    })
   })
 })
 

@@ -29,6 +29,8 @@ export type RouteDetail = Pick<
   editor_state: EditorState | null
   pois: Poi[]
   photos: RoutePhoto[]
+  // Outings recorded with the GPS on this route, latest first
+  outings: RouteOuting[]
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null
@@ -38,6 +40,12 @@ export type RouteDetail = Pick<
 export type RoutePhoto = {
   id: string
   url: string
+}
+
+// An outing recorded with the GPS on a route: who, when, and their times (s).
+export type RouteOuting = Pick<Tables<'route_outings'>, 'id' | 'started_at' | 'duration_s' | 'moving_s' | 'distance_m'> & {
+  user: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
+  is_mine: boolean
 }
 
 export type RouteListItem = {
@@ -70,6 +78,18 @@ export type MyProfile = {
   created: RouteListItem[]
   saved: RouteListItem[]
   completed: (RouteListItem & OutingTimes & { completed_at: string })[]
+  // What the statistics count
+  outings: StatsOuting[]
+}
+
+// One outing of the profile statistics: an outing recorded with the GPS, or a route only marked as done.
+// Distance and gain are the route's.
+export type StatsOuting = Pick<RouteListItem, 'sport_type' | 'distance_m' | 'elevation_gain_m'> & {
+  route_id: string
+  // When the outing ended, or when the route was marked as done
+  completed_at: string
+  // Only for outings recorded with the GPS
+  moving_s: number | null
 }
 
 export type PublicProfile = {

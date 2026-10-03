@@ -1,4 +1,4 @@
-import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
+import { E2E_USER, expect, FAMILY_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
 
 test('finds a route of another member on the home map and opens it', async ({ page }) => {
   await page.goto('/')
@@ -296,6 +296,71 @@ test.describe('follow mode', () => {
 
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
+  })
+
+  test('records the outing while following, and lists it on the route without another route', async ({ page, context }) => {
+    test.slow()
+    // Fake clock: the recorder times fixes with Date.now().
+    await page.clock.install({ time: new Date('2026-09-28T08:00:00Z') })
+    page.on('dialog', dialog => dialog.accept()) // "leave the page?" and "delete?" prompts
+    const id = process.env.E2E_ROUTE_ID!
+    const myProfile = async () => (await (await page.request.get('/api/profile/me')).json()) as {
+      created: unknown[]
+      outings: { route_id: string, moving_s: number | null }[]
+    }
+    const routesBefore = (await myProfile()).created.length
+    const done = page.getByTestId('done')
+    const elapsed = page.getByTestId('recording-elapsed')
+
+    await page.goto(`/routes/${id}/follow`)
+    await waitForMap(page)
+    await waitForHydration(page)
+    await expect(done).toHaveText('0 m')
+    await page.getByRole('button', { name: 'Enregistrer la sortie' }).click()
+    await expect(elapsed).toBeVisible()
+
+    // A quarter of an hour later, at the second point of the route.
+    await page.clock.fastForward(15 * 60_000)
+    await context.setGeolocation({ latitude: 45.87, longitude: 6.14, accuracy: 10 })
+    await expect(done).toHaveText('3,34 km')
+
+    // The page closes by accident: the outing is kept on the phone, and following goes on.
+    await page.reload()
+    await waitForMap(page)
+    await waitForHydration(page)
+    await expect(page.getByText(/n'est pas terminée/)).toBeVisible()
+    await page.getByRole('button', { name: 'Reprendre' }).click()
+    await expect(elapsed).toHaveText(/^1\d:\d\d$/)
+
+    // At the end of the route.
+    await page.clock.fastForward(15 * 60_000)
+    await context.setGeolocation({ latitude: 45.85, longitude: 6.16, accuracy: 10 })
+    await expect(page.getByText('Tu es arrivé !')).toBeVisible()
+
+    await page.getByRole('button', { name: 'Terminer' }).click()
+    const dialog = page.getByRole('dialog', { name: 'Terminer la sortie' })
+    await expect(dialog).toContainText('30 min')
+    await dialog.getByRole('button', { name: 'Enregistrer' }).click()
+
+    // Back on the route's page, on its outings.
+    await expect(page).toHaveURL(new RegExp(`/routes/${id}\\?tab=outings$`))
+    await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME, level: 1 })).toBeVisible()
+    await expect(page.getByRole('tab', { name: /Passages/ })).toHaveAttribute('aria-selected', 'true')
+    const outing = page.getByTestId('outing').filter({ hasText: FAMILY_USER.username }).first()
+    await expect(outing).toContainText('28 septembre 2026')
+    await expect(outing).toContainText(/30 min au total, 30 min en mouvement/)
+    await expect(outing).toContainText("de moins que l'estimation")
+    await expect(page.getByRole('button', { name: /Fait le/ })).toBeVisible()
+
+    // No new route, and the outing counts in the statistics.
+    const profile = await myProfile()
+    expect(profile.created).toHaveLength(routesBefore)
+    expect(profile.outings.filter(o => o.route_id === id && o.moving_s! >= 1700).length).toBeGreaterThanOrEqual(1)
+
+    // Deleted by its author.
+    const count = await page.getByTestId('outing').count()
+    await outing.getByRole('button', { name: 'Supprimer ce passage' }).click()
+    await expect(page.getByTestId('outing')).toHaveCount(count - 1)
   })
 
   test('reads out leaving the route, getting back on it and the arrival', async ({ page, context }) => {

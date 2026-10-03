@@ -1,12 +1,11 @@
-import type { MyProfile } from '#shared/types/routes'
+import type { StatsOuting } from '#shared/types/routes'
 import { DEFAULT_FORMAT_LOCALE } from '#shared/utils/format'
 import type { SportType } from '#shared/utils/routes'
 
-// Totals of the completed routes of the profile, by week, month or year, for the statistics tab.
+// Totals of the outings of the profile, by week, month or year, for the statistics tab.
 
 export type StatsPeriod = 'week' | 'month' | 'year'
 export type StatsMetric = 'distance' | 'gain' | 'time'
-type Completed = MyProfile['completed'][number]
 
 export interface StatsBucket {
   key: string
@@ -82,7 +81,7 @@ function bucketKeys(period: StatsPeriod, today: string): string[] {
 }
 
 export function activityStats(
-  completed: Completed[],
+  outings: StatsOuting[],
   period: StatsPeriod,
   sport: SportType | 'all',
   now = new Date(),
@@ -97,13 +96,13 @@ export function activityStats(
     outings: 0,
   } satisfies StatsBucket]))
 
-  for (const route of completed) {
-    if (sport !== 'all' && route.sport_type !== sport) continue
-    const bucket = buckets.get(bucketKey(localDate(route.completed_at), period))
+  for (const outing of outings) {
+    if (sport !== 'all' && outing.sport_type !== sport) continue
+    const bucket = buckets.get(bucketKey(localDate(outing.completed_at), period))
     if (!bucket) continue // older than the buckets shown
-    bucket.distanceM += route.distance_m
-    bucket.gainM += route.elevation_gain_m ?? 0
-    bucket.movingS += route.moving_s ?? 0
+    bucket.distanceM += outing.distance_m
+    bucket.gainM += outing.elevation_gain_m ?? 0
+    bucket.movingS += outing.moving_s ?? 0
     bucket.outings++
   }
   return [...buckets.values()]

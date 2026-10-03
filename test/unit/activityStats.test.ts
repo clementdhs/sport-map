@@ -1,26 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import type { MyProfile } from '#shared/types/routes'
+import type { StatsOuting } from '#shared/types/routes'
 import { activityStats, localDate, metricValue, MONTHS_SHOWN, WEEKS_SHOWN, weekStart, YEARS_SHOWN } from '~/utils/activityStats'
-
-type Completed = MyProfile['completed'][number]
 
 const NOW = new Date('2026-09-30T10:00:00Z') // a Wednesday
 
-function done(completedAt: string, extra: Partial<Completed> = {}): Completed {
+function done(completedAt: string, extra: Partial<StatsOuting> = {}): StatsOuting {
   return {
-    id: completedAt,
-    name: 'Parcours',
+    route_id: completedAt,
     sport_type: 'hiking',
     distance_m: 10_000,
     elevation_gain_m: 500,
-    is_public: true,
-    is_loop: false,
-    rating_avg: null,
-    rating_count: 0,
-    owner_name: 'moi',
-    created_at: completedAt,
     completed_at: completedAt,
-    duration_s: null,
     moving_s: null,
     ...extra,
   }

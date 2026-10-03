@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
 import type { FetchError } from 'ofetch'
-import type { RouteDetail, RoutePhoto, ViewerActivity } from '#shared/types/routes'
+import type { RouteDetail, RouteOuting, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat } from '#shared/utils/routes'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
@@ -41,6 +41,7 @@ const showSlopes = ref(false)
 // Own state for what the page changes: useFetch data is a shallow ref, so changing a property of
 // parcours (photos, viewer) would not re-render the page.
 const photos = ref<RoutePhoto[]>(parcours.value.photos)
+const outings = ref<RouteOuting[]>(parcours.value.outings)
 const viewer = ref<ViewerActivity>(parcours.value.viewer ?? { saved: false, completed_at: null, duration_s: null, moving_s: null })
 
 // In the order they come along the track.
@@ -122,6 +123,9 @@ const tabs = computed(() => [
     ? [{ label: t('route.tabs.photos'), value: 'photos', slot: 'photos' as const, badge: photos.value.length || undefined }]
     : []),
   { label: t('route.tabs.reviews'), value: 'reviews', slot: 'reviews' as const, badge: parcours.value?.rating_count || undefined },
+  ...(outings.value.length
+    ? [{ label: t('route.tabs.outings'), value: 'outings', slot: 'outings' as const, badge: outings.value.length }]
+    : []),
 ] satisfies TabsItem[])
 // The open tab is kept in the URL (?tab=reviews), so that a reload or a shared link shows it.
 const activeTab = computed({
@@ -331,6 +335,16 @@ useSeoMeta({
 
       <template #reviews>
         <RouteReviews :route-id="parcours.id" :is-owner="isOwner" :is-public="parcours.is_public" />
+      </template>
+
+      <template #outings>
+        <RouteOutings
+          v-model:outings="outings"
+          :route-id="parcours.id"
+          :sport="parcours.sport_type"
+          :distance-m="parcours.distance_m"
+          :elevation-gain-m="parcours.elevation_gain_m"
+        />
       </template>
     </UTabs>
 

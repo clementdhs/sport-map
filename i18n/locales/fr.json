@@ -157,7 +157,8 @@
     "tabs": {
       "overview": "Aperçu",
       "photos": "Photos",
-      "reviews": "Avis"
+      "reviews": "Avis",
+      "outings": "Passages"
     },
     "deleted": "Parcours supprimé",
     "deleteFailed": "Suppression impossible",
@@ -442,7 +443,20 @@
     "searchingGps": "Recherche du signal GPS…",
     "screenOn": "Écran maintenu allumé",
     "backgroundGps": "GPS actif écran éteint",
-    "keepScreenOn": "Garde l'écran allumé pendant le suivi"
+    "keepScreenOn": "Garde l'écran allumé pendant le suivi",
+    "record": "Enregistrer la sortie",
+    "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé."
+  },
+  "outings": {
+    "estimate": "Durée estimée : ~{duration} en mouvement",
+    "times": "{total} au total, {moving} en mouvement",
+    "moving": "En mouvement",
+    "asEstimated": "Comme estimé",
+    "faster": "{duration} de moins que l'estimation",
+    "slower": "{duration} de plus que l'estimation",
+    "delete": "Supprimer ce passage",
+    "deleteConfirm": "Supprimer ce passage ? Il ne comptera plus dans les statistiques.",
+    "deleteFailed": "Impossible de supprimer le passage"
   },
   "voice": {
     "title": "Guidage vocal",
@@ -635,6 +649,8 @@
   "api": {
     "signInRequired": "Connexion requise",
     "routeNotFound": "Parcours introuvable",
+    "outingNotFound": "Passage introuvable",
+    "deleteOutingFailed": "Impossible de supprimer le passage",
     "collectionNotFound": "Collection introuvable",
     "photoNotFound": "Photo introuvable",
     "reviewNotFound": "Avis introuvable",
@@ -697,6 +713,7 @@
       "routes": "parcours.json",
       "reviews": "avis.json",
       "activity": "activite.json",
+      "outings": "passages.json",
       "collections": "collections.json",
       "reports": "signalements.json",
       "routing": "calculs.json",
@@ -711,6 +728,7 @@
       "photos": "les photos de tes parcours, un dossier par parcours",
       "reviews": "les avis que tu as laissés sur des parcours",
       "activity": "les parcours que tu as sauvegardés ou réalisés, avec les temps de tes sorties enregistrées",
+      "outings": "tes sorties enregistrées au GPS sur des parcours (date, temps, distance)",
       "collections": "tes collections de parcours",
       "reports": "les avis que tu as signalés",
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",

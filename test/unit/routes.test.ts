@@ -5,6 +5,7 @@ import {
   routeCreateSchema,
   routeSearchSchema,
   reviewSchema,
+  outingSchema,
   recordingSchema,
   snapToTrack,
   MAX_POIS,
@@ -202,5 +203,24 @@ describe('recordingSchema', () => {
   it('rejects more moving time than elapsed time, or a missing start', () => {
     expect(recordingSchema.safeParse({ ...recording, moving_s: 4000 }).success).toBe(false)
     expect(recordingSchema.safeParse({ ...recording, started_at: 'hier' }).success).toBe(false)
+  })
+
+  it('takes the GPS distance when the page sends it', () => {
+    expect(recordingSchema.parse({ ...recording, distance_m: 9800 }).distance_m).toBe(9800)
+  })
+})
+
+describe('outingSchema', () => {
+  const outing = { started_at: '2026-09-28T08:00:00.000Z', duration_s: 3600, moving_s: 3000, distance_m: 9800 }
+
+  it('accepts an outing recorded on a route', () => {
+    expect(outingSchema.parse(outing)).toEqual(outing)
+  })
+
+  it('needs the distance, and no more moving time than elapsed time', () => {
+    const { distance_m: _distance, ...withoutDistance } = outing
+    expect(outingSchema.safeParse(withoutDistance).success).toBe(false)
+    expect(outingSchema.safeParse({ ...outing, distance_m: -1 }).success).toBe(false)
+    expect(outingSchema.safeParse({ ...outing, moving_s: 4000 }).success).toBe(false)
   })
 })

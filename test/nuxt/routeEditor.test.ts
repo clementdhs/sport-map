@@ -85,6 +85,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     editor_state: body.editor_state ?? null,
     pois: body.pois ?? [],
     photos: [],
+    outings: [],
     owner: { username: 'test', display_name: null },
     viewer: null,
     ...overrides,

@@ -157,7 +157,8 @@
     "tabs": {
       "overview": "Overview",
       "photos": "Photos",
-      "reviews": "Reviews"
+      "reviews": "Reviews",
+      "outings": "Outings"
     },
     "deleted": "Route deleted",
     "deleteFailed": "Couldn't delete",
@@ -442,7 +443,20 @@
     "searchingGps": "Looking for a GPS signal…",
     "screenOn": "Screen kept on",
     "backgroundGps": "GPS on with the screen off",
-    "keepScreenOn": "Keep the screen on while following"
+    "keepScreenOn": "Keep the screen on while following",
+    "record": "Record the outing",
+    "finishDescription": "It's added to this route's outings, and the route is marked as completed."
+  },
+  "outings": {
+    "estimate": "Estimated time: ~{duration} moving",
+    "times": "{total} in total, {moving} moving",
+    "moving": "Moving",
+    "asEstimated": "As estimated",
+    "faster": "{duration} under the estimate",
+    "slower": "{duration} over the estimate",
+    "delete": "Delete this outing",
+    "deleteConfirm": "Delete this outing? It will no longer count in the statistics.",
+    "deleteFailed": "Couldn't delete the outing"
   },
   "voice": {
     "title": "Voice guidance",
@@ -635,6 +649,8 @@
   "api": {
     "signInRequired": "Sign-in required",
     "routeNotFound": "Route not found",
+    "outingNotFound": "Outing not found",
+    "deleteOutingFailed": "Couldn't delete the outing",
     "collectionNotFound": "Collection not found",
     "photoNotFound": "Photo not found",
     "reviewNotFound": "Review not found",
@@ -697,6 +713,7 @@
       "routes": "routes.json",
       "reviews": "reviews.json",
       "activity": "activity.json",
+      "outings": "outings.json",
       "collections": "collections.json",
       "reports": "reports.json",
       "routing": "routing.json",
@@ -711,6 +728,7 @@
       "photos": "the photos of your routes, one folder per route",
       "reviews": "the reviews you left on routes",
       "activity": "the routes you saved or completed, with the times of your recorded outings",
+      "outings": "your outings recorded with the GPS on routes (date, times, distance)",
       "collections": "your route collections",
       "reports": "the reviews you reported",
       "routing": "your number of route calculations today (limited per person)",

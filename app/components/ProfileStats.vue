@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { MyProfile } from '#shared/types/routes'
+import type { StatsOuting } from '#shared/types/routes'
 import type { SportType } from '#shared/utils/routes'
 import type { StatsBucket, StatsMetric, StatsPeriod } from '~/utils/activityStats'
 
 const { formatDistance, formatNumber, locale } = useFormat()
 
-// Statistics of the completed routes: totals and a chart by week, month or year. Computed in the browser from
-// the profile's completed routes, so switching period, sport or measure is instant.
+// Statistics of the outings: totals and a chart by week, month or year. Computed in the browser from the
+// profile's outings (each one recorded with the GPS, and the routes only marked as done), so switching period,
+// sport or measure is instant.
 const props = defineProps<{
-  completed: MyProfile['completed']
+  outings: StatsOuting[]
 }>()
 
 const { t } = useI18n()
@@ -33,7 +34,7 @@ const sportItems = computed(() => [
 const SHOWN: Record<StatsPeriod, number> = { week: WEEKS_SHOWN, month: MONTHS_SHOWN, year: YEARS_SHOWN }
 const rangeLabel = computed(() => t(`stats.ranges.${period.value}`, { count: SHOWN[period.value] }))
 
-const buckets = computed(() => activityStats(props.completed, period.value, sport.value, new Date(), locale()))
+const buckets = computed(() => activityStats(props.outings, period.value, sport.value, new Date(), locale()))
 const bucketTitle = (bucket: StatsBucket) => (period.value === 'week' ? t('stats.weekOf', { date: bucket.fullLabel }) : bucket.fullLabel)
 const totals = computed(() => buckets.value.reduce((sum, b) => ({
   outings: sum.outings + b.outings,
@@ -74,7 +75,7 @@ const everyOther = computed(() => buckets.value.length > 6)
       <UTabs v-model="metric" :items="metricItems" :content="false" size="sm" :aria-label="t('stats.metric')" />
     </div>
 
-    <p v-if="!completed.length" class="text-sm text-muted">
+    <p v-if="!outings.length" class="text-sm text-muted">
       {{ t('stats.empty') }}
     </p>
 

@@ -10,7 +10,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   if (!user) throw apiError(event, 401, 'api.signInRequired')
   const supabase = await serverSupabaseClient(event)
 
-  const [profile, routes, reviews, activity, collections, reports, routingUsage] = await Promise.all([
+  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage] = await Promise.all([
     supabase.from('profiles').select('username, display_name, bio, created_at').eq('id', user.sub).single(),
     supabase
       .from('routes')
@@ -28,6 +28,11 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .eq('user_id', user.sub)
       .order('created_at'),
     supabase
+      .from('route_outings')
+      .select('route_id, started_at, duration_s, moving_s, distance_m, created_at, route:routes(name)')
+      .eq('user_id', user.sub)
+      .order('started_at'),
+    supabase
       .from('collections')
       .select('id, name, description, is_public, created_at, updated_at, routes:collection_routes(route_id, added_at)')
       .eq('owner_id', user.sub)
@@ -35,7 +40,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     supabase.from('review_reports').select('review_id, created_at').eq('reporter_id', user.sub).order('created_at'),
     supabase.from('routing_usage').select('day, count').eq('user_id', user.sub),
   ])
-  const failed = [profile, routes, reviews, activity, collections, reports, routingUsage].find(result => result.error)
+  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
     throw apiError(event, 500, 'api.exportFailed')
@@ -65,6 +70,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     photos: photos.data,
     reviews: reviews.data!,
     activity: activity.data!,
+    outings: outings.data!,
     collections: collections.data!,
     reports: reports.data!,
     routingUsage: routingUsage.data!,

@@ -11,11 +11,12 @@ Clem validates every issue before it is committed. Talk to Clem in French; code,
 
 1. `npm run typecheck`, keeping only the errors: `npm run typecheck 2>&1 | Select-String 'error TS'`.
 2. `npm test` (Vitest); show only the summary lines.
-3. e2e when a user-facing flow changed: Docker must be running (Clem starts Docker Desktop), `npm run db:start`, then `npm run test:e2e`; show only the last ~40 lines.
-4. Check the change in the browser pane with the `sport-map-local-db` launch config (local Supabase). Sign in with the e2e test user from `test/e2e/fixtures.ts` (local only; don't repeat the credentials in chat). Prefer `read_page`/`get_page_text`; take screenshots only for visual checks, scaled down.
-5. If the feature has a non-obvious rule, add or update a file in `.claude/rules/` (with `paths:`), not `CLAUDE.md`.
-6. Summarise in French: what was done, tests run, what was left out. Then ask for the go. Never commit or push without it.
-7. Notify Clem's phone with `PushNotification` (load it with ToolSearch): "Issue #N prête : j'attends ton go", plus the issue title. Clem often walks away during the checks.
+3. **Migrations, only when `git status --porcelain supabase/migrations/` or `git diff --name-only origin/main -- supabase/migrations/` lists something.** Apply them locally if Docker is up (`npx supabase migration up --local`), then delegate the review to the `migration-reviewer` agent (Agent tool, in the foreground), telling it which issue the migration serves. Fix every blocker, then run it again until the verdict isn't `BLOCKING`. Mention the remaining remarks in the summary to Clem. Skip this step when no migration changed.
+4. **e2e, only when a user-facing flow changed.** Delegate to the `e2e-runner` agent (Agent tool, in the foreground): it checks Docker and the local Supabase, builds, runs Playwright and returns the failures with their likely cause. Give it a scope (spec file or project) when the change is clearly local, the whole suite otherwise. Fix the app bugs and outdated tests it reports, then run it again on the failing specs. If it reports that Docker is down, ask Clem to start Docker Desktop. Don't run e2e and the browser check at the same time: the e2e setup recreates the test users and data.
+5. Check the change in the browser pane with the `sport-map-local-db` launch config (local Supabase). Sign in with the e2e test user from `test/e2e/fixtures.ts` (local only; don't repeat the credentials in chat). Prefer `read_page`/`get_page_text`; take screenshots only for visual checks, scaled down.
+6. If the feature has a non-obvious rule, add or update a file in `.claude/rules/` (with `paths:`), not `CLAUDE.md`.
+7. Summarise in French: what was done, tests run, what was left out. Then ask for the go. Never commit or push without it.
+8. Notify Clem's phone with `PushNotification` (load it with ToolSearch): "Issue #N prête : j'attends ton go", plus the issue title. Clem often walks away during the checks.
 
 ## 2. After the go
 

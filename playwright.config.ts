@@ -85,7 +85,8 @@ export default defineConfig({
   // The production build, as deployed, pointed at the local Supabase. No map or routing key: the tests
   // mock those requests, so they run offline and never use the free-tier quotas.
   webServer: {
-    command: 'npm run build && node .output/server/index.mjs',
+    // E2E_SKIP_BUILD=1 reuses the existing .output: Playwright's own build can exceed the timeout on a busy machine.
+    command: process.env.E2E_SKIP_BUILD ? 'node .output/server/index.mjs' : 'npm run build && node .output/server/index.mjs',
     url: baseURL,
     // The production build alone takes about 5 minutes on a local machine.
     timeout: 600_000,

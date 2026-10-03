@@ -307,6 +307,8 @@ test.describe('offline follow mode', () => {
 })
 
 test('groups routes in a public collection, which only shows its public routes to visitors', async ({ page, playwright }) => {
+  // A retry finds the collection of the failed attempt: each attempt makes its own.
+  const name = `Week-end e2e ${test.info().retry + 1}`
   const { id: privateId } = await (await page.request.post('/api/routes', {
     data: { name: 'Parcours privé collection e2e', sport_type: 'hiking', is_public: false, coordinates: [[6.3, 45.8], [6.35, 45.82]] },
   })).json() as { id: string }
@@ -316,16 +318,16 @@ test('groups routes in a public collection, which only shows its public routes t
   await routeAction(page, 'Ajouter à une collection')
   const dialog = page.getByRole('dialog', { name: 'Ajouter à une collection' })
   await dialog.getByRole('button', { name: 'Nouvelle collection' }).click()
-  await dialog.getByLabel('Nom').fill('Week-end e2e')
+  await dialog.getByLabel('Nom').fill(name)
   await dialog.getByRole('switch', { name: 'Collection publique' }).click()
   await dialog.getByRole('button', { name: 'Créer et ajouter' }).click()
-  await expect(dialog.getByRole('checkbox', { name: 'Week-end e2e' })).toBeChecked()
+  await expect(dialog.getByRole('checkbox', { name })).toBeChecked()
   await page.keyboard.press('Escape')
 
   // Added from the private route's page.
   await page.goto(`/routes/${privateId}`)
   await routeAction(page, 'Ajouter à une collection')
-  const checkbox = page.getByRole('dialog').getByRole('checkbox', { name: 'Week-end e2e' })
+  const checkbox = page.getByRole('dialog').getByRole('checkbox', { name })
   await expect(checkbox).not.toBeChecked()
   await checkbox.click()
   await expect(checkbox).toBeChecked()
@@ -334,7 +336,7 @@ test('groups routes in a public collection, which only shows its public routes t
   await page.goto('/profile')
   await waitForHydration(page)
   await page.getByRole('tab', { name: /Collections/ }).click()
-  await page.getByRole('link', { name: /Week-end e2e/ }).click()
+  await page.getByRole('link', { name: new RegExp(name) }).click()
   await expect(page).toHaveURL(/\/collections\/[0-9a-f-]{36}$/)
   await waitForMap(page)
   const routes = page.getByRole('list', { name: 'Parcours de la collection' })

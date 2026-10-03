@@ -65,8 +65,9 @@ export async function waitForHydration(page: Page) {
   await expect(page.locator('html[data-hydrated]')).toBeAttached({ timeout: 15_000 })
 }
 
-// Secondary actions of a route page are in its "…" menu.
+// Secondary actions of a route page are in its "…" menu, which only opens once the page is hydrated.
 export async function routeAction(page: Page, name: string) {
+  await waitForHydration(page)
   await page.getByRole('button', { name: "Plus d'actions" }).click()
   await page.getByRole('menuitem', { name }).click()
 }

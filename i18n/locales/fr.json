@@ -457,6 +457,35 @@
     "backgroundGps": "GPS actif écran éteint",
     "keepScreenOn": "Garde l'écran allumé pendant le suivi"
   },
+  "voice": {
+    "title": "Guidage vocal",
+    "description": "Annonces à voix haute pendant le suivi, réglées sur cet appareil.",
+    "enabled": "Activer le guidage vocal",
+    "legend": "Annonces",
+    "announcements": {
+      "track": "Sortie du parcours et retour dessus",
+      "kilometres": "Chaque kilomètre : temps, allure (vitesse moyenne à vélo)",
+      "climbs": "Montées importantes, 300 m avant",
+      "arrival": "Arrivée"
+    },
+    "unsupported": "La synthèse vocale n'est pas disponible sur ce navigateur.",
+    "screenOnHint": "Dans le navigateur, les annonces ne passent qu'écran allumé.",
+    "said": {
+      "on": "Guidage vocal activé.",
+      "offTrack": "Tu quittes le parcours.",
+      "backOnTrack": "Tu es de retour sur le parcours.",
+      "kilometre": "Kilomètre {km}, en {time}.",
+      "pace": "{pace} au kilomètre.",
+      "averageSpeed": "Moyenne : {speed} kilomètres heure.",
+      "climb": "Montée de {length} à {grade} pour cent dans {distance}.",
+      "arrived": "Tu es arrivé, parcours terminé !",
+      "hours": "{n} heure | {n} heures",
+      "minutes": "{n} minute | {n} minutes",
+      "seconds": "{n} seconde | {n} secondes",
+      "metres": "{n} mètre | {n} mètres",
+      "kilometres": "{n} kilomètre | {n} kilomètres"
+    }
+  },
   "map": {
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",

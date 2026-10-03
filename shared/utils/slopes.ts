@@ -93,18 +93,18 @@ export function steepestGrade({ grades }: SlopeProfile): number {
   return Math.round(Math.max(0, ...grades))
 }
 
-// The climb with the largest gain: it starts at a low point and goes on until the elevation falls more than
-// CLIMB_TOLERANCE_M below its highest point. null when no climb gains MIN_CLIMB_GAIN_M.
-export function mainClimb(coordinates: LngLat[], elevations: number[], along: number[]): Climb | null {
+// Climbs along the track, in order: each starts at a low point and goes on until the elevation falls more than
+// CLIMB_TOLERANCE_M below its highest point. Only those gaining at least minGainM.
+export function climbs(coordinates: LngLat[], elevations: number[], along: number[], minGainM = MIN_CLIMB_GAIN_M): Climb[] {
   const smoothed = smoothByDistance(coordinates, elevations)
-  let best: Climb | null = null
+  const found: Climb[] = []
   let start = 0
   let top = 0
   const close = () => {
     const gainM = smoothed[top]! - smoothed[start]!
     const lengthM = along[top]! - along[start]!
-    if (gainM >= MIN_CLIMB_GAIN_M && lengthM > 0 && (!best || gainM > best.gainM)) {
-      best = { startM: along[start]!, endM: along[top]!, gainM, averageGrade: (gainM / lengthM) * 100 }
+    if (gainM >= minGainM && lengthM > 0) {
+      found.push({ startM: along[start]!, endM: along[top]!, gainM, averageGrade: (gainM / lengthM) * 100 })
     }
   }
   for (let i = 1; i < smoothed.length; i++) {
@@ -121,7 +121,12 @@ export function mainClimb(coordinates: LngLat[], elevations: number[], along: nu
     }
   }
   close()
-  return best
+  return found
+}
+
+// The climb with the largest gain, null when no climb gains MIN_CLIMB_GAIN_M.
+export function mainClimb(coordinates: LngLat[], elevations: number[], along: number[]): Climb | null {
+  return climbs(coordinates, elevations, along).reduce<Climb | null>((best, c) => (!best || c.gainM > best.gainM ? c : best), null)
 }
 
 // MapLibre line-gradient colouring the track by slope class (requires lineMetrics on the source).

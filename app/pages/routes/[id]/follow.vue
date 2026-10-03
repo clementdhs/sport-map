@@ -4,6 +4,7 @@ import type { LngLat } from '#shared/utils/routes'
 import type { LiveStats } from '~/utils/liveStats'
 import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
+import type { GuideState } from '~/utils/voiceGuide'
 
 const { formatDistance } = useFormat()
 
@@ -33,6 +34,15 @@ const model = computed(() => {
 const { fix, error: gpsError, background } = useWatchPosition()
 const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock()
 
+// Voice guidance, with the climbs worth announcing.
+const voice = useVoiceGuide(() => parcours.value!.sport_type)
+const routeClimbs = computed(() => {
+  const elevations = parcours.value!.elevation_profile
+  if (elevations?.length !== coordinates.value.length) return []
+  return announcedClimbs(climbs(coordinates.value, elevations, model.value.along))
+})
+let guideState: GuideState | null = null
+
 // Each fix is located from the previous progress, to follow the right leg where the track passes twice.
 const progress = shallowRef<TrackProgress | null>(null)
 const offTrack = ref(false)
@@ -56,6 +66,20 @@ watch(fix, (current) => {
   else if (offTrack.value && next.offTrackM < limit * 0.6) {
     offTrack.value = false
   }
+
+  const outing = walked.value
+  guideState ??= startGuide(outing.startedAt)
+  const guided = guide(guideState, {
+    now: time,
+    elapsedS: (time - outing.startedAt) / 1000,
+    distanceM: outing.distanceM,
+    averageSpeedMs: averageSpeed(outing.distanceM, outing.movingMs),
+    doneM: next.doneM,
+    offTrack: offTrack.value,
+    arrived: arrived.value,
+  }, routeClimbs.value)
+  guideState = guided.state
+  voice.announce(guided.announcements)
 })
 
 const percentDone = computed(() =>
@@ -119,12 +143,19 @@ const liveStats = computed<LiveStats>(() => {
             class="shadow-md"
           />
           <p class="truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">{{ parcours.name }}</p>
+          <VoiceGuideSettings
+            class="ml-auto"
+            :prefs="voice.prefs.value"
+            :supported="voice.supported.value"
+            :background="background"
+            @update="voice.setPrefs"
+          />
           <UButton
             :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
             :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
             color="neutral"
             variant="solid"
-            class="ml-auto shrink-0 shadow-md"
+            class="shrink-0 shadow-md"
             @click="dataView = !dataView"
           />
         </div>

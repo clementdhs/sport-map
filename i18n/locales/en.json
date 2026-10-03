@@ -457,6 +457,35 @@
     "backgroundGps": "GPS on with the screen off",
     "keepScreenOn": "Keep the screen on while following"
   },
+  "voice": {
+    "title": "Voice guidance",
+    "description": "Spoken announcements while following, set on this device.",
+    "enabled": "Turn on voice guidance",
+    "legend": "Announcements",
+    "announcements": {
+      "track": "Leaving the route and getting back on it",
+      "kilometres": "Every kilometre: time, pace (average speed when cycling)",
+      "climbs": "Big climbs, 300 m ahead",
+      "arrival": "Arrival"
+    },
+    "unsupported": "Speech synthesis isn't available in this browser.",
+    "screenOnHint": "In the browser, announcements only play with the screen on.",
+    "said": {
+      "on": "Voice guidance on.",
+      "offTrack": "You're leaving the route.",
+      "backOnTrack": "You're back on the route.",
+      "kilometre": "Kilometre {km}, in {time}.",
+      "pace": "{pace} per kilometre.",
+      "averageSpeed": "Average: {speed} kilometres per hour.",
+      "climb": "Climb of {length} at {grade} percent in {distance}.",
+      "arrived": "You've arrived, route complete!",
+      "hours": "{n} hour | {n} hours",
+      "minutes": "{n} minute | {n} minutes",
+      "seconds": "{n} second | {n} seconds",
+      "metres": "{n} metre | {n} metres",
+      "kilometres": "{n} kilometre | {n} kilometres"
+    }
+  },
   "map": {
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",

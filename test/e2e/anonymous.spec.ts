@@ -341,6 +341,43 @@ test.describe('follow mode', () => {
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
   })
+
+  test('reads out leaving the route, getting back on it and the arrival', async ({ page, context }) => {
+    // What the page says, instead of the browser's voice.
+    await page.addInitScript(() => {
+      const said: string[] = []
+      Object.assign(window, { said })
+      window.speechSynthesis.speak = (utterance: SpeechSynthesisUtterance) => void said.push(`${utterance.lang}: ${utterance.text}`)
+    })
+    const said = () => page.evaluate(() => (window as unknown as { said: string[] }).said)
+
+    await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
+    await waitForMap(page)
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Guidage vocal' }).click()
+    await page.getByRole('switch', { name: 'Activer le guidage vocal' }).click()
+    await page.getByRole('checkbox', { name: 'Arrivée' }).click()
+    await page.keyboard.press('Escape')
+    await expect.poll(said).toEqual(['fr-FR: Guidage vocal activé.'])
+
+    // 4 km east of the route, then back on it at its end: the arrival is not read out, as chosen.
+    await context.setGeolocation({ latitude: 45.87, longitude: 6.19, accuracy: 10 })
+    await expect(page.getByText("Tu t'éloignes du tracé")).toBeVisible()
+    await context.setGeolocation({ latitude: 45.85, longitude: 6.16, accuracy: 10 })
+    await expect(page.getByText('Tu es arrivé !')).toBeVisible()
+    await expect.poll(said).toEqual([
+      'fr-FR: Guidage vocal activé.',
+      'fr-FR: Tu quittes le parcours.',
+      'fr-FR: Tu es de retour sur le parcours.',
+    ])
+
+    // The choices are kept on the phone.
+    await page.reload()
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Guidage vocal' }).click()
+    await expect(page.getByRole('switch', { name: 'Activer le guidage vocal' })).toBeChecked()
+    await expect(page.getByRole('checkbox', { name: 'Arrivée' })).not.toBeChecked()
+  })
 })
 
 test('resets a forgotten password from the email link, opened in another browser', async ({ page, browser }) => {

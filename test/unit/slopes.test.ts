@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LngLat } from '#shared/utils/routes'
-import { mainClimb, slopeClass, slopeGradient, slopeProfile, slopeRuns, SLOPE_CLASSES, steepestGrade } from '#shared/utils/slopes'
+import { climbs, mainClimb, slopeClass, slopeGradient, slopeProfile, slopeRuns, SLOPE_CLASSES, steepestGrade } from '#shared/utils/slopes'
 
 const METERS_PER_DEG_LAT = 111_195
 // `count` points every 10 m going north.
@@ -91,5 +91,26 @@ describe('mainClimb', () => {
   it('reports no climb on flat routes', () => {
     const coordinates = line(101)
     expect(mainClimb(coordinates, coordinates.map(() => 500), slopeProfile(coordinates, coordinates.map(() => 500)).along)).toBeNull()
+  })
+})
+
+describe('climbs', () => {
+  it('lists every climb in order, through small dips', () => {
+    // 300 m up, a 10 m dip, 300 m up again, a long descent, then a 40 m climb.
+    const coordinates = line(201)
+    const elevations = coordinates.map((_, i) => {
+      if (i <= 50) return 500 + i * 6
+      if (i <= 60) return 800 - (i - 50)
+      if (i <= 110) return 790 + (i - 60) * 6
+      if (i <= 170) return 1090 - (i - 110) * 10
+      return 490 + (i - 170) * 1.3
+    })
+    const { along } = slopeProfile(coordinates, elevations)
+    const found = climbs(coordinates, elevations, along)
+    expect(found).toHaveLength(2)
+    expect(found[0]!.gainM).toBeGreaterThan(540)
+    expect(found[1]!.startM).toBeGreaterThan(found[0]!.endM)
+    expect(found[1]!.gainM).toBeGreaterThan(30)
+    expect(climbs(coordinates, elevations, along, 100)).toHaveLength(1)
   })
 })

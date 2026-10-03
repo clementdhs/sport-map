@@ -14,9 +14,6 @@ const config: CapacitorConfig = {
     url: serverUrl,
     cleartext: serverUrl.startsWith('http:'),
     errorPath: 'offline.html',
-    // Sign-in pages of Vercel Authentication (through GitHub), while the site is behind it: kept inside the
-    // app so its cookie lands in the app's WebView, not in the phone's browser.
-    allowNavigation: ['vercel.com', '*.vercel.com', 'github.com', '*.github.com'],
   },
   android: {
     // Background location updates stop after 5 minutes otherwise (background-geolocation plugin README).

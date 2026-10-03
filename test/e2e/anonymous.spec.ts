@@ -308,6 +308,26 @@ test.describe('follow mode', () => {
     await expect(done).toHaveText('3,34 km')
     await expect(remaining).toHaveText('2,71 km')
 
+    // The data screen, with its values chosen on the phone.
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Données' }).click()
+    const data = page.getByTestId('live-data')
+    await expect(data.locator('[data-field="remaining"]')).toContainText(/2,71\s*km/)
+    await expect(data.locator('[data-field="time"]')).toBeVisible()
+    await page.getByRole('button', { name: 'Personnaliser' }).click()
+    await page.getByRole('checkbox', { name: 'Heure' }).click()
+    await page.getByRole('radio', { name: 'Allure (min/km)' }).click()
+    await page.keyboard.press('Escape')
+    await expect(data.locator('[data-field="time"]')).toHaveCount(0)
+    await expect(data.locator('[data-field="speed"]')).toContainText('/km')
+    await page.reload()
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Données' }).click()
+    await expect(data.locator('[data-field="remaining"]')).toBeVisible()
+    await expect(data.locator('[data-field="time"]')).toHaveCount(0)
+    await page.getByRole('button', { name: 'Carte' }).click()
+    await expect(done).toHaveText('3,34 km')
+
     // 4 km east of it: off the track.
     await context.setGeolocation({ latitude: 45.87, longitude: 6.19, accuracy: 10 })
     await expect(page.getByText("Tu t'éloignes du tracé")).toBeVisible()

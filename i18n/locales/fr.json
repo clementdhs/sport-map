@@ -415,6 +415,31 @@
     "finishDescription": "Elle devient un parcours de ton profil, marqué comme réalisé.",
     "discardOuting": "Abandonner la sortie"
   },
+  "liveData": {
+    "showData": "Données",
+    "showMap": "Carte",
+    "speed": "Vitesse",
+    "pace": "Allure",
+    "customize": "Personnaliser",
+    "customizeTitle": "Valeurs affichées",
+    "customizeDescription": "Gardées sur cet appareil.",
+    "fieldsLegend": "Valeurs",
+    "unitLegend": "Rythme",
+    "speedUnit": "Vitesse (km/h)",
+    "paceUnit": "Allure (min/km)",
+    "empty": "Aucune valeur choisie : personnalise l'écran.",
+    "fields": {
+      "elapsed": "Durée",
+      "distance": "Parcouru",
+      "remaining": "Restant",
+      "gain": "D+ fait",
+      "remainingGain": "D+ restant",
+      "speed": "{unit}",
+      "averageSpeed": "{unit} moyenne",
+      "arrival": "Arrivée estimée",
+      "time": "Heure"
+    }
+  },
   "follow": {
     "title": "Suivre « {name} »",
     "offTrack": "Tu t'éloignes du tracé",

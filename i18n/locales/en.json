@@ -415,6 +415,31 @@
     "finishDescription": "It becomes a route on your profile, marked as done.",
     "discardOuting": "Discard the outing"
   },
+  "liveData": {
+    "showData": "Data",
+    "showMap": "Map",
+    "speed": "Speed",
+    "pace": "Pace",
+    "customize": "Customize",
+    "customizeTitle": "Values shown",
+    "customizeDescription": "Kept on this device.",
+    "fieldsLegend": "Values",
+    "unitLegend": "Rate",
+    "speedUnit": "Speed (km/h)",
+    "paceUnit": "Pace (min/km)",
+    "empty": "No value chosen: customize the screen.",
+    "fields": {
+      "elapsed": "Time",
+      "distance": "Done",
+      "remaining": "To go",
+      "gain": "Climbed",
+      "remainingGain": "Climb left",
+      "speed": "{unit}",
+      "averageSpeed": "Average {unit}",
+      "arrival": "Est. arrival",
+      "time": "Clock"
+    }
+  },
   "follow": {
     "title": "Follow “{name}”",
     "offTrack": "You're straying from the track",

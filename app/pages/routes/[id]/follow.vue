@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RouteDetail } from '#shared/types/routes'
 import type { LngLat } from '#shared/utils/routes'
+import type { LiveStats } from '~/utils/liveStats'
+import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
 
 const { formatDistance } = useFormat()
@@ -35,8 +37,13 @@ const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock
 const progress = shallowRef<TrackProgress | null>(null)
 const offTrack = ref(false)
 
+// The outing itself, measured like a recording (kept in memory only), for the speeds and the arrival time.
+const walked = shallowRef<Recording | null>(null)
+
 watch(fix, (current) => {
   if (!current) return
+  const time = Date.now()
+  walked.value = addFix(walked.value ?? startRecording(time), current, time)
   const next = locateOnTrack(model.value, current.position, progress.value?.doneM ?? null)
   progress.value = next
   // A poor GPS fix must not raise the alert; once raised, it only clears well inside the limit, so that
@@ -55,6 +62,32 @@ const percentDone = computed(() =>
   progress.value && model.value.totalM ? Math.round((progress.value.doneM / model.value.totalM) * 100) : 0)
 const arrived = computed(() => !!progress.value && !offTrack.value && progress.value.remainingM < 30)
 const follow = ref(true)
+
+// Data screen
+const dataView = ref(false)
+const now = ref(Date.now())
+let clock: ReturnType<typeof setInterval> | undefined
+onMounted(() => (clock = setInterval(() => (now.value = Date.now()), 1000)))
+onBeforeUnmount(() => clearInterval(clock))
+
+const liveStats = computed<LiveStats>(() => {
+  const outing = walked.value
+  const remainingM = progress.value ? progress.value.remainingM : model.value.totalM
+  const totalGainM = model.value.gainLeft?.[0] ?? null
+  const remainingGainM = progress.value ? progress.value.remainingGainM : totalGainM
+  const average = outing ? averageSpeed(outing.distanceM, outing.movingMs) : null
+  return {
+    now: now.value,
+    elapsedS: outing ? (now.value - outing.startedAt) / 1000 : null,
+    distanceM: progress.value?.doneM ?? null,
+    remainingM,
+    gainM: totalGainM !== null && remainingGainM !== null ? Math.max(0, totalGainM - remainingGainM) : null,
+    remainingGainM,
+    speedMs: outing ? currentSpeed(outing.points, now.value) : null,
+    averageSpeedMs: average,
+    arrivalAt: estimatedArrival(now.value, remainingM, average),
+  }
+})
 </script>
 
 <template>
@@ -65,8 +98,17 @@ const follow = ref(true)
         <MapRouteFollow :coordinates="coordinates" :fix="fix" :follow="follow" @stop-follow="follow = false" />
       </ClientOnly>
 
+      <!-- Over the map, which keeps following the position; the top bar stays above it. -->
+      <LiveData
+        v-if="dataView"
+        class="absolute inset-0 z-10 pt-16"
+        mode="follow"
+        :stats="liveStats"
+        :default-pace="parcours.sport_type === 'running'"
+      />
+
       <!-- Right padding: the map controls stay reachable. -->
-      <div class="pointer-events-none absolute inset-x-0 top-0 space-y-2 p-3 pr-14">
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView ? 'pr-3' : 'pr-14'">
         <div class="pointer-events-auto flex items-center gap-2">
           <UButton
             :to="`/routes/${parcours.id}`"
@@ -77,6 +119,14 @@ const follow = ref(true)
             class="shadow-md"
           />
           <p class="truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">{{ parcours.name }}</p>
+          <UButton
+            :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
+            :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            color="neutral"
+            variant="solid"
+            class="ml-auto shrink-0 shadow-md"
+            @click="dataView = !dataView"
+          />
         </div>
         <UAlert
           v-if="gpsError"
@@ -114,7 +164,7 @@ const follow = ref(true)
     </div>
 
     <div class="shrink-0 space-y-3 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
-      <div class="grid grid-cols-3 gap-2 text-center">
+      <div v-if="!dataView" class="grid grid-cols-3 gap-2 text-center">
         <div>
           <p class="text-xs text-muted">{{ t('follow.done') }}</p>
           <p class="text-lg font-semibold" data-testid="done">{{ progress ? formatDistance(progress.doneM) : '—' }}</p>

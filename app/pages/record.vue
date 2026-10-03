@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LngLat, RecordingPayload, SportType } from '#shared/utils/routes'
 import type { GpsFix } from '~/composables/useWatchPosition'
+import type { LiveStats } from '~/utils/liveStats'
 import type { Recording } from '~/utils/recorder'
 
 const { formatDistance, formatDate, formatSpeed } = useFormat()
@@ -102,6 +103,23 @@ const gainM = computed(() => {
 
 const follow = ref(true)
 
+// Data screen
+const dataView = ref(false)
+const liveStats = computed<LiveStats>(() => {
+  const current = recording.value
+  return {
+    now: now.value,
+    elapsedS: current ? elapsedS.value : null,
+    distanceM: current?.distanceM ?? null,
+    remainingM: null,
+    gainM: gainM.value,
+    remainingGainM: null,
+    speedMs: current && !paused.value ? currentSpeed(current.points, now.value) : null,
+    averageSpeedMs: current ? averageSpeed(current.distanceM, current.movingMs) : null,
+    arrivalAt: null,
+  }
+})
+
 // Leaving keeps the recording on the phone; warn anyway, a closed page records nothing.
 const saving = ref(false)
 onBeforeRouteLeave(() => {
@@ -178,12 +196,24 @@ function discard() {
         <MapRouteFollow recording :coordinates="track" :fix="fix" :follow="follow" @stop-follow="follow = false" />
       </ClientOnly>
 
+      <!-- Over the map, which keeps following the position; the top bar stays above it. -->
+      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-16" mode="record" :stats="liveStats" :default-pace="false" />
+
       <!-- Right padding: the map controls stay reachable. -->
-      <div class="pointer-events-none absolute inset-x-0 top-0 space-y-2 p-3 pr-14">
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView && recording ? 'pr-3' : 'pr-14'">
         <div class="pointer-events-auto flex items-center gap-2">
           <UButton to="/" icon="i-lucide-x" :label="t('record.quit')" color="neutral" variant="solid" class="shadow-md" />
           <UBadge v-if="recording && !paused" icon="i-lucide-circle-dot" :label="t('record.recording')" color="error" variant="solid" />
           <UBadge v-else-if="paused" icon="i-lucide-pause" :label="t('record.paused')" color="neutral" variant="solid" />
+          <UButton
+            v-if="recording"
+            :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
+            :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            color="neutral"
+            variant="solid"
+            class="ml-auto shrink-0 shadow-md"
+            @click="dataView = !dataView"
+          />
         </div>
         <UAlert v-if="gpsError" class="pointer-events-auto" color="warning" icon="i-lucide-map-pin-off" :title="gpsError" />
         <UAlert
@@ -209,7 +239,7 @@ function discard() {
 
     <div class="shrink-0 space-y-3 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       <template v-if="recording">
-        <div class="grid grid-cols-4 gap-2 text-center" aria-live="off">
+        <div v-if="!dataView" class="grid grid-cols-4 gap-2 text-center" aria-live="off">
           <div>
             <p class="text-xs text-muted">{{ t('duration.short') }}</p>
             <p class="text-base font-semibold whitespace-nowrap sm:text-lg tabular-nums" data-testid="elapsed">{{ formatStopwatch(elapsedS) }}</p>

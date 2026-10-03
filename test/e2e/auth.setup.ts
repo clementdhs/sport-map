@@ -11,7 +11,8 @@ for (const [name, user, file] of [['test account', E2E_USER, AUTH_FILE], ['famil
     await page.locator('input[name="password"]').fill(user.password)
     await page.getByRole('button', { name: 'Se connecter' }).click()
 
-    await expect(page.getByRole('button', { name: user.email })).toBeVisible()
+    // Signed in, on the home page: its floating map bar has the account menu.
+    await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
     mkdirSync(dirname(file), { recursive: true })
     await page.context().storageState({ path: file })
   })

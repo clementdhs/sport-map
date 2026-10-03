@@ -1,5 +1,6 @@
 {
   "header": {
+    "account": "Mon compte",
     "record": "Enregistrer une sortie",
     "create": "Créer un parcours",
     "login": "Connexion",
@@ -480,6 +481,13 @@
     "locationNotAvailable": "Position indisponible",
     "toggleAttribution": "Afficher les crédits",
     "title": "Carte"
+  },
+  "mapBar": {
+    "label": "Navigation",
+    "back": "Retour",
+    "home": "Accueil",
+    "record": "Enregistrer",
+    "create": "Créer"
   },
   "sheet": {
     "expand": "Agrandir le panneau",

@@ -108,8 +108,10 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await expect(expand).toBeDisabled()
 
   // Dragging its header: to the bottom collapses it, then a third of the way up opens it at half height.
-  // Once its height animation is over, the full sheet starts right under the app header.
+  // Once its height animation is over, the full sheet starts right under the floating top bar, still reachable.
   await expect(async () => expect((await sheet.boundingBox())!.y).toBeLessThan(100)).toPass()
+  await expect(page.getByRole('button', { name: 'Mon compte' })).toBeInViewport()
+  await expect(page.getByRole('link', { name: 'Créer un parcours' })).toHaveCount(0)
   const header = (await sheet.getByText('2 parcours dans cette zone').first().boundingBox())!
   const x = header.x + 40
   await page.mouse.move(x, header.y + 5)

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// Map page: MapSheetLayout replaces the header with its floating top bar.
+definePageMeta({ layout: false })
 const { t } = useI18n()
 useSeoMeta({ title: () => `${t('header.create')} — sport-map` })
 
@@ -8,5 +10,5 @@ if (editor.editingId) editor.reset()
 </script>
 
 <template>
-  <RouteEditorWorkspace :submit-label="t('editor.submitCreate')" />
+  <RouteEditorWorkspace :submit-label="t('editor.submitCreate')" back="/" />
 </template>

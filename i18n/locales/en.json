@@ -1,5 +1,6 @@
 {
   "header": {
+    "account": "My account",
     "record": "Record an outing",
     "create": "Create a route",
     "login": "Sign in",
@@ -480,6 +481,13 @@
     "locationNotAvailable": "Location not available",
     "toggleAttribution": "Toggle attribution",
     "title": "Map"
+  },
+  "mapBar": {
+    "label": "Navigation",
+    "back": "Back",
+    "home": "Home",
+    "record": "Record",
+    "create": "Create"
   },
   "sheet": {
     "expand": "Expand the panel",

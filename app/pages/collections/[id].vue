@@ -4,6 +4,8 @@ import type { CollectionInput } from '#shared/utils/collections'
 
 const { formatDistance, formatDate } = useFormat()
 
+// Map page: MapSheetLayout replaces the header with its floating top bar.
+definePageMeta({ layout: false })
 const route = useRoute()
 const toast = useToast()
 const { t } = useI18n()
@@ -111,7 +113,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <MapSheetLayout v-if="collection">
+  <MapSheetLayout v-if="collection" back="/">
     <template #map>
       <ClientOnly>
         <MapRouteCollection :routes="routes" :highlighted-id="highlightedId" @hover="highlightedId = $event" />

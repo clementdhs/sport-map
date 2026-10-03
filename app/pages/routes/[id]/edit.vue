@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { RouteDetail } from '#shared/types/routes'
 
+// Map page: MapSheetLayout replaces the header with its floating top bar.
+definePageMeta({ layout: false })
 const route = useRoute()
 const user = useSupabaseUser()
 const { t } = useI18n()
@@ -26,5 +28,5 @@ if (editor.editingId !== parcours.value.id) editor.loadRoute(parcours.value)
 </script>
 
 <template>
-  <RouteEditorWorkspace :submit-label="t('editor.submitEdit')" />
+  <RouteEditorWorkspace :submit-label="t('editor.submitEdit')" :back="`/routes/${parcours!.id}`" />
 </template>

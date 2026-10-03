@@ -458,7 +458,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
 })
 
 test('edits the profile and the appearance from the settings, reached through the account menu', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/profile')
   // Signed-in users change the appearance in the settings, not from the header.
   await expect(page.getByRole('button', { name: 'Apparence' })).toHaveCount(0)
   await page.getByRole('button', { name: E2E_USER.email }).click()
@@ -485,6 +485,45 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })
+
+// Map pages have no header: a floating bar (back, logo, account menu) and the main buttons over the map.
+for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
+  test(`reaches the account menu, creation, recording and back from the map pages, on a ${device.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: device.width, height: device.height })
+    await page.goto('/')
+    await waitForMap(page)
+    await expect(page.getByRole('banner')).toHaveCount(0)
+    // Nothing to go back to from the home page.
+    await expect(page.getByRole('button', { name: 'Retour' })).toHaveCount(0)
+
+    await page.getByRole('link', { name: 'Créer un parcours' }).click()
+    await expect(page).toHaveURL(/\/routes\/create$/)
+    await waitForMap(page)
+    await page.getByRole('button', { name: 'Retour' }).click()
+    await expect(page).toHaveURL(/\/$/)
+
+    await page.getByRole('link', { name: 'Enregistrer une sortie' }).click()
+    await expect(page).toHaveURL(/\/record$/)
+    await page.getByRole('link', { name: 'Quitter' }).click()
+    await expect(page).toHaveURL(/\/$/)
+
+    // Opened from the profile, a route goes back to it; opened directly, to the home page.
+    await page.getByRole('button', { name: 'Mon compte' }).click()
+    await page.getByRole('menuitem', { name: 'Mon profil' }).click()
+    await expect(page).toHaveURL(/\/profile$/)
+    await expect(page.getByRole('banner')).toBeVisible()
+    await page.getByRole('link', { name: new RegExp(SEEDED_ROUTE_NAME) }).click()
+    await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME, level: 1 })).toBeVisible()
+    const routeUrl = page.url()
+    await page.getByRole('button', { name: 'Retour' }).click()
+    await expect(page).toHaveURL(/\/profile$/)
+
+    await page.goto(routeUrl)
+    await waitForHydration(page)
+    await page.getByRole('button', { name: 'Retour' }).click()
+    await expect(page).toHaveURL(/\/$/)
+  })
+}
 
 test('counts a completed route in the profile statistics', async ({ page }) => {
   const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')

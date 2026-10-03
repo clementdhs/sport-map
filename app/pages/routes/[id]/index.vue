@@ -6,6 +6,8 @@ import type { ActivityType, LngLat } from '#shared/utils/routes'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
 
+// Map page: MapSheetLayout replaces the header with its floating top bar.
+definePageMeta({ layout: false })
 const route = useRoute()
 const user = useSupabaseUser()
 const toast = useToast()
@@ -163,7 +165,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <MapSheetLayout v-if="parcours">
+  <MapSheetLayout v-if="parcours" back="/">
     <template #map>
       <ClientOnly>
         <MapRouteDisplay

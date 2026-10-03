@@ -6,6 +6,8 @@ const { formatDistance } = useFormat()
 // Map + side panel of the route editor, shared by the create and edit pages.
 defineProps<{
   submitLabel: string
+  // Fallback of the top bar's back button.
+  back: string
 }>()
 
 const editor = useRouteEditorStore()
@@ -56,7 +58,8 @@ async function onSubmit() {
   try {
     const id = await editor.save()
     toast.add({ title: t('editor.saved'), color: 'success', icon: 'i-lucide-check' })
-    await navigateTo(`/routes/${id}`)
+    // Replacing the editor: going back from the saved route leads where the editor was opened from.
+    await navigateTo(`/routes/${id}`, { replace: true })
   }
   catch (error) {
     toast.add({
@@ -72,7 +75,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <MapSheetLayout>
+  <MapSheetLayout :back="back">
     <template #map>
       <ClientOnly>
         <MapRouteEditor :hover-point="hoverPoint" />

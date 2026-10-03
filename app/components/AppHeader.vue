@@ -66,10 +66,7 @@ async function signOut() {
           :ui="{ label: 'hidden sm:inline' }"
         />
       </UDropdownMenu>
-      <template v-else>
-        <UButton to="/login" color="neutral" variant="ghost" :label="t('header.login')" />
-        <UButton to="/register" :label="t('header.register')" />
-      </template>
+      <UButton v-else to="/login" color="neutral" variant="ghost" :label="t('header.login')" />
     </template>
   </UHeader>
 </template>

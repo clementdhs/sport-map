@@ -9,7 +9,7 @@ const { formatDistance, formatDate, formatSpeed } = useFormat()
 // Records an outing with the phone's GPS, then saves it as a new route marked as done. A web page only gets
 // positions while the screen is on: the screen is kept on, and the recording is saved on the phone after
 // every point, so that it can be resumed if the page closes.
-definePageMeta({ layout: false, middleware: 'auth' })
+definePageMeta({ layout: false })
 const { t } = useI18n()
 const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
 useSeoMeta({ title: () => `${t('header.record')} — sport-map` })

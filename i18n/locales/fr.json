@@ -3,7 +3,6 @@
     "record": "Enregistrer une sortie",
     "create": "Créer un parcours",
     "login": "Connexion",
-    "register": "Inscription",
     "profile": "Mon profil",
     "settings": "Paramètres",
     "signOut": "Se déconnecter",
@@ -42,23 +41,10 @@
     "login": {
       "title": "Connexion",
       "submit": "Se connecter",
-      "noAccount": "Pas encore de compte ?",
-      "registerLink": "Inscris-toi",
+      "familyOnly": "L'accès est réservé à la famille : demande un compte à l'administrateur.",
       "forgotLink": "Mot de passe oublié ?",
       "emailNotConfirmed": "Confirme ton adresse email avant de te connecter.",
       "invalidCredentials": "Email ou mot de passe incorrect."
-    },
-    "register": {
-      "title": "Inscription",
-      "submit": "Créer mon compte",
-      "username": "Nom d'utilisateur",
-      "usernameHint": "3 à 30 caractères : lettres, chiffres, _",
-      "usernameInvalid": "Nom d'utilisateur invalide",
-      "alreadyExists": "Un compte existe déjà avec cet email.",
-      "checkEmail": "Vérifie tes emails",
-      "confirmationSent": "Un lien de confirmation a été envoyé à {email}.",
-      "hasAccount": "Déjà inscrit ?",
-      "loginLink": "Connecte-toi"
     },
     "forgot": {
       "title": "Mot de passe oublié",
@@ -303,8 +289,8 @@
     "name": "Nom",
     "namePlaceholder": "Week-end dans les Vosges",
     "description": "Description",
-    "public": "Collection publique",
-    "publicHint": "Visible par tous ceux qui ont le lien. Tes parcours privés y restent cachés.",
+    "public": "Visible par la famille",
+    "publicHint": "Visible par tous les membres de la famille. Tes parcours privés y restent cachés.",
     "createAndAdd": "Créer et ajouter",
     "new": "Nouvelle collection"
   },
@@ -364,8 +350,8 @@
     "poiNote": "Note (facultatif)",
     "poiNoteLabel": "Note du point d'intérêt {n}",
     "namePlaceholder": "Tour du lac",
-    "public": "Parcours public",
-    "publicHint": "Visible par tous et dans la recherche.",
+    "public": "Visible par la famille",
+    "publicHint": "Visible par tous les membres de la famille et dans la recherche.",
     "noPath": "Aucun chemin trouvé",
     "noPathHint": "Ce segment est tracé en ligne droite.",
     "dailyLimit": "Limite quotidienne atteinte",
@@ -508,7 +494,7 @@
       "stats": "Statistiques"
     },
     "memberSince": "membre depuis le {date}",
-    "viewPublic": "Voir mon profil public",
+    "viewPublic": "Voir mon profil tel que la famille le voit",
     "noCreated": "Aucun parcours créé",
     "noCreatedHint": "Trace ton premier parcours ou importe un fichier GPX.",
     "noSaved": "Aucun parcours sauvegardé",
@@ -520,9 +506,9 @@
     "noCompleted": "Aucun parcours réalisé",
     "noCompletedHint": "Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties.",
     "notFound": "Profil introuvable",
-    "publicRoutes": "{count} parcours public | {count} parcours publics",
+    "publicRoutes": "{count} parcours visible par la famille | {count} parcours visibles par la famille",
     "seoDescription": "{routes} de {name} sur sport-map.",
-    "noPublic": "Aucun parcours public pour l'instant"
+    "noPublic": "Aucun parcours visible par la famille pour l'instant"
   },
   "accountData": {
     "exportFailed": "Export impossible",
@@ -548,7 +534,7 @@
     "copyFailed": "Copie impossible",
     "summary": "Collection de {count} parcours · {distance} | Collection de {count} parcours · {distance}",
     "badge": "Collection",
-    "public": "Publique",
+    "public": "Visible par la famille",
     "routes": "Parcours",
     "copyLink": "Copier le lien",
     "editTitle": "Modifier la collection",
@@ -592,8 +578,8 @@
   "settings": {
     "profileUpdated": "Profil mis à jour",
     "profile": "Profil",
-    "profileHint": "Ce que les autres voient sur {link} ({username}).",
-    "publicProfile": "ton profil public",
+    "profileHint": "Ce que la famille voit sur {link} ({username}).",
+    "publicProfile": "ton profil",
     "displayName": "Nom affiché",
     "displayNameHint": "Sinon : {username}",
     "bio": "Bio",

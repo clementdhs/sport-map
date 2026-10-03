@@ -3,7 +3,7 @@ import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
 
 type LoginState = { email: string, password: string }
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 useSeoMeta({ title: () => `${t('auth.login.title')} — sport-map` })
 
 const supabase = useSupabaseClient()
@@ -19,6 +19,20 @@ const redirectTo = computed(() => {
 watch(user, (value) => {
   if (value) navigateTo(redirectTo.value)
 }, { immediate: true })
+
+// Link previews (WhatsApp, Messages): their bots have no session, so a shared route link lands here. The image
+// draws the route's name and track, and only exists for routes visible to the family.
+const sharedRouteId = /^\/routes\/([0-9a-f-]{36})(\/|$)/.exec(redirectTo.value)?.[1]
+if (sharedRouteId) {
+  useSeoMeta({
+    ogTitle: 'sport-map',
+    ogImage: `${useRequestURL().origin}/api/routes/${sharedRouteId}/og.png?lang=${locale.value}`,
+    ogImageType: 'image/png',
+    ogImageWidth: 1200,
+    ogImageHeight: 630,
+    twitterCard: 'summary_large_image',
+  })
+}
 
 const fields = computed<AuthFormField[]>(() => [
   { name: 'email', type: 'email', label: t('auth.email'), placeholder: t('auth.emailPlaceholder'), required: true },
@@ -64,8 +78,7 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
         @submit="onSubmit"
       >
         <template #description>
-          {{ t('auth.login.noAccount') }}
-          <ULink to="/register" class="text-primary font-medium">{{ t('auth.login.registerLink') }}</ULink>
+          {{ t('auth.login.familyOnly') }}
         </template>
         <template #password-hint>
           <ULink to="/forgot-password" class="text-primary font-medium">{{ t('auth.login.forgotLink') }}</ULink>

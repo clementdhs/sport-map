@@ -3,7 +3,6 @@ import type { ProfileInfo } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
 // Account settings, reached from the account menu: profile, password, appearance, data (RGPD).
-definePageMeta({ middleware: 'auth' })
 const { t } = useI18n()
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
 useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })

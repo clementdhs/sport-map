@@ -1,2 +1,6 @@
+# For the family only: nothing to crawl. Link previews of shared routes (sign-in page and its image) stay
+# reachable for the chat apps that check this file; the page itself says noindex.
 User-Agent: *
-Disallow:
+Disallow: /
+Allow: /login
+Allow: /api/routes/*/og.png

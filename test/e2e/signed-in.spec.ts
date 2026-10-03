@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
-import { E2E_USER, expect, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
+import { E2E_USER, expect, familyRequest, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -39,7 +39,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await routeAction(page, 'Modifier le parcours')
   await waitForMap(page)
   await expect(page.getByLabel('Nom')).toHaveValue('Parcours e2e')
-  await page.getByRole('switch', { name: 'Parcours public' }).click()
+  await page.getByRole('switch', { name: 'Visible par la famille' }).click()
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
 
   await expect(page).toHaveURL(detailUrl)
@@ -55,9 +55,6 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page.getByRole('link', { name: /Parcours e2e/ })).toBeVisible()
 })
 
-// Visitors: without it, request contexts reuse the signed-in session of the project.
-const NO_SESSION = { cookies: [], origins: [] }
-
 // A 1×1 PNG: the page converts it to WebP (or JPEG) before uploading it.
 const PNG_1PX = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -72,7 +69,7 @@ function storedPhotoFiles(routeId: string): Promise<{ name: string }[]> {
   })
 }
 
-// Whether a visitor (publishable key only) can get a signed URL for a file, straight from the storage API.
+// Whether a signed-out visitor (publishable key only) can get a signed URL for a file, straight from the storage API.
 async function visitorCanSign(path: string): Promise<boolean> {
   const response = await fetch(`${process.env.E2E_SUPABASE_URL}/storage/v1/object/sign/route-photos/${path}`, {
     method: 'POST',
@@ -101,16 +98,17 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   await expect.poll(() => photos.first().evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1)
   const [file] = await storedPhotoFiles(id)
 
-  // Visitors see the photos of a public route.
-  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
-  const asVisitor = await (await visitor.get(`/api/routes/${id}`)).json() as { photos: unknown[] }
-  expect(asVisitor.photos).toHaveLength(1)
-  await visitor.dispose()
-  expect(await visitorCanSign(`${id}/${file!.name}`)).toBe(true)
-
-  // Once the route is private, its files are out of their reach, even through the storage API.
-  expect((await page.request.put(`/api/routes/${id}`, { data: { ...route, is_public: false } })).ok()).toBe(true)
+  // Other members see the photos of a route visible to the family. Signed-out visitors can't reach the files,
+  // even through the storage API.
+  const member = await familyRequest(playwright, new URL(page.url()).origin)
+  const asMember = await (await member.get(`/api/routes/${id}`)).json() as { photos: unknown[] }
+  expect(asMember.photos).toHaveLength(1)
   expect(await visitorCanSign(`${id}/${file!.name}`)).toBe(false)
+
+  // Once the route is private, other members don't see it any more.
+  expect((await page.request.put(`/api/routes/${id}`, { data: { ...route, is_public: false } })).ok()).toBe(true)
+  expect((await member.get(`/api/routes/${id}`)).status()).toBe(404)
+  await member.dispose()
   await page.reload()
   await waitForMap(page)
 
@@ -192,17 +190,17 @@ test('moderates the reviews of its own route', async ({ page, playwright }) => {
   // No rating of one's own route.
   await expect(reviews.getByRole('button', { name: 'Publier mon avis' })).toHaveCount(0)
 
-  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
-  const asVisitor = async () => (await visitor.get(`/api/routes/${id}/reviews`)).json() as Promise<{ rating_count: number, reviews: unknown[] }>
+  const member = await familyRequest(playwright, new URL(page.url()).origin)
+  const asMember = async () => (await member.get(`/api/routes/${id}/reviews`)).json() as Promise<{ rating_count: number, reviews: unknown[] }>
 
   await reviews.getByRole('button', { name: 'Masquer le commentaire' }).click()
   await expect(reviews).toContainText("Commentaire masqué par l'auteur du parcours")
-  expect(await asVisitor()).toMatchObject({ rating_count: 1, reviews: [] })
+  expect(await asMember()).toMatchObject({ rating_count: 1, reviews: [] })
 
   await reviews.getByRole('button', { name: 'Afficher le commentaire' }).click()
   await expect(reviews).not.toContainText('Commentaire masqué')
-  expect((await asVisitor()).reviews).toHaveLength(1)
-  await visitor.dispose()
+  expect((await asMember()).reviews).toHaveLength(1)
+  await member.dispose()
 })
 
 test.describe('recording an outing', () => {
@@ -306,20 +304,20 @@ test.describe('offline follow mode', () => {
   })
 })
 
-test('groups routes in a public collection, which only shows its public routes to visitors', async ({ page, playwright }) => {
+test('groups routes in a collection visible to the family, which only shows them its routes visible to the family', async ({ page, playwright }) => {
   // A retry finds the collection of the failed attempt: each attempt makes its own.
   const name = `Week-end e2e ${test.info().retry + 1}`
   const { id: privateId } = await (await page.request.post('/api/routes', {
     data: { name: 'Parcours privé collection e2e', sport_type: 'hiking', is_public: false, coordinates: [[6.3, 45.8], [6.35, 45.82]] },
   })).json() as { id: string }
 
-  // Created from the page of the seeded (public) route, which it then holds.
+  // Created from the page of the seeded (visible to the family) route, which it then holds.
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
   await routeAction(page, 'Ajouter à une collection')
   const dialog = page.getByRole('dialog', { name: 'Ajouter à une collection' })
   await dialog.getByRole('button', { name: 'Nouvelle collection' }).click()
   await dialog.getByLabel('Nom').fill(name)
-  await dialog.getByRole('switch', { name: 'Collection publique' }).click()
+  await dialog.getByRole('switch', { name: 'Visible par la famille' }).click()
   await dialog.getByRole('button', { name: 'Créer et ajouter' }).click()
   await expect(dialog.getByRole('checkbox', { name })).toBeChecked()
   await page.keyboard.press('Escape')
@@ -341,14 +339,14 @@ test('groups routes in a public collection, which only shows its public routes t
   await waitForMap(page)
   const routes = page.getByRole('list', { name: 'Parcours de la collection' })
   await expect(routes.getByRole('listitem')).toHaveCount(2)
-  await expect(page.getByText('Publique', { exact: true })).toBeVisible()
+  await expect(page.getByText('Visible par la famille', { exact: true })).toBeVisible()
   await expect(routes.getByRole('listitem').first()).toContainText(`par ${E2E_USER.displayName}`)
 
-  // A visitor sees the collection, without the private route.
+  // Another member sees the collection, without the private route.
   const collectionApi = page.url().replace('/collections/', '/api/collections/')
-  const visitor = await playwright.request.newContext({ baseURL: new URL(page.url()).origin, storageState: NO_SESSION })
-  const asVisitor = async () => (await visitor.get(collectionApi)).json() as Promise<{ is_mine: boolean, routes: { name: string }[] }>
-  expect(await asVisitor()).toMatchObject({ is_mine: false, routes: [{ name: SEEDED_ROUTE_NAME }] })
+  const member = await familyRequest(playwright, new URL(page.url()).origin)
+  const asMember = async () => (await member.get(collectionApi)).json() as Promise<{ is_mine: boolean, routes: { name: string }[] }>
+  expect(await asMember()).toMatchObject({ is_mine: false, routes: [{ name: SEEDED_ROUTE_NAME }] })
 
   // Deleting a route takes it out of the collection.
   expect((await page.request.delete(`/api/routes/${privateId}`)).ok()).toBe(true)
@@ -362,9 +360,9 @@ test('groups routes in a public collection, which only shows its public routes t
   await page.getByRole('button', { name: 'Supprimer la collection' }).click()
   await page.getByRole('button', { name: 'Supprimer', exact: true }).click()
   await expect(page).toHaveURL(/\/profile$/)
-  expect((await visitor.get(collectionApi)).status()).toBe(404)
-  expect((await visitor.get(`/api/routes/${process.env.E2E_ROUTE_ID}`)).ok()).toBe(true)
-  await visitor.dispose()
+  expect((await member.get(collectionApi)).status()).toBe(404)
+  expect((await member.get(`/api/routes/${process.env.E2E_ROUTE_ID}`)).ok()).toBe(true)
+  await member.dispose()
 })
 
 // Only its first bytes matter: the server checks the type from them.
@@ -438,7 +436,8 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   await expect(confirm).toBeDisabled()
   await dialog.getByLabel(/Pour confirmer/).fill(account.username)
   await confirm.click()
-  await expect(page).toHaveURL(/\/$/)
+  // Signed out, hence on the sign-in page.
+  await expect(page).toHaveURL(/\/login$/)
   await expect(page.getByRole('link', { name: 'Connexion' })).toBeVisible()
 
   // Nothing left: rows, photo files, auth user; the neighbor's route no longer counts the rating.
@@ -531,8 +530,8 @@ test('caps routing requests per user and per day', async ({ page, playwright, ba
     data: { reason: 'daily_quota' },
   })
 
-  // Visitors can't use routing at all.
-  const visitor = await playwright.request.newContext({ baseURL, storageState: NO_SESSION })
+  // Signed-out visitors can't use routing at all.
+  const visitor = await signedOutRequest(playwright, baseURL!)
   expect((await visitor.post('/api/routing/segment', { data: segment })).status()).toBe(401)
   await visitor.dispose()
 })

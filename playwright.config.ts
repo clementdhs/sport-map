@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process'
 import { defineConfig, devices } from '@playwright/test'
 import { FAKE_WEATHER_PORT } from './test/e2e/fake-weather'
-import { AUTH_FILE } from './test/e2e/fixtures'
+import { AUTH_FILE, FAMILY_AUTH_FILE } from './test/e2e/fixtures'
 
 const PORT = 3100
 const baseURL = `http://localhost:${PORT}`
@@ -53,7 +53,15 @@ export default defineConfig({
   },
   projects: [
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
+    // Without a session: everything leads to the sign-in page.
     { name: 'anonymous', testMatch: /anonymous\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
+    // Another family member browsing the test account's routes.
+    {
+      name: 'family',
+      testMatch: /family\.spec\.ts/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'], storageState: FAMILY_AUTH_FILE },
+    },
     {
       name: 'signed-in',
       testMatch: /signed-in\.spec\.ts/,
@@ -61,7 +69,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
     },
     // The main flows again (search, route page, creation) in a browser set to English, the detected language.
-    { name: 'anonymous-en', testMatch: /anonymous\.en\.spec\.ts/, use: { ...devices['Desktop Chrome'], locale: 'en-GB' } },
+    {
+      name: 'family-en',
+      testMatch: /family\.en\.spec\.ts/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'], storageState: FAMILY_AUTH_FILE, locale: 'en-GB' },
+    },
     {
       name: 'signed-in-en',
       testMatch: /signed-in\.en\.spec\.ts/,

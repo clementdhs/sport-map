@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { RouteDetail } from '#shared/types/routes'
 
-definePageMeta({ middleware: 'auth' })
-
 const route = useRoute()
 const user = useSupabaseUser()
 const { t } = useI18n()

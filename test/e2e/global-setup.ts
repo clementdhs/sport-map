@@ -1,6 +1,6 @@
 import { insertRows, supabaseAdmin } from './admin'
 import { startFakeWeather } from './fake-weather'
-import { E2E_NEIGHBORS, E2E_USER, RESET_USER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME } from './fixtures'
+import { E2E_NEIGHBORS, E2E_USER, FAMILY_USER, RESET_USER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME } from './fixtures'
 
 async function createUser(email: string, username: string, password: string) {
   return supabaseAdmin<{ id: string }>('/auth/v1/admin/users', {
@@ -17,7 +17,7 @@ export default async function globalSetup() {
   await fetch(`${process.env.E2E_MAILPIT_URL}/api/v1/messages`, { method: 'DELETE' })
 
   const { users } = await supabaseAdmin<{ users: { id: string, email: string }[] }>('/auth/v1/admin/users?per_page=1000')
-  const emails = [E2E_USER.email, RESET_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]
+  const emails = [E2E_USER.email, FAMILY_USER.email, RESET_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]
   // Throwaway accounts are deleted by their test, unless it failed halfway.
   for (const user of users.filter(u => emails.includes(u.email) || u.email.startsWith('jetable-'))) {
     await supabaseAdmin(`/auth/v1/admin/users/${user.id}`, { method: 'DELETE' })
@@ -25,6 +25,7 @@ export default async function globalSetup() {
 
   const user = await createUser(E2E_USER.email, E2E_USER.username, E2E_USER.password)
   await supabaseAdmin(`/rest/v1/profiles?id=eq.${user.id}`, { method: 'PATCH', body: JSON.stringify({ display_name: E2E_USER.displayName }) })
+  await createUser(FAMILY_USER.email, FAMILY_USER.username, FAMILY_USER.password)
   await createUser(RESET_USER.email, RESET_USER.username, RESET_USER.password)
   // Other users, to review and report. They never sign in.
   const neighbors = await Promise.all(E2E_NEIGHBORS.map(n => createUser(n.email, n.username, crypto.randomUUID())))

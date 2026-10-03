@@ -30,8 +30,8 @@ test('draws, saves and deletes a route, in English', async ({ page }) => {
   // The message only goes away when leaving the field, moving the fields below it: leave it before clicking them.
   await page.getByLabel('Name').blur()
   await expect(page.getByText('Name required')).toBeHidden()
-  // Private, so the visitor tests don't find it on the home map.
-  const isPublic = page.getByRole('switch', { name: 'Public route' })
+  // Private, so the family tests don't find it on the home map.
+  const isPublic = page.getByRole('switch', { name: 'Visible to the family' })
   await isPublic.click()
   await expect(isPublic).not.toBeChecked()
   await page.getByRole('button', { name: 'Save the route' }).click()

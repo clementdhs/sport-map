@@ -1,16 +1,18 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
-import { AUTH_FILE, E2E_USER, expect, test, waitForHydration } from './fixtures'
+import { AUTH_FILE, E2E_USER, expect, FAMILY_AUTH_FILE, FAMILY_USER, test, waitForHydration } from './fixtures'
 
-test('sign in with the test account', async ({ page }) => {
-  await page.goto('/login')
-  await waitForHydration(page)
-  // By name: the password label also matches the "Afficher le mot de passe" toggle.
-  await page.locator('input[name="email"]').fill(E2E_USER.email)
-  await page.locator('input[name="password"]').fill(E2E_USER.password)
-  await page.getByRole('button', { name: 'Se connecter' }).click()
+for (const [name, user, file] of [['test account', E2E_USER, AUTH_FILE], ['family member', FAMILY_USER, FAMILY_AUTH_FILE]] as const) {
+  test(`sign in with the ${name}`, async ({ page }) => {
+    await page.goto('/login')
+    await waitForHydration(page)
+    // By name: the password label also matches the "Afficher le mot de passe" toggle.
+    await page.locator('input[name="email"]').fill(user.email)
+    await page.locator('input[name="password"]').fill(user.password)
+    await page.getByRole('button', { name: 'Se connecter' }).click()
 
-  await expect(page.getByRole('button', { name: E2E_USER.email })).toBeVisible()
-  mkdirSync(dirname(AUTH_FILE), { recursive: true })
-  await page.context().storageState({ path: AUTH_FILE })
-})
+    await expect(page.getByRole('button', { name: user.email })).toBeVisible()
+    mkdirSync(dirname(file), { recursive: true })
+    await page.context().storageState({ path: file })
+  })
+}

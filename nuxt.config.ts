@@ -23,6 +23,8 @@ export default defineNuxtConfig({
         { rel: 'icon', href: '/icon.svg', sizes: 'any', type: 'image/svg+xml' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon-180x180.png' },
       ],
+      // For the family only: kept out of search engines (public/robots.txt forbids crawling too).
+      meta: [{ name: 'robots', content: 'noindex, nofollow' }],
     },
   },
 

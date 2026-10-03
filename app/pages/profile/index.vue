@@ -3,7 +3,6 @@ import type { CollectionSummary, MyProfile } from '#shared/types/routes'
 
 const { formatDate, formatSpeed } = useFormat()
 
-definePageMeta({ middleware: 'auth' })
 const { t } = useI18n()
 useSeoMeta({ title: () => `${t('header.profile')} — sport-map` })
 

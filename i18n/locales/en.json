@@ -3,7 +3,6 @@
     "record": "Record an outing",
     "create": "Create a route",
     "login": "Sign in",
-    "register": "Sign up",
     "profile": "My profile",
     "settings": "Settings",
     "signOut": "Sign out",
@@ -42,23 +41,10 @@
     "login": {
       "title": "Sign in",
       "submit": "Sign in",
-      "noAccount": "No account yet?",
-      "registerLink": "Sign up",
+      "familyOnly": "Access is for the family only: ask the administrator for an account.",
       "forgotLink": "Forgot your password?",
       "emailNotConfirmed": "Confirm your email address before signing in.",
       "invalidCredentials": "Wrong email or password."
-    },
-    "register": {
-      "title": "Sign up",
-      "submit": "Create my account",
-      "username": "Username",
-      "usernameHint": "3 to 30 characters: letters, digits, _",
-      "usernameInvalid": "Invalid username",
-      "alreadyExists": "An account already exists with this email.",
-      "checkEmail": "Check your email",
-      "confirmationSent": "A confirmation link has been sent to {email}.",
-      "hasAccount": "Already signed up?",
-      "loginLink": "Sign in"
     },
     "forgot": {
       "title": "Forgotten password",
@@ -303,8 +289,8 @@
     "name": "Name",
     "namePlaceholder": "Weekend in the Vosges",
     "description": "Description",
-    "public": "Public collection",
-    "publicHint": "Visible to anyone with the link. Your private routes stay hidden in it.",
+    "public": "Visible to the family",
+    "publicHint": "Visible to every family member. Your private routes stay hidden in it.",
     "createAndAdd": "Create and add",
     "new": "New collection"
   },
@@ -364,8 +350,8 @@
     "poiNote": "Note (optional)",
     "poiNoteLabel": "Note for point of interest {n}",
     "namePlaceholder": "Lake loop",
-    "public": "Public route",
-    "publicHint": "Visible to everyone and in the search.",
+    "public": "Visible to the family",
+    "publicHint": "Visible to every family member and in the search.",
     "noPath": "No path found",
     "noPathHint": "This segment is drawn as a straight line.",
     "dailyLimit": "Daily limit reached",
@@ -508,7 +494,7 @@
       "stats": "Statistics"
     },
     "memberSince": "member since {date}",
-    "viewPublic": "View my public profile",
+    "viewPublic": "View my profile as the family sees it",
     "noCreated": "No route created",
     "noCreatedHint": "Draw your first route or import a GPX file.",
     "noSaved": "No saved route",
@@ -520,9 +506,9 @@
     "noCompleted": "No route done",
     "noCompletedHint": "On a route's page, tap “I did it” to keep a history of your outings.",
     "notFound": "Profile not found",
-    "publicRoutes": "{count} public route | {count} public routes",
+    "publicRoutes": "{count} route visible to the family | {count} routes visible to the family",
     "seoDescription": "{routes} by {name} on sport-map.",
-    "noPublic": "No public route yet"
+    "noPublic": "No route visible to the family yet"
   },
   "accountData": {
     "exportFailed": "Couldn't export",
@@ -548,7 +534,7 @@
     "copyFailed": "Couldn't copy",
     "summary": "Collection of {count} route · {distance} | Collection of {count} routes · {distance}",
     "badge": "Collection",
-    "public": "Public",
+    "public": "Visible to the family",
     "routes": "Routes",
     "copyLink": "Copy the link",
     "editTitle": "Edit the collection",
@@ -592,8 +578,8 @@
   "settings": {
     "profileUpdated": "Profile updated",
     "profile": "Profile",
-    "profileHint": "What others see on {link} ({username}).",
-    "publicProfile": "your public profile",
+    "profileHint": "What the family sees on {link} ({username}).",
+    "publicProfile": "your profile",
     "displayName": "Display name",
     "displayNameHint": "Otherwise: {username}",
     "bio": "Bio",

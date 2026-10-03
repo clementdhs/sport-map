@@ -1,29 +1,15 @@
-import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
+import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
 
-// The main visitor flows again, in a browser set to British English (playwright.config.ts): the language is
-// detected from it, with English formats. User content (route names, reviews) stays as written.
+// The main flows of a family member again, in a browser set to British English (playwright.config.ts): the
+// language is detected from it, with English formats. User content (route names, reviews) stays as written.
 
-test('detects the browser language, and keeps the one a visitor picks', async ({ page, context }) => {
-  await page.goto('/')
-  await waitForHydration(page)
-  const html = page.locator('html')
-  await expect(html).toHaveAttribute('lang', 'en')
-  await expect(page.getByRole('combobox', { name: 'Search for a place or a route' })).toBeVisible()
-
-  await page.getByRole('button', { name: 'Language' }).click()
-  await page.getByRole('menuitemcheckbox', { name: 'Français' }).click()
-  await expect(html).toHaveAttribute('lang', 'fr')
-  await expect(page.getByRole('combobox', { name: 'Rechercher un lieu ou un parcours' })).toBeVisible()
-
-  // Kept in a cookie, and rendered by the server in that language despite the browser's.
-  const cookies = await context.cookies()
-  expect(cookies.find(cookie => cookie.name === 'sport-map-locale')?.value).toBe('fr')
-  const response = await page.reload()
-  expect(await response!.text()).toContain('lang="fr"')
-  await expect(page.getByRole('button', { name: 'Langue' })).toBeVisible()
+// The saved session also holds the language cookie set while signing in, in French: without it, the language
+// is detected from the browser.
+test.beforeEach(async ({ context }) => {
+  await context.clearCookies({ name: 'sport-map-locale' })
 })
 
-test('finds a public route on the home map and opens it, in English', async ({ page }) => {
+test('finds a route on the home map and opens it, in English', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)
 
@@ -46,7 +32,8 @@ test('finds a public route on the home map and opens it, in English', async ({ p
   await page.getByRole('tab', { name: /Reviews/ }).click()
   const reviews = page.getByRole('region', { name: 'Reviews', exact: true })
   await expect(reviews).toContainText('1 review')
-  await expect(reviews.getByRole('link', { name: 'Sign in' })).toBeVisible()
+  // Members review the routes of others.
+  await expect(reviews.getByRole('button', { name: 'Post my review' })).toBeVisible()
 })
 
 test('searches routes by name and filters them, in English', async ({ page }) => {

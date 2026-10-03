@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Resvg } from '@resvg/resvg-js'
 import type { LineString } from 'geojson'
-import { serverSupabaseClient } from '#supabase/server'
+import { serverSupabaseServiceRole } from '#supabase/server'
 import type { LngLat } from '#shared/utils/routes'
 
 const FONTS = ['Inter-Regular.ttf', 'Inter-Bold.ttf']
@@ -29,13 +29,15 @@ function loadFonts(): Promise<string[]> {
   return fontFiles
 }
 
-// Link preview image of a public route. Private routes get a 404 even for their owner, so that no
-// cached copy of them can ever be served publicly.
+// Link preview image of a route visible to the family: its title and track are shown to whoever has the link.
+// Private routes get a 404 even for their owner, so that no cached copy of them can ever be served publicly.
 export default defineEventHandler(async (event) => {
   const id = getRouteIdParam(event)
   // Set by the route page to its own language: link preview bots send no cookie.
   const { lang } = getQuery(event)
-  const supabase = await serverSupabaseClient(event)
+  // Bots send no session, and members-only policies would hide everything: only routes visible to the family
+  // are read, through the filter below.
+  const supabase = serverSupabaseServiceRole(event)
   const { data, error } = await supabase
     .from('routes')
     .select('name, sport_type, distance_m, elevation_gain_m, elevation_profile, geometry:route_geojson')

@@ -528,6 +528,27 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
   })
 }
 
+test('switches the basemap to Plan IGN and keeps it on the device', async ({ page }) => {
+  await page.goto('/')
+  await waitForMap(page)
+  await waitForHydration(page)
+  const attribution = page.locator('.maplibregl-ctrl-attrib-inner')
+  await expect(attribution).not.toContainText('IGN')
+
+  await page.getByRole('button', { name: 'Fond de carte' }).click()
+  await expect(page.getByRole('menuitemcheckbox', { name: 'MapTiler Outdoor' })).toBeChecked()
+  await page.getByRole('menuitemcheckbox', { name: 'Plan IGN' }).click()
+  await expect(attribution).toContainText('Plan IGN')
+
+  // Remembered on the device: the map opens on it again.
+  await page.reload()
+  await waitForMap(page)
+  await expect(attribution).toContainText('Plan IGN')
+  await waitForHydration(page)
+  await page.getByRole('button', { name: 'Fond de carte' }).click()
+  await expect(page.getByRole('menuitemcheckbox', { name: 'Plan IGN' })).toBeChecked()
+})
+
 test('counts a completed route in the profile statistics', async ({ page }) => {
   const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')
   const emptyStats = page.getByText('Marque des parcours comme faits')

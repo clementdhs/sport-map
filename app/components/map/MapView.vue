@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { LngLatBoundsLike, LngLatLike, Map } from 'maplibre-gl'
+import type { Basemap } from '~/utils/basemaps'
 
 const props = withDefaults(defineProps<{
   center?: LngLatLike
@@ -25,6 +26,11 @@ const styleUrl = mapStyleUrl(maptilerKey)
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
+// Basemap picked by the visitor, and the button picking it (a MapLibre control filled by a teleport).
+const basemap = ref<Basemap>(DEFAULT_BASEMAP)
+const online = ref(true)
+const basemapControl = shallowRef<HTMLElement>()
+let setBasemap: ((basemap: Basemap) => void) | undefined
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
 const loaded = ref(false)
 
@@ -37,6 +43,10 @@ onMounted(async () => {
   ])
   setWorkerUrl(workerUrl)
   if (!container.value) return
+  basemap.value = loadBasemap()
+  online.value = navigator.onLine
+  window.addEventListener('online', updateOnline)
+  window.addEventListener('offline', updateOnline)
 
   if (!maptilerKey) {
     console.warn('[MapView] NUXT_PUBLIC_MAPTILER_KEY is not set, using MapLibre demo tiles.')
@@ -61,7 +71,23 @@ onMounted(async () => {
   })
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
+  instance.addControl({
+    onAdd: () => {
+      basemapControl.value = document.createElement('div')
+      basemapControl.value.className = 'maplibregl-ctrl maplibregl-ctrl-group'
+      return basemapControl.value
+    },
+    onRemove: () => {
+      basemapControl.value?.remove()
+      basemapControl.value = undefined
+    },
+  }, 'top-right')
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
+  // Before the first tiles are requested, so that a basemap drawn over the style doesn't load the style's own.
+  instance.once('style.load', () => {
+    setBasemap = addBasemapLayers(instance)
+    setBasemap(shownBasemap(basemap.value, online.value))
+  })
   instance.once('load', () => {
     emit('load', instance)
     loaded.value = true
@@ -69,11 +95,36 @@ onMounted(async () => {
   map.value = instance
 })
 
+function updateOnline() {
+  online.value = navigator.onLine
+}
+
+watch([basemap, online], () => setBasemap?.(shownBasemap(basemap.value, online.value)))
+
+const basemapItems = computed(() => BASEMAPS.map(id => ({
+  label: t(`map.basemaps.${id}`),
+  type: 'checkbox' as const,
+  checked: basemap.value === id,
+  onUpdateChecked: () => {
+    basemap.value = id
+    saveBasemap(id)
+  },
+})))
+
 onBeforeUnmount(() => {
+  window.removeEventListener('online', updateOnline)
+  window.removeEventListener('offline', updateOnline)
   map.value?.remove()
 })
 </script>
 
 <template>
   <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" />
+  <Teleport v-if="basemapControl" :to="basemapControl">
+    <UDropdownMenu :items="basemapItems" :content="{ side: 'left', align: 'start' }">
+      <button type="button" class="flex items-center justify-center" :title="t('map.basemap')" :aria-label="t('map.basemap')">
+        <UIcon name="i-lucide-layers" class="size-4 text-neutral-800" />
+      </button>
+    </UDropdownMenu>
+  </Teleport>
 </template>

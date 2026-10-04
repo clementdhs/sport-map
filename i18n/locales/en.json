@@ -494,7 +494,12 @@
     "findMyLocation": "Find my location",
     "locationNotAvailable": "Location not available",
     "toggleAttribution": "Toggle attribution",
-    "title": "Map"
+    "title": "Map",
+    "basemap": "Basemap",
+    "basemaps": {
+      "maptiler": "MapTiler Outdoor",
+      "ignPlan": "Plan IGN (France)"
+    }
   },
   "mapBar": {
     "label": "Navigation",

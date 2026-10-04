@@ -494,7 +494,12 @@
     "findMyLocation": "Me localiser",
     "locationNotAvailable": "Position indisponible",
     "toggleAttribution": "Afficher les crédits",
-    "title": "Carte"
+    "title": "Carte",
+    "basemap": "Fond de carte",
+    "basemaps": {
+      "maptiler": "MapTiler Outdoor",
+      "ignPlan": "Plan IGN"
+    }
   },
   "mapBar": {
     "label": "Navigation",

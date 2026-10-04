@@ -281,7 +281,7 @@ test.describe('follow mode', () => {
     await page.getByRole('button', { name: 'Données' }).click()
     await expect(data.locator('[data-field="remaining"]')).toBeVisible()
     await expect(data.locator('[data-field="time"]')).toHaveCount(0)
-    await page.getByRole('button', { name: 'Carte' }).click()
+    await page.getByRole('button', { name: 'Carte', exact: true }).click()
     await expect(done).toHaveText('3,34 km')
 
     // 4 km east of it: off the track.

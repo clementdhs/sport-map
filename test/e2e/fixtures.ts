@@ -44,8 +44,12 @@ const EMPTY_MAP_STYLE = {
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e8efe6' } }],
 }
 
+// A transparent 1×1 PNG, for raster tiles (Plan IGN basemap).
+const EMPTY_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
+
 async function mockExternalServices(page: Page) {
   await page.route('**/demotiles.maplibre.org/**', route => route.fulfill({ json: EMPTY_MAP_STYLE }))
+  await page.route('https://data.geopf.fr/**', route => route.fulfill({ contentType: 'image/png', body: EMPTY_TILE }))
   // Fake routing: a straight line through the midpoint, climbing from 100 to 200 m.
   await page.route('**/api/routing/segment', async (route) => {
     const { from, to } = route.request().postDataJSON() as { from: [number, number], to: [number, number] }

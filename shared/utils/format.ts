@@ -30,6 +30,11 @@ export function formatDate(isoDate: string, locale = DEFAULT_FORMAT_LOCALE): str
   })
 }
 
+// Time of day, e.g. "09:05", in the same fixed time zone.
+export function formatTime(isoDate: string, locale = DEFAULT_FORMAT_LOCALE): string {
+  return new Date(isoDate).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })
+}
+
 // Average rating with one decimal, e.g. "4,3".
 export function formatRating(average: number, locale = DEFAULT_FORMAT_LOCALE): string {
   return average.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })

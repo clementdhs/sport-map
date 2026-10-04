@@ -450,6 +450,39 @@
     "record": "Record the outing",
     "finishDescription": "It's added to this route's outings, and the route is marked as completed."
   },
+  "live": {
+    "title": "Outings in progress",
+    "intro": "Family members sharing their location during an outing.",
+    "none": "Nobody is sharing their location right now.",
+    "outingOf": "{name}'s outing",
+    "myOuting": "Your outing",
+    "privateRoute": "Private route",
+    "freeOuting": "Free outing, no planned route",
+    "lastPosition": "Last location at {time} ({ago} ago)",
+    "lastPositionAt": "Last location at {time}",
+    "noPosition": "No location received yet",
+    "since": "Sharing started at {time}",
+    "centerOn": "Centre",
+    "endedTitle": "This location sharing has ended",
+    "endedDescription": "{name} is no longer sharing their location.",
+    "seeAll": "See outings in progress",
+    "banner": "{name} is out",
+    "bannerLink": "See their location",
+    "share": "Share my location",
+    "confirmTitle": "Share your location with the family?",
+    "confirmDescription": "The whole family will see your live location and your track on a map until the end of the outing ({hours} h at most). Nothing is kept afterwards.",
+    "confirm": "Share",
+    "sharing": "Location shared with the family",
+    "stop": "Stop",
+    "sentAgo": "Sent {time} ago",
+    "firstPoint": "Waiting for the GPS position…",
+    "waiting": "No network: {count} location waiting | No network: {count} locations waiting",
+    "ended": "Location sharing ended",
+    "endedHint": "The family no longer sees your location.",
+    "startFailed": "Couldn't share your location",
+    "stopFailed": "Couldn't stop sharing",
+    "stopFailedHint": "Without network, the family still sees your last location, 12 h at most."
+  },
   "outings": {
     "estimate": "Estimated time: ~{duration} moving",
     "times": "{total} in total, {moving} moving",
@@ -712,6 +745,11 @@
     "saveReviewFailed": "Couldn't save your review",
     "maxPhotos": "{max} photos maximum per route",
     "routingQuota": "Limit of {limit} route calculations per day reached",
+    "liveShareNotFound": "This location sharing has ended",
+    "startLiveShareFailed": "Couldn't share your location",
+    "sendLivePointsFailed": "Couldn't send your location",
+    "stopLiveShareFailed": "Couldn't stop sharing your location",
+    "loadLiveSharesFailed": "Couldn't load the shared locations",
     "invalidRequest": "Invalid request"
   },
   "archive": {
@@ -725,6 +763,7 @@
       "collections": "collections.json",
       "reports": "reports.json",
       "routing": "routing.json",
+      "live": "location-sharing.json",
       "gpxFolder": "routes",
       "photosFolder": "photos"
     },
@@ -740,6 +779,7 @@
       "collections": "your route collections",
       "reports": "the reviews you reported",
       "routing": "your number of route calculations today (limited per person)",
+      "live": "your location shared with the family during an outing in progress (deleted when the outing ends)",
       "json": "The .json files are structured text (JSON), readable by most software."
     }
   }

@@ -29,6 +29,7 @@ const data: AccountData = {
   collections: [],
   reports: [],
   routingUsage: [{ day: '2026-09-29', count: 12 }],
+  liveShares: [{ started_at: '2026-10-04T08:00:00Z', points: [{ fixed_at: '2026-10-04T08:00:30Z', lng: 3.06, lat: 50.63 }] }],
 }
 
 describe('accountArchive', () => {
@@ -36,12 +37,13 @@ describe('accountArchive', () => {
   const file = (path: string) => archive.files.find(entry => entry.path === path)?.content
 
   it('holds a readme and one JSON file per kind of data', () => {
-    expect(archive.files.slice(0, 9).map(entry => entry.path)).toEqual([
+    expect(archive.files.slice(0, 10).map(entry => entry.path)).toEqual([
       'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'passages.json', 'collections.json', 'signalements.json',
-      'calculs.json',
+      'calculs.json', 'partage-position.json',
     ])
     expect(JSON.parse(file('passages.json')!)).toEqual(data.outings)
     expect(JSON.parse(file('calculs.json')!)).toEqual(data.routingUsage)
+    expect(JSON.parse(file('partage-position.json')!)).toEqual(data.liveShares)
     expect(file('LISEZMOI.txt')).toContain('Données de clem')
     expect(JSON.parse(file('profil.json')!)).toMatchObject({ email: 'clem@example.test' })
     expect(JSON.parse(file('avis.json')!)).toEqual(data.reviews)
@@ -51,7 +53,7 @@ describe('accountArchive', () => {
     const english = accountArchive(data, 'en')
     expect(english.files.map(entry => entry.path)).toEqual([
       'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'outings.json', 'collections.json', 'reports.json',
-      'routing.json',
+      'routing.json', 'location-sharing.json',
       'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
     ])
     const readme = english.files[0]!.content

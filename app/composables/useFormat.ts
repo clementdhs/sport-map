@@ -7,6 +7,7 @@ export function useFormat() {
     formatDistance: (meters: number) => formatDistance(meters, locale()),
     formatDate: (isoDate: string) => formatDate(isoDate, locale()),
     formatShortDate: (isoDate: string) => formatShortDate(isoDate, locale()),
+    formatTime: (isoDate: string) => formatTime(isoDate, locale()),
     formatRating: (average: number) => formatRating(average, locale()),
     formatSpeed: (meters: number, seconds: number) => formatSpeed(meters, seconds, locale()),
     formatNumber: (value: number, options?: Intl.NumberFormatOptions) => formatNumber(value, locale(), options),

@@ -57,6 +57,9 @@ const walked = shallowRef<Recording | null>(null)
 const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } =
   useOutingRecorder(`sport-map:recording:${parcours.value.id}`, fix)
 
+// Position shared with the family on request, until the page is left.
+const live = useLiveShare(parcours.value.id, fix)
+
 watch(fix, (current) => {
   if (!current) return
   const time = Date.now()
@@ -303,6 +306,15 @@ function discardOuting() {
         variant="outline"
         block
         @click="start"
+      />
+      <LiveShareControl
+        :active="live.active.value"
+        :starting="live.starting.value"
+        :last-sent-at="live.lastSentAt.value"
+        :waiting="live.waiting.value"
+        :now="now"
+        @start="live.start"
+        @stop="live.stop"
       />
       <p class="flex flex-wrap justify-between gap-x-3 text-xs text-muted">
         <span>

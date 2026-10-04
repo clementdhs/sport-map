@@ -16,6 +16,7 @@ const userMenu = computed<DropdownMenuItem[][]>(() => [
   [{ label: user.value?.email ?? '', type: 'label' }],
   [
     { label: t('header.profile'), icon: 'i-lucide-user', to: '/profile' },
+    { label: t('live.title'), icon: 'i-lucide-radio', to: '/live' },
     { label: t('header.settings'), icon: 'i-lucide-settings', to: '/settings' },
     { label: t('language.label'), icon: 'i-lucide-languages', children: languageItems.value },
   ],

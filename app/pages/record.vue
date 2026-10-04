@@ -18,6 +18,12 @@ const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock
 
 const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } = useOutingRecorder('sport-map:recording', fix)
 
+// Position shared with the family on request, until the outing is saved or discarded.
+const live = useLiveShare(null, fix)
+watch(recording, (current) => {
+  if (!current) live.stop()
+})
+
 function discardDraft() {
   if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
 }
@@ -187,6 +193,15 @@ function discard() {
           />
           <UButton icon="i-lucide-square" :label="t('record.finish')" size="lg" block @click="openFinish" />
         </div>
+        <LiveShareControl
+          :active="live.active.value"
+          :starting="live.starting.value"
+          :last-sent-at="live.lastSentAt.value"
+          :waiting="live.waiting.value"
+          :now="now"
+          @start="live.start"
+          @stop="live.stop"
+        />
       </template>
 
       <div v-else-if="draft" class="space-y-2">

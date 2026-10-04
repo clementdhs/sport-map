@@ -450,6 +450,39 @@
     "record": "Enregistrer la sortie",
     "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé."
   },
+  "live": {
+    "title": "Sorties en cours",
+    "intro": "Les membres de la famille qui partagent leur position pendant une sortie.",
+    "none": "Personne ne partage sa position en ce moment.",
+    "outingOf": "Sortie de {name}",
+    "myOuting": "Ta sortie",
+    "privateRoute": "Parcours privé",
+    "freeOuting": "Sortie libre, sans parcours prévu",
+    "lastPosition": "Dernière position à {time} (il y a {ago})",
+    "lastPositionAt": "Dernière position à {time}",
+    "noPosition": "Pas encore de position reçue",
+    "since": "Partage commencé à {time}",
+    "centerOn": "Centrer",
+    "endedTitle": "Ce partage de position est terminé",
+    "endedDescription": "{name} ne partage plus sa position.",
+    "seeAll": "Voir les sorties en cours",
+    "banner": "{name} est en sortie",
+    "bannerLink": "Voir sa position",
+    "share": "Partager ma position",
+    "confirmTitle": "Partager ta position avec la famille ?",
+    "confirmDescription": "Toute la famille verra ta position en direct et ta trace sur une carte, jusqu'à la fin de la sortie ({hours} h au plus). Rien n'est conservé ensuite.",
+    "confirm": "Partager",
+    "sharing": "Position partagée avec la famille",
+    "stop": "Arrêter",
+    "sentAgo": "Envoyée il y a {time}",
+    "firstPoint": "En attente de la position GPS…",
+    "waiting": "Pas de réseau : {count} position en attente | Pas de réseau : {count} positions en attente",
+    "ended": "Partage de position terminé",
+    "endedHint": "La famille ne voit plus ta position.",
+    "startFailed": "Impossible de partager ta position",
+    "stopFailed": "Le partage n'a pas pu être arrêté",
+    "stopFailedHint": "Sans réseau, la famille voit encore ta dernière position, 12 h au plus."
+  },
   "outings": {
     "estimate": "Durée estimée : ~{duration} en mouvement",
     "times": "{total} au total, {moving} en mouvement",
@@ -712,6 +745,11 @@
     "saveReviewFailed": "Impossible d'enregistrer ton avis",
     "maxPhotos": "{max} photos maximum par parcours",
     "routingQuota": "Limite de {limit} calculs d'itinéraire par jour atteinte",
+    "liveShareNotFound": "Ce partage de position est terminé",
+    "startLiveShareFailed": "Impossible de partager ta position",
+    "sendLivePointsFailed": "Impossible d'envoyer ta position",
+    "stopLiveShareFailed": "Impossible d'arrêter le partage de position",
+    "loadLiveSharesFailed": "Impossible de charger les positions partagées",
     "invalidRequest": "Requête invalide"
   },
   "archive": {
@@ -725,6 +763,7 @@
       "collections": "collections.json",
       "reports": "signalements.json",
       "routing": "calculs.json",
+      "live": "partage-position.json",
       "gpxFolder": "parcours",
       "photosFolder": "photos"
     },
@@ -740,6 +779,7 @@
       "collections": "tes collections de parcours",
       "reports": "les avis que tu as signalés",
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",
+      "live": "ta position partagée avec la famille pendant une sortie en cours (effacée à la fin de la sortie)",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
   }

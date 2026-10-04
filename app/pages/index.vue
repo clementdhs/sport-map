@@ -89,6 +89,7 @@ watch(() => search.results, (results) => {
       </span>
     </template>
 
+    <LiveSharesBanner />
     <SearchBox @place="focus = $event" />
 
     <div class="flex gap-2">

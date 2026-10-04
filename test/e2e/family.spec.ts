@@ -1,4 +1,5 @@
-import { E2E_USER, expect, FAMILY_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
+import type { LiveShareStarted } from '../../shared/types/live'
+import { AUTH_FILE, E2E_USER, expect, FAMILY_USER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForHydration, waitForMap } from './fixtures'
 
 test('finds a route of another member on the home map and opens it', async ({ page }) => {
   await page.goto('/')
@@ -406,4 +407,52 @@ test.describe('follow mode', () => {
     await expect(page.getByRole('switch', { name: 'Activer le guidage vocal' })).toBeChecked()
     await expect(page.getByRole('checkbox', { name: 'Arrivée' })).not.toBeChecked()
   })
+})
+
+test('follows the outing of another member sharing their position, until it ends', async ({ page, playwright, baseURL }) => {
+  test.slow()
+  // The test account shares its position (its phone, through the API).
+  const sharer = await playwright.request.newContext({ baseURL, storageState: AUTH_FILE })
+  const { id } = await (await sharer.post('/api/live', { data: { route_id: process.env.E2E_ROUTE_ID } })).json() as LiveShareStarted
+  const sendPoint = async (minutesAgo: number, lat: number) => {
+    const fixedAt = new Date(Date.now() - minutesAgo * 60_000).toISOString()
+    expect((await sharer.post(`/api/live/${id}/points`, { data: { points: [{ fixed_at: fixedAt, lng: 6.13, lat, accuracy_m: 8 }] } })).status()).toBe(204)
+  }
+  await sendPoint(11, 45.899)
+  await sendPoint(10, 45.896)
+  // Fake clock from now on, to run the 20 s refreshes at once.
+  await page.clock.install()
+
+  // Announced on the home page, listed among the outings in progress.
+  await page.goto('/')
+  await page.getByRole('link', { name: `${E2E_USER.displayName} est en sortie` }).click()
+  await expect(page).toHaveURL(`/live/${id}`)
+  await page.getByRole('link', { name: 'Sorties en cours' }).click()
+  await expect(page.getByRole('heading', { name: 'Sorties en cours' })).toBeVisible()
+  await page.getByRole('link', { name: new RegExp(`Sortie de ${E2E_USER.displayName}`) }).click()
+
+  // The map of the outing, with the route followed and how old the latest position is.
+  await waitForMap(page)
+  await expect(page.getByRole('heading', { name: `Sortie de ${E2E_USER.displayName}` })).toBeVisible()
+  await expect(page.getByRole('link', { name: SEEDED_ROUTE_NAME })).toBeVisible()
+  const lastPosition = page.getByTestId('live-last-position')
+  await expect(lastPosition).toHaveText(/^Dernière position à \d\d:\d\d \(il y a 10 min\)$/)
+  await expect(lastPosition).toHaveClass(/text-warning/)
+
+  // A new point shows at the next refresh.
+  await sendPoint(0, 45.893)
+  await page.clock.fastForward(20_000)
+  await expect(lastPosition).toHaveText(/\(il y a \d+ s\)$/)
+  await expect(lastPosition).not.toHaveClass(/text-warning/)
+
+  // Stopped on the phone: the page says so at the next refresh.
+  expect((await sharer.delete(`/api/live/${id}`)).status()).toBe(204)
+  await page.clock.fastForward(20_000)
+  await expect(page.getByText('Ce partage de position est terminé')).toBeVisible()
+  await expect(page.getByText(`${E2E_USER.displayName} ne partage plus sa position.`)).toBeVisible()
+  await sharer.dispose()
+
+  // Nothing in progress any more.
+  await page.goto('/live')
+  await expect(page.getByText('Personne ne partage sa position en ce moment.')).toBeVisible()
 })

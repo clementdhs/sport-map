@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
+import type { LiveShareDetail, LiveShareStarted, LiveShareSummary } from '../../shared/types/live'
 import { insertRows, supabaseAdmin } from './admin'
 import { E2E_USER, EMPTY_MAP_STYLE, expect, familyRequest, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
 
@@ -625,4 +626,136 @@ test('caps routing requests per user and per day', async ({ page, playwright, ba
   const visitor = await signedOutRequest(playwright, baseURL!)
   expect((await visitor.post('/api/routing/segment', { data: segment })).status()).toBe(401)
   await visitor.dispose()
+})
+
+test('shares the location with the family during an outing, then deletes it', async ({ request, playwright, baseURL }) => {
+  const member = await familyRequest(playwright, baseURL!)
+  const point = (minute: number) => ({ fixed_at: `2026-10-04T08:0${minute}:00Z`, lng: 6.12, lat: 45.9 + minute / 1000, accuracy_m: 5 })
+
+  const started = await request.post('/api/live', { data: { route_id: process.env.E2E_ROUTE_ID } })
+  expect(started.status()).toBe(201)
+  const { id } = await started.json() as LiveShareStarted
+
+  // Points out of order, then one sent again with an older one arriving late: nothing is lost or doubled, and
+  // the latest position stays the latest fix.
+  expect((await request.post(`/api/live/${id}/points`, { data: { points: [point(2), point(1)] } })).status()).toBe(204)
+  expect((await request.post(`/api/live/${id}/points`, { data: { points: [point(1), point(0)] } })).status()).toBe(204)
+
+  // The family sees the share, its route and its track; ?after= only brings the newer points.
+  const list = await (await member.get('/api/live')).json() as LiveShareSummary[]
+  expect(list).toEqual([expect.objectContaining({
+    id, user_name: E2E_USER.displayName, is_mine: false, route: { id: process.env.E2E_ROUTE_ID, name: SEEDED_ROUTE_NAME },
+    last_fixed_at: expect.stringMatching(/^2026-10-04T08:02:00/),
+  })])
+  const detail = await (await member.get(`/api/live/${id}`)).json() as LiveShareDetail
+  expect(detail.points.map(p => p.lat)).toEqual([45.9, 45.901, 45.902])
+  expect(detail.route_geometry?.type).toBe('LineString')
+  const newer = await (await member.get(`/api/live/${id}?after=${encodeURIComponent(point(1).fixed_at)}`)).json() as LiveShareDetail
+  expect(newer).toMatchObject({ points: [{ lat: 45.902 }], route_geometry: null })
+
+  // Other members can neither add points nor stop it.
+  expect((await member.post(`/api/live/${id}/points`, { data: { points: [point(3)] } })).status()).toBe(404)
+  expect((await member.delete(`/api/live/${id}`)).status()).toBe(204)
+  expect((await member.get(`/api/live/${id}`)).ok()).toBe(true)
+
+  // Starting again replaces the share whose end never reached the server.
+  const { id: second } = await (await request.post('/api/live', { data: {} })).json() as LiveShareStarted
+  expect((await member.get(`/api/live/${id}`)).status()).toBe(404)
+  expect((await member.get(`/api/live/${second}`)).ok()).toBe(true)
+
+  // Expired after 12 hours: hidden from the family and closed to new points, until the cron job removes it.
+  await supabaseAdmin(`/rest/v1/live_shares?id=eq.${second}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ expires_at: new Date(Date.now() - 60_000).toISOString() }),
+  })
+  expect((await member.get(`/api/live/${second}`)).status()).toBe(404)
+  expect(await (await member.get('/api/live')).json()).toEqual([])
+  expect((await request.post(`/api/live/${second}/points`, { data: { points: [point(4)] } })).status()).toBe(404)
+
+  // Stopped: the share and its track are deleted.
+  expect((await request.delete(`/api/live/${second}`)).status()).toBe(204)
+  expect(await supabaseAdmin(`/rest/v1/live_shares?id=eq.${second}&select=id`)).toEqual([])
+  expect(await supabaseAdmin(`/rest/v1/live_positions?share_id=in.(${id},${second})&select=fixed_at`)).toEqual([])
+  await member.dispose()
+})
+
+test.describe('sharing the location during an outing', () => {
+  // At the start of the seeded route.
+  const START = { latitude: 45.899, longitude: 6.129, accuracy: 5 }
+  test.use({ permissions: ['geolocation'], geolocation: START })
+
+  test('shares the position while following, fills in a network gap, and stops when leaving', async ({ page, context, playwright, baseURL }) => {
+    test.slow()
+    // Fake clock: one point is kept every 30 s of Date.now().
+    await page.clock.install({ time: new Date('2026-10-04T08:00:00Z') })
+    const member = await familyRequest(playwright, baseURL!)
+    const shares = async () => await (await member.get('/api/live')).json() as LiveShareSummary[]
+    // `meters` south of the start, 30 simulated seconds later.
+    const moveTo = async (meters: number) => {
+      await page.clock.fastForward(30_000)
+      await context.setGeolocation({ ...START, latitude: START.latitude - meters / 111_194.93 })
+    }
+    const status = page.getByTestId('live-status')
+
+    await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
+    await waitForMap(page)
+    await expect(page.getByText(/Précision GPS/)).toBeVisible()
+    // Never shared without asking.
+    expect(await shares()).toEqual([])
+
+    await page.getByRole('button', { name: 'Partager ma position' }).click()
+    await page.getByRole('dialog', { name: 'Partager ta position avec la famille ?' }).getByRole('button', { name: 'Partager', exact: true }).click()
+    await expect(page.getByText('Position partagée avec la famille')).toBeVisible()
+    await expect(status).toHaveText('Envoyée il y a 0 s')
+    const [share] = await shares()
+    expect(share).toMatchObject({ user_name: E2E_USER.displayName, route: { name: SEEDED_ROUTE_NAME } })
+
+    // No network for a minute: the points wait, then all arrive in order.
+    await context.setOffline(true)
+    await moveTo(100)
+    await moveTo(200)
+    await expect(status).toHaveText('Pas de réseau : 2 positions en attente')
+    await context.setOffline(false)
+    // The next try, 30 s after the last one.
+    await page.clock.fastForward(30_000)
+    await expect(status).toHaveText('Envoyée il y a 0 s')
+    const { points } = await (await member.get(`/api/live/${share!.id}`)).json() as LiveShareDetail
+    expect(points.map(point => Math.round((START.latitude - point.lat) * 111_194.93))).toEqual([0, 100, 200])
+
+    // Leaving follow mode stops sharing.
+    await page.getByRole('link', { name: 'Quitter' }).click()
+    await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
+    await expect.poll(shares).toEqual([])
+    await member.dispose()
+  })
+
+  test('shares the position while recording, and stops when the outing is discarded', async ({ page, context, playwright, baseURL }) => {
+    test.slow()
+    await page.clock.install({ time: new Date('2026-10-04T08:00:00Z') })
+    page.on('dialog', dialog => dialog.accept()) // "discard the outing?"
+    const member = await familyRequest(playwright, baseURL!)
+    const shares = async () => await (await member.get('/api/live')).json() as LiveShareSummary[]
+
+    await page.goto('/record')
+    await waitForMap(page)
+    await expect(page.getByText(/Précision GPS/)).toBeVisible()
+    // Offered once the outing has started.
+    await expect(page.getByRole('button', { name: 'Partager ma position' })).toHaveCount(0)
+    await page.getByRole('button', { name: 'Démarrer' }).click()
+    await page.getByRole('button', { name: 'Partager ma position' }).click()
+    await page.getByRole('dialog', { name: 'Partager ta position avec la famille ?' }).getByRole('button', { name: 'Partager', exact: true }).click()
+    await expect(page.getByText('Position partagée avec la famille')).toBeVisible()
+    await expect.poll(shares).toEqual([expect.objectContaining({ route: null })])
+
+    for (const meters of [100, 200]) {
+      await page.clock.fastForward(60_000)
+      await context.setGeolocation({ ...START, latitude: START.latitude + meters / 111_194.93 })
+      await expect(page.getByTestId('distance')).toHaveText(`${meters} m`)
+    }
+    await page.getByRole('button', { name: 'Terminer' }).click()
+    await page.getByRole('dialog', { name: 'Terminer la sortie' }).getByRole('button', { name: 'Abandonner la sortie' }).click()
+    await expect(page.getByRole('button', { name: 'Démarrer' })).toBeVisible()
+    await expect.poll(shares).toEqual([])
+    await member.dispose()
+  })
 })

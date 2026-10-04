@@ -123,6 +123,29 @@ export function routeBounds(coordinates: LngLat[]): LngLatBoundsLike {
   return [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]]
 }
 
+const LIVE_TRACK_SOURCE = 'live-track'
+
+// Track covered by a member sharing their position (#46), in the GPS colour, above the route they follow.
+// Returns the function to call with the whole track each time it grows.
+export function addLiveTrackLayers(map: Map): (coordinates: LngLat[]) => void {
+  map.addSource(LIVE_TRACK_SOURCE, { type: 'geojson', data: lineData([]) })
+  map.addLayer({
+    id: 'live-track-casing',
+    type: 'line',
+    source: LIVE_TRACK_SOURCE,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': '#ffffff', 'line-width': 7 },
+  })
+  map.addLayer({
+    id: 'live-track',
+    type: 'line',
+    source: LIVE_TRACK_SOURCE,
+    layout: { 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-color': GPS_COLOR, 'line-width': 4 },
+  })
+  return coordinates => map.getSource<GeoJSONSource>(LIVE_TRACK_SOURCE)?.setData(lineData(coordinates))
+}
+
 // Live GPS position: a dot, or an arrow pointing the direction of travel when it is known, and a halo sized
 // to the fix's accuracy (in meters, so it depends on the zoom).
 const GPS_SOURCE = 'gps-position'

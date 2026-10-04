@@ -110,6 +110,77 @@ export type Database = {
           },
         ]
       }
+      live_positions: {
+        Row: {
+          accuracy_m: number | null
+          fixed_at: string
+          lat: number
+          lng: number
+          share_id: string
+        }
+        Insert: {
+          accuracy_m?: number | null
+          fixed_at: string
+          lat: number
+          lng: number
+          share_id: string
+        }
+        Update: {
+          accuracy_m?: number | null
+          fixed_at?: string
+          lat?: number
+          lng?: number
+          share_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_positions_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "live_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_shares: {
+        Row: {
+          expires_at: string
+          id: string
+          route_id: string | null
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          id?: string
+          route_id?: string | null
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          id?: string
+          route_id?: string | null
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_shares_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_shares_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

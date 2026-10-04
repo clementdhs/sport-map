@@ -30,6 +30,7 @@ export interface AccountData {
   collections: object[]
   reports: object[]
   routingUsage: object[]
+  liveShares: object[]
 }
 
 export interface AccountArchive {
@@ -41,7 +42,7 @@ export interface AccountArchive {
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 const ARCHIVE_NAMES = [
-  'readme', 'profile', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'gpxFolder', 'photosFolder',
+  'readme', 'profile', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'gpxFolder', 'photosFolder',
 ] as const
 type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
 
@@ -62,6 +63,7 @@ function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames): 
     [names.collections, t('collections')],
     [names.reports, t('reports')],
     [names.routing, t('routing')],
+    [names.live, t('live')],
   ] as const
   const width = Math.max(...rows.map(([path]) => path.length)) + 2
   return `${t('intro', { username: data.profile.username, date: data.exportedAt })}
@@ -113,6 +115,7 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     { path: names.collections, content: json(data.collections) },
     { path: names.reports, content: json(data.reports) },
     { path: names.routing, content: json(data.routingUsage) },
+    { path: names.live, content: json(data.liveShares) },
   )
   return { files, photos }
 }

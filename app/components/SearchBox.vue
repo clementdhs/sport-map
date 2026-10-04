@@ -11,6 +11,11 @@ interface GeocodingResponse {
   features: { place_name: string, center: LngLat, bbox?: Bounds }[]
 }
 
+const props = defineProps<{
+  // Places only (route editor): no route name search.
+  placesOnly?: boolean
+}>()
+
 const emit = defineEmits<{
   place: [focus: MapFocus]
 }>()
@@ -22,7 +27,7 @@ const { maptilerKey } = useRuntimeConfig().public
 const routesSuggestion = (text: string): Suggestion => ({ kind: 'routes', label: text, icon: 'i-lucide-route' })
 
 // Coming back to the page: show the name search still applied.
-const selected = ref<Suggestion | undefined>(search.text ? routesSuggestion(search.text) : undefined)
+const selected = ref<Suggestion | undefined>(search.text && !props.placesOnly ? routesSuggestion(search.text) : undefined)
 const searchTerm = ref('')
 const places = ref<Suggestion[]>([])
 const loading = ref(false)
@@ -33,6 +38,7 @@ const term = computed(() => searchTerm.value.trim())
 
 const items = computed(() => {
   if (term.value.length < MIN_SEARCH_TEXT_LENGTH) return []
+  if (props.placesOnly) return places.value
   const groups = [[{ type: 'label' as const, label: t('searchBox.routes') }, routesSuggestion(term.value)]]
   if (places.value.length) groups.push([{ type: 'label' as const, label: t('searchBox.places') }, ...places.value])
   return groups
@@ -81,7 +87,7 @@ watch(selected, (suggestion) => {
   }
   else {
     // The field now shows a place: a name search left behind would no longer match it.
-    search.text = ''
+    if (!props.placesOnly) search.text = ''
     emit('place', suggestion.focus)
   }
 })
@@ -92,7 +98,7 @@ watch(() => search.text, (text) => {
 })
 
 function clear() {
-  search.text = ''
+  if (!props.placesOnly) search.text = ''
   selected.value = undefined
 }
 </script>
@@ -108,8 +114,8 @@ function clear() {
       :loading="loading"
       icon="i-lucide-search"
       trailing-icon=""
-      :placeholder="t('searchBox.placeholder')"
-      :aria-label="t('searchBox.label')"
+      :placeholder="placesOnly ? t('searchBox.placesPlaceholder') : t('searchBox.placeholder')"
+      :aria-label="placesOnly ? t('searchBox.placesLabel') : t('searchBox.label')"
       class="w-full"
       :ui="{ base: 'pe-9' }"
     >
@@ -122,7 +128,12 @@ function clear() {
         </template>
       </template>
       <template #empty>
-        {{ t('searchBox.minLength', { count: MIN_SEARCH_TEXT_LENGTH }) }}
+        <template v-if="term.length < MIN_SEARCH_TEXT_LENGTH">
+          {{ t('searchBox.minLength', { count: MIN_SEARCH_TEXT_LENGTH }) }}
+        </template>
+        <template v-else-if="!loading">
+          {{ t('searchBox.noPlace') }}
+        </template>
       </template>
     </UInputMenu>
     <UButton

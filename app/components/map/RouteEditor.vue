@@ -2,15 +2,18 @@
 import { lineString, nearestPointOnLine } from '@turf/turf'
 import type { Map, MapMouseEvent, MapTouchEvent, PointLike } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
+import type { MapFocus } from '~/stores/routeSearch'
 
 const props = defineProps<{
   // Position hovered on the elevation profile
   hoverPoint?: LngLat | null
+  // A new object moves the map there (a place picked in the search box), without touching the track.
+  focus?: MapFocus | null
 }>()
 
 const editor = useRouteEditorStore()
 const map = shallowRef<Map>()
-const { padding } = useMapPadding()
+const { padding, focusOn } = useMapPadding()
 
 // Moves under this distance (px) count as a click, not a drag.
 const DRAG_THRESHOLD_PX = 4
@@ -176,6 +179,10 @@ watch(layerData, (data) => {
 
 watch(() => editor.replacedCount, () => {
   map.value?.fitBounds(routeBounds(editor.track.coordinates), { padding: padding(48) })
+})
+
+watch(() => props.focus, (focus) => {
+  if (map.value && focus) focusOn(map.value, focus)
 })
 
 watch(() => props.hoverPoint, (point) => {

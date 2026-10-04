@@ -43,6 +43,7 @@ onMounted(() => {
 const root = useTemplateRef('root')
 const header = useTemplateRef('header')
 const topBar = useTemplateRef('topBar')
+const topArea = useTemplateRef('topArea')
 // Height in pixels while dragging, null otherwise.
 const dragHeight = ref<number | null>(null)
 let drag: { pointerId: number, startY: number, startHeight: number, lastY: number, lastTime: number, velocity: number } | null = null
@@ -90,10 +91,10 @@ function onPointerUp(event: PointerEvent) {
   snap.value = SNAPS.reduce((best, s) => Math.abs(heights[s] - height) < Math.abs(heights[best] - height) ? s : best)
 }
 
-// Map height hidden by the top bar, from the top of the page.
-function topInset() {
-  if (!root.value || !topBar.value) return 0
-  return topBar.value.getBoundingClientRect().bottom - root.value.getBoundingClientRect().top
+// Map height hidden by an element at the top (the bar, or the bar with the search slot), from the top of the page.
+function topInset(element = topBar.value) {
+  if (!root.value || !element) return 0
+  return element.getBoundingClientRect().bottom - root.value.getBoundingClientRect().top
 }
 
 function measure() {
@@ -108,10 +109,10 @@ function snapHeights(): Record<SheetSnap, number> {
   return { collapsed: peek, half: full / 2, full }
 }
 
-// Maps frame routes and places under the top bar and above the open sheet. The sheet's half height is used
+// Maps frame routes and places under the top bar (and search) and above the open sheet. The sheet's half height is used
 // when full too: the map is hidden then, and a larger padding than the map itself would break the framing.
 provide(MAP_INSET_KEY, () => {
-  const top = topInset()
+  const top = topInset(topArea.value)
   if (!root.value || !header.value || snap.value === 'collapsed' || !window.matchMedia(MOBILE_QUERY).matches) return { top, bottom: 0 }
   return { top, bottom: Math.max(0, root.value.getBoundingClientRect().height / 2 - header.value.getBoundingClientRect().height) }
 })
@@ -133,9 +134,18 @@ const actionsHidden = computed(() => dragHeight.value === null
       <slot name="map" />
     </div>
 
-    <!-- Top left of the map: MapLibre's controls are on the right, the scale and attribution at the bottom. -->
-    <div ref="topBar" class="absolute top-[max(0.75rem,env(safe-area-inset-top))] left-3 z-10">
-      <MapTopBar :back="back" />
+    <!-- Top left of the map: MapLibre's controls are on the right, the scale and attribution at the bottom.
+         The search slot goes under the bar, or beside it when the map is wide enough. -->
+    <div
+      ref="topArea"
+      class="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-12 left-3 z-10 flex flex-col items-start gap-2 *:pointer-events-auto md:right-auto lg:flex-row lg:items-center"
+    >
+      <div ref="topBar">
+        <MapTopBar :back="back" />
+      </div>
+      <div v-if="$slots.search" class="w-full md:w-72 lg:w-80">
+        <slot name="search" />
+      </div>
     </div>
 
     <!-- Following the sheet's edge, high enough to clear the scale and attribution when it is collapsed. -->

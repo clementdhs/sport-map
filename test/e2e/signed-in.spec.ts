@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, supabaseAdmin } from './admin'
-import { E2E_USER, expect, familyRequest, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
+import { E2E_USER, EMPTY_MAP_STYLE, expect, familyRequest, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -78,6 +78,36 @@ async function visitorCanSign(path: string): Promise<boolean> {
   })
   return response.ok
 }
+
+test('moves the editor map to a searched place without touching the track', async ({ page }) => {
+  await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({
+    json: { features: [{ place_name: 'Annecy, Haute-Savoie, France', center: [6.129, 45.899], bbox: [6.10, 45.88, 6.16, 45.93] }] },
+  }))
+  await page.goto('/routes/create')
+  await waitForMap(page)
+
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  for (const [x, y] of [[0.3, 0.4], [0.5, 0.6]] as const) {
+    await map.click({ position: { x: box.width * x, y: box.height * y } })
+  }
+  const distance = page.locator('p.text-3xl')
+  await expect(distance).not.toHaveText('0 m')
+  const drawn = await distance.textContent()
+
+  const searchBox = page.getByRole('combobox', { name: 'Rechercher un lieu' })
+  await searchBox.fill('Annecy')
+  // Places only: no route name search in the editor.
+  await expect(page.getByRole('option', { name: 'Annecy, Haute-Savoie, France' })).toBeVisible()
+  await expect(page.getByRole('option', { name: /Parcours contenant/ })).toHaveCount(0)
+  await page.getByRole('option', { name: 'Annecy, Haute-Savoie, France' }).click()
+
+  await expect.poll(async () => {
+    const [lng, lat] = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number)
+    return Math.abs(lng! - 6.13) < 0.05 && Math.abs(lat! - 45.905) < 0.05
+  }, { timeout: 10_000 }).toBe(true)
+  await expect(distance).toHaveText(drawn!)
+})
 
 test('adds, shows and deletes photos, and removes their files with the route', async ({ page, playwright }) => {
   const route = { name: 'Parcours photos e2e', sport_type: 'hiking', is_public: true, coordinates: [[6.1, 45.9], [6.2, 45.95]] }
@@ -277,9 +307,7 @@ test.describe('offline follow mode', () => {
 
   test('prepares a route, follows it without network, then removes it from the phone', async ({ page, context }) => {
     // The map style, for requests the service worker makes too (page.route doesn't see those).
-    await context.route('**/demotiles.maplibre.org/**', route => route.fulfill({
-      json: { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e8efe6' } }] },
-    }))
+    await context.route('https://api.maptiler.com/maps/**', route => route.fulfill({ json: EMPTY_MAP_STYLE }))
     const id = process.env.E2E_ROUTE_ID!
     await page.goto(`/routes/${id}`)
     // Pages load under the service worker once it is active.

@@ -109,7 +109,10 @@
     "places": "Lieux",
     "routesContaining": "Parcours contenant « {text} »",
     "minLength": "Tape au moins {count} lettres",
-    "clear": "Effacer la recherche"
+    "clear": "Effacer la recherche",
+    "placesPlaceholder": "Rechercher un lieu…",
+    "placesLabel": "Rechercher un lieu",
+    "noPlace": "Aucun lieu trouvé"
   },
   "filters": {
     "title": "Filtres",

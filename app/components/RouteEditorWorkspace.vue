@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LngLat } from '#shared/utils/routes'
+import type { MapFocus } from '~/stores/routeSearch'
 
 const { formatDistance } = useFormat()
 
@@ -13,6 +14,7 @@ defineProps<{
 const editor = useRouteEditorStore()
 const hasLockedTrack = computed(() => editor.segments.some(segment => segment.mode === 'locked'))
 const hoverPoint = ref<LngLat | null>(null)
+const focus = ref<MapFocus | null>(null)
 const toast = useToast()
 const { t } = useI18n()
 const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
@@ -78,8 +80,12 @@ async function onSubmit() {
   <MapSheetLayout :back="back">
     <template #map>
       <ClientOnly>
-        <MapRouteEditor :hover-point="hoverPoint" />
+        <MapRouteEditor :hover-point="hoverPoint" :focus="focus" />
       </ClientOnly>
+    </template>
+
+    <template #search>
+      <SearchBox places-only @place="focus = $event" />
     </template>
 
     <template #title>

@@ -33,6 +33,8 @@ const basemapControl = shallowRef<HTMLElement>()
 let setBasemap: ((basemap: Basemap) => void) | undefined
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
 const loaded = ref(false)
+// Exposed as data-map-center ("lng,lat") so end-to-end tests check where the map went.
+const center = ref<string>()
 
 onMounted(async () => {
   // maplibre-gl touches `window` at import time, so load it client-side only.
@@ -92,6 +94,10 @@ onMounted(async () => {
     emit('load', instance)
     loaded.value = true
   })
+  instance.on('moveend', () => {
+    const { lng, lat } = instance.getCenter()
+    center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
+  })
   map.value = instance
 })
 
@@ -119,7 +125,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" />
+  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" :data-map-center="center" />
   <Teleport v-if="basemapControl" :to="basemapControl">
     <UDropdownMenu :items="basemapItems" :content="{ side: 'left', align: 'start' }">
       <button type="button" class="flex items-center justify-center" :title="t('map.basemap')" :aria-label="t('map.basemap')">

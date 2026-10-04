@@ -97,7 +97,8 @@ export default defineConfig({
       NUXT_PUBLIC_SUPABASE_KEY: supabase.publicKey,
       // The local one, for account deletion.
       NUXT_SUPABASE_SECRET_KEY: supabase.secretKey,
-      NUXT_PUBLIC_MAPTILER_KEY: '',
+      // Fake: the MapTiler style and geocoding are mocked by the fixtures.
+      NUXT_PUBLIC_MAPTILER_KEY: 'e2e-fake-key',
       NUXT_OPENROUTESERVICE_KEY: '',
       // Small, so a test reaches the per-user routing quota quickly.
       NUXT_ROUTING_DAILY_LIMIT: '3',

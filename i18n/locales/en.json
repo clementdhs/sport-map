@@ -109,7 +109,10 @@
     "places": "Places",
     "routesContaining": "Routes containing “{text}”",
     "minLength": "Type at least {count} letters",
-    "clear": "Clear the search"
+    "clear": "Clear the search",
+    "placesPlaceholder": "Search for a place…",
+    "placesLabel": "Search for a place",
+    "noPlace": "No place found"
   },
   "filters": {
     "title": "Filters",

@@ -38,7 +38,7 @@ export const E2E_NEIGHBORS = [1, 2, 3].map(i => ({ email: `e2e-voisin${i}@sport-
 export const SEEDED_REVIEW = { rating: 4, comment: 'Très jolie balade au bord du lac.' }
 
 // A style without any source: the map loads instantly and offline.
-const EMPTY_MAP_STYLE = {
+export const EMPTY_MAP_STYLE = {
   version: 8,
   sources: {},
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e8efe6' } }],
@@ -48,7 +48,9 @@ const EMPTY_MAP_STYLE = {
 const EMPTY_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 
 async function mockExternalServices(page: Page) {
-  await page.route('**/demotiles.maplibre.org/**', route => route.fulfill({ json: EMPTY_MAP_STYLE }))
+  await page.route('https://api.maptiler.com/maps/**', route => route.fulfill({ json: EMPTY_MAP_STYLE }))
+  // No place found, unless a test mocks its own results.
+  await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({ json: { features: [] } }))
   await page.route('https://data.geopf.fr/**', route => route.fulfill({ contentType: 'image/png', body: EMPTY_TILE }))
   // Fake routing: a straight line through the midpoint, climbing from 100 to 200 m.
   await page.route('**/api/routing/segment', async (route) => {

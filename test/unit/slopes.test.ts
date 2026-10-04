@@ -67,6 +67,18 @@ describe('slopeRuns and slopeGradient', () => {
     stops.forEach((stop, i) => expect(stop).toBeGreaterThan(i ? stops[i - 1]! : 0))
     expect(expression).toContain(SLOPE_CLASSES[2].color)
   })
+
+  it('colours a track in one slope class with that class, without a step MapLibre would refuse', () => {
+    expect(slopeGradient([{ startM: 0, endM: 1000, slopeClass: 1 }], 1000)).toEqual(['literal', SLOPE_CLASSES[1].color])
+    // A run starting where the previous one starts adds no stop either.
+    expect(slopeGradient([{ startM: 0, endM: 0, slopeClass: 2 }, { startM: 0, endM: 1000, slopeClass: 0 }], 1000))
+      .toEqual(['literal', SLOPE_CLASSES[2].color])
+  })
+
+  it('falls back to the first class colour without runs or length', () => {
+    expect(slopeGradient([], 1000)).toEqual(['literal', SLOPE_CLASSES[0].color])
+    expect(slopeGradient([{ startM: 0, endM: 0, slopeClass: 3 }], 0)).toEqual(['literal', SLOPE_CLASSES[0].color])
+  })
 })
 
 describe('mainClimb', () => {

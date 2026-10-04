@@ -142,5 +142,6 @@ export function slopeGradient(runs: SlopeRun[], totalM: number): unknown[] {
       lastStop = progress
     }
   }
-  return expression
+  // A step without stops is refused by MapLibre: a track in one slope class is that class's colour.
+  return expression.length > 3 ? expression : ['literal', expression[2]]
 }

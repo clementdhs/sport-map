@@ -38,6 +38,11 @@ test('shows the weather at the start of a route, crediting Open-Meteo', async ({
 })
 
 test('summarises the slopes of a route and colours them on demand', async ({ page }) => {
+  // MapLibre only logs an invalid line-gradient: the track then keeps its plain colour.
+  const mapErrors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('line-gradient')) mapErrors.push(message.text())
+  })
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
   await waitForMap(page)
   await expect(page.getByText(/Pente max : \d+ %/)).toBeVisible()
@@ -45,6 +50,8 @@ test('summarises the slopes of a route and colours them on demand', async ({ pag
   await expect(legend).toHaveCount(0)
   await page.getByRole('switch', { name: 'Pentes sur la carte et le profil' }).click()
   await expect(legend).toContainText('Plus de 15 %')
+  // The seeded route stays under 5 %: one slope class, whose gradient has no stop (#63).
+  expect(mapErrors).toEqual([])
 })
 
 test('filters the search from the filters popover, counts and resets them', async ({ page }) => {

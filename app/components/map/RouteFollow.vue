@@ -18,7 +18,9 @@ const emit = defineEmits<{
 }>()
 
 const map = shallowRef<Map>()
-let setGps: ((fix: GpsFix | null) => void) | undefined
+let setGps: ((fix: GpsFix | null, headingDeg: number | null) => void) | undefined
+// Direction of travel shown by the GPS arrow
+let heading = NO_HEADING
 
 function layerData(coordinates: LngLat[]) {
   const [start] = coordinates
@@ -29,7 +31,8 @@ function layerData(coordinates: LngLat[]) {
 function onLoad(instance: Map) {
   addRouteLayers(instance, layerData(props.coordinates))
 
-  setGps = addGpsLayers(instance, props.fix)
+  setGps = addGpsLayers(instance)
+  if (props.fix) showFix(props.fix)
   // Only gestures (originalEvent) stop the following, not the map's own easing.
   instance.on('dragstart', event => event.originalEvent && emit('stopFollow'))
   map.value = instance
@@ -50,8 +53,13 @@ function center(fix: GpsFix) {
   zoomedIn = true
 }
 
+function showFix(fix: GpsFix | null) {
+  if (fix) heading = nextHeading(heading, fix, Date.now())
+  setGps?.(fix, heading.headingDeg)
+}
+
 watch(() => props.fix, (fix) => {
-  setGps?.(fix)
+  showFix(fix)
   if (fix && props.follow) center(fix)
 })
 

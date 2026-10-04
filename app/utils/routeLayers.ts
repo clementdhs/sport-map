@@ -123,32 +123,62 @@ export function routeBounds(coordinates: LngLat[]): LngLatBoundsLike {
   return [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]]
 }
 
-// Live GPS position: a dot, and a halo sized to the fix's accuracy (in meters, so it depends on the zoom).
+// Live GPS position: a dot, or an arrow pointing the direction of travel when it is known, and a halo sized
+// to the fix's accuracy (in meters, so it depends on the zoom).
 const GPS_SOURCE = 'gps-position'
 const GPS_COLOR = '#2563eb'
+const GPS_ARROW = 'gps-arrow'
 
 export interface GpsPosition {
   position: LngLat
   accuracyM: number
 }
 
-function gpsData(map: Map, fix: GpsPosition | null): FeatureCollection<Point> {
+function gpsData(map: Map, fix: GpsPosition | null, headingDeg: number | null): FeatureCollection<Point> {
   if (!fix) return { type: 'FeatureCollection', features: [] }
   const metersPerPixel = (40_075_016.686 * Math.cos((fix.position[1] * Math.PI) / 180)) / (512 * 2 ** map.getZoom())
   return {
     type: 'FeatureCollection',
     features: [{
       type: 'Feature',
-      properties: { halo: Math.min(fix.accuracyM / metersPerPixel, 400) },
+      properties: {
+        halo: Math.min(fix.accuracyM / metersPerPixel, 400),
+        ...(headingDeg === null ? {} : { heading: headingDeg }),
+      },
       geometry: { type: 'Point', coordinates: fix.position },
     }],
   }
 }
 
-// Returns the function to call with each new fix; the halo follows the zoom by itself.
-export function addGpsLayers(map: Map, initial: GpsPosition | null): (fix: GpsPosition | null) => void {
-  let current = initial
-  map.addSource(GPS_SOURCE, { type: 'geojson', data: gpsData(map, current) })
+// A navigation arrow pointing north, 32 px, in the dot's colors (white outline, readable on any basemap).
+function arrowImage(): ImageData {
+  const ratio = 2
+  const canvas = document.createElement('canvas')
+  canvas.width = canvas.height = 32 * ratio
+  const context = canvas.getContext('2d')!
+  context.scale(ratio, ratio)
+  context.beginPath()
+  context.moveTo(16, 3)
+  context.lineTo(27, 28)
+  context.lineTo(16, 22)
+  context.lineTo(5, 28)
+  context.closePath()
+  context.lineJoin = 'round'
+  context.lineWidth = 5
+  context.strokeStyle = '#ffffff'
+  context.stroke()
+  context.fillStyle = GPS_COLOR
+  context.fill()
+  return context.getImageData(0, 0, canvas.width, canvas.height)
+}
+
+// Returns the function to call with each new fix and the direction of travel (degrees clockwise from north,
+// null when unknown); the halo follows the zoom by itself.
+export function addGpsLayers(map: Map): (fix: GpsPosition | null, headingDeg: number | null) => void {
+  let current: GpsPosition | null = null
+  let heading: number | null = null
+  map.addImage(GPS_ARROW, arrowImage(), { pixelRatio: 2 })
+  map.addSource(GPS_SOURCE, { type: 'geojson', data: gpsData(map, current, heading) })
   map.addLayer({
     id: 'gps-halo',
     type: 'circle',
@@ -159,12 +189,28 @@ export function addGpsLayers(map: Map, initial: GpsPosition | null): (fix: GpsPo
     id: 'gps-dot',
     type: 'circle',
     source: GPS_SOURCE,
+    filter: ['!', ['has', 'heading']],
     paint: { 'circle-radius': 8, 'circle-color': GPS_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 },
   })
-  const update = () => map.getSource<GeoJSONSource>(GPS_SOURCE)?.setData(gpsData(map, current))
+  map.addLayer({
+    id: 'gps-arrow',
+    type: 'symbol',
+    source: GPS_SOURCE,
+    filter: ['has', 'heading'],
+    layout: {
+      'icon-image': GPS_ARROW,
+      'icon-rotate': ['get', 'heading'],
+      // The arrow keeps pointing the right way when the map is rotated.
+      'icon-rotation-alignment': 'map',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+  })
+  const update = () => map.getSource<GeoJSONSource>(GPS_SOURCE)?.setData(gpsData(map, current, heading))
   map.on('zoom', update)
-  return (fix) => {
+  return (fix, headingDeg) => {
     current = fix
+    heading = headingDeg
     update()
   }
 }

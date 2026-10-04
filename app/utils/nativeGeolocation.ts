@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from '@capacitor/core'
 import type { BackgroundGeolocationPlugin, CallbackError, Location } from '@capacitor-community/background-geolocation'
 import type { GpsFix } from '~/composables/useWatchPosition'
+import { finiteOrNull } from '~/utils/heading'
 
 // True inside the Android app: a Capacitor shell that loads the hosted site (capacitor.config.ts) and
 // injects its native bridge into the page.
@@ -13,6 +14,8 @@ export function locationToFix(location: Location): GpsFix {
     position: [location.longitude, location.latitude],
     accuracyM: location.accuracy,
     altitudeM: location.altitude,
+    headingDeg: finiteOrNull(location.bearing),
+    speedMps: finiteOrNull(location.speed),
   }
 }
 

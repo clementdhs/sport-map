@@ -6,6 +6,9 @@ export interface GpsFix {
   accuracyM: number
   // GPS altitude (m), when the device provides it
   altitudeM: number | null
+  // Direction of travel (degrees clockwise from north) and speed (m/s), when the device provides them
+  headingDeg: number | null
+  speedMps: number | null
 }
 
 // Translation keys of the GeolocationPositionError codes worth explaining.
@@ -58,7 +61,13 @@ export function useWatchPosition() {
       return
     }
     watchId = navigator.geolocation.watchPosition(
-      ({ coords }) => onFix({ position: [coords.longitude, coords.latitude], accuracyM: coords.accuracy, altitudeM: coords.altitude }),
+      ({ coords }) => onFix({
+        position: [coords.longitude, coords.latitude],
+        accuracyM: coords.accuracy,
+        altitudeM: coords.altitude,
+        headingDeg: finiteOrNull(coords.heading),
+        speedMps: finiteOrNull(coords.speed),
+      }),
       // Timeouts are not reported: the watch keeps trying.
       ({ code }) => {
         if (ERROR_KEYS[code]) error.value = t(ERROR_KEYS[code])

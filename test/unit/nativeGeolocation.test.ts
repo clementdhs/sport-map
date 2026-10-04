@@ -37,7 +37,7 @@ describe('native geolocation', () => {
   })
 
   it('turns a plugin location into a fix', () => {
-    expect(locationToFix(location)).toEqual({ position: [6.12, 45.9], accuracyM: 8, altitudeM: 450 })
+    expect(locationToFix(location)).toEqual({ position: [6.12, 45.9], accuracyM: 8, altitudeM: 450, headingDeg: null, speedMps: 2.5 })
     expect(locationToFix({ ...location, altitude: null }).altitudeM).toBeNull()
   })
 
@@ -56,7 +56,7 @@ describe('native geolocation', () => {
     expect(options).toMatchObject({ backgroundTitle: 'Title', backgroundMessage: 'Message', requestPermissions: true, stale: false })
 
     callback(location)
-    expect(onFix).toHaveBeenCalledWith({ position: [6.12, 45.9], accuracyM: 8, altitudeM: 450 })
+    expect(onFix).toHaveBeenCalledWith({ position: [6.12, 45.9], accuracyM: 8, altitudeM: 450, headingDeg: null, speedMps: 2.5 })
     callback(undefined, Object.assign(new Error('denied'), { code: 'NOT_AUTHORIZED' }))
     expect(onError).toHaveBeenCalledWith('gps.deniedApp')
 

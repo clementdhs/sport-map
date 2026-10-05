@@ -223,6 +223,27 @@ export type RoutingSegmentResponse = {
   quota_remaining?: number
 }
 
+// Automatic loops (#50), OpenRouteService round trips: 100 km at most.
+export const LOOP_MIN_M = 1000
+export const LOOP_MAX_M = 100_000
+
+export const routingLoopSchema = z.object({
+  start: coordinateSchema,
+  length_m: z.number().int().min(LOOP_MIN_M).max(LOOP_MAX_M),
+  sport_type: z.enum(SPORT_TYPES),
+  // Picks the loop's direction: one seed per proposal.
+  seed: z.number().int().min(0).max(1_000_000),
+})
+
+export type RoutingLoopRequest = z.infer<typeof routingLoopSchema>
+
+export type RoutingLoopResponse = {
+  coordinates: LngLat[]
+  elevations: number[]
+  way_info?: WayInfo
+  quota_remaining: number
+}
+
 // Reason given with the 429 of /api/routing/segment once the user's daily quota is used up (a 429 without
 // it is OpenRouteService's own per-minute limit).
 export const ROUTING_QUOTA_REASON = 'daily_quota'

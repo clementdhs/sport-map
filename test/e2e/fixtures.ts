@@ -61,6 +61,30 @@ async function mockExternalServices(page: Page) {
     const wayInfo = { surface: [[0, 1, 3], [1, 2, 10]], waytype: [[0, 1, 3], [1, 2, 5]], sac_scale: graded, mtb_scale: graded }
     await route.fulfill({ json: { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true, way_info: wayInfo } })
   })
+  // Fake loops: a square from the start, as long as asked (21 points), climbing 50 m on its first side; each seed
+  // turns it a quarter, so proposals differ.
+  await page.route('**/api/routing/loop', async (route) => {
+    const { start: [lng, lat], length_m, seed } = route.request().postDataJSON() as { start: [number, number], length_m: number, seed: number }
+    // 111 195 m per degree of latitude, as on turf's sphere: the editor measures 8,00 km for 8000 m.
+    const sideDeg = length_m / 4 / 111_195
+    const turn = ([x, y]: [number, number]): [number, number] => [y, -x]
+    const corners = ([[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]] as [number, number][]).map((corner) => {
+      for (let i = 0; i < seed % 4; i++) corner = turn(corner)
+      return corner
+    })
+    const coordinates: [number, number][] = []
+    for (let side = 0; side < 4; side++) {
+      const [x0, y0] = corners[side]!
+      const [x1, y1] = corners[side + 1]!
+      for (let step = 0; step < 5; step++) {
+        const [x, y] = [x0 + (x1 - x0) * step / 5, y0 + (y1 - y0) * step / 5]
+        coordinates.push([lng + x * sideDeg / Math.cos(lat * Math.PI / 180), lat + y * sideDeg])
+      }
+    }
+    coordinates.push([lng, lat])
+    const elevations = coordinates.map((_, i) => 100 + Math.min(i, 5) * 10)
+    await route.fulfill({ json: { coordinates, elevations, quota_remaining: 299 } })
+  })
 }
 
 export const test = base.extend<{ mockServices: void }>({

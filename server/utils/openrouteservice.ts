@@ -66,16 +66,49 @@ function toWayInfo(extras: OrsExtras | undefined, profile: string): WayInfo | nu
   }
 }
 
-// The track along paths, and what is known of its ways (indexed in its points).
-export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, sport: SportType): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null }> {
+type OrsFeature = { geometry: { coordinates: LngLatEle[] }, properties?: { extras?: OrsExtras, summary?: { distance?: number } } }
+
+async function directions(event: H3Event, sport: SportType, body: Record<string, unknown>) {
   const profile = PROFILES[sport]
-  const result = await orsPost<{ features: { geometry: { coordinates: LngLatEle[] }, properties?: { extras?: OrsExtras } }[] }>(
+  const result = await orsPost<{ features: OrsFeature[] }>(
     event,
     `/v2/directions/${profile}/geojson`,
-    { coordinates: [from, to], elevation: true, instructions: false, extra_info: ['surface', 'waytype', 'traildifficulty'] },
+    { ...body, elevation: true, instructions: false, extra_info: ['surface', 'waytype', 'traildifficulty'] },
   )
   const feature = result.features[0]!
-  return { points: feature.geometry.coordinates, wayInfo: toWayInfo(feature.properties?.extras, profile) }
+  return {
+    points: feature.geometry.coordinates,
+    wayInfo: toWayInfo(feature.properties?.extras, profile),
+    lengthM: feature.properties?.summary?.distance ?? 0,
+  }
+}
+
+// The track along paths, and what is known of its ways (indexed in its points).
+export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, sport: SportType): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null }> {
+  return directions(event, sport, { coordinates: [from, to] })
+}
+
+// Points the round trip goes through, around the start: 5 made rounder loops than 3, but further from the
+// asked length on test loops.
+const LOOP_POINTS = 3
+
+// A loop from the start of about lengthM (#50), the seed picking its direction.
+export async function roundTrip(event: H3Event, start: LngLat, lengthM: number, sport: SportType, seed: number): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
+  return directions(event, sport, { coordinates: [start], options: { round_trip: { length: lengthM, points: LOOP_POINTS, seed } } })
+}
+
+const round6 = (value: number) => Math.round(value * 1e6) / 1e6
+const round1 = (value: number) => Math.round(value * 10) / 10
+
+// Named: an inline return type would hide the next export from Nitro's auto-imports (see CLAUDE.md).
+type TrackFields = { coordinates: LngLat[], elevations: number[] }
+
+// A track as the API sends it: coordinates to ~10 cm, elevations to 10 cm.
+export function trackFields(points: LngLatEle[]): TrackFields {
+  return {
+    coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),
+    elevations: points.map(([, , ele]) => round1(ele)),
+  }
 }
 
 export async function elevationAlong(event: H3Event, coordinates: LngLat[]): Promise<LngLatEle[]> {

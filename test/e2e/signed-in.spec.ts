@@ -122,6 +122,62 @@ test('moves the editor map to a searched place without touching the track', asyn
   await expect(distance).toHaveText(drawn!)
 })
 
+// Loops are mocked by the fixtures: a square of the asked length, turned by the seed.
+for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
+  test(`generates loops from a start and a distance, then edits the chosen one, on a ${device.name}`, async ({ page }) => {
+    await page.setViewportSize({ width: device.width, height: device.height })
+    await page.goto('/routes/create')
+    await waitForMap(page)
+
+    await page.getByRole('button', { name: 'Générer une boucle' }).click()
+    const panel = page.getByRole('region', { name: 'Boucle automatique' })
+    await expect(panel.getByText('Clique sur la carte pour placer le départ.')).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Proposer des boucles' })).toBeDisabled()
+
+    // The start, in the part of the map above the bottom sheet on a phone.
+    const map = page.locator('.maplibregl-canvas')
+    const box = (await map.boundingBox())!
+    await map.click({ position: { x: box.width * 0.6, y: box.height * 0.3 } })
+    await expect(panel.getByText('Départ placé')).toBeVisible()
+
+    await panel.getByRole('combobox', { name: 'Sport' }).click()
+    await page.getByRole('option', { name: 'Trail' }).click()
+    await panel.getByRole('tab', { name: 'Durée' }).click()
+    // Trail is estimated at 8 min/km on the flat.
+    const duration = panel.getByLabel('Durée (min)')
+    await duration.fill('64')
+    await duration.press('Tab')
+    await expect(panel.getByText('Environ 8,00 km sur le plat.')).toBeVisible()
+
+    const requests: { length_m: number, sport_type: string, seed: number }[] = []
+    page.on('request', (request) => {
+      if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+    })
+    await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+    const proposals = panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')
+    await expect(proposals).toHaveCount(3)
+    for (const [i, proposal] of (await proposals.all()).entries()) {
+      await expect(proposal).toContainText(`Boucle ${i + 1}`)
+      await expect(proposal).toContainText(/8,0\d km · D\+ \d+ m · ~1 h \d\d/)
+    }
+    expect(requests.map(({ length_m, sport_type }) => ({ length_m, sport_type }))).toEqual(Array(3).fill({ length_m: 8000, sport_type: 'trail' }))
+    expect(new Set(requests.map(request => request.seed)).size).toBe(3)
+    await expect(panel.getByRole('button', { name: 'Autres propositions' })).toBeEnabled()
+
+    // The chosen loop becomes the editor's track, cut into editable segments.
+    await panel.getByRole('button', { name: 'Choisir la boucle 2' }).click()
+    await expect(panel).toHaveCount(0)
+    await expect(page.locator('p.text-3xl')).toHaveText(/^8,0\d km$/)
+    await expect(page.getByText('Le parcours revient à son point de départ.')).toBeVisible()
+    await expect(page.getByText('Profil altimétrique')).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Trail')
+
+    // Undo brings back the empty editor.
+    await page.getByRole('button', { name: 'Annuler la dernière action' }).click()
+    await expect(page.locator('p.text-3xl')).toHaveText('0 m')
+  })
+}
+
 test('adds, shows and deletes photos, and removes their files with the route', async ({ page, playwright }) => {
   const route = { name: 'Parcours photos e2e', sport_type: 'hiking', is_public: true, coordinates: [[6.1, 45.9], [6.2, 45.95]] }
   const { id } = await (await page.request.post('/api/routes', { data: route })).json() as { id: string }
@@ -629,20 +685,25 @@ test('counts a completed route in the profile statistics', async ({ page }) => {
 // Last: it uses up the test account's routing quota for the day (the other tests mock routing).
 test('caps routing requests per user and per day', async ({ page, playwright, baseURL }) => {
   const segment = { from: [6.1, 45.9], to: [6.2, 45.95], mode: 'straight', sport_type: 'running' }
-  // The e2e server allows 3 a day and has no OpenRouteService key: counted requests then answer 503.
-  for (let i = 0; i < 3; i++) {
+  const loop = { start: [6.1, 45.9], length_m: 10_000, sport_type: 'running', seed: 1 }
+  // The e2e server allows 3 a day and has no OpenRouteService key: counted requests then answer 503. Automatic
+  // loops count too.
+  for (let i = 0; i < 2; i++) {
     expect((await page.request.post('/api/routing/segment', { data: segment })).status()).toBe(503)
   }
+  expect((await page.request.post('/api/routing/loop', { data: loop })).status()).toBe(503)
   const refused = await page.request.post('/api/routing/segment', { data: segment })
   expect(refused.status()).toBe(429)
   expect(await refused.json()).toMatchObject({
     statusMessage: "Limite de 3 calculs d'itinéraire par jour atteinte",
     data: { reason: 'daily_quota' },
   })
+  expect((await page.request.post('/api/routing/loop', { data: loop })).status()).toBe(429)
 
   // Signed-out visitors can't use routing at all.
   const visitor = await signedOutRequest(playwright, baseURL!)
   expect((await visitor.post('/api/routing/segment', { data: segment })).status()).toBe(401)
+  expect((await visitor.post('/api/routing/loop', { data: loop })).status()).toBe(401)
   await visitor.dispose()
 })
 

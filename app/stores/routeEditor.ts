@@ -39,6 +39,21 @@ const roundPoint = ([lng, lat]: LngLat): LngLat => [round(lng), round(lat)]
 const samePoint = (a: LngLat, b: LngLat) => a[0] === b[0] && a[1] === b[1]
 const isLocked = (mode: SegmentMode) => mode === 'imported' || mode === 'locked'
 
+interface Track {
+  coordinates: LngLat[]
+  elevations: number[] | null
+  wayInfo: WayInfo | null
+}
+
+// Points start..end of a track, as a segment's own track.
+function sliceTrack({ coordinates, elevations, wayInfo }: Track, start: number, end: number): Track {
+  return {
+    coordinates: coordinates.slice(start, end + 1),
+    elevations: elevations?.slice(start, end + 1) ?? null,
+    wayInfo: sliceWayInfo(wayInfo, start, end),
+  }
+}
+
 // A saved editor state can only be trusted if it matches the saved track.
 function isUsableState(state: EditorState | null, pointCount: number): state is EditorState {
   return !!state
@@ -119,6 +134,23 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, wayInfo: null, loading: true }
   }
 
+  // A routing request refused for the daily quota: warns once (several can be in flight) and stops routing.
+  function isRoutingQuotaError(error: unknown): boolean {
+    const data = (error as FetchError<{ statusMessage?: string, data?: { reason?: string } }>).data
+    if (data?.data?.reason !== ROUTING_QUOTA_REASON) return false
+    if (!routingQuotaReached.value) {
+      toast.add({
+        title: t('editor.dailyLimit'),
+        description: t('editor.dailyLimitHint', { message: data.statusMessage }),
+        color: 'warning',
+        icon: 'i-lucide-gauge',
+      })
+    }
+    routingQuotaReached.value = true
+    routingQuotaRemaining.value = 0
+    return true
+  }
+
   // Fetches the track of a segment. Every edit replaces segments with new ids, so a late answer for
   // a segment that no longer exists is simply ignored.
   async function routeSegment({ id, mode, coordinates }: Segment) {
@@ -157,21 +189,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       }
     }
     catch (error) {
-      const data = (error as FetchError<{ statusMessage?: string, data?: { reason?: string } }>).data
-      if (data?.data?.reason === ROUTING_QUOTA_REASON) {
-        // Several segments can be in flight: warn once.
-        if (!routingQuotaReached.value) {
-          toast.add({
-            title: t('editor.dailyLimit'),
-            description: t('editor.dailyLimitHint', { message: data.statusMessage }),
-            color: 'warning',
-            icon: 'i-lucide-gauge',
-          })
-        }
-        routingQuotaReached.value = true
-        routingQuotaRemaining.value = 0
-        return
-      }
+      if (isRoutingQuotaError(error)) return
       if (!segments.value.some(s => s.id === id)) return
       toast.add({
         title: t('editor.routingFailed'),
@@ -300,6 +318,19 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     replacedCount.value++
   }
 
+  // A generated loop (#50) is cut at waypoints spread along it, into segments that follow paths: moving a
+  // waypoint then routes again only the two segments around it, as on a drawn route.
+  function loadLoop(loop: Track) {
+    saveSnapshot()
+    const indices = loopWaypointIndices(loop.coordinates)
+    waypoints.value = indices.map(i => loop.coordinates[i]!)
+    segments.value = indices.slice(1).map((end, k) =>
+      ({ id: nextSegmentId++, mode: 'snap', loading: false, ...sliceTrack(loop, indices[k]!, end) }))
+    // They were placed on the replaced track.
+    pois.value = []
+    replacedCount.value++
+  }
+
   // Points of interest sit on the track: the clicked spot is moved onto it.
   function addPoi(point: LngLat, type: PoiType = 'water') {
     placingPoi.value = false
@@ -361,11 +392,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
     const coordinates = route.geometry.coordinates as LngLat[]
     const elevations = route.elevation_profile?.length === coordinates.length ? route.elevation_profile : null
-    const slice = (start: number, end: number) => ({
-      coordinates: coordinates.slice(start, end + 1),
-      elevations: elevations?.slice(start, end + 1) ?? null,
-      wayInfo: sliceWayInfo(route.way_info, start, end),
-    })
+    const slice = (start: number, end: number) => sliceTrack({ coordinates, elevations, wayInfo: route.way_info }, start, end)
 
     if (isUsableState(route.editor_state, coordinates.length)) {
       waypoints.value = route.editor_state.waypoints
@@ -409,8 +436,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   return {
     waypoints, segments, pois, placingPoi, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
     editingId, isLoop, canFinish, routingQuotaReached, routingQuotaRemaining,
-    canEditWaypoint, canInsertInSegment,
+    canEditWaypoint, canInsertInSegment, isRoutingQuotaError,
     addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack,
-    addPoi, removePoi, importTrack, loadRoute, undo, clearPoints, reset, save,
+    addPoi, removePoi, importTrack, loadLoop, loadRoute, undo, clearPoints, reset, save,
   }
 })

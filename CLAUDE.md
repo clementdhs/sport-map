@@ -23,6 +23,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - Validation schemas (zod) live in `shared/utils/` and are shared by `UForm` (through `useLocalizedSchema`) and the API (`readLocalizedBody` / `getLocalizedQuery`). Their messages are translation keys.
 - API errors: `throw apiError(event, status, 'api.…')` (`server/utils/messages.ts`), whose statusMessage is written in the request's language (locale cookie, else `Accept-Language`); pages show it as is.
 - Every new table gets RLS enabled with explicit policies, in a new file under `supabase/migrations/` (never edit an applied migration).
+- Auto-imported `utils/` files: an exported function returning an inline object type with several properties (`): { a: A, b: B } {`) hides the next export from the scanner (mlly) when no comment line comes between them. Prefer a named type.
 - `useFetch` data is a shallow ref (Nuxt 4 default): state a page changes after loading gets its own `ref`, since assigning a property of the fetched object doesn't re-render.
 - Free-tier quotas matter: debounce OpenRouteService calls, serve images straight from Supabase Storage, mind MapTiler's 100k requests/month.
 - APIs of Nuxt 4 / Nuxt UI 4 / MapLibre 6 / @nuxtjs/supabase 2 change fast: when unsure, check the official docs or the package's types in `node_modules` rather than relying on memory.

@@ -12,8 +12,9 @@ const props = defineProps<{
 }>()
 
 const editor = useRouteEditorStore()
+const loop = useLoopGeneratorStore()
 const map = shallowRef<Map>()
-const { padding, focusOn } = useMapPadding()
+const { padding, offset, focusOn } = useMapPadding()
 
 // Moves under this distance (px) count as a click, not a drag.
 const DRAG_THRESHOLD_PX = 4
@@ -26,7 +27,9 @@ type Drag =
 const drag = shallowRef<Drag | null>(null)
 
 // While dragging, the edited segments are previewed as straight lines until the real ones are computed.
+// The track is hidden while loops are proposed: one of them would replace it.
 const layerData = computed(() => {
+  if (loop.open) return { line: [], points: [] }
   const current = drag.value
   if (!current?.position) return { line: editor.track.coordinates, points: editor.waypoints }
 
@@ -108,14 +111,14 @@ function isOnPoiMarker(event: MapMouseEvent | MapTouchEvent) {
 }
 
 function onPointDown(instance: Map, event: MapMouseEvent | MapTouchEvent) {
-  if (editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
+  if (loop.open || editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
   const index = pointsAt(instance, event.point)[0]?.properties.index as number | undefined
   if (index === undefined || !editor.canEditWaypoint(index)) return
   startDrag(instance, event, { kind: 'move', waypointIndex: index, start: event.point, position: null })
 }
 
 function onLineDown(instance: Map, event: MapMouseEvent | MapTouchEvent) {
-  if (editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
+  if (loop.open || editor.placingPoi || isMultiTouch(event) || ('button' in event.originalEvent && event.originalEvent.button !== 0)) return
   // Points are drawn over the line: grabbing a point must not also grab the line.
   if (pointsAt(instance, event.point).length) return
   const segmentIndex = nearestSegmentIndex([event.lngLat.lng, event.lngLat.lat])
@@ -125,11 +128,19 @@ function onLineDown(instance: Map, event: MapMouseEvent | MapTouchEvent) {
 
 function onLoad(instance: Map) {
   addRouteLayers(instance, layerData.value, { editable: true })
+  addLoopLayers(instance)
+  setLoopLayerData(instance, loopLayerData.value)
   const canvas = instance.getCanvas()
   canvas.style.cursor = 'crosshair'
 
   instance.on('click', (event: MapMouseEvent) => {
     if (isOnPoiMarker(event)) return
+    // While loops are proposed, a click places their start or highlights one of them.
+    if (loop.open) {
+      if (loop.placingStart) loop.setStart([event.lngLat.lng, event.lngLat.lat])
+      else loop.highlighted = loopAt(instance, event.point) ?? loop.highlighted
+      return
+    }
     if (editor.placingPoi) {
       editor.addPoi([event.lngLat.lng, event.lngLat.lat])
       return
@@ -153,6 +164,10 @@ function onLoad(instance: Map) {
 
   instance.on('mousemove', (event: MapMouseEvent) => {
     if (drag.value) return
+    if (loop.open) {
+      canvas.style.cursor = loop.placingStart ? 'crosshair' : loopAt(instance, event.point) === null ? '' : 'pointer'
+      return
+    }
     if (editor.placingPoi) {
       canvas.style.cursor = 'cell'
       return
@@ -175,6 +190,34 @@ function onLoad(instance: Map) {
 
 watch(layerData, (data) => {
   if (map.value) setRouteLayerData(map.value, data)
+})
+
+const loopLayerData = computed(() => ({
+  start: loop.open ? loop.start : null,
+  loops: loop.proposals.map(proposal => proposal.coordinates),
+  highlighted: loop.highlighted,
+}))
+
+// Index of the proposed loop under the pointer.
+function loopAt(instance: Map, point: PointLike): number | null {
+  return (instance.queryRenderedFeatures(point, { layers: [LOOPS_HIT_LAYER] })[0]?.properties.index as number | undefined) ?? null
+}
+
+watch(loopLayerData, (data) => {
+  if (map.value) setLoopLayerData(map.value, data)
+})
+
+// A start found by geolocation may be off screen.
+watch(() => loop.start, (start) => {
+  if (map.value && start && !map.value.getBounds().contains(start)) {
+    map.value.flyTo({ center: start, zoom: Math.max(map.value.getZoom(), 13), offset: offset() })
+  }
+})
+
+// Frames the proposals once they have all come back.
+watch(() => loop.settledCount, () => {
+  const coordinates = loop.proposals.flatMap(proposal => proposal.coordinates)
+  if (map.value && coordinates.length) map.value.fitBounds(routeBounds(coordinates), { padding: padding(48) })
 })
 
 watch(() => editor.replacedCount, () => {

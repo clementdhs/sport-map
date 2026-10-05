@@ -1,8 +1,5 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseUser } from '#supabase/server'
 import type { RoutingSegmentResponse, WayInfo } from '#shared/utils/routes'
-
-const round6 = (value: number) => Math.round(value * 1e6) / 1e6
-const round1 = (value: number) => Math.round(value * 10) / 10
 
 export default defineEventHandler(async (event): Promise<RoutingSegmentResponse> => {
   // Signed-in users only: the OpenRouteService quota is shared by the whole app.
@@ -10,18 +7,7 @@ export default defineEventHandler(async (event): Promise<RoutingSegmentResponse>
   if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const { from, to, mode, sport_type } = await readLocalizedBody(event, routingSegmentSchema)
-
-  // Counted before calling OpenRouteService, failed calls included: a loop of bad requests costs too.
-  const { routingDailyLimit } = useRuntimeConfig(event)
-  const supabase = await serverSupabaseClient(event)
-  const { data: remaining, error } = await supabase.rpc('consume_routing_quota', { daily_limit: Number(routingDailyLimit) })
-  if (error) {
-    console.error('[POST /api/routing/segment] quota', error)
-    throw apiError(event, 500, 'api.routingFailed')
-  }
-  if (remaining < 0) {
-    throw apiError(event, 429, 'api.routingQuota', { limit: routingDailyLimit }, { reason: ROUTING_QUOTA_REASON })
-  }
+  const remaining = await consumeRoutingQuota(event)
 
   let points = null
   let wayInfo: WayInfo | null = null
@@ -38,8 +24,7 @@ export default defineEventHandler(async (event): Promise<RoutingSegmentResponse>
   points ??= await elevationAlong(event, sampleStraightLine(from, to))
 
   return {
-    coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),
-    elevations: points.map(([, , ele]) => round1(ele)),
+    ...trackFields(points),
     snapped,
     ...(wayInfo ? { way_info: wayInfo } : {}),
     quota_remaining: remaining,

@@ -501,7 +501,27 @@
     "slower": "{duration} over the estimate",
     "delete": "Delete this outing",
     "deleteConfirm": "Delete this outing? It will no longer count in the statistics.",
-    "deleteFailed": "Couldn't delete the outing"
+    "deleteFailed": "Couldn't delete the outing",
+    "detail": "Details",
+    "detailFailed": "Couldn't load the details",
+    "tooShort": "Too short an outing for splits per kilometre.",
+    "splits": {
+      "title": "Splits per kilometre",
+      "km": "Km",
+      "pace": "Pace",
+      "speed": "Speed",
+      "gain": "Gain",
+      "loss": "Loss",
+      "fastest": "Fastest kilometre: no. {km}, {value}",
+      "fastestBadge": "(fastest)",
+      "movingOnly": "Moving time: pauses and stops don't count."
+    },
+    "chart": {
+      "pace": "Pace (min/km)",
+      "speed": "Speed (km/h)",
+      "summary": "{title}: from {from} to {to} {unit} over {distance}",
+      "altitude": "Altitude {altitude} m"
+    }
   },
   "voice": {
     "title": "Voice guidance",
@@ -731,6 +751,7 @@
     "routeNotFound": "Route not found",
     "outingNotFound": "Outing not found",
     "deleteOutingFailed": "Couldn't delete the outing",
+    "loadOutingFailed": "Couldn't load the outing's detail",
     "collectionNotFound": "Collection not found",
     "photoNotFound": "Photo not found",
     "reviewNotFound": "Review not found",
@@ -814,7 +835,7 @@
       "photos": "the photos of your routes, one folder per route",
       "reviews": "the reviews you left on routes",
       "activity": "the routes you saved or completed, with the times of your recorded outings",
-      "outings": "your outings recorded with the GPS on routes (date, times, distance)",
+      "outings": "your outings recorded with the GPS on routes (date, times, distance, GPS points with their times)",
       "collections": "your route collections",
       "reports": "the reviews you reported",
       "routing": "your number of route calculations today (limited per person)",

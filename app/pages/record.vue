@@ -86,6 +86,7 @@ async function save() {
   const body: RecordingPayload = {
     route: { ...form, description: '', source: 'recorded', ...trackPayload },
     ...outingTimes(current, Date.now()),
+    track: outingTrack(current) ?? undefined,
   }
   saving.value = true
   try {

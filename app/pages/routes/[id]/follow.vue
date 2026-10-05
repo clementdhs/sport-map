@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RouteDetail } from '#shared/types/routes'
-import type { LngLat } from '#shared/utils/routes'
+import type { LngLat, OutingPayload } from '#shared/utils/routes'
 import type { LiveStats } from '~/utils/liveStats'
 import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
@@ -144,7 +144,8 @@ async function saveOuting() {
   const id = parcours.value!.id
   saving.value = true
   try {
-    await $fetch(`/api/routes/${id}/outings`, { method: 'POST', body: outingTimes(recording.value!, Date.now()) })
+    const body: OutingPayload = { ...outingTimes(recording.value!, Date.now()), track: outingTrack(recording.value!) ?? undefined }
+    await $fetch(`/api/routes/${id}/outings`, { method: 'POST', body })
     stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
     await navigateTo({ path: `/routes/${id}`, query: { tab: 'outings' } })

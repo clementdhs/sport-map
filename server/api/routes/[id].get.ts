@@ -16,7 +16,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
       geometry:route_geojson,
       owner:profiles(username, display_name),
       photos:route_photos(id, storage_path),
-      outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, user:profiles(username, display_name))
+      outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, has_track, user:profiles(username, display_name))
     `)
     .eq('id', id)
     .order('created_at', { referencedTable: 'route_photos' })

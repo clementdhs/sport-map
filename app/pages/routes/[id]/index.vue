@@ -403,6 +403,7 @@ useSeoMeta({
           :sport="parcours.sport_type"
           :distance-m="parcours.distance_m"
           :elevation-gain-m="parcours.elevation_gain_m"
+          @hover="hoverPoint = $event"
         />
       </template>
     </UTabs>

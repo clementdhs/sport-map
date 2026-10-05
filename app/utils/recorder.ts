@@ -1,5 +1,6 @@
 import { distance } from '@turf/turf'
-import type { LngLat, OutingPayload, RouteCreatePayload } from '#shared/utils/routes'
+import { MAX_OUTING_POINTS } from '#shared/utils/routes'
+import type { LngLat, OutingPayload, OutingTrackPoint, RouteCreatePayload } from '#shared/utils/routes'
 import { resampleTrack } from '~/utils/gpx'
 
 // Recording an outing with the phone's GPS. Pure functions over a plain, serializable state, so that the
@@ -23,6 +24,8 @@ export interface RecordedPoint {
   alt: number | null
   // Time (ms since epoch)
   t: number
+  // Time spent moving since the start (ms); missing from drafts recorded before it existed
+  movingMs?: number
 }
 
 export interface Recording {
@@ -50,7 +53,7 @@ export function startRecording(now: number): Recording {
 // The recording with the fix added, or unchanged when the fix is ignored.
 export function addFix(recording: Recording, fix: Fix, now: number): Recording {
   if (recording.pausedAt !== null || fix.accuracyM > MAX_ACCURACY_M) return recording
-  const point: RecordedPoint = { lng: fix.position[0], lat: fix.position[1], alt: fix.altitudeM, t: now }
+  const point: RecordedPoint = { lng: fix.position[0], lat: fix.position[1], alt: fix.altitudeM, t: now, movingMs: recording.movingMs }
   const last = recording.points.at(-1)
   if (!last) return { ...recording, points: [point] }
 
@@ -60,11 +63,12 @@ export function addFix(recording: Recording, fix: Fix, now: number): Recording {
   if (dt > 0 && stepM / (dt / 1000) > MAX_SPEED_MS) return recording
 
   const moving = !recording.afterPause && dt > 0 && stepM / (dt / 1000) >= MIN_MOVING_SPEED_MS
+  const movingMs = recording.movingMs + (moving ? dt : 0)
   return {
     ...recording,
-    points: [...recording.points, point],
+    points: [...recording.points, { ...point, movingMs }],
     distanceM: recording.distanceM + stepM,
-    movingMs: recording.movingMs + (moving ? dt : 0),
+    movingMs,
     gaps: recording.gaps + (dt > GAP_MS ? 1 : 0),
     afterPause: false,
   }
@@ -106,4 +110,24 @@ export function recordingTrack(recording: Recording): Pick<RouteCreatePayload, '
     coordinates: kept.map(([lng, lat]) => [round(lng!), round(lat!)] as LngLat),
     elevations: withAltitude ? kept.map(p => Math.round(p[2]! * 10) / 10) : undefined,
   }
+}
+
+// The outing's GPS points with their times, kept for its splits and speed chart. Long outings are thinned out
+// like a route's track; each kept point keeps its own times, so the totals don't change. null for drafts
+// recorded before the moving time was kept per point.
+export function outingTrack(recording: Recording): OutingTrackPoint[] | null {
+  const { points } = recording
+  if (points.length < 2 || points.some(p => p.movingMs === undefined)) return null
+  // The index rides along as a third coordinate, which distances ignore.
+  const kept = points.length > MAX_OUTING_POINTS
+    ? resampleTrack(points.map((p, i) => [p.lng, p.lat, i]), MAX_OUTING_POINTS).map(([, , i]) => points[i!]!)
+    : points
+  const round = (value: number, digits: number) => Math.round(value * 10 ** digits) / 10 ** digits
+  return kept.map(p => [
+    round(p.lng, 6),
+    round(p.lat, 6),
+    p.alt === null ? null : round(p.alt, 1),
+    round((p.t - recording.startedAt) / 1000, 1),
+    round(p.movingMs! / 1000, 1),
+  ])
 }

@@ -305,6 +305,12 @@ test.describe('recording an outing', () => {
     // Its first outing.
     await page.getByRole('tab', { name: /Passages/ }).click()
     await expect(page.getByTestId('outing')).toHaveCount(1)
+    // Its pace chart and splits, from the GPS points kept with it: a full kilometre, then the last 200 m.
+    await page.getByTestId('outing').getByRole('button', { name: 'Détail' }).click()
+    const detail = page.getByTestId('outing-detail')
+    await expect(detail.getByRole('img', { name: /^Allure \(min\/km\) : de [\d:]+ à [\d:]+ \/km sur 1,20 km$/ })).toBeVisible()
+    await expect(detail.getByRole('rowheader')).toHaveText(['1', '200 m'])
+    await expect(detail.getByTestId('split').first()).toContainText(/\d+:\d\d \/km/)
 
     // Listed among the completed routes of the profile, with its times.
     await page.goto('/profile')

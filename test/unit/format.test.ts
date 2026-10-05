@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDistance, formatTime, formatDuration, formatElapsed, formatNumber, formatRating, formatSpeed, formatStopwatch } from '#shared/utils/format'
+import { formatDate, formatDistance, formatTime, formatDuration, formatElapsed, formatNumber, formatPace, formatRating, formatSpeed, formatStopwatch } from '#shared/utils/format'
 
 describe('formatDistance', () => {
   it('uses meters under 1 km', () => {
@@ -55,6 +55,12 @@ describe('outing times', () => {
   it('formats a speed in km/h', () => {
     expect(formatSpeed(8400, 3600)).toBe('8,4 km/h')
     expect(formatSpeed(1000, 0)).toBe('0,0 km/h')
+  })
+
+  it('formats a pace in minutes per km, or a dash when too slow', () => {
+    expect(formatPace(1000 / 312)).toBe('5:12')
+    expect(formatPace(1000 / 59.6)).toBe('1:00')
+    expect(formatPace(0.2)).toBe('—')
   })
 })
 

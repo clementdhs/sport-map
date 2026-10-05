@@ -1,7 +1,8 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 // Saves an outing recorded with the phone's GPS: its track as a new route of the caller, marked as
-// completed with the outing's times, and the outing itself, the first one listed on the route.
+// completed with the outing's times, and the outing itself, the first one listed on the route, with its GPS
+// points and their times.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
@@ -33,6 +34,7 @@ export default defineEventHandler(async (event) => {
       user_id: user.sub,
       route_id: route.id,
       distance_m: body.distance_m ?? route.distance_m,
+      track: body.track ?? null,
       ...times,
     }),
   ])

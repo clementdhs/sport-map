@@ -8,6 +8,7 @@ import {
   outingSchema,
   recordingSchema,
   snapToTrack,
+  MAX_OUTING_POINTS,
   MAX_POIS,
   type LngLat,
 } from '#shared/utils/routes'
@@ -232,5 +233,15 @@ describe('outingSchema', () => {
     expect(outingSchema.safeParse(withoutDistance).success).toBe(false)
     expect(outingSchema.safeParse({ ...outing, distance_m: -1 }).success).toBe(false)
     expect(outingSchema.safeParse({ ...outing, moving_s: 4000 }).success).toBe(false)
+  })
+
+  it('accepts its GPS points with their times, within the limit', () => {
+    const track = [[6.1, 45.9, 450, 0, 0], [6.11, 45.9, null, 60, 55]]
+    expect(outingSchema.parse({ ...outing, track }).track).toEqual(track)
+    expect(outingSchema.safeParse({ ...outing, track: track.slice(0, 1) }).success).toBe(false)
+    expect(outingSchema.safeParse({ ...outing, track: [[200, 45.9, null, 0, 0], track[1]] }).success).toBe(false)
+    expect(outingSchema.safeParse({ ...outing, track: [[6.1, 45.9, null, -1, 0], track[1]] }).success).toBe(false)
+    const tooLong = Array.from({ length: MAX_OUTING_POINTS + 1 }, (_, i) => [6.1, 45.9, null, i, i])
+    expect(outingSchema.safeParse({ ...outing, track: tooLong }).success).toBe(false)
   })
 })

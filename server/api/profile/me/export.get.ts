@@ -29,7 +29,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .order('created_at'),
     supabase
       .from('route_outings')
-      .select('route_id, started_at, duration_s, moving_s, distance_m, created_at, route:routes(name)')
+      .select('route_id, started_at, duration_s, moving_s, distance_m, track, created_at, route:routes(name)')
       .eq('user_id', user.sub)
       .order('started_at'),
     supabase

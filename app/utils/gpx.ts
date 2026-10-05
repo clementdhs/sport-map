@@ -16,12 +16,12 @@ const MIN_SPACING_M = 5
 
 // Keeps a point once the track has moved far enough from the last kept one; spacing grows until the
 // track fits the point limit.
-export function resampleTrack(positions: Position[]): Position[] {
+export function resampleTrack(positions: Position[], maxPoints = MAX_ROUTE_POINTS): Position[] {
   const along = [0]
   for (let i = 1; i < positions.length; i++) {
     along.push(along[i - 1]! + distance(positions[i - 1]!, positions[i]!, { units: 'meters' }))
   }
-  const spacing = Math.max(MIN_SPACING_M, along.at(-1)! / (MAX_ROUTE_POINTS - 2))
+  const spacing = Math.max(MIN_SPACING_M, along.at(-1)! / (maxPoints - 2))
 
   const kept = [positions[0]!]
   let lastKept = 0

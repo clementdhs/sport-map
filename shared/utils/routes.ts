@@ -318,16 +318,35 @@ const outingFields = {
 const movingWithinDuration = (outing: { duration_s: number, moving_s: number }) => outing.moving_s <= outing.duration_s
 const movingExceedsDuration = { message: 'validation.movingExceedsDuration', path: ['moving_s'] }
 
+// One GPS point of an outing: position, GPS altitude (m, null when the phone gives none), time since the start
+// (s, pauses included) and time spent moving so far (s), from which its splits and speed are worked out.
+export type OutingTrackPoint = [lng: number, lat: number, altitude: number | null, elapsedS: number, movingS: number]
+
+// About 3 h of cycling with a fix every second; longer outings are thinned out.
+export const MAX_OUTING_POINTS = 10_000
+
+const outingTrackSchema = z.array(z.tuple([
+  z.number().min(-180).max(180),
+  z.number().min(-90).max(90),
+  z.number().min(-500).max(9000).nullable(),
+  z.number().min(0),
+  z.number().min(0),
+])).min(2).max(MAX_OUTING_POINTS)
+
+// Optional: pages loaded before the track was kept, and drafts recorded by them, send times only.
+const outingTrackField = { track: outingTrackSchema.optional() }
+
 // An outing recorded on an existing route, while following it.
-export const outingSchema = z.object(outingFields).refine(movingWithinDuration, movingExceedsDuration)
+export const outingSchema = z.object({ ...outingFields, ...outingTrackField }).refine(movingWithinDuration, movingExceedsDuration)
 
 export type OutingPayload = z.infer<typeof outingSchema>
 
-// An outing recorded from /record: its track, saved as a new route, and its times. distance_m is optional for
-// pages loaded before it existed (the route's distance is used instead).
+// An outing recorded from /record: its track, saved as a new route, and its times and GPS points. distance_m is
+// optional for pages loaded before it existed (the route's distance is used instead).
 export const recordingSchema = z.object({
   route: routeCreateSchema,
   ...outingFields,
+  ...outingTrackField,
   distance_m: outingFields.distance_m.optional(),
 }).refine(movingWithinDuration, movingExceedsDuration)
 

@@ -300,30 +300,36 @@ export type Database = {
           created_at: string
           distance_m: number
           duration_s: number
+          has_track: boolean | null
           id: string
           moving_s: number
           route_id: string
           started_at: string
+          track: Json | null
           user_id: string
         }
         Insert: {
           created_at?: string
           distance_m: number
           duration_s: number
+          has_track?: boolean | null
           id?: string
           moving_s: number
           route_id: string
           started_at: string
+          track?: Json | null
           user_id: string
         }
         Update: {
           created_at?: string
           distance_m?: number
           duration_s?: number
+          has_track?: boolean | null
           id?: string
           moving_s?: number
           route_id?: string
           started_at?: string
+          track?: Json | null
           user_id?: string
         }
         Relationships: [

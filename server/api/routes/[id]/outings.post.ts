@@ -1,7 +1,7 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 // Saves an outing recorded while following a route: listed on the route's page with the others, and the
-// route is marked as completed with its times. The track isn't kept: the route already has one.
+// route is marked as completed with its times. Its GPS points and their times are kept for its splits.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
@@ -22,7 +22,7 @@ export default defineEventHandler(async (event) => {
   const times = { started_at: startedAt, duration_s: body.duration_s, moving_s: body.moving_s }
   let { data: outing, error } = await supabase
     .from('route_outings')
-    .insert({ user_id: user.sub, route_id: routeId, distance_m: body.distance_m, ...times })
+    .insert({ user_id: user.sub, route_id: routeId, distance_m: body.distance_m, track: body.track ?? null, ...times })
     .select('id')
     .single()
   // Already saved by an earlier attempt whose answer was lost: that's a success.

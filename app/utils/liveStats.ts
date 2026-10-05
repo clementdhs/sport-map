@@ -1,13 +1,11 @@
 import { distance } from '@turf/turf'
-import { formatStopwatch } from '#shared/utils/format'
+import { MIN_PACE_SPEED_MS, formatPace, formatStopwatch } from '#shared/utils/format'
 import type { RecordedPoint } from '~/utils/recorder'
 
 // The big values of the "data" screen of follow mode and outing recording, read at a glance while moving.
 
 // Instant speed is the speed over this last stretch of time: a single GPS step is too noisy.
 const SPEED_WINDOW_MS = 30_000
-// Slower than this, a pace (min/km) means nothing: shown as a dash (1 km/h).
-const MIN_PACE_SPEED_MS = 0.28
 
 export const LIVE_FIELDS = [
   'elapsed',
@@ -127,9 +125,7 @@ function distanceValue(meters: number | null, locale: string): LiveValue {
 function speedValue(speedMs: number | null, pace: boolean, locale: string): LiveValue {
   if (speedMs === null) return DASH
   if (!pace) return { value: number(speedMs * 3.6, locale, 1), unit: 'km/h' }
-  if (speedMs < MIN_PACE_SPEED_MS) return { value: '—', unit: '/km' }
-  const secondsPerKm = Math.round(1000 / speedMs)
-  return { value: `${Math.floor(secondsPerKm / 60)}:${String(secondsPerKm % 60).padStart(2, '0')}`, unit: '/km' }
+  return { value: formatPace(speedMs), unit: '/km' }
 }
 
 // A field's value, split from its unit so that the number can be shown much bigger.

@@ -501,7 +501,27 @@
     "slower": "{duration} de plus que l'estimation",
     "delete": "Supprimer ce passage",
     "deleteConfirm": "Supprimer ce passage ? Il ne comptera plus dans les statistiques.",
-    "deleteFailed": "Impossible de supprimer le passage"
+    "deleteFailed": "Impossible de supprimer le passage",
+    "detail": "Détail",
+    "detailFailed": "Impossible de charger le détail",
+    "tooShort": "Sortie trop courte pour un détail par kilomètre.",
+    "splits": {
+      "title": "Temps par kilomètre",
+      "km": "Km",
+      "pace": "Allure",
+      "speed": "Vitesse",
+      "gain": "D+",
+      "loss": "D−",
+      "fastest": "Kilomètre le plus rapide : n° {km}, {value}",
+      "fastestBadge": "(le plus rapide)",
+      "movingOnly": "Temps en mouvement : les pauses et les arrêts ne comptent pas."
+    },
+    "chart": {
+      "pace": "Allure (min/km)",
+      "speed": "Vitesse (km/h)",
+      "summary": "{title} : de {from} à {to} {unit} sur {distance}",
+      "altitude": "Altitude {altitude} m"
+    }
   },
   "voice": {
     "title": "Guidage vocal",
@@ -731,6 +751,7 @@
     "routeNotFound": "Parcours introuvable",
     "outingNotFound": "Passage introuvable",
     "deleteOutingFailed": "Impossible de supprimer le passage",
+    "loadOutingFailed": "Impossible de charger le détail du passage",
     "collectionNotFound": "Collection introuvable",
     "photoNotFound": "Photo introuvable",
     "reviewNotFound": "Avis introuvable",
@@ -814,7 +835,7 @@
       "photos": "les photos de tes parcours, un dossier par parcours",
       "reviews": "les avis que tu as laissés sur des parcours",
       "activity": "les parcours que tu as sauvegardés ou réalisés, avec les temps de tes sorties enregistrées",
-      "outings": "tes sorties enregistrées au GPS sur des parcours (date, temps, distance)",
+      "outings": "tes sorties enregistrées au GPS sur des parcours (date, temps, distance, points GPS horodatés)",
       "collections": "tes collections de parcours",
       "reports": "les avis que tu as signalés",
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",

@@ -1,5 +1,5 @@
 import type { LineString } from 'geojson'
-import type { EditorState, Poi, WayInfo } from '../utils/routes'
+import type { EditorState, OutingTrackPoint, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
 
 // Declared here rather than inferred from the handler: the app's TypeScript project cannot
@@ -44,10 +44,16 @@ export type RoutePhoto = {
   url: string
 }
 
-// An outing recorded with the GPS on a route: who, when, and their times (s).
-export type RouteOuting = Pick<Tables<'route_outings'>, 'id' | 'started_at' | 'duration_s' | 'moving_s' | 'distance_m'> & {
+// An outing recorded with the GPS on a route: who, when, and their times (s). has_track tells whether its GPS
+// points were kept (OutingDetail), which outings recorded before #57 don't have.
+export type RouteOuting = Pick<Tables<'route_outings'>, 'id' | 'started_at' | 'duration_s' | 'moving_s' | 'distance_m' | 'has_track'> & {
   user: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   is_mine: boolean
+}
+
+// The GPS points of an outing, loaded when its detail is opened.
+export type OutingDetail = {
+  track: OutingTrackPoint[]
 }
 
 export type RouteListItem = {

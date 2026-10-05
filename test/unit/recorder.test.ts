@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_ROUTE_POINTS, type LngLat } from '#shared/utils/routes'
+import { MAX_OUTING_POINTS, MAX_ROUTE_POINTS, type LngLat } from '#shared/utils/routes'
 import {
   addFix,
   elapsedMs,
   outingTimes,
+  outingTrack,
   pauseRecording,
   recordingTrack,
   resumeRecording,
@@ -72,6 +73,16 @@ describe('addFix', () => {
     // The watch kept running during the pause.
     expect(elapsedMs(r, T0 + 190_000)).toBe(190_000)
   })
+
+  it('keeps the moving time so far with each point', () => {
+    let r = addFix(startRecording(T0), fix(0), T0)
+    r = addFix(r, fix(30), T0 + 10_000)
+    r = pauseRecording(r, T0 + 20_000)
+    r = resumeRecording(r)
+    r = addFix(r, fix(60), T0 + 600_000)
+    r = addFix(r, fix(90), T0 + 610_000)
+    expect(r.points.map(p => p.movingMs)).toEqual([0, 10_000, 10_000, 20_000])
+  })
 })
 
 describe('outingTimes', () => {
@@ -106,5 +117,39 @@ describe('recordingTrack', () => {
     const track = recordingTrack(r)!
     expect(track.coordinates.length).toBeLessThanOrEqual(MAX_ROUTE_POINTS)
     expect(track.coordinates.at(-1)![1]).toBeCloseTo(north(48_000)[1], 5)
+  })
+})
+
+describe('outingTrack', () => {
+  it('gives each point its times since the start, in seconds', () => {
+    let r = addFix(startRecording(T0), fix(0, { altitudeM: 450.04 }), T0 + 2000)
+    r = addFix(r, fix(30, { altitudeM: 451 }), T0 + 12_000)
+    r = addFix(r, fix(60), T0 + 22_000)
+    expect(outingTrack(r)).toEqual([
+      [6.12, 45.9, 450, 2, 0],
+      [6.12, 45.90027, 451, 12, 10],
+      [6.12, 45.90054, null, 22, 20],
+    ])
+  })
+
+  it('needs two points, each with its moving time', () => {
+    expect(outingTrack(addFix(startRecording(T0), fix(0), T0))).toBeNull()
+    // A draft recorded before the moving time was kept per point
+    let r = addFix(startRecording(T0), fix(0), T0)
+    r = addFix(r, fix(30), T0 + 10_000)
+    expect(outingTrack({ ...r, points: r.points.map(({ movingMs: _moving, ...point }) => point) })).toBeNull()
+  })
+
+  it('thins a long outing out, keeping the times of the points it keeps', () => {
+    let r = addFix(startRecording(T0), fix(0), T0)
+    r = walk(r, 0, 12_000, 6, 2, T0) // 72 km, one fix every 2 s
+    const track = outingTrack(r)!
+    expect(track.length).toBeLessThanOrEqual(MAX_OUTING_POINTS)
+    expect(track.at(-1)).toEqual([6.12, expect.closeTo(north(72_000)[1], 5), null, 24_000, 24_000])
+    // Every kept point still says how long it took to reach it.
+    for (const [, lat, , elapsedS, movingS] of track) {
+      expect(movingS).toBeCloseTo(((lat - 45.9) * METERS_PER_DEG_LAT / 6) * 2, -1)
+      expect(elapsedS).toBe(movingS)
+    }
   })
 })

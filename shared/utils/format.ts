@@ -64,6 +64,16 @@ export function formatSpeed(meters: number, seconds: number, locale = DEFAULT_FO
   return `${kmh.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km/h`
 }
 
+// Slower than this, a pace (min/km) means nothing: shown as a dash (1 km/h).
+export const MIN_PACE_SPEED_MS = 0.28
+
+// Pace from a speed, e.g. "5:12" (minutes per km), or a dash when too slow.
+export function formatPace(speedMs: number): string {
+  if (speedMs < MIN_PACE_SPEED_MS) return '—'
+  const secondsPerKm = Math.round(1000 / speedMs)
+  return `${Math.floor(secondsPerKm / 60)}:${String(secondsPerKm % 60).padStart(2, '0')}`
+}
+
 // Any other number, e.g. "1 250" or "1,250".
 export function formatNumber(value: number, locale = DEFAULT_FORMAT_LOCALE, options?: Intl.NumberFormatOptions): string {
   return value.toLocaleString(locale, options)

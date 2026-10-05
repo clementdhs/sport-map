@@ -183,7 +183,13 @@
     "maxGrade": "Max grade:",
     "mainClimb": "Main climb:",
     "climbValue": "{length} at {grade} %",
-    "showSlopes": "Slopes on the map and the profile",
+    "colouring": {
+      "title": "Track colours",
+      "none": "None",
+      "slopes": "Slope",
+      "surface": "Surface",
+      "difficulty": "Difficulty"
+    },
     "slopesLegend": "Slope legend",
     "pois": "Points of interest",
     "deleteTitle": "Delete this route?",
@@ -680,6 +686,32 @@
     "from10to15": "10 to 15 %",
     "over15": "Over 15 %"
   },
+  "ways": {
+    "surfaceTitle": "Surface",
+    "surface": {
+      "paved": "Paved",
+      "unpaved": "Dirt road",
+      "trail": "Trail",
+      "unknown": "Unknown"
+    },
+    "sacTitle": "Trail difficulty (SAC hiking scale T1 to T6)",
+    "sac": {
+      "t1": "T1 hiking",
+      "t2": "T2 mountain hiking",
+      "t3": "T3 demanding mountain hiking",
+      "t4plus": "T4 to T6 alpine",
+      "unknown": "Not graded"
+    },
+    "mtbTitle": "Mountain bike difficulty (S0 to S6 scale)",
+    "mtb": {
+      "s0": "S0 easy",
+      "s1": "S1 small obstacles",
+      "s2": "S2 obstacles, steps",
+      "s3plus": "S3 and above, hard",
+      "unknown": "Not graded"
+    },
+    "source": "From OpenStreetMap, when the track was drawn. Roads without a known surface count as paved."
+  },
   "validation": {
     "usernameRequired": "Type your username",
     "minChars": "At least {min} characters",
@@ -691,7 +723,8 @@
     "elevationsMismatch": "There must be one elevation per point",
     "editorMismatch": "The editor's state doesn't match the track",
     "movingExceedsDuration": "The moving time is longer than the outing",
-    "maxPois": "{max} points of interest maximum"
+    "maxPois": "{max} points of interest maximum",
+    "wayInfoMismatch": "The way information doesn't match the track"
   },
   "api": {
     "signInRequired": "Sign-in required",

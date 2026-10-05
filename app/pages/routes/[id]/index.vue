@@ -37,7 +37,44 @@ const slopes = computed(() => {
     gradient: slopeGradient(slopeRuns(profile), profile.along.at(-1)!),
   }
 })
-const showSlopes = ref(false)
+
+// Surface and trail difficulty, for routes whose track was snapped to paths in the editor (#43).
+const ways = computed(() => {
+  const info = parcours.value?.way_info
+  if (!info || coordinates.value.length < 2) return null
+  const along = trackDistances(coordinates.value)
+  const totalM = along.at(-1)!
+  const surface = surfaceRuns(info, along)
+  const scale = difficultyScale(parcours.value!.sport_type)
+  const graded = info[`${scale}_scale`]
+  const difficulty = hasDifficulty(graded) ? difficultyRuns(graded, along) : null
+  return {
+    surface: { shares: classShares(surface), gradient: classGradient(surface, SURFACE_CLASSES, totalM) },
+    difficulty: difficulty && {
+      scale,
+      shares: classShares(difficulty),
+      gradient: classGradient(difficulty, DIFFICULTY_CLASSES[scale], totalM),
+    },
+  }
+})
+
+// What colours the track on the map (and, for slopes, the elevation profile).
+type TrackColouring = 'none' | 'slopes' | 'surface' | 'difficulty'
+const colouring = ref<TrackColouring>('none')
+const colouringItems = computed(() => [
+  { label: t('route.colouring.none'), value: 'none' },
+  ...(slopes.value ? [{ label: t('route.colouring.slopes'), value: 'slopes' }] : []),
+  ...(ways.value ? [{ label: t('route.colouring.surface'), value: 'surface' }] : []),
+  ...(ways.value?.difficulty ? [{ label: t('route.colouring.difficulty'), value: 'difficulty' }] : []),
+])
+const trackGradient = computed(() => {
+  switch (colouring.value) {
+    case 'slopes': return slopes.value?.gradient ?? null
+    case 'surface': return ways.value?.surface.gradient ?? null
+    case 'difficulty': return ways.value?.difficulty?.gradient ?? null
+    default: return null
+  }
+})
 // Own state for what the page changes: useFetch data is a shallow ref, so changing a property of
 // parcours (photos, viewer) would not re-render the page.
 const photos = ref<RoutePhoto[]>(parcours.value.photos)
@@ -175,7 +212,7 @@ useSeoMeta({
         <MapRouteDisplay
           :coordinates="coordinates"
           :pois="parcours.pois"
-          :slope-gradient="showSlopes ? slopes?.gradient : null"
+          :line-gradient="trackGradient"
           :hover-point="hoverPoint"
         />
       </ClientOnly>
@@ -276,26 +313,48 @@ useSeoMeta({
             v-if="parcours.elevation_profile?.length === coordinates.length"
             :coordinates="coordinates"
             :elevations="parcours.elevation_profile"
-            :grades="showSlopes ? slopes?.profile.grades : null"
+            :grades="colouring === 'slopes' ? slopes?.profile.grades : null"
             @hover="hoverPoint = $event"
           />
 
-          <div v-if="slopes" class="space-y-2">
-            <p class="text-sm text-muted">
-              {{ t('route.maxGrade') }} <span class="font-medium text-default">{{ slopes.steepest }} %</span>
-              <template v-if="slopes.climb">
-                · {{ t('route.mainClimb') }} <span class="font-medium text-default">{{ t('route.climbValue', {
-                  length: formatDistance(slopes.climb.endM - slopes.climb.startM),
-                  grade: Math.round(slopes.climb.averageGrade),
-                }) }}</span> (+{{ Math.round(slopes.climb.gainM) }} m)
-              </template>
-            </p>
-            <USwitch v-model="showSlopes" :label="t('route.showSlopes')" />
-            <ul v-if="showSlopes" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
+          <p v-if="slopes" class="text-sm text-muted">
+            {{ t('route.maxGrade') }} <span class="font-medium text-default">{{ slopes.steepest }} %</span>
+            <template v-if="slopes.climb">
+              · {{ t('route.mainClimb') }} <span class="font-medium text-default">{{ t('route.climbValue', {
+                length: formatDistance(slopes.climb.endM - slopes.climb.startM),
+                grade: Math.round(slopes.climb.averageGrade),
+              }) }}</span> (+{{ Math.round(slopes.climb.gainM) }} m)
+            </template>
+          </p>
+
+          <div v-if="colouringItems.length > 1" class="space-y-2">
+            <URadioGroup
+              v-model="colouring"
+              :legend="t('route.colouring.title')"
+              :items="colouringItems"
+              orientation="horizontal"
+              variant="table"
+              indicator="hidden"
+              size="sm"
+              :ui="{ legend: 'text-sm font-medium mb-1.5', item: 'flex-1 justify-center px-2 py-1.5', label: 'text-center' }"
+            />
+            <ul v-if="colouring === 'slopes'" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
               <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.key" class="flex items-center gap-1">
                 <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ t(`slopes.${slopeClass.key}`) }}
               </li>
             </ul>
+          </div>
+
+          <div v-if="ways" class="space-y-3">
+            <RouteBreakdown :title="t('ways.surfaceTitle')" :classes="SURFACE_CLASSES" :shares="ways.surface.shares" labels="ways.surface" />
+            <RouteBreakdown
+              v-if="ways.difficulty"
+              :title="t(`ways.${ways.difficulty.scale}Title`)"
+              :classes="DIFFICULTY_CLASSES[ways.difficulty.scale]"
+              :shares="ways.difficulty.shares"
+              :labels="`ways.${ways.difficulty.scale}`"
+            />
+            <p class="text-xs text-muted">{{ t('ways.source') }}</p>
           </div>
 
           <RouteWeather :route-id="parcours.id" />

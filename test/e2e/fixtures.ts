@@ -52,11 +52,14 @@ async function mockExternalServices(page: Page) {
   // No place found, unless a test mocks its own results.
   await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({ json: { features: [] } }))
   await page.route('https://data.geopf.fr/**', route => route.fulfill({ contentType: 'image/png', body: EMPTY_TILE }))
-  // Fake routing: a straight line through the midpoint, climbing from 100 to 200 m.
+  // Fake routing: a straight line through the midpoint, climbing from 100 to 200 m, on a street then a gravel
+  // track graded T3 (walking) or S2 (cycling).
   await page.route('**/api/routing/segment', async (route) => {
     const { from, to } = route.request().postDataJSON() as { from: [number, number], to: [number, number] }
     const mid = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2]
-    await route.fulfill({ json: { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true } })
+    const graded = [[0, 1, 0], [1, 2, 3]]
+    const wayInfo = { surface: [[0, 1, 3], [1, 2, 10]], waytype: [[0, 1, 3], [1, 2, 5]], sac_scale: graded, mtb_scale: graded }
+    await route.fulfill({ json: { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true, way_info: wayInfo } })
   })
 }
 

@@ -1,5 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
-import type { RoutingSegmentResponse } from '#shared/utils/routes'
+import type { RoutingSegmentResponse, WayInfo } from '#shared/utils/routes'
 
 const round6 = (value: number) => Math.round(value * 1e6) / 1e6
 const round1 = (value: number) => Math.round(value * 10) / 10
@@ -24,10 +24,11 @@ export default defineEventHandler(async (event): Promise<RoutingSegmentResponse>
   }
 
   let points = null
+  let wayInfo: WayInfo | null = null
   let snapped = mode === 'snap'
   if (snapped) {
     try {
-      points = await routeAlongPaths(event, from, to, sport_type)
+      ({ points, wayInfo } = await routeAlongPaths(event, from, to, sport_type))
     }
     catch (error) {
       if (!(error instanceof NoRouteFoundError)) throw error
@@ -40,6 +41,7 @@ export default defineEventHandler(async (event): Promise<RoutingSegmentResponse>
     coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),
     elevations: points.map(([, , ele]) => round1(ele)),
     snapped,
+    ...(wayInfo ? { way_info: wayInfo } : {}),
     quota_remaining: remaining,
   }
 })

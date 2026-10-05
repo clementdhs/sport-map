@@ -183,7 +183,13 @@
     "maxGrade": "Pente max :",
     "mainClimb": "Montée principale :",
     "climbValue": "{length} à {grade} %",
-    "showSlopes": "Pentes sur la carte et le profil",
+    "colouring": {
+      "title": "Couleurs du tracé",
+      "none": "Aucune",
+      "slopes": "Pente",
+      "surface": "Surface",
+      "difficulty": "Difficulté"
+    },
     "slopesLegend": "Légende des pentes",
     "pois": "Points d'intérêt",
     "deleteTitle": "Supprimer ce parcours ?",
@@ -680,6 +686,32 @@
     "from10to15": "10 à 15 %",
     "over15": "Plus de 15 %"
   },
+  "ways": {
+    "surfaceTitle": "Type de surface",
+    "surface": {
+      "paved": "Goudron",
+      "unpaved": "Chemin",
+      "trail": "Sentier",
+      "unknown": "Inconnu"
+    },
+    "sacTitle": "Difficulté des sentiers (cotation randonnée T1 à T6)",
+    "sac": {
+      "t1": "T1 randonnée",
+      "t2": "T2 randonnée en montagne",
+      "t3": "T3 montagne exigeante",
+      "t4plus": "T4 à T6 alpin",
+      "unknown": "Non cotée"
+    },
+    "mtbTitle": "Difficulté VTT (échelle S0 à S6)",
+    "mtb": {
+      "s0": "S0 facile",
+      "s1": "S1 petits obstacles",
+      "s2": "S2 obstacles, marches",
+      "s3plus": "S3 et plus, difficile",
+      "unknown": "Non cotée"
+    },
+    "source": "D'après OpenStreetMap, au moment du tracé. Les routes sans revêtement renseigné comptent comme goudron."
+  },
   "validation": {
     "usernameRequired": "Saisis ton nom d'utilisateur",
     "minChars": "{min} caractères minimum",
@@ -691,7 +723,8 @@
     "elevationsMismatch": "Il doit y avoir une altitude par point",
     "editorMismatch": "L'état de l'éditeur ne correspond pas au tracé",
     "movingExceedsDuration": "Le temps en mouvement dépasse la durée de la sortie",
-    "maxPois": "{max} points d'intérêt maximum"
+    "maxPois": "{max} points d'intérêt maximum",
+    "wayInfoMismatch": "Les informations sur les voies ne correspondent pas au tracé"
   },
   "api": {
     "signInRequired": "Connexion requise",

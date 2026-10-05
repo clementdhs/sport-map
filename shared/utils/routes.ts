@@ -110,6 +110,27 @@ export const poiSchema = z.object({
 
 export type Poi = z.infer<typeof poiSchema>
 
+// What OpenRouteService knows of the ways along the parts of a track snapped to paths ("extra info"): ranges
+// [start, end, value] of point indices, where consecutive ranges share their boundary point. Trail difficulty
+// comes on the SAC scale from walking profiles and on the MTB scale from cycling ones. Values and classes are
+// in shared/utils/wayInfo.ts.
+export type WayRange = [start: number, end: number, value: number]
+
+const wayRangesSchema = z.array(z.tuple([
+  z.number().int().min(0),
+  z.number().int().min(0),
+  z.number().int().min(0).max(99),
+])).max(MAX_ROUTE_POINTS)
+
+export const wayInfoSchema = z.object({
+  surface: wayRangesSchema,
+  waytype: wayRangesSchema,
+  sac_scale: wayRangesSchema,
+  mtb_scale: wayRangesSchema,
+})
+
+export type WayInfo = z.infer<typeof wayInfoSchema>
+
 // drawn in the editor, imported from a GPX file, or recorded with the phone's GPS
 export const ROUTE_SOURCES = ['drawn', 'gpx_import', 'recorded'] as const
 export type RouteSource = typeof ROUTE_SOURCES[number]
@@ -123,6 +144,7 @@ export const routeCreateSchema = routeDetailsSchema.extend({
   source: z.enum(ROUTE_SOURCES).default('drawn'),
   editor_state: editorStateSchema.optional(),
   pois: z.array(poiSchema).max(MAX_POIS, 'validation.maxPois').optional(),
+  way_info: wayInfoSchema.optional(),
 }).refine(route => !route.elevations || route.elevations.length === route.coordinates.length, {
   message: 'validation.elevationsMismatch',
   path: ['elevations'],
@@ -130,6 +152,10 @@ export const routeCreateSchema = routeDetailsSchema.extend({
   segment.start <= segment.end && segment.end < route.coordinates.length), {
   message: 'validation.editorMismatch',
   path: ['editor_state'],
+}).refine(route => !route.way_info || Object.values(route.way_info).every(ranges => ranges.every(([start, end]) =>
+  start <= end && end < route.coordinates.length)), {
+  message: 'validation.wayInfoMismatch',
+  path: ['way_info'],
 })
 
 export type RouteDetails = z.infer<typeof routeDetailsSchema>
@@ -191,6 +217,8 @@ export type RoutingSegmentResponse = {
   elevations: number[]
   // false when snapping was requested but no path was found, so a straight line was used instead
   snapped: boolean
+  // Ways along a snapped segment, indexed in its coordinates
+  way_info?: WayInfo
   // Routing requests the user has left today.
   quota_remaining?: number
 }
@@ -208,11 +236,17 @@ export const ROUTING_QUOTA_WARNING = 30
 const SMOOTHING_WINDOW_M = 100
 const ELEVATION_NOISE_M = 3
 
-export function smoothByDistance(coordinates: LngLat[], elevations: number[]): number[] {
+// Distance from the start (m) at each point of a track.
+export function trackDistances(coordinates: LngLat[]): number[] {
   const along = [0]
   for (let i = 1; i < coordinates.length; i++) {
     along.push(along[i - 1]! + distance(coordinates[i - 1]!, coordinates[i]!, { units: 'meters' }))
   }
+  return along
+}
+
+export function smoothByDistance(coordinates: LngLat[], elevations: number[]): number[] {
+  const along = trackDistances(coordinates)
   const half = SMOOTHING_WINDOW_M / 2
   let start = 0
   let end = 0

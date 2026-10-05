@@ -5,8 +5,8 @@ import type { LngLat, Poi } from '#shared/utils/routes'
 const props = defineProps<{
   coordinates: LngLat[]
   pois?: Poi[]
-  // line-gradient colouring the track by slope, null for the plain route colour
-  slopeGradient?: unknown[] | null
+  // line-gradient colouring the track (slopes, surface or difficulty), null for the plain route colour
+  lineGradient?: unknown[] | null
   // Position hovered on the elevation profile
   hoverPoint?: LngLat | null
 }>()
@@ -20,12 +20,12 @@ function onLoad(instance: Map) {
     points: [props.coordinates[0]!, props.coordinates.at(-1)!],
   })
   instance.fitBounds(routeBounds(props.coordinates), { padding: padding(48), duration: 0 })
-  if (props.slopeGradient) setRouteSlopes(instance, props.slopeGradient)
+  if (props.lineGradient) setRouteGradient(instance, props.lineGradient)
   map.value = instance
 }
 
-watch(() => props.slopeGradient, (gradient) => {
-  if (map.value) setRouteSlopes(map.value, gradient ?? null)
+watch(() => props.lineGradient, (gradient) => {
+  if (map.value) setRouteGradient(map.value, gradient ?? null)
 })
 
 watch(() => props.hoverPoint, (point) => {

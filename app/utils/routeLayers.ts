@@ -44,7 +44,7 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
 }
 
 export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { editable = false } = {}) {
-  // lineMetrics: needed by line-gradient, to colour the track by slope.
+  // lineMetrics: needed by line-gradient, to colour the track by slope, surface or difficulty.
   map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line), lineMetrics: true })
   map.addSource(POINTS_SOURCE, { type: 'geojson', data: pointsData(points) })
 
@@ -108,8 +108,9 @@ export function setRouteLayerData(map: Map, { line, points }: RouteLayerData) {
   map.getSource<GeoJSONSource>(POINTS_SOURCE)?.setData(pointsData(points))
 }
 
-// Colours the track by slope (a line-gradient expression, see shared/utils/slopes.ts), or back to the route colour.
-export function setRouteSlopes(map: Map, gradient: unknown[] | null) {
+// Colours the track along its length (a line-gradient expression, see lineGradient in shared/utils/slopes.ts), or
+// back to the route colour.
+export function setRouteGradient(map: Map, gradient: unknown[] | null) {
   map.setPaintProperty('route-line', 'line-gradient', (gradient ?? undefined) as ExpressionSpecification | undefined)
 }
 

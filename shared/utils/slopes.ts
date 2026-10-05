@@ -1,5 +1,4 @@
-import { distance } from '@turf/turf'
-import { type LngLat, smoothByDistance } from './routes'
+import { type LngLat, smoothByDistance, trackDistances } from './routes'
 
 // Slopes along a route: grades computed on smoothed elevations (the elevation model is noisy), classes to
 // colour the track and the elevation profile, the steepest grade and the main climb.
@@ -63,8 +62,7 @@ function elevationAt(along: number[], smoothed: number[], meters: number): numbe
 // Grades over a fixed GRADE_WINDOW_M, interpolated: with points far apart, measuring between the nearest
 // points only would divide a steep step by a few meters and report absurd grades (95 % on a real route).
 export function slopeProfile(coordinates: LngLat[], elevations: number[]): SlopeProfile {
-  const along = [0]
-  for (let i = 1; i < coordinates.length; i++) along.push(along[i - 1]! + distance(coordinates[i - 1]!, coordinates[i]!, { units: 'meters' }))
+  const along = trackDistances(coordinates)
   const smoothed = smoothByDistance(coordinates, elevations)
   const totalM = along.at(-1)!
   const half = GRADE_WINDOW_M / 2
@@ -129,19 +127,26 @@ export function mainClimb(coordinates: LngLat[], elevations: number[], along: nu
   return climbs(coordinates, elevations, along).reduce<Climb | null>((best, c) => (!best || c.gainM > best.gainM ? c : best), null)
 }
 
-// MapLibre line-gradient colouring the track by slope class (requires lineMetrics on the source).
-export function slopeGradient(runs: SlopeRun[], totalM: number): unknown[] {
-  if (!runs.length || totalM <= 0) return ['literal', SLOPE_CLASSES[0].color]
-  const expression: unknown[] = ['step', ['line-progress'], SLOPE_CLASSES[runs[0]!.slopeClass]!.color]
+// MapLibre line-gradient colouring the track with each stretch's colour, in order along the track (requires
+// lineMetrics on the source).
+export function lineGradient(stretches: { startM: number, color: string }[], totalM: number, fallback: string): unknown[] {
+  if (!stretches.length || totalM <= 0) return ['literal', fallback]
+  const expression: unknown[] = ['step', ['line-progress'], stretches[0]!.color]
   let lastStop = 0
-  for (const run of runs.slice(1)) {
-    const progress = Math.min(1, Math.max(0, run.startM / totalM))
-    // Stops must strictly increase: a run shorter than the rounding is merged into the previous one.
+  for (const stretch of stretches.slice(1)) {
+    const progress = Math.min(1, Math.max(0, stretch.startM / totalM))
+    // Stops must strictly increase: a stretch shorter than the rounding is merged into the previous one.
     if (progress > lastStop) {
-      expression.push(progress, SLOPE_CLASSES[run.slopeClass]!.color)
+      expression.push(progress, stretch.color)
       lastStop = progress
     }
   }
-  // A step without stops is refused by MapLibre: a track in one slope class is that class's colour.
+  // A step without stops is refused by MapLibre: a track in one colour is that colour.
   return expression.length > 3 ? expression : ['literal', expression[2]]
+}
+
+// The track coloured by slope class.
+export function slopeGradient(runs: SlopeRun[], totalM: number): unknown[] {
+  const stretches = runs.map(run => ({ startM: run.startM, color: SLOPE_CLASSES[run.slopeClass]!.color }))
+  return lineGradient(stretches, totalM, SLOPE_CLASSES[0].color)
 }

@@ -446,6 +446,7 @@ export type Database = {
           sport_type: Database["public"]["Enums"]["sport_type"]
           start_point: unknown
           updated_at: string
+          way_info: Json | null
           route_geojson: Json | null
           route_preview: Json | null
         }
@@ -471,6 +472,7 @@ export type Database = {
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown
           updated_at?: string
+          way_info?: Json | null
         }
         Update: {
           cover_image_url?: string | null
@@ -494,6 +496,7 @@ export type Database = {
           sport_type?: Database["public"]["Enums"]["sport_type"]
           start_point?: unknown
           updated_at?: string
+          way_info?: Json | null
         }
         Relationships: [
           {

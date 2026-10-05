@@ -1,7 +1,7 @@
 import type { LineString } from 'geojson'
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { RouteDetail, ViewerActivity } from '#shared/types/routes'
-import type { EditorState, Poi } from '#shared/utils/routes'
+import type { EditorState, Poi, WayInfo } from '#shared/utils/routes'
 
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
   const id = getRouteIdParam(event)
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .from('routes')
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
-      is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois,
+      is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois, way_info,
       rating_avg, rating_count,
       geometry:route_geojson,
       owner:profiles(username, display_name),
@@ -55,6 +55,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     elevation_profile: data.elevation_profile as number[] | null,
     editor_state: data.editor_state as EditorState | null,
     pois: data.pois as Poi[],
+    way_info: data.way_info as WayInfo | null,
     photos: await signPhotos(supabase, photos),
     viewer,
   }

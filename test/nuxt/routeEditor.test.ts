@@ -3,10 +3,11 @@ import { registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RouteDetail } from '#shared/types/routes'
-import type { LngLat, RouteCreatePayload, RoutingSegmentRequest } from '#shared/utils/routes'
+import type { LngLat, RouteCreatePayload, RoutingSegmentRequest, WayInfo } from '#shared/utils/routes'
 
-// Fake routing service: a straight line through the midpoint, 100 m → 150 m → 200 m of elevation. With a
-// quota set, it counts down and answers 429 once it is used up, like the real one.
+// Fake routing service: a straight line through the midpoint, 100 m → 150 m → 200 m of elevation; when snapped, a
+// street then a T2 path with a dirt surface. With a quota set, it counts down and answers 429 once it is used up,
+// like the real one.
 const routingCalls: RoutingSegmentRequest[] = []
 let routingQuota: number | null = null
 registerEndpoint('/api/routing/segment', {
@@ -24,7 +25,14 @@ registerEndpoint('/api/routing/segment', {
     if (routingQuota !== null) routingQuota--
     const { from, to } = body
     const mid: LngLat = [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2]
-    return { coordinates: [from, mid, to], elevations: [100, 150, 200], snapped: true, quota_remaining: routingQuota ?? undefined }
+    const wayInfo: WayInfo = { surface: [[0, 1, 3], [1, 2, 11]], waytype: [[0, 1, 3], [1, 2, 4]], sac_scale: [[0, 1, 0], [1, 2, 2]], mtb_scale: [] }
+    return {
+      coordinates: [from, mid, to],
+      elevations: [100, 150, 200],
+      snapped: true,
+      ...(body.mode === 'snap' ? { way_info: wayInfo } : {}),
+      quota_remaining: routingQuota ?? undefined,
+    }
   },
 })
 
@@ -84,6 +92,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     elevation_profile: body.elevations ?? null,
     editor_state: body.editor_state ?? null,
     pois: body.pois ?? [],
+    way_info: body.way_info ?? null,
     photos: [],
     outings: [],
     owner: { username: 'test', display_name: null },
@@ -112,6 +121,16 @@ describe('drawing', () => {
     expect(editor.canSave).toBe(true)
   })
 
+  it('joins the way info of the segments, renumbered in the track', async () => {
+    const editor = await drawABC()
+    expect(editor.track.wayInfo).toEqual({
+      surface: [[0, 1, 3], [1, 2, 11], [2, 3, 3], [3, 4, 11]],
+      waytype: [[0, 1, 3], [1, 2, 4], [2, 3, 3], [3, 4, 4]],
+      sac_scale: [[0, 1, 0], [1, 2, 2], [2, 3, 0], [3, 4, 2]],
+      mtb_scale: [],
+    })
+  })
+
   it('uses the straight mode when snapping is off', async () => {
     const editor = useRouteEditorStore()
     editor.snapToPaths = false
@@ -119,6 +138,8 @@ describe('drawing', () => {
     editor.addWaypoint(B)
     await settled(editor)
     expect(routingCalls[0]!.mode).toBe('straight')
+    // Nothing is known of the ways a straight line crosses.
+    expect(editor.track.wayInfo).toBeNull()
   })
 })
 
@@ -212,6 +233,8 @@ describe('finishing a route', () => {
     expect(routingCalls).toHaveLength(0)
     expect(editor.waypoints).toEqual([A, B, C, B, A])
     expect(editor.distanceM).toBeCloseTo(oneWay * 2)
+    // The way back has the same ways in reverse order; at the turnaround, the dirt path goes on in one range.
+    expect(editor.track.wayInfo!.surface).toEqual([[0, 1, 3], [1, 2, 11], [2, 3, 3], [3, 5, 11], [5, 6, 3], [6, 7, 11], [7, 8, 3]])
     expect(editor.isLoop).toBe(true)
     expect(editor.canFinish).toBe(false)
 
@@ -260,10 +283,13 @@ describe('saving and editing again', () => {
     // Saving resets the editor for the next route.
     expect(editor.waypoints).toEqual([])
 
+    expect(createdBody!.way_info!.surface).toEqual([[0, 1, 3], [1, 2, 11], [2, 3, 3], [3, 4, 11]])
     editor.loadRoute(routeDetail(createdBody!))
     expect(editor.editingId).toBe('existing-route')
     expect(editor.waypoints).toEqual([A, B, C])
     expect(editor.track.coordinates).toEqual(createdBody!.coordinates)
+    // Split between the segments, then joined again as it was.
+    expect(editor.track.wayInfo).toEqual(createdBody!.way_info)
     expect(editor.canEditWaypoint(1)).toBe(true)
 
     editor.details.is_public = false

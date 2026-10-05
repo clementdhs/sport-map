@@ -110,6 +110,13 @@ describe('routeCreateSchema', () => {
     expect(routeCreateSchema.safeParse({ ...valid, editor_state: missingSegment }).success).toBe(false)
   })
 
+  it('accepts way info within the track and rejects ranges beyond it', () => {
+    const wayInfo = { surface: [[0, 1, 3], [1, 2, 11]], waytype: [[0, 2, 4]], sac_scale: [], mtb_scale: [] }
+    expect(routeCreateSchema.safeParse({ ...valid, way_info: wayInfo }).success).toBe(true)
+    expect(routeCreateSchema.safeParse({ ...valid, way_info: { ...wayInfo, sac_scale: [[1, 3, 2]] } }).success).toBe(false)
+    expect(routeCreateSchema.safeParse({ ...valid, way_info: { ...wayInfo, waytype: [[2, 1, 4]] } }).success).toBe(false)
+  })
+
   it('rejects out-of-range coordinates', () => {
     expect(routeCreateSchema.safeParse({ ...valid, coordinates: [[200, 45], [6, 46]], elevations: undefined, editor_state: undefined }).success).toBe(false)
   })

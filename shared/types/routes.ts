@@ -1,5 +1,5 @@
 import type { LineString } from 'geojson'
-import type { EditorState, Poi } from '../utils/routes'
+import type { EditorState, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
 
 // Declared here rather than inferred from the handler: the app's TypeScript project cannot
@@ -28,6 +28,8 @@ export type RouteDetail = Pick<
   // null for routes saved before the editor state was stored
   editor_state: EditorState | null
   pois: Poi[]
+  // Surface, way type and trail difficulty along the parts snapped to paths; null when none was
+  way_info: WayInfo | null
   photos: RoutePhoto[]
   // Outings recorded with the GPS on this route, latest first
   outings: RouteOuting[]

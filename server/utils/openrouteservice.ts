@@ -1,6 +1,6 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
-import type { LngLat, SportType } from '#shared/utils/routes'
+import type { LngLat, SportType, WayInfo, WayRange } from '#shared/utils/routes'
 
 type LngLatEle = [lng: number, lat: number, ele: number]
 
@@ -51,13 +51,31 @@ async function orsPost<T>(event: H3Event, path: string, body: Record<string, unk
   }
 }
 
-export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, sport: SportType): Promise<LngLatEle[]> {
-  const result = await orsPost<{ features: { geometry: { coordinates: LngLatEle[] } }[] }>(
+type OrsExtras = Partial<Record<'surface' | 'waytype' | 'traildifficulty', { values: WayRange[] }>>
+
+// Trail difficulty is on the SAC scale for walking profiles and on the MTB scale for cycling ones.
+function toWayInfo(extras: OrsExtras | undefined, profile: string): WayInfo | null {
+  if (!extras) return null
+  const difficulty = extras.traildifficulty?.values ?? []
+  const cycling = profile.startsWith('cycling')
+  return {
+    surface: extras.surface?.values ?? [],
+    waytype: extras.waytype?.values ?? [],
+    sac_scale: cycling ? [] : difficulty,
+    mtb_scale: cycling ? difficulty : [],
+  }
+}
+
+// The track along paths, and what is known of its ways (indexed in its points).
+export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, sport: SportType): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null }> {
+  const profile = PROFILES[sport]
+  const result = await orsPost<{ features: { geometry: { coordinates: LngLatEle[] }, properties?: { extras?: OrsExtras } }[] }>(
     event,
-    `/v2/directions/${PROFILES[sport]}/geojson`,
-    { coordinates: [from, to], elevation: true, instructions: false },
+    `/v2/directions/${profile}/geojson`,
+    { coordinates: [from, to], elevation: true, instructions: false, extra_info: ['surface', 'waytype', 'traildifficulty'] },
   )
-  return result.features[0]!.geometry.coordinates
+  const feature = result.features[0]!
+  return { points: feature.geometry.coordinates, wayInfo: toWayInfo(feature.properties?.extras, profile) }
 }
 
 export async function elevationAlong(event: H3Event, coordinates: LngLat[]): Promise<LngLatEle[]> {

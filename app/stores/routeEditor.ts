@@ -1,7 +1,7 @@
 import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail } from '#shared/types/routes'
-import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode } from '#shared/utils/routes'
+import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode, WayInfo } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
@@ -12,6 +12,8 @@ interface Segment {
   coordinates: LngLat[]
   // null while loading, when the elevation service could not be reached, or for a GPX without elevation
   elevations: number[] | null
+  // Surface, way type and trail difficulty, indexed in the segment's coordinates; null unless snapped to paths
+  wayInfo: WayInfo | null
   loading: boolean
 }
 
@@ -70,7 +72,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
   // ranges[i] locates segment i in the track, so the editor state can be saved without duplicating coordinates.
   const track = computed(() => {
-    if (!segments.value.length) return { coordinates: [...waypoints.value], elevations: null, ranges: [] }
+    if (!segments.value.length) return { coordinates: [...waypoints.value], elevations: null, ranges: [], wayInfo: null }
 
     const coordinates: LngLat[] = []
     const elevations: number[] = []
@@ -85,7 +87,8 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       if (segment.elevations) elevations.push(...segment.elevations.slice(skipFirst ? 1 : 0))
       else hasElevations = false
     }
-    return { coordinates, elevations: hasElevations ? elevations : null, ranges }
+    const wayInfo = joinWayInfo(segments.value.map((segment, i) => ({ info: segment.wayInfo, offset: ranges[i]!.start })))
+    return { coordinates, elevations: hasElevations ? elevations : null, ranges, wayInfo }
   })
 
   // Client-side estimate for live feedback; the database computes the stored distance.
@@ -113,7 +116,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   }
 
   function newSegment(from: LngLat, to: LngLat, mode: RoutingMode): Segment {
-    return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, loading: true }
+    return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, wayInfo: null, loading: true }
   }
 
   // Fetches the track of a segment. Every edit replaces segments with new ids, so a late answer for
@@ -140,6 +143,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       const segment = segments.value[index]!
       segment.coordinates = result.coordinates
       segment.elevations = result.elevations
+      segment.wayInfo = result.way_info ?? null
       // Snapping moves the ends onto the nearest path: keep the markers on the track.
       waypoints.value[index + 1] = result.coordinates.at(-1)!
       if (index === 0) waypoints.value[0] = result.coordinates[0]!
@@ -279,6 +283,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       id: nextSegmentId++,
       coordinates: [...segment.coordinates].reverse(),
       elevations: segment.elevations ? [...segment.elevations].reverse() : null,
+      wayInfo: segment.wayInfo ? reverseWayInfo(segment.wayInfo, segment.coordinates.length) : null,
     }))
     waypoints.value = [...waypoints.value, ...waypoints.value.slice(0, -1).reverse()]
     segments.value = [...segments.value, ...reversed]
@@ -288,7 +293,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   function importTrack({ name, coordinates, elevations }: ImportedTrack) {
     saveSnapshot()
     waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
-    segments.value = [{ id: nextSegmentId++, mode: 'imported', coordinates, elevations, loading: false }]
+    segments.value = [{ id: nextSegmentId++, mode: 'imported', coordinates, elevations, wayInfo: null, loading: false }]
     // They were placed on the replaced track.
     pois.value = []
     if (name && !details.value.name) details.value.name = name.slice(0, 120)
@@ -359,6 +364,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     const slice = (start: number, end: number) => ({
       coordinates: coordinates.slice(start, end + 1),
       elevations: elevations?.slice(start, end + 1) ?? null,
+      wayInfo: sliceWayInfo(route.way_info, start, end),
     })
 
     if (isUsableState(route.editor_state, coordinates.length)) {
@@ -391,6 +397,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
         segments: segments.value.map((segment, i) => ({ mode: segment.mode, ...track.value.ranges[i]! })),
       } satisfies EditorState,
       pois: pois.value.map(({ note, ...poi }) => (note?.trim() ? { ...poi, note: note.trim() } : poi)),
+      way_info: track.value.wayInfo ?? undefined,
     }
     const { id } = editingId.value
       ? await $fetch<{ id: string }>(`/api/routes/${editingId.value}`, { method: 'PUT', body })

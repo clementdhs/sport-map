@@ -36,6 +36,10 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: 'Parcours e2e' })).toBeVisible()
   await expect(page.getByText('VTT', { exact: true })).toBeVisible()
+  // The ways of the snapped segments, the difficulty on the mountain bike scale.
+  await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Goudron\s+50\s%/)
+  await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Chemin\s+50\s%/)
+  await expect(page.getByRole('region', { name: 'Difficulté VTT (échelle S0 à S6)' })).toContainText('S2 obstacles, marches')
   const pois = page.getByRole('region', { name: "Points d'intérêt" })
   await expect(pois).toContainText("Point d'eau")
   await expect(pois).toContainText('Fontaine')

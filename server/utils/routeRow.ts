@@ -15,5 +15,6 @@ export function routeRowFromPayload(body: RouteCreatePayload) {
     source: body.source,
     editor_state: body.editor_state ?? null,
     pois: body.pois ?? [],
+    way_info: body.way_info ?? null,
   }
 }

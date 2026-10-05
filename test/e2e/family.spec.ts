@@ -38,7 +38,7 @@ test('shows the weather at the start of a route, crediting Open-Meteo', async ({
   await expect(weather.getByRole('link', { name: 'Open-Meteo.com' })).toHaveAttribute('href', 'https://open-meteo.com/')
 })
 
-test('summarises the slopes of a route and colours them on demand', async ({ page }) => {
+test('summarises the slopes and the ways of a route and colours the track on demand', async ({ page }) => {
   // MapLibre only logs an invalid line-gradient: the track then keeps its plain colour.
   const mapErrors: string[] = []
   page.on('console', (message) => {
@@ -49,10 +49,29 @@ test('summarises the slopes of a route and colours them on demand', async ({ pag
   await expect(page.getByText(/Pente max : \d+ %/)).toBeVisible()
   const legend = page.getByRole('list', { name: 'Légende des pentes' })
   await expect(legend).toHaveCount(0)
-  await page.getByRole('switch', { name: 'Pentes sur la carte et le profil' }).click()
+  // The radios are hidden behind their labels, which users click.
+  const colouring = page.getByRole('group', { name: 'Couleurs du tracé' })
+  await colouring.getByText('Pente', { exact: true }).click()
+  await expect(page.getByRole('radio', { name: 'Pente' })).toBeChecked()
   await expect(legend).toContainText('Plus de 15 %')
+
+  // A street then a dirt path graded T2, on the hiking scale since the route is a running one.
+  await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Goudron\s+\d+\s%/)
+  await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Sentier\s+\d+\s%/)
+  await expect(page.getByRole('region', { name: /Difficulté des sentiers/ })).toContainText('T2 randonnée en montagne')
+  await colouring.getByText('Surface', { exact: true }).click()
+  await expect(legend).toHaveCount(0)
+  await colouring.getByText('Difficulté', { exact: true }).click()
+  await expect(page.getByRole('radio', { name: 'Difficulté' })).toBeChecked()
   // The seeded route stays under 5 %: one slope class, whose gradient has no stop (#63).
   expect(mapErrors).toEqual([])
+})
+
+test('shows nothing about the ways of a route drawn without them', async ({ page }) => {
+  await page.goto(`/routes/${process.env.E2E_LOOP_ID}`)
+  await expect(page.getByRole('radio', { name: 'Pente' })).toBeVisible()
+  await expect(page.getByRole('radio', { name: 'Surface' })).toHaveCount(0)
+  await expect(page.getByRole('region', { name: 'Type de surface' })).toHaveCount(0)
 })
 
 test('filters the search from the filters popover, counts and resets them', async ({ page }) => {

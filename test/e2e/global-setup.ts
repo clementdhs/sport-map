@@ -30,8 +30,9 @@ export default async function globalSetup() {
   // Other users, to review and report. They never sign in.
   const neighbors = await Promise.all(E2E_NEIGHBORS.map(n => createUser(n.email, n.username, crypto.randomUUID())))
 
-  // A ~6.5 km point-to-point route, and a longer loop with more climbing (both running, both near Annecy).
-  const [route] = await insertRows<{ id: string }>('routes', [
+  // A ~6.5 km point-to-point route, and a longer loop with more climbing (both running, both near Annecy). The
+  // first was snapped to paths: a street, then a T2 dirt path; the loop has no way info, like a GPX import.
+  const [route, loop] = await insertRows<{ id: string }>('routes', [
     {
       owner_id: user.id,
       name: SEEDED_ROUTE_NAME,
@@ -42,6 +43,7 @@ export default async function globalSetup() {
       elevation_profile: [450, 470, 520],
       elevation_gain_m: 70,
       elevation_loss_m: 0,
+      way_info: { surface: [[0, 1, 3], [1, 2, 11]], waytype: [[0, 1, 3], [1, 2, 4]], sac_scale: [[0, 1, 0], [1, 2, 2]], mtb_scale: [] },
     },
     {
       owner_id: user.id,
@@ -53,11 +55,14 @@ export default async function globalSetup() {
       elevation_profile: [500, 900, 1100, 800, 500],
       elevation_gain_m: 650,
       elevation_loss_m: 650,
+      // A bulk insert needs the same keys in every row.
+      way_info: null,
     },
   ])
   await insertRows('route_reviews', [{ route_id: route!.id, user_id: neighbors[0]!.id, ...SEEDED_REVIEW }])
 
   process.env.E2E_ROUTE_ID = route!.id
+  process.env.E2E_LOOP_ID = loop!.id
   process.env.E2E_NEIGHBOR_IDS = neighbors.map(n => n.id).join(',')
 
   // Returned: Playwright calls it once the tests are done.

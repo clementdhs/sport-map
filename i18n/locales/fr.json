@@ -575,7 +575,8 @@
   },
   "sheet": {
     "expand": "Agrandir le panneau",
-    "collapse": "Réduire le panneau"
+    "collapse": "Réduire le panneau",
+    "show": "Afficher le panneau"
   },
   "profile": {
     "tabs": {

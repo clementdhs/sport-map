@@ -94,6 +94,15 @@ onMounted(async () => {
     emit('load', instance)
     loaded.value = true
   })
+  // When the map alone changes width (MapSheetLayout's side panel, on its right, collapsed or expanded), its
+  // left edge stays in place instead of its centre: the map doesn't jump. Window resizes keep the centre.
+  let size = { map: container.value.clientWidth, window: window.innerWidth }
+  instance.on('resize', () => {
+    const next = { map: instance.getContainer().clientWidth, window: window.innerWidth }
+    const shift = next.map - size.map
+    if (shift && next.window === size.window && !instance.isMoving()) instance.panBy([shift / 2, 0], { animate: false })
+    size = next
+  })
   instance.on('moveend', () => {
     const { lng, lat } = instance.getCenter()
     center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`

@@ -3,6 +3,9 @@
 // under a bottom sheet with three positions (collapsed to its title, half height, full height, which stops
 // under the floating top bar), moved by dragging its header or with the expand / collapse buttons.
 // The `actions` slot (main buttons) floats above the sheet on phones and tops the side panel from md up.
+// From md up the side panel can be collapsed: the map takes the whole width and the title floats over it.
+import type { ComponentPublicInstance } from 'vue'
+
 export type SheetSnap = 'collapsed' | 'half' | 'full'
 
 const props = withDefaults(defineProps<{
@@ -39,6 +42,23 @@ onMounted(() => {
   mobile.value = query.matches
   query.addEventListener('change', (event) => { mobile.value = event.matches })
 })
+
+// Side panel collapsed from md up (no effect on phones), remembered on the device. Focus follows the button
+// that replaces the one just clicked.
+const panelId = useId()
+const panelCollapsed = ref(false)
+const collapseButton = useTemplateRef<ComponentPublicInstance>('collapseButton')
+const showButton = useTemplateRef<ComponentPublicInstance>('showButton')
+onMounted(() => {
+  panelCollapsed.value = loadSidePanel().collapsed
+})
+
+async function setPanelCollapsed(collapsed: boolean) {
+  panelCollapsed.value = collapsed
+  saveSidePanel({ collapsed })
+  await nextTick()
+  ;(collapsed ? showButton : collapseButton).value?.$el.focus()
+}
 
 const root = useTemplateRef('root')
 const header = useTemplateRef('header')
@@ -148,6 +168,26 @@ const actionsHidden = computed(() => dragHeight.value === null
       </div>
     </div>
 
+    <!-- Collapsed side panel: its title stays over the map, left of MapLibre's controls, and reopens it. -->
+    <div
+      v-if="panelCollapsed"
+      class="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-14 z-10 hidden max-w-xs items-center gap-1 rounded-lg border border-default bg-default py-1 pr-1 pl-3 shadow-md md:flex"
+    >
+      <div class="min-w-0 flex-1 truncate font-medium">
+        <slot name="title" />
+      </div>
+      <UButton
+        ref="showButton"
+        icon="i-lucide-panel-right-open"
+        color="neutral"
+        variant="ghost"
+        :aria-label="t('sheet.show')"
+        aria-expanded="false"
+        :aria-controls="panelId"
+        @click="setPanelCollapsed(false)"
+      />
+    </div>
+
     <!-- Following the sheet's edge, high enough to clear the scale and attribution when it is collapsed. -->
     <div
       v-if="$slots.actions"
@@ -159,10 +199,25 @@ const actionsHidden = computed(() => dragHeight.value === null
     </div>
 
     <aside
-      class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:static md:h-auto md:w-96 md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
-      :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
+      :id="panelId"
+      class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-96 md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
+      :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panelCollapsed }"
       :data-sheet="snap"
+      :data-panel="panelCollapsed ? 'collapsed' : 'expanded'"
     >
+      <!-- Tab on the panel's edge, over the map, collapsing it from md up. -->
+      <UButton
+        ref="collapseButton"
+        icon="i-lucide-chevron-right"
+        color="neutral"
+        variant="outline"
+        class="absolute top-1/2 right-full hidden h-12 -translate-y-1/2 rounded-r-none bg-default px-1 shadow-md ring-default md:flex"
+        :aria-label="t('sheet.collapse')"
+        aria-expanded="true"
+        :aria-controls="panelId"
+        @click="setPanelCollapsed(true)"
+      />
+
       <div
         ref="header"
         class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col px-4 select-none active:cursor-grabbing md:hidden"

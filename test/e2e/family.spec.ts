@@ -154,6 +154,42 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
 })
 
+test('collapses the side panel on a computer and remembers it after a reload', async ({ page }) => {
+  await page.goto('/')
+  await waitForMap(page)
+  const panel = page.locator('aside[data-panel]')
+  const map = page.locator('[data-map-loaded]')
+  const collapse = page.getByRole('button', { name: 'Réduire le panneau' })
+  const show = page.getByRole('button', { name: 'Afficher le panneau' })
+  const title = page.getByText('2 parcours dans cette zone').filter({ visible: true })
+  const width = (await map.boundingBox())!.width
+  await expect(collapse).toHaveAttribute('aria-expanded', 'true')
+
+  // The map takes the whole width; the panel's title floats over it, beside the button reopening it.
+  await collapse.click()
+  await expect(panel).toBeHidden()
+  await expect(panel).toHaveAttribute('data-panel', 'collapsed')
+  await expect(show).toBeFocused()
+  await expect(show).toHaveAttribute('aria-expanded', 'false')
+  await expect(title).toBeVisible()
+  await expect(async () => expect((await map.boundingBox())!.width).toBeGreaterThan(width + 300)).toPass()
+
+  await page.reload()
+  await waitForMap(page)
+  await expect(panel).toHaveAttribute('data-panel', 'collapsed')
+  await expect(panel).toBeHidden()
+
+  await show.focus()
+  await page.keyboard.press('Enter')
+  await expect(panel).toBeVisible()
+  await expect(collapse).toBeFocused()
+  await expect(show).toHaveCount(0)
+  await page.reload()
+  await waitForMap(page)
+  await expect(panel).toBeVisible()
+  await expect(panel).toContainText('2 parcours dans cette zone')
+})
+
 test('keeps only loops and sorts the results', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

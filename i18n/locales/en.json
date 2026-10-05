@@ -576,7 +576,8 @@
   "sheet": {
     "expand": "Expand the panel",
     "collapse": "Collapse the panel",
-    "show": "Show the panel"
+    "show": "Show the panel",
+    "resize": "Resize the panel"
   },
   "profile": {
     "tabs": {

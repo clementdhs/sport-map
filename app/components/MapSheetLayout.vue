@@ -3,7 +3,7 @@
 // under a bottom sheet with three positions (collapsed to its title, half height, full height, which stops
 // under the floating top bar), moved by dragging its header or with the expand / collapse buttons.
 // The `actions` slot (main buttons) floats above the sheet on phones and tops the side panel from md up.
-// From md up the side panel can be collapsed: the map takes the whole width and the title floats over it.
+// From md up the side panel can be collapsed (the map takes the whole width and the title floats over it) and resized.
 import type { ComponentPublicInstance } from 'vue'
 
 export type SheetSnap = 'collapsed' | 'half' | 'full'
@@ -43,21 +43,78 @@ onMounted(() => {
   query.addEventListener('change', (event) => { mobile.value = event.matches })
 })
 
-// Side panel collapsed from md up (no effect on phones), remembered on the device. Focus follows the button
-// that replaces the one just clicked.
+// Side panel from md up (no effect on phones), remembered on the device: collapsed or not, and its width, set by
+// dragging its left edge or with the arrow keys on it. Focus follows the button that replaces the one just clicked.
 const panelId = useId()
-const panelCollapsed = ref(false)
+const panel = ref<SidePanelState>({ ...DEFAULT_SIDE_PANEL })
+// Unknown until mounted: the server renders the saved width's default.
+const windowWidth = ref(Number.POSITIVE_INFINITY)
+const panelWidth = computed(() => sidePanelWidth(panel.value.width, windowWidth.value))
+const panelMaxWidth = computed(() => maxSidePanelWidth(windowWidth.value))
 const collapseButton = useTemplateRef<ComponentPublicInstance>('collapseButton')
 const showButton = useTemplateRef<ComponentPublicInstance>('showButton')
+
+function updateWindowWidth() {
+  windowWidth.value = window.innerWidth
+}
+
 onMounted(() => {
-  panelCollapsed.value = loadSidePanel().collapsed
+  panel.value = loadSidePanel()
+  updateWindowWidth()
+  window.addEventListener('resize', updateWindowWidth)
 })
+onBeforeUnmount(() => window.removeEventListener('resize', updateWindowWidth))
 
 async function setPanelCollapsed(collapsed: boolean) {
-  panelCollapsed.value = collapsed
-  saveSidePanel({ collapsed })
+  panel.value = { ...panel.value, collapsed }
+  saveSidePanel(panel.value)
   await nextTick()
   ;(collapsed ? showButton : collapseButton).value?.$el.focus()
+}
+
+function setPanelWidth(width: number) {
+  panel.value = { ...panel.value, width: sidePanelWidth(width, windowWidth.value) }
+}
+
+const RESIZE_STEP = 16
+const resizing = ref(false)
+let resize: { pointerId: number, startX: number, startWidth: number } | null = null
+
+function onResizeStart(event: PointerEvent) {
+  if (event.button !== 0) return
+  // No text selection while dragging.
+  event.preventDefault()
+  ;(event.currentTarget as Element).setPointerCapture(event.pointerId)
+  resize = { pointerId: event.pointerId, startX: event.clientX, startWidth: panelWidth.value }
+  resizing.value = true
+}
+
+function onResizeMove(event: PointerEvent) {
+  if (!resize || event.pointerId !== resize.pointerId) return
+  // The panel is on the right: dragging its edge to the left widens it.
+  setPanelWidth(resize.startWidth + resize.startX - event.clientX)
+}
+
+function onResizeEnd(event: PointerEvent) {
+  if (!resize || event.pointerId !== resize.pointerId) return
+  resize = null
+  resizing.value = false
+  saveSidePanel(panel.value)
+}
+
+// Window splitter keys: arrows move the edge (Shift for bigger steps), Home and End give the narrowest and widest panel.
+function onResizeKey(event: KeyboardEvent) {
+  const step = event.shiftKey ? RESIZE_STEP * 4 : RESIZE_STEP
+  const width = {
+    ArrowLeft: panelWidth.value + step,
+    ArrowRight: panelWidth.value - step,
+    Home: SIDE_PANEL_WIDTH.min,
+    End: panelMaxWidth.value,
+  }[event.key]
+  if (width === undefined) return
+  event.preventDefault()
+  setPanelWidth(width)
+  saveSidePanel(panel.value)
 }
 
 const root = useTemplateRef('root')
@@ -148,7 +205,7 @@ const actionsHidden = computed(() => dragHeight.value === null
   <div
     ref="root"
     class="relative flex h-dvh flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"
-    :style="{ '--sheet-height': sheetHeight }"
+    :style="{ '--sheet-height': sheetHeight, '--panel-width': `${panelWidth}px` }"
   >
     <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:static md:min-h-0 md:flex-1">
       <slot name="map" />
@@ -170,7 +227,7 @@ const actionsHidden = computed(() => dragHeight.value === null
 
     <!-- Collapsed side panel: its title stays over the map, left of MapLibre's controls, and reopens it. -->
     <div
-      v-if="panelCollapsed"
+      v-if="panel.collapsed"
       class="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-14 z-10 hidden max-w-xs items-center gap-1 rounded-lg border border-default bg-default py-1 pr-1 pl-3 shadow-md md:flex"
     >
       <div class="min-w-0 flex-1 truncate font-medium">
@@ -200,11 +257,30 @@ const actionsHidden = computed(() => dragHeight.value === null
 
     <aside
       :id="panelId"
-      class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-96 md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
-      :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panelCollapsed }"
+      class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
+      :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panel.collapsed }"
       :data-sheet="snap"
-      :data-panel="panelCollapsed ? 'collapsed' : 'expanded'"
+      :data-panel="panel.collapsed ? 'collapsed' : 'expanded'"
     >
+      <!-- Left edge resizing the panel from md up, dragged or moved with the arrow keys; highlighted when used. -->
+      <div
+        role="separator"
+        tabindex="0"
+        aria-orientation="vertical"
+        :aria-label="t('sheet.resize')"
+        :aria-controls="panelId"
+        :aria-valuenow="panelWidth"
+        :aria-valuemin="SIDE_PANEL_WIDTH.min"
+        :aria-valuemax="panelMaxWidth"
+        class="absolute inset-y-0 -left-1.5 hidden w-3 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors hover:after:bg-primary focus-visible:after:w-1 focus-visible:after:bg-primary md:block"
+        :class="{ 'after:bg-primary': resizing }"
+        @pointerdown="onResizeStart"
+        @pointermove="onResizeMove"
+        @pointerup="onResizeEnd"
+        @pointercancel="onResizeEnd"
+        @keydown="onResizeKey"
+      />
+
       <!-- Tab on the panel's edge, over the map, collapsing it from md up. -->
       <UButton
         ref="collapseButton"

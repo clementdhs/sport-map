@@ -190,6 +190,44 @@ test('collapses the side panel on a computer and remembers it after a reload', a
   await expect(panel).toContainText('2 parcours dans cette zone')
 })
 
+test('resizes the side panel with the mouse or the keyboard and remembers its width', async ({ page }) => {
+  await page.goto('/')
+  await waitForMap(page)
+  const panel = page.locator('aside[data-panel]')
+  const edge = page.getByRole('separator', { name: 'Redimensionner le panneau' })
+  await expect(edge).toHaveAttribute('aria-valuenow', '384')
+  await expect(edge).toHaveAttribute('aria-valuemin', '320')
+  await expect(edge).toHaveAttribute('aria-valuemax', '720')
+
+  // Dragging its edge 200 px to the left widens it as much; far to the right stops at the narrowest panel.
+  const box = (await edge.boundingBox())!
+  const x = box.x + box.width / 2
+  await page.mouse.move(x, 300)
+  await page.mouse.down()
+  await page.mouse.move(x - 200, 300, { steps: 10 })
+  await page.mouse.up()
+  await expect(edge).toHaveAttribute('aria-valuenow', '584')
+  expect((await panel.boundingBox())!.width).toBeCloseTo(584, 0)
+  await page.mouse.move(x - 200, 300)
+  await page.mouse.down()
+  await page.mouse.move(x + 300, 300, { steps: 5 })
+  await page.mouse.up()
+  await expect(edge).toHaveAttribute('aria-valuenow', '320')
+
+  await edge.focus()
+  await page.keyboard.press('ArrowLeft')
+  await expect(edge).toHaveAttribute('aria-valuenow', '336')
+  await page.keyboard.press('End')
+  await expect(edge).toHaveAttribute('aria-valuenow', '720')
+  await page.keyboard.press('Shift+ArrowRight')
+  await expect(edge).toHaveAttribute('aria-valuenow', '656')
+
+  await page.reload()
+  await waitForMap(page)
+  await expect(edge).toHaveAttribute('aria-valuenow', '656')
+  expect((await panel.boundingBox())!.width).toBeCloseTo(656, 0)
+})
+
 test('keeps only loops and sorts the results', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

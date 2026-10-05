@@ -8,12 +8,19 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
   await waitForMap(page)
 
+  // The sport chosen first decides how segments are routed.
+  await page.getByRole('combobox', { name: 'Sport' }).click()
+  await page.getByRole('option', { name: 'VTT' }).click()
+  await expect(page.getByText('Itinéraire adapté : VTT')).toBeVisible()
+  const routing = page.waitForRequest('**/api/routing/segment')
+
   // Three waypoints across the map; routing is mocked by the fixtures.
   const map = page.locator('.maplibregl-canvas')
   const box = (await map.boundingBox())!
   for (const [x, y] of [[0.3, 0.4], [0.5, 0.6], [0.7, 0.4]] as const) {
     await map.click({ position: { x: box.width * x, y: box.height * y } })
   }
+  expect((await routing).postDataJSON()).toMatchObject({ mode: 'snap', sport_type: 'mountain_biking' })
 
   await expect(page.getByText('Profil altimétrique')).toBeVisible()
   await expect(page.getByText('0 m', { exact: true })).toHaveCount(0)
@@ -28,6 +35,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: 'Parcours e2e' })).toBeVisible()
+  await expect(page.getByText('VTT', { exact: true })).toBeVisible()
   const pois = page.getByRole('region', { name: "Points d'intérêt" })
   await expect(pois).toContainText("Point d'eau")
   await expect(pois).toContainText('Fontaine')
@@ -594,15 +602,15 @@ test('counts a completed route in the profile statistics', async ({ page }) => {
   const before = empty ? 0 : Number(await outings.textContent())
 
   const { id } = await (await page.request.post('/api/routes', {
-    data: { name: 'Parcours stats e2e', sport_type: 'cycling', is_public: false, coordinates: [[6.1, 45.9], [6.2, 45.95]] },
+    data: { name: 'Parcours stats e2e', sport_type: 'road_cycling', is_public: false, coordinates: [[6.1, 45.9], [6.2, 45.95]] },
   })).json() as { id: string }
   expect((await page.request.put(`/api/routes/${id}/activity/completed`)).ok()).toBe(true)
 
   await openStats()
   await expect(outings).toHaveText(String(before + 1))
-  // Switching the period is immediate, and cycling alone shows at least this route.
+  // Switching the period is immediate, and road cycling alone shows at least this route.
   await page.getByRole('combobox', { name: 'Sport' }).click()
-  await page.getByRole('option', { name: 'Vélo' }).click()
+  await page.getByRole('option', { name: 'Vélo de route' }).click()
   await page.getByRole('tab', { name: 'Années' }).click()
   await expect(page.getByText('Sur les 5 dernières années', { exact: true })).toBeVisible()
   expect(Number(await outings.textContent())).toBeGreaterThanOrEqual(1)

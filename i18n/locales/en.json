@@ -304,9 +304,12 @@
     "estimated": "Estimated time",
     "unknownGain": "Unknown elevation gain: not taken into account.",
     "methods": {
-      "hiking": "Naismith's rule: 5 km/h, plus 1 h per 600 m of elevation gain.",
       "running": "Pace of 6 min/km, each 100 m of elevation gain counting as 1 km on the flat (km-effort).",
-      "cycling": "20 km/h average, plus 1 h per 600 m of elevation gain."
+      "trail": "Pace of 8 min/km, each 100 m of elevation gain counting as 1 km on the flat (km-effort).",
+      "hiking": "Naismith's rule: 5 km/h, plus 1 h per 600 m of elevation gain.",
+      "cycling": "15 km/h average, plus 1 h per 500 m of elevation gain.",
+      "road_cycling": "25 km/h average, plus 1 h per 600 m of elevation gain.",
+      "mountain_biking": "12 km/h average, plus 1 h per 500 m of elevation gain."
     }
   },
   "elevationProfile": {
@@ -651,9 +654,12 @@
     "appearanceHint": "Kept on this device."
   },
   "sports": {
-    "running": "Running",
+    "running": "Road running",
+    "trail": "Trail running",
     "hiking": "Hiking",
-    "cycling": "Cycling"
+    "cycling": "Leisure cycling",
+    "road_cycling": "Road cycling",
+    "mountain_biking": "Mountain biking"
   },
   "pois": {
     "water": "Water point",

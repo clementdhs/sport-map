@@ -97,7 +97,7 @@ async function onSubmit() {
         v-model="editor.snapToPaths"
         :label="t('editor.snap')"
         :description="editor.snapToPaths
-          ? t('editor.snapOn', { sport: t(`sports.${editor.details.sport_type}`).toLowerCase() })
+          ? t('editor.snapOn', { sport: t(`sports.${editor.details.sport_type}`) })
           : t('editor.snapOff')"
       />
       <div class="flex gap-2">

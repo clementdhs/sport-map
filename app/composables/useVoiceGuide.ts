@@ -4,7 +4,7 @@ import type { Announcement, VoicePrefs } from '~/utils/voiceGuide'
 const PREFS_KEY = 'sport-map:voice'
 
 // Voice guidance of follow mode: the choices kept on the device, and the announcements of voiceGuide.ts read
-// out in the interface's language. Running and hiking hear the pace of each kilometre, cycling the average
+// out in the interface's language. Runners and hikers hear the pace of each kilometre, cyclists the average
 // speed.
 export function useVoiceGuide(sport: () => SportType) {
   const { t } = useI18n()
@@ -62,7 +62,7 @@ export function useVoiceGuide(sport: () => SportType) {
       })
       case 'kilometre': {
         const said = [t('voice.said.kilometre', { km: announcement.km, time: duration(announcement.elapsedS) })]
-        if (sport() !== 'cycling') said.push(t('voice.said.pace', { pace: duration(announcement.splitS) }))
+        if (SPORT_KINDS[sport()] !== 'ride') said.push(t('voice.said.pace', { pace: duration(announcement.splitS) }))
         else if (announcement.averageSpeedMs !== null) {
           said.push(t('voice.said.averageSpeed', { speed: formatNumber(announcement.averageSpeedMs * 3.6, { maximumFractionDigits: 1 }) }))
         }

@@ -590,7 +590,13 @@ export type Database = {
     Enums: {
       activity_type: "saved" | "completed"
       route_source: "drawn" | "gpx_import" | "recorded"
-      sport_type: "running" | "hiking" | "cycling"
+      sport_type:
+        | "running"
+        | "trail"
+        | "hiking"
+        | "cycling"
+        | "road_cycling"
+        | "mountain_biking"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -723,7 +729,14 @@ export const Constants = {
     Enums: {
       activity_type: ["saved", "completed"],
       route_source: ["drawn", "gpx_import", "recorded"],
-      sport_type: ["running", "hiking", "cycling"],
+      sport_type: [
+        "running",
+        "trail",
+        "hiking",
+        "cycling",
+        "road_cycling",
+        "mountain_biking",
+      ],
     },
   },
 } as const

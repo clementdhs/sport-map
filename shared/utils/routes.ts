@@ -3,26 +3,47 @@ import * as z from 'zod'
 
 export type LngLat = [lng: number, lat: number]
 
-export const SPORT_TYPES = ['running', 'hiking', 'cycling'] as const
+// 'running' is road running and 'cycling' leisure cycling: both kept their value from before the other sports
+// existed, so routes saved then didn't need migrating.
+export const SPORT_TYPES = ['running', 'trail', 'hiking', 'cycling', 'road_cycling', 'mountain_biking'] as const
 export type SportType = typeof SPORT_TYPES[number]
 
 export const SPORT_ICONS: Record<SportType, string> = {
   running: 'i-lucide-footprints',
+  trail: 'i-lucide-mountain-snow',
   hiking: 'i-lucide-mountain',
   cycling: 'i-lucide-bike',
+  road_cycling: 'i-lucide-gauge',
+  mountain_biking: 'i-lucide-trees',
+}
+
+// How a sport moves: runners follow their pace, cyclists their speed.
+export type SportKind = 'run' | 'walk' | 'ride'
+
+export const SPORT_KINDS: Record<SportType, SportKind> = {
+  running: 'run',
+  trail: 'run',
+  hiking: 'walk',
+  cycling: 'ride',
+  road_cycling: 'ride',
+  mountain_biking: 'ride',
 }
 
 // Estimated moving time. Elevation gain is ignored when unknown.
+// - running, trail: "km-effort" (100 m of gain = 1 km), at 6 min/km on the road and 8 min/km on trails
 // - hiking: Naismith's rule, 5 km/h plus 1 h per 600 m of gain
-// - running: "km-effort" used in trail running (100 m of gain = 1 km), at 6 min/km
-// - cycling: 20 km/h plus 1 h per 600 m of gain
+// - cycling: 15 km/h plus 1 h per 500 m of gain; road cycling 25 km/h plus 1 h per 600 m; mountain biking
+//   12 km/h plus 1 h per 500 m
 export function estimateDurationMin(sport: SportType, distanceM: number, elevationGainM: number | null): number {
   const km = distanceM / 1000
   const gain = elevationGainM ?? 0
   switch (sport) {
-    case 'hiking': return (km / 5) * 60 + (gain / 600) * 60
     case 'running': return (km + gain / 100) * 6
-    case 'cycling': return (km / 20) * 60 + (gain / 600) * 60
+    case 'trail': return (km + gain / 100) * 8
+    case 'hiking': return (km / 5) * 60 + (gain / 600) * 60
+    case 'cycling': return (km / 15) * 60 + (gain / 500) * 60
+    case 'road_cycling': return (km / 25) * 60 + (gain / 600) * 60
+    case 'mountain_biking': return (km / 12) * 60 + (gain / 500) * 60
   }
 }
 

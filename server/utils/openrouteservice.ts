@@ -8,8 +8,11 @@ const ORS_URL = 'https://api.openrouteservice.org'
 
 const PROFILES: Record<SportType, string> = {
   running: 'foot-walking',
+  trail: 'foot-hiking',
   hiking: 'foot-hiking',
   cycling: 'cycling-regular',
+  road_cycling: 'cycling-road',
+  mountain_biking: 'cycling-mountain',
 }
 
 // ORS error codes: 2009 = no route between the points, 2010 = no routable way near a point,

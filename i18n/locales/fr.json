@@ -304,9 +304,12 @@
     "estimated": "Durée estimée",
     "unknownGain": "Dénivelé inconnu : non pris en compte.",
     "methods": {
-      "hiking": "Règle de Naismith : 5 km/h, plus 1 h par 600 m de dénivelé positif.",
       "running": "Allure de 6 min/km, chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).",
-      "cycling": "20 km/h de moyenne, plus 1 h par 600 m de dénivelé positif."
+      "trail": "Allure de 8 min/km, chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).",
+      "hiking": "Règle de Naismith : 5 km/h, plus 1 h par 600 m de dénivelé positif.",
+      "cycling": "15 km/h de moyenne, plus 1 h par 500 m de dénivelé positif.",
+      "road_cycling": "25 km/h de moyenne, plus 1 h par 600 m de dénivelé positif.",
+      "mountain_biking": "12 km/h de moyenne, plus 1 h par 500 m de dénivelé positif."
     }
   },
   "elevationProfile": {
@@ -651,9 +654,12 @@
     "appearanceHint": "Gardée sur cet appareil."
   },
   "sports": {
-    "running": "Course à pied",
+    "running": "Course sur route",
+    "trail": "Trail",
     "hiking": "Randonnée",
-    "cycling": "Vélo"
+    "cycling": "Vélo loisir",
+    "road_cycling": "Vélo de route",
+    "mountain_biking": "VTT"
   },
   "pois": {
     "water": "Point d'eau",

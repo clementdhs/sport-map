@@ -182,7 +182,7 @@ function discardOuting() {
         class="absolute inset-0 z-10 pt-16"
         mode="follow"
         :stats="liveStats"
-        :default-pace="parcours.sport_type === 'running'"
+        :default-pace="SPORT_KINDS[parcours.sport_type] === 'run'"
       />
 
       <!-- Right padding: the map controls stay reachable. -->

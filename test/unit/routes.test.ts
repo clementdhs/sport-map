@@ -20,12 +20,15 @@ function lineNorth(count: number, spacingM = 10): LngLat[] {
 }
 
 describe('estimateDurationMin', () => {
-  // Values checked by hand when the feature was built (issue #4).
+  // Values checked by hand when each sport was added (issues #4 and #49).
   it.each([
     ['hiking', 43_930, 1528, '11 h 20'],
     ['running', 49_370, null, '4 h 55'],
     ['running', 268_540, 1798, '28 h 40'],
-    ['cycling', 268_540, 1798, '16 h 25'],
+    ['trail', 22_000, 1100, '4 h 25'],
+    ['cycling', 30_000, 300, '2 h 35'],
+    ['road_cycling', 110_000, 1200, '6 h 25'],
+    ['mountain_biking', 35_000, 900, '4 h 45'],
   ] as const)('%s, %i m, %s m of gain → ~%s', (sport, distanceM, gainM, expected) => {
     expect(formatDuration(estimateDurationMin(sport, distanceM, gainM))).toBe(expected)
   })
@@ -35,7 +38,7 @@ describe('estimateDurationMin', () => {
   })
 
   it('makes climbing cost time', () => {
-    expect(estimateDurationMin('cycling', 10_000, 600) - estimateDurationMin('cycling', 10_000, 0)).toBeCloseTo(60)
+    expect(estimateDurationMin('road_cycling', 10_000, 600) - estimateDurationMin('road_cycling', 10_000, 0)).toBeCloseTo(60)
   })
 })
 

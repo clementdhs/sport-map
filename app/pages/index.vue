@@ -11,6 +11,7 @@ useSeoMeta({
 })
 
 const search = useRouteSearchStore()
+const discover = useOsmDiscoverStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
 
@@ -102,6 +103,10 @@ watch(() => search.results, (results) => {
         class="min-w-0 flex-1"
       />
     </div>
+
+    <ULink to="/discover" class="flex items-center gap-2 text-sm font-medium text-primary" @click="discover.startFrom(search.view)">
+      <UIcon name="i-lucide-signpost" class="size-4 shrink-0" />{{ t('home.discoverOsm') }}
+    </ULink>
 
     <!-- Shown by the sheet title on mobile, still read out from here. -->
     <p class="flex items-center gap-2 text-sm text-muted max-md:sr-only" aria-live="polite">

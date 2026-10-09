@@ -2,13 +2,18 @@
 import { lineString, nearestPointOnLine } from '@turf/turf'
 import type { Map, MapMouseEvent, MapTouchEvent, PointLike } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
-import type { MapFocus } from '~/stores/routeSearch'
+import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 
 const props = defineProps<{
   // Position hovered on the elevation profile
   hoverPoint?: LngLat | null
   // A new object moves the map there (a place picked in the search box), without touching the track.
   focus?: MapFocus | null
+}>()
+
+const emit = defineEmits<{
+  // Where the map is looking, e.g. to search marked routes there.
+  viewChange: [view: MapViewState]
 }>()
 
 const editor = useRouteEditorStore()
@@ -185,6 +190,8 @@ function onLoad(instance: Map) {
   if (editor.track.coordinates.length >= 2) {
     instance.fitBounds(routeBounds(editor.track.coordinates), { padding: padding(48), duration: 0 })
   }
+  instance.on('moveend', () => emit('viewChange', mapViewState(instance)))
+  emit('viewChange', mapViewState(instance))
   map.value = instance
 }
 

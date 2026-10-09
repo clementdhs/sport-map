@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LngLat } from '#shared/utils/routes'
-import type { MapFocus } from '~/stores/routeSearch'
+import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 
 const { formatDistance } = useFormat()
 
@@ -17,6 +17,14 @@ const loop = useLoopGeneratorStore()
 onBeforeUnmount(() => loop.hide())
 const hasLockedTrack = computed(() => editor.segments.some(segment => segment.mode === 'locked'))
 const hoverPoint = ref<LngLat | null>(null)
+// Where the editor's map is looking: the marked routes page opens there.
+const mapView = ref<Omit<MapViewState, 'bounds'> | null>(null)
+const discover = useOsmDiscoverStore()
+
+function openDiscover() {
+  if (mapView.value) discover.startFrom(mapView.value)
+  navigateTo('/discover')
+}
 const focus = ref<MapFocus | null>(null)
 const toast = useToast()
 const { t } = useI18n()
@@ -123,7 +131,7 @@ async function onSubmit() {
         @drop.prevent="onDrop"
       >
         <ClientOnly>
-          <MapRouteEditor :hover-point="hoverPoint" :focus="focus" />
+          <MapRouteEditor :hover-point="hoverPoint" :focus="focus" @view-change="mapView = $event" />
         </ClientOnly>
         <div
           v-if="draggingFile"
@@ -243,6 +251,14 @@ async function onSubmit() {
           variant="outline"
           block
           @click="loop.show()"
+        />
+        <UButton
+          icon="i-lucide-signpost"
+          :label="t('editor.fromOsm')"
+          color="neutral"
+          variant="outline"
+          block
+          @click="openDiscover()"
         />
       </template>
       <UAlert

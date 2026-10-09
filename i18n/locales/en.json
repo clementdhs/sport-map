@@ -100,7 +100,8 @@
     },
     "textEmptyHint": "Try other words or widen the filters.",
     "zoneEmptyHint": "Move the map, change the filters, or {link}.",
-    "createFirst": "create the first route"
+    "createFirst": "create the first route",
+    "discoverOsm": "OpenStreetMap marked routes in this area"
   },
   "searchBox": {
     "placeholder": "Search for a place or a route…",
@@ -331,7 +332,8 @@
     "gpxInvalid": "This file is not a valid GPX.",
     "gpxTooShort": "The track has fewer than 2 points.",
     "gpxOneFile": "Drop a single GPX file at a time.",
-    "gpxNotGpx": "Only GPX files (.gpx) can be imported."
+    "gpxNotGpx": "Only GPX files (.gpx) can be imported.",
+    "overpassBusy": "The OpenStreetMap service (Overpass) is busy, try again in a moment."
   },
   "editor": {
     "replaceWithGpx": "Replace the current track with this GPX file?",
@@ -380,7 +382,8 @@
     "submitEdit": "Save changes",
     "notOwner": "You can only edit your own routes",
     "editTitle": "Edit “{name}”",
-    "dropGpx": "Drop your GPX file to import it"
+    "dropGpx": "Drop your GPX file to import it",
+    "fromOsm": "Start from a marked route"
   },
   "loop": {
     "open": "Generate a loop",
@@ -409,6 +412,36 @@
     "choose": "Choose",
     "chooseLabel": "Choose loop {n}",
     "replaceConfirm": "Replace the current track with this loop?"
+  },
+  "discover": {
+    "title": "Marked routes",
+    "kind": "Route type",
+    "kinds": {
+      "foot": "On foot",
+      "bicycle": "Cycling",
+      "mtb": "MTB"
+    },
+    "searchHere": "Search this area",
+    "zoomIn": "Zoom in to search",
+    "zoomInHint": "The area shown is too large: zoom in to search for marked routes.",
+    "searching": "Searching for marked routes…",
+    "failed": "Search failed",
+    "retry": "Try again",
+    "count": "{count} marked route | {count} marked routes",
+    "none": "No marked routes here",
+    "noneHint": "No marked routes of this type in the area. Try another type or move the map.",
+    "results": "Marked routes found",
+    "unnamed": "Unnamed route",
+    "scopes": {
+      "local": "Local",
+      "regional": "Regional",
+      "national": "National",
+      "international": "International"
+    },
+    "incomplete": "Incomplete",
+    "incompleteHint": "Its sections don't connect in OpenStreetMap: it can't be imported as it is.",
+    "attribution": "Data {link}, under the ODbL licence.",
+    "osmContributors": "© OpenStreetMap contributors"
   },
   "gps": {
     "denied": "Allow access to your location in the browser settings.",

@@ -38,15 +38,7 @@ function resultsData(results: RouteSummary[]): FeatureCollection<Point> {
 }
 
 function emitView(instance: Map) {
-  const b = instance.getBounds()
-  const clampLng = (value: number) => Math.min(180, Math.max(-180, value))
-  const clampLat = (value: number) => Math.min(90, Math.max(-90, value))
-  const center = instance.getCenter()
-  emit('viewChange', {
-    bounds: [clampLng(b.getWest()), clampLat(b.getSouth()), clampLng(b.getEast()), clampLat(b.getNorth())],
-    center: [center.lng, center.lat],
-    zoom: instance.getZoom(),
-  })
+  emit('viewChange', mapViewState(instance))
 }
 
 async function onLoad(instance: Map) {

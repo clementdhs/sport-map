@@ -100,7 +100,8 @@
     },
     "textEmptyHint": "Essaie d'autres mots ou élargis les filtres.",
     "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
-    "createFirst": "crée le premier parcours"
+    "createFirst": "crée le premier parcours",
+    "discoverOsm": "Parcours balisés OpenStreetMap dans cette zone"
   },
   "searchBox": {
     "placeholder": "Rechercher un lieu ou un parcours…",
@@ -331,7 +332,8 @@
     "gpxInvalid": "Ce fichier n'est pas un GPX valide.",
     "gpxTooShort": "La trace contient moins de 2 points.",
     "gpxOneFile": "Dépose un seul fichier GPX à la fois.",
-    "gpxNotGpx": "Seuls les fichiers GPX (.gpx) peuvent être importés."
+    "gpxNotGpx": "Seuls les fichiers GPX (.gpx) peuvent être importés.",
+    "overpassBusy": "Le service OpenStreetMap (Overpass) est surchargé, réessaie dans un moment."
   },
   "editor": {
     "replaceWithGpx": "Remplacer le tracé en cours par ce fichier GPX ?",
@@ -380,7 +382,8 @@
     "submitEdit": "Enregistrer les modifications",
     "notOwner": "Tu ne peux modifier que tes propres parcours",
     "editTitle": "Modifier « {name} »",
-    "dropGpx": "Dépose ton fichier GPX pour l'importer"
+    "dropGpx": "Dépose ton fichier GPX pour l'importer",
+    "fromOsm": "Partir d'un parcours balisé"
   },
   "loop": {
     "open": "Générer une boucle",
@@ -409,6 +412,36 @@
     "choose": "Choisir",
     "chooseLabel": "Choisir la boucle {n}",
     "replaceConfirm": "Remplacer le tracé en cours par cette boucle ?"
+  },
+  "discover": {
+    "title": "Parcours balisés",
+    "kind": "Type de parcours",
+    "kinds": {
+      "foot": "À pied",
+      "bicycle": "Vélo",
+      "mtb": "VTT"
+    },
+    "searchHere": "Chercher dans cette zone",
+    "zoomIn": "Zoome pour chercher",
+    "zoomInHint": "La zone affichée est trop grande : zoome pour chercher les parcours balisés.",
+    "searching": "Recherche des parcours balisés…",
+    "failed": "Recherche impossible",
+    "retry": "Réessayer",
+    "count": "{count} parcours balisé | {count} parcours balisés",
+    "none": "Aucun parcours balisé ici",
+    "noneHint": "Aucun parcours balisé de ce type dans la zone. Essaie un autre type ou déplace la carte.",
+    "results": "Parcours balisés trouvés",
+    "unnamed": "Parcours sans nom",
+    "scopes": {
+      "local": "Local",
+      "regional": "Régional",
+      "national": "National",
+      "international": "International"
+    },
+    "incomplete": "Incomplet",
+    "incompleteHint": "Ses tronçons ne se raccordent pas dans OpenStreetMap : il ne peut pas être importé tel quel.",
+    "attribution": "Données {link}, sous licence ODbL.",
+    "osmContributors": "© les contributeurs d'OpenStreetMap"
   },
   "gps": {
     "denied": "Autorise l'accès à ta position dans les réglages du navigateur.",

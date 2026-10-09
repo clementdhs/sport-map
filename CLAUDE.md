@@ -4,7 +4,7 @@ Web app (installable PWA) to create, share and discover running / hiking / cycli
 
 The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Reference the issue in the commit that completes it (`Closes #N`) and file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes how an issue is tested, committed and pushed.
 
-Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, collections, auth emails, Sentry, link previews, Android app, live location sharing) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
+Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
 
 ## Stack
 - Nuxt 4 (`app/` directory), Vue 3 `<script setup lang="ts">` + Composition API

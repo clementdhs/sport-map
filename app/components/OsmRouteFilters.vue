@@ -19,13 +19,16 @@ onMounted(() => {
 })
 const panelSlot = computed(() => isDesktop.value ? 'content' : 'body')
 
-const distanceLabel = computed(() => {
-  const [min, max] = discover.filters.distanceKm
-  if (min === 0 && max === OSM_DISTANCE_MAX_KM) return t('filters.anyDistance')
-  if (max === OSM_DISTANCE_MAX_KM) return t('filters.moreThan', { min, unit: 'km' })
-  if (min === 0) return t('filters.lessThan', { max, unit: 'km' })
-  return t('filters.between', { min, max, unit: 'km' })
-})
+// "unit" follows the numbers, e.g. "km" or "m D+".
+function rangeLabel([min, max]: [number, number], top: number, unit: string, all: string) {
+  if (min === 0 && max === top) return all
+  if (max === top) return t('filters.moreThan', { min, unit })
+  if (min === 0) return t('filters.lessThan', { max, unit })
+  return t('filters.between', { min, max, unit })
+}
+
+const distanceLabel = computed(() => rangeLabel(discover.filters.distanceKm, OSM_DISTANCE_MAX_KM, 'km', t('filters.anyDistance')))
+const gainLabel = computed(() => rangeLabel(discover.filters.gainM, OSM_GAIN_MAX_M, t('filters.gainUnit'), t('filters.anyGain')))
 
 const shapeItems = computed(() => OSM_SHAPE_FILTERS.map(value => ({ value, label: t(`discover.filters.shapes.${value}`) })))
 
@@ -76,6 +79,17 @@ const buttonLabel = computed(() => {
             :step="1"
             :aria-label="t('filters.distanceLabel')"
           />
+        </div>
+        <div class="space-y-2">
+          <p class="text-sm text-muted">{{ gainLabel }}</p>
+          <USlider
+            v-model="discover.filters.gainM"
+            :min="0"
+            :max="OSM_GAIN_MAX_M"
+            :step="OSM_GAIN_STEP_M"
+            :aria-label="t('filters.gainLabel')"
+          />
+          <p class="text-xs text-muted">{{ t('discover.filters.gainHint') }}</p>
         </div>
         <USwitch
           v-model="discover.filters.outAndBack"

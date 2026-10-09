@@ -181,6 +181,33 @@ export type Database = {
           },
         ]
       }
+      osm_route_elevations: {
+        Row: {
+          computed_at: string
+          distance_m: number
+          gain_m: number
+          loss_m: number
+          relation_id: number
+          version: number
+        }
+        Insert: {
+          computed_at?: string
+          distance_m: number
+          gain_m: number
+          loss_m: number
+          relation_id: number
+          version: number
+        }
+        Update: {
+          computed_at?: string
+          distance_m?: number
+          gain_m?: number
+          loss_m?: number
+          relation_id?: number
+          version?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

@@ -13,7 +13,7 @@ describe('overpassQuery', () => {
   it('asks for the route relations of the kind in the area, south-west first', () => {
     const query = overpassQuery(BBOX, 'foot')
     expect(query).toContain('relation["type"="route"]["route"~"^(hiking|foot)$"](48.38,2.58,48.46,2.72)')
-    expect(query).toContain('out geom;')
+    expect(query).toContain('out meta geom;')
     expect(overpassQuery(BBOX, 'mtb')).toContain('"^(mtb)$"')
   })
 })

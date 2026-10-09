@@ -28,8 +28,8 @@ export default defineNuxtConfig({
     },
   },
 
-  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_OPEN_METEO_URL / NUXT_PUBLIC_MAPTILER_KEY /
-  // NUXT_PUBLIC_SENTRY_DSN.
+  // Overridable at runtime via NUXT_OPENROUTESERVICE_KEY / NUXT_OPEN_METEO_URL / NUXT_IGN_ALTIMETRY_URL /
+  // NUXT_OPEN_METEO_ELEVATION_URL / NUXT_PUBLIC_MAPTILER_KEY / NUXT_PUBLIC_SENTRY_DSN.
   runtimeConfig: {
     openrouteserviceKey: '',
     // Routing requests per user and per day (NUXT_ROUTING_DAILY_LIMIT): the free OpenRouteService quota is
@@ -37,6 +37,10 @@ export default defineNuxtConfig({
     routingDailyLimit: 300,
     // Weather forecast API (free, no key). The e2e tests point it at a local fake.
     openMeteoUrl: 'https://api.open-meteo.com/v1/forecast',
+    // Elevations of tracks imported without any (#71): the IGN's in France (NUXT_IGN_ALTIMETRY_URL), Open-Meteo's
+    // elsewhere (NUXT_OPEN_METEO_ELEVATION_URL). Both free, without a key; the e2e tests point them at the local fake.
+    ignAltimetryUrl: 'https://data.geopf.fr/altimetrie/1.0/calcul/alti/rest/elevation.json',
+    openMeteoElevationUrl: 'https://api.open-meteo.com/v1/elevation',
     public: {
       maptilerKey: '',
       // Error reporting is off without a DSN (locally, in tests).

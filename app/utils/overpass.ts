@@ -32,10 +32,10 @@ interface OverpassResponse {
   remark?: string
 }
 
-// Overpass takes south, west, north, east.
+// Overpass takes south, west, north, east. `meta` adds the relation's version, which keys its cached elevation gain.
 export function overpassQuery([minLng, minLat, maxLng, maxLat]: Bbox, kind: OsmRouteKind): string {
   const routes = OSM_ROUTE_TAGS[kind].join('|')
-  return `[out:json][timeout:${QUERY_TIMEOUT_S}];relation["type"="route"]["route"~"^(${routes})$"](${minLat},${minLng},${maxLat},${maxLng});out geom;`
+  return `[out:json][timeout:${QUERY_TIMEOUT_S}];relation["type"="route"]["route"~"^(${routes})$"](${minLat},${minLng},${maxLat},${maxLng});out meta geom;`
 }
 
 async function queryOverpass(query: string, signal?: AbortSignal): Promise<OverpassRelation[]> {

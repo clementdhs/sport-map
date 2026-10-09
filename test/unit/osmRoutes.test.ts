@@ -63,11 +63,12 @@ describe('toOsmRoute', () => {
     const route = toOsmRoute({
       type: 'relation',
       id: 42,
+      version: 7,
       tags: { type: 'route', route: 'hiking', name: ' Tour du lac ', ref: 'PR 3', network: 'lwn', roundtrip: 'no' },
       members: [way([A, B])],
     })
     expect(route).toMatchObject({
-      id: 42, route: 'hiking', name: 'Tour du lac', ref: 'PR 3', network: 'lwn', roundtrip: false, complete: true,
+      id: 42, version: 7, route: 'hiking', name: 'Tour du lac', ref: 'PR 3', network: 'lwn', roundtrip: false, complete: true,
     })
     expect(route!.distance_m).toBe(Math.round(distance(A, B, { units: 'meters' })))
   })

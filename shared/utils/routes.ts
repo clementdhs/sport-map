@@ -49,7 +49,7 @@ export function estimateDurationMin(sport: SportType, distanceM: number, elevati
 
 export const MAX_ROUTE_POINTS = 5000
 
-const coordinateSchema = z.tuple([
+export const coordinateSchema = z.tuple([
   z.number().min(-180).max(180),
   z.number().min(-90).max(90),
 ])

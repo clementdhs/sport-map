@@ -1,5 +1,6 @@
 import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
+import type { TrackElevationsResponse } from '#shared/types/osm'
 import type { RouteDetail } from '#shared/types/routes'
 import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode, WayInfo } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
@@ -10,7 +11,7 @@ interface Segment {
   // How the track was obtained. Imported and locked segments cannot be recomputed without losing their track.
   mode: SegmentMode
   coordinates: LngLat[]
-  // null while loading, when the elevation service could not be reached, or for a GPX without elevation
+  // null while loading, or when the elevation service could not be reached
   elevations: number[] | null
   // Surface, way type and trail difficulty, indexed in the segment's coordinates; null unless snapped to paths
   wayInfo: WayInfo | null
@@ -79,7 +80,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const editingId = ref<string | null>(null)
   const editingSource = ref<RouteSource>('drawn')
   let nextSegmentId = 0
-  // Segments with a routing request in flight: lets undo restart the ones whose request already finished.
+  // Segments with a routing or elevation request in flight: lets undo restart the ones whose request already finished.
   const inFlight = new Set<number>()
   // The user's daily routing quota (server-side): once used up, new segments stay straight lines.
   const routingQuotaReached = ref(false)
@@ -311,11 +312,39 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   function importTrack({ name, coordinates, elevations }: ImportedTrack) {
     saveSnapshot()
     waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
-    segments.value = [{ id: nextSegmentId++, mode: 'imported', coordinates, elevations, wayInfo: null, loading: false }]
+    const segment: Segment = { id: nextSegmentId++, mode: 'imported', coordinates, elevations, wayInfo: null, loading: !elevations }
+    segments.value = [segment]
     // They were placed on the replaced track.
     pois.value = []
     if (name && !details.value.name) details.value.name = name.slice(0, 120)
     replacedCount.value++
+    if (!elevations) fetchElevations(segment)
+  }
+
+  // A track imported without elevations (#71: OpenStreetMap route, GPX without <ele>) gets them from the server
+  // (Open-Meteo), sampled like the discover page's gains. Saving waits for them; if the service fails, the track
+  // stays without elevation, as before.
+  async function fetchElevations({ id, coordinates }: Segment) {
+    inFlight.add(id)
+    try {
+      const { elevations } = await $fetch<TrackElevationsResponse>('/api/elevations', { method: 'POST', body: { coordinates } })
+      const segment = segments.value.find(s => s.id === id)
+      if (segment && elevations.length === segment.coordinates.length) segment.elevations = elevations
+    }
+    catch (error) {
+      if (!segments.value.some(s => s.id === id)) return
+      toast.add({
+        title: t('editor.elevationFailed'),
+        description: t('editor.elevationFailedHint', { message: (error as FetchError).data?.statusMessage ?? (error as Error).message }),
+        color: 'warning',
+        icon: 'i-lucide-mountain',
+      })
+    }
+    finally {
+      inFlight.delete(id)
+      const segment = segments.value.find(s => s.id === id)
+      if (segment) segment.loading = false
+    }
   }
 
   // A generated loop (#50) is cut at waypoints spread along it, into segments that follow paths: moving a
@@ -353,7 +382,10 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     pois.value = previous.pois
     // A segment saved while loading whose request has since finished would otherwise stay loading forever.
     for (const segment of segments.value) {
-      if (segment.loading && !inFlight.has(segment.id)) routeSegment(segment)
+      if (segment.loading && !inFlight.has(segment.id)) {
+        if (segment.mode === 'imported') fetchElevations(segment)
+        else routeSegment(segment)
+      }
     }
   }
 

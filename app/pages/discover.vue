@@ -6,7 +6,7 @@ import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 // floating top bar.
 definePageMeta({ layout: false })
 const { t } = useI18n()
-const { formatDistance } = useFormat()
+const { formatDistance, formatNumber } = useFormat()
 const errorMessage = useErrorMessage()
 useSeoMeta({ title: () => `${t('discover.title')} — sport-map` })
 
@@ -28,7 +28,10 @@ onMounted(() => {
     const { fullPath, href } = router.resolve({ path: route.path, query: JSON.parse(query) })
     window.history.replaceState({ ...window.history.state, current: fullPath }, '', href)
   }, { immediate: true })
+  // Elevation gains (#71) are computed while the page is open.
+  discover.startElevations()
 })
+onBeforeUnmount(() => discover.stopElevations())
 
 const kindItems = computed(() => OSM_ROUTE_KINDS.map(value =>
   ({ value, label: t(`discover.kinds.${value}`), icon: SPORT_ICONS[OSM_KIND_SPORTS[value]] })))
@@ -40,6 +43,12 @@ const kind = computed({
 const label = (route: OsmRoute) => route.name ?? route.ref ?? t('discover.unnamed')
 const scopeOf = (route: OsmRoute) => osmRouteScope(route.network)
 const shapeOf = (route: OsmRoute) => osmRouteShape(route)
+// Elevation gain (#71): known, being computed (or waiting for it), or unknown.
+function gainLabel(route: OsmRoute): string {
+  const state = discover.elevationState(route)
+  if (state.status === 'known') return t('discover.gain', { gain: formatNumber(state.gain_m) })
+  return t(state.status === 'pending' ? 'discover.gainPending' : 'discover.gainUnknown')
+}
 const shownId = computed(() => discover.highlightedId ?? discover.selectedId)
 
 // The first view of the map starts a search, unless results already cover it (coming back from the editor).
@@ -148,6 +157,10 @@ async function selectOnMap(id: number) {
       {{ statusLabel }}
       <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
     </p>
+    <p v-if="discover.computingElevationId !== null && discover.elevationsLeft" class="-mt-2 flex items-center gap-2 text-xs text-muted">
+      <UIcon name="i-lucide-mountain" class="size-3.5" aria-hidden="true" />
+      {{ t('discover.elevationsLeft', { count: discover.elevationsLeft }, discover.elevationsLeft) }}
+    </p>
 
     <UAlert
       v-if="discover.error"
@@ -176,6 +189,10 @@ async function selectOnMap(id: number) {
           <span class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span>{{ formatDistance(route.distance_m) }}</span>
             <span v-if="shapeOf(route) === 'linear'">· {{ t('discover.outAndBackDistance', { distance: formatDistance(2 * route.distance_m) }) }}</span>
+            <span class="inline-flex items-center gap-1">
+              · {{ gainLabel(route) }}
+              <UIcon v-if="discover.computingElevationId === route.id" name="i-lucide-loader-circle" class="size-3.5 animate-spin" aria-hidden="true" />
+            </span>
             <UBadge v-if="shapeOf(route) !== 'unknown'" :label="t(`discover.shapes.${shapeOf(route)}`)" :icon="shapeOf(route) === 'loop' ? 'i-lucide-repeat' : 'i-lucide-move-right'" color="neutral" variant="subtle" size="sm" />
             <UBadge v-if="scopeOf(route)" :label="t(`discover.scopes.${scopeOf(route)}`)" color="neutral" variant="subtle" size="sm" />
             <UBadge v-if="route.name && route.ref" :label="route.ref" color="neutral" variant="outline" size="sm" />
@@ -211,6 +228,15 @@ async function selectOnMap(id: number) {
       <i18n-t keypath="discover.attribution" scope="global">
         <template #link>
           <ULink to="https://www.openstreetmap.org/copyright" target="_blank" class="underline">{{ t('discover.osmContributors') }}</ULink>
+        </template>
+      </i18n-t>
+      <!-- Licence Ouverte (IGN) and CC BY 4.0 (Open-Meteo) both ask for the source (#71). -->
+      <i18n-t keypath="discover.elevationAttribution" scope="global" tag="span" class="block">
+        <template #ign>
+          <ULink to="https://geoservices.ign.fr/rgealti" target="_blank" class="underline">{{ t('discover.ignRgeAlti') }}</ULink>
+        </template>
+        <template #openMeteo>
+          <ULink to="https://open-meteo.com/" target="_blank" class="underline">Open-Meteo.com</ULink>
         </template>
       </i18n-t>
     </p>

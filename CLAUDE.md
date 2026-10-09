@@ -12,7 +12,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - Pinia (setup-style stores in `app/stores/`)
 - Nitro API routes in `server/api/`, no separate backend
 - Supabase (`@nuxtjs/supabase`): Postgres + PostGIS, Auth, Storage
-- MapLibre GL JS 6 + MapTiler tiles; OpenRouteService for routing/elevation; `@tmcw/togeojson` for GPX
+- MapLibre GL JS 6 + MapTiler tiles; OpenRouteService for routing/elevation; Open-Meteo for weather; IGN altimetry (Open-Meteo abroad) for the elevations of imported tracks; `@tmcw/togeojson` for GPX
 
 ## Conventions
 - Secrets (`NUXT_OPENROUTESERVICE_KEY`, `NUXT_SUPABASE_SECRET_KEY`) are only read in `server/`. Only the MapTiler key and Supabase URL/publishable key are public.

@@ -36,6 +36,19 @@ registerEndpoint('/api/routing/segment', {
   },
 })
 
+// Fake elevation service (#71): 100 m, then 10 m higher at each point; fails when asked to.
+const elevationCalls: LngLat[][] = []
+let elevationsFail = false
+registerEndpoint('/api/elevations', {
+  method: 'POST',
+  handler: async (event) => {
+    const { coordinates } = await readBody<{ coordinates: LngLat[] }>(event)
+    elevationCalls.push(coordinates)
+    if (elevationsFail) throw createError({ statusCode: 502, statusMessage: 'Le service d\'altitude ne répond pas' })
+    return { elevations: coordinates.map((_, i) => 100 + 10 * i) }
+  },
+})
+
 let createdBody: RouteCreatePayload | undefined
 registerEndpoint('/api/routes', {
   method: 'POST',
@@ -266,6 +279,55 @@ describe('imported tracks', () => {
     editor.addWaypoint([6.4, 45.9])
     await settled(editor)
     expect(editor.canEditWaypoint(2)).toBe(true)
+  })
+
+  it('asks the elevations of a track imported without any, and saving waits for them', async () => {
+    elevationCalls.length = 0
+    elevationsFail = false
+    const editor = useRouteEditorStore()
+    editor.importTrack({ name: 'Parcours balisé', coordinates: [A, B, C], elevations: null })
+    expect(editor.isRouting).toBe(true)
+    expect(editor.canSave).toBe(false)
+
+    await settled(editor)
+    expect(elevationCalls).toEqual([[A, B, C]])
+    expect(editor.track.elevations).toEqual([100, 110, 120])
+    expect(editor.elevation?.gain).toBeGreaterThan(0)
+    expect(editor.canSave).toBe(true)
+  })
+
+  it('keeps the elevations of a GPX that has them', async () => {
+    elevationCalls.length = 0
+    const editor = useRouteEditorStore()
+    editor.importTrack({ name: null, coordinates: [A, B, C], elevations: [300, 250, 200] })
+    expect(editor.isRouting).toBe(false)
+    expect(editor.track.elevations).toEqual([300, 250, 200])
+    expect(elevationCalls).toEqual([])
+  })
+
+  it('keeps the track without elevation when the service fails', async () => {
+    elevationsFail = true
+    const editor = useRouteEditorStore()
+    editor.importTrack({ name: null, coordinates: [A, B, C], elevations: null })
+    await settled(editor)
+    expect(editor.track.coordinates).toEqual([A, B, C])
+    expect(editor.track.elevations).toBeNull()
+    expect(editor.canSave).toBe(true)
+    elevationsFail = false
+  })
+
+  it('asks again for an import restored by undo while its elevations were loading', async () => {
+    elevationCalls.length = 0
+    const editor = useRouteEditorStore()
+    editor.importTrack({ name: null, coordinates: [A, B, C], elevations: null })
+    // Saved while the elevations were still loading.
+    editor.addPoi(B)
+    await settled(editor)
+    editor.undo()
+
+    await settled(editor)
+    expect(editor.track.elevations).toEqual([100, 110, 120])
+    expect(elevationCalls).toHaveLength(2)
   })
 })
 

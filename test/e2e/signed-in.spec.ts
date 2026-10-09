@@ -183,12 +183,18 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(results.getByRole('listitem')).toHaveCount(4)
   await expect(page.getByText('4 parcours balisés').filter({ visible: true })).toBeVisible()
 
-  // Its ways don't connect: it can't be imported.
-  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ }).click()
+  // Its ways don't connect: it can't be imported, and has no elevation gain.
+  const incomplete = results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ })
+  await expect(incomplete).toContainText('D+ inconnu')
+  await incomplete.click()
   await expect(page.getByText('Ses tronçons ne se raccordent pas')).toBeVisible()
   await expect(page.getByRole('button', { name: /^Importer/ })).toHaveCount(0)
 
-  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 1\b/ }).click()
+  // The gains of the others are computed from the fake elevations (#71).
+  const loop = results.getByRole('button', { name: /^Sentier Denecourt-Colinet 1\b/ })
+  await expect(loop).toContainText(/D\+ \d+ m/)
+  const gain = (await loop.textContent())!.match(/D\+ (\d+) m/)![1]!
+  await loop.click()
   await page.getByRole('button', { name: 'Importer Sentier Denecourt-Colinet 1 dans l\'éditeur' }).click()
 
   await expect(page).toHaveURL('/routes/create')
@@ -196,8 +202,9 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 1')
   await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Randonnée')
   await expect(page.getByLabel('Description')).toHaveValue(/openstreetmap\.org\/relation\/389996/)
-  // A 3.8 km loop in OpenStreetMap.
+  // A 3.8 km loop in OpenStreetMap, with the gain the list showed.
   await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)
+  await expect(page.getByText('Dénivelé +', { exact: true }).locator('xpath=following-sibling::p')).toHaveText(`${gain} m`)
 
   // Back to the same search, its URL (written without navigating) kept in the history.
   await page.goBack()
@@ -244,6 +251,33 @@ test('filters the marked routes and keeps the filters and the view in the URL', 
   await page.getByRole('button', { name: 'Réinitialiser' }).click()
   await expect(results.getByRole('listitem')).toHaveCount(4)
   await expect(page).not.toHaveURL(/shape=/)
+})
+
+// The fake elevations make gentle slopes: no Fontainebleau route climbs 2,000 m.
+test('filters the marked routes on their elevation gain, keeping those whose gain is unknown', async ({ page }) => {
+  const fontainebleau = readFileSync('test/fixtures/overpass-fontainebleau.json', 'utf8')
+  await page.route('**/api/interpreter', route => route.fulfill({ contentType: 'application/json', body: fontainebleau }))
+
+  await page.goto('/discover?at=48.41,2.65,12&dplus=2000-')
+  const results = page.getByRole('list', { name: 'Parcours balisés trouvés' })
+  await expect(page.getByRole('button', { name: 'Filtres, 1 actif' })).toBeVisible()
+  // Once the gains are known, only the route that can't have one is left.
+  await expect(results.getByRole('listitem')).toHaveCount(1)
+  await expect(results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ })).toContainText('D+ inconnu')
+
+  await page.getByRole('button', { name: 'Filtres, 1 actif' }).click()
+  await expect(page.getByText('Plus de 2000 m D+')).toBeVisible()
+  await expect(page.getByText('Les parcours dont le dénivelé n\'est pas encore calculé restent affichés.')).toBeVisible()
+
+  // The gains are kept for the family: coming back computes nothing again.
+  const computations: string[] = []
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/osm/elevations') computations.push(request.url())
+  })
+  await page.reload()
+  await expect(results.getByRole('listitem')).toHaveCount(1)
+  await expect(results).toContainText('D+ inconnu')
+  expect(computations).toEqual([])
 })
 
 // Loops are mocked by the fixtures: a square of the asked length, turned by the seed.

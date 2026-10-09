@@ -104,6 +104,8 @@ export default defineConfig({
       NUXT_ROUTING_DAILY_LIMIT: '3',
       // Fake Open-Meteo, started by the global setup.
       NUXT_OPEN_METEO_URL: `http://127.0.0.1:${FAKE_WEATHER_PORT}/v1/forecast`,
+      NUXT_IGN_ALTIMETRY_URL: `http://127.0.0.1:${FAKE_WEATHER_PORT}/altimetrie/1.0/calcul/alti/rest/elevation.json`,
+      NUXT_OPEN_METEO_ELEVATION_URL: `http://127.0.0.1:${FAKE_WEATHER_PORT}/v1/elevation`,
     },
   },
 })

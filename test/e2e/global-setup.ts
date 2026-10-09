@@ -15,6 +15,8 @@ export default async function globalSetup() {
   // Photo files are not deleted by the cascade: start from an empty bucket. Same for the local mailbox.
   await supabaseAdmin('/storage/v1/bucket/route-photos/empty', { method: 'POST' })
   await fetch(`${process.env.E2E_MAILPIT_URL}/api/v1/messages`, { method: 'DELETE' })
+  // Gains of marked routes are shared, not tied to a user: computed again from the fake elevations.
+  await supabaseAdmin('/rest/v1/osm_route_elevations?relation_id=gt.0', { method: 'DELETE' })
 
   const { users } = await supabaseAdmin<{ users: { id: string, email: string }[] }>('/auth/v1/admin/users?per_page=1000')
   const emails = [E2E_USER.email, FAMILY_USER.email, RESET_USER.email, ...E2E_NEIGHBORS.map(n => n.email)]

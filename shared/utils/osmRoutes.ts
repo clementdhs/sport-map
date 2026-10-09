@@ -49,6 +49,8 @@ export const fitsOsmSearch = (view: Bbox) => bboxAreaKm2(osmSearchBbox(view)) <=
 export interface OsmRoute {
   // OSM relation id
   id: number
+  // The relation's version (`out meta`), which keys the cached elevation gain (#71)
+  version: number | null
   // The relation's `route` tag (hiking, foot, bicycle, mtb)
   route: string
   name: string | null
@@ -79,6 +81,7 @@ export interface OverpassMember {
 export interface OverpassRelation {
   type: 'relation'
   id: number
+  version?: number
   tags?: Record<string, string>
   members: OverpassMember[]
 }
@@ -215,6 +218,7 @@ export function toOsmRoute(relation: OverpassRelation): OsmRoute | null {
   const roundtrip = tag(tags, 'roundtrip')
   return {
     id: relation.id,
+    version: relation.version ?? null,
     route: tags.route ?? '',
     name: tag(tags, 'name'),
     ref: tag(tags, 'ref'),

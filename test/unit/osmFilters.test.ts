@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  activeOsmFilterCount, defaultOsmFilters, matchesOsmFilters, OSM_DISTANCE_MAX_KM, osmDiscoverQuery, type OsmRouteFilters,
-  osmRouteShape, parseOsmDiscoverQuery,
+  activeOsmFilterCount, defaultOsmFilters, matchesOsmFilters, OSM_DISTANCE_MAX_KM, OSM_GAIN_MAX_M, osmDiscoverQuery,
+  type OsmRouteFilters, osmRouteShape, parseOsmDiscoverQuery,
 } from '#shared/utils/osmFilters'
 import type { OsmRoute } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
@@ -14,7 +14,7 @@ const FAR: LngLat = [2.6, 48.41]
 const SIDE: LngLat = [2.61, 48.405]
 
 const route = (overrides: Partial<OsmRoute> = {}): OsmRoute => ({
-  id: 1, route: 'hiking', name: 'Sentier', ref: null, network: 'lwn', roundtrip: null, grade: null, complete: true,
+  id: 1, version: 3, route: 'hiking', name: 'Sentier', ref: null, network: 'lwn', roundtrip: null, grade: null, complete: true,
   distance_m: 8000, lines: [[START, SIDE, FAR]], ...overrides,
 })
 
@@ -60,6 +60,24 @@ describe('matchesOsmFilters', () => {
     expect(matchesOsmFilters(loop, { ...range, outAndBack: true })).toBe(false)
   })
 
+  it('keeps the routes within the elevation gain range, and those whose gain is unknown', () => {
+    const gainFilter = filters({ gainM: [200, 500] })
+    expect(matchesOsmFilters(route(), gainFilter, { gain_m: 350, loss_m: 350 })).toBe(true)
+    expect(matchesOsmFilters(route(), gainFilter, { gain_m: 150, loss_m: 150 })).toBe(false)
+    expect(matchesOsmFilters(route(), gainFilter, { gain_m: 600, loss_m: 0 })).toBe(false)
+    expect(matchesOsmFilters(route(), gainFilter, null)).toBe(true)
+    expect(matchesOsmFilters(route(), filters({ gainM: [1000, OSM_GAIN_MAX_M] }), { gain_m: 3200, loss_m: 0 })).toBe(true)
+  })
+
+  it('adds the loss of a linear route to its gain there and back when asked', () => {
+    // FAR is 1.1 km from START: linear. 150 m up, then 250 m up on the way back.
+    const elevation = { gain_m: 150, loss_m: 250 }
+    expect(matchesOsmFilters(route(), filters({ gainM: [300, 500] }), elevation)).toBe(false)
+    expect(matchesOsmFilters(route(), filters({ gainM: [300, 500], outAndBack: true }), elevation)).toBe(true)
+    // A loop already comes back.
+    expect(matchesOsmFilters(route({ roundtrip: true }), filters({ gainM: [300, 500], outAndBack: true }), elevation)).toBe(false)
+  })
+
   it('keeps loops or linear routes, not the ones whose shape is unknown', () => {
     expect(matchesOsmFilters(loop, filters({ shape: 'loop' }))).toBe(true)
     expect(matchesOsmFilters(linear, filters({ shape: 'loop' }))).toBe(false)
@@ -93,6 +111,7 @@ describe('activeOsmFilterCount', () => {
     expect(activeOsmFilterCount(defaultOsmFilters())).toBe(0)
     expect(activeOsmFilterCount(filters({ outAndBack: true }))).toBe(0)
     expect(activeOsmFilterCount(filters({ distanceKm: [5, OSM_DISTANCE_MAX_KM], shape: 'loop', maxGrade: 2, scopes: ['local'] }))).toBe(4)
+    expect(activeOsmFilterCount(filters({ gainM: [0, 500] }))).toBe(1)
   })
 })
 
@@ -104,21 +123,25 @@ describe('page URL', () => {
   it('reads back the kind, the filters and the view it wrote', () => {
     const state = {
       kind: 'mtb' as const,
-      filters: filters({ distanceKm: [5, 20], outAndBack: true, shape: 'loop', maxGrade: 2, scopes: ['local', 'regional'] }),
+      filters: filters({ distanceKm: [5, 20], gainM: [200, 800], outAndBack: true, shape: 'loop', maxGrade: 2, scopes: ['local', 'regional'] }),
       view: { center: [2.65, 48.415] as LngLat, zoom: 13 },
     }
     const query = osmDiscoverQuery(state)
-    expect(query).toEqual({ kind: 'mtb', km: '5-20', ar: '1', shape: 'loop', grade: '2', scope: 'local,regional', at: '48.415,2.65,13' })
+    expect(query).toEqual({
+      kind: 'mtb', km: '5-20', dplus: '200-800', ar: '1', shape: 'loop', grade: '2', scope: 'local,regional', at: '48.415,2.65,13',
+    })
     expect(parseOsmDiscoverQuery(query)).toEqual(state)
   })
 
-  it('writes an open distance range without its missing bound', () => {
+  it('writes an open range without its missing bound', () => {
     expect(osmDiscoverQuery({ kind: 'foot', filters: filters({ distanceKm: [10, OSM_DISTANCE_MAX_KM] }), view: null }).km).toBe('10-')
     expect(parseOsmDiscoverQuery({ km: '-20' }).filters.distanceKm).toEqual([0, 20])
+    expect(osmDiscoverQuery({ kind: 'foot', filters: filters({ gainM: [300, OSM_GAIN_MAX_M] }), view: null }).dplus).toBe('300-')
+    expect(parseOsmDiscoverQuery({ dplus: '-400' }).filters.gainM).toEqual([0, 400])
   })
 
   it('falls back to the defaults on values it doesn\'t know', () => {
-    expect(parseOsmDiscoverQuery({ kind: 'canoe', km: '20-5', shape: 'spiral', grade: '9', scope: 'galactic', at: '95,2,13' }))
+    expect(parseOsmDiscoverQuery({ kind: 'canoe', km: '20-5', dplus: 'lots', shape: 'spiral', grade: '9', scope: 'galactic', at: '95,2,13' }))
       .toEqual({ kind: 'foot', filters: defaultOsmFilters(), view: null })
     // S2 doesn't exist on the walking scale: only T1 to T3 can be picked.
     expect(parseOsmDiscoverQuery({ grade: '0' }).filters.maxGrade).toBeNull()

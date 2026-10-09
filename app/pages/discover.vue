@@ -44,6 +44,22 @@ function selectInList(route: OsmRoute) {
   focus.value = { center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], bbox }
 }
 
+const editor = useRouteEditorStore()
+const toast = useToast()
+
+async function importRoute(route: OsmRoute) {
+  // A new route being drawn would be lost; a saved one being edited stays as it was.
+  if (!editor.editingId && editor.waypoints.length && !window.confirm(t('discover.replaceDraft'))) return
+  discover.importIntoEditor(route)
+  toast.add({
+    title: t('discover.imported'),
+    description: t('discover.importedPoints', { count: editor.track.coordinates.length }),
+    color: 'success',
+    icon: 'i-lucide-file-check',
+  })
+  await navigateTo('/routes/create')
+}
+
 async function selectOnMap(id: number) {
   discover.selectedId = id
   await nextTick()
@@ -135,9 +151,21 @@ async function selectOnMap(id: number) {
             <UBadge v-if="!route.complete" :label="t('discover.incomplete')" icon="i-lucide-unlink" color="warning" variant="subtle" size="sm" />
           </span>
         </button>
-        <p v-if="discover.selectedId === route.id && !route.complete" class="mt-1 px-1 text-sm text-muted">
-          {{ t('discover.incompleteHint') }}
-        </p>
+        <template v-if="discover.selectedId === route.id">
+          <UButton
+            v-if="route.complete"
+            icon="i-lucide-route"
+            :label="t('discover.import')"
+            :aria-label="t('discover.importLabel', { name: label(route) })"
+            size="sm"
+            block
+            class="mt-2"
+            @click="importRoute(route)"
+          />
+          <p v-else class="mt-1 px-1 text-sm text-muted">
+            {{ t('discover.incompleteHint') }}
+          </p>
+        </template>
       </li>
     </ul>
     <p v-else-if="discover.searched && !discover.loading && !discover.error" class="text-sm text-muted">

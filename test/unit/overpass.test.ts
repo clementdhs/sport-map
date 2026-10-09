@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Bbox } from '#shared/utils/osmRoutes'
 import { LocalizedError } from '~/utils/localizedError'
 import { clearOverpassCache, OVERPASS_URLS, overpassQuery, searchOsmRoutes } from '~/utils/overpass'
-import fontainebleau from './fixtures/overpass-fontainebleau.json'
+import fontainebleau from '../fixtures/overpass-fontainebleau.json'
 
 const BBOX: Bbox = [2.58, 48.38, 2.72, 48.46]
 const [PRIMARY, FALLBACK] = OVERPASS_URLS

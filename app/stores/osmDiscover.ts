@@ -1,4 +1,4 @@
-import { type Bbox, bboxContains, fitsOsmSearch, type OsmRoute, type OsmRouteKind, osmSearchBbox, sortOsmRoutes } from '#shared/utils/osmRoutes'
+import { type Bbox, bboxContains, fitsOsmSearch, OSM_KIND_SPORTS, type OsmRoute, type OsmRouteKind, osmSearchBbox, sortOsmRoutes } from '#shared/utils/osmRoutes'
 import type { MapViewState } from '~/stores/routeSearch'
 
 // Marked routes of OpenStreetMap around the map view (#69). Overpass is slow and allows few queries: the page searches
@@ -65,6 +65,22 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
     bounds.value = null
   }
 
+  // Starts a new route in the editor from a complete marked route: its sport, and its source in the description
+  // (with the attribution the ODbL asks for).
+  function importIntoEditor(route: OsmRoute) {
+    const editor = useRouteEditorStore()
+    // A saved route being edited stays as it was.
+    if (editor.editingId) editor.reset()
+    editor.importTrack(osmRouteTrack(route))
+    editor.details.sport_type = OSM_KIND_SPORTS[searched.value?.kind ?? kind.value]
+    if (!editor.details.description) {
+      editor.details.description = $i18n.t('discover.importedDescription', {
+        name: route.name ?? route.ref ?? $i18n.t('discover.unnamed'),
+        url: `https://www.openstreetmap.org/relation/${route.id}`,
+      })
+    }
+  }
+
   // The page searches on its own when it opens, when nothing covers the view yet.
   function searchIfNeeded() {
     if (!viewSearched.value && !loading.value) search()
@@ -81,6 +97,6 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
 
   return {
     kind, view, bounds, routes, searched, loading, error, highlightedId, selectedId, tooWide, viewSearched, selected,
-    search, setView, startFrom, searchIfNeeded,
+    search, setView, startFrom, searchIfNeeded, importIntoEditor,
   }
 })

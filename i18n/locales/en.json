@@ -441,7 +441,13 @@
     "incomplete": "Incomplete",
     "incompleteHint": "Its sections don't connect in OpenStreetMap: it can't be imported as it is.",
     "attribution": "Data {link}, under the ODbL licence.",
-    "osmContributors": "© OpenStreetMap contributors"
+    "osmContributors": "© OpenStreetMap contributors",
+    "import": "Import into the editor",
+    "importLabel": "Import {name} into the editor",
+    "replaceDraft": "Replace the track being drawn in the editor with this marked route?",
+    "imported": "Marked route imported",
+    "importedPoints": "{count} points. OpenStreetMap has no altitudes: the elevation gain won't be calculated.",
+    "importedDescription": "Based on the marked route “{name}” from OpenStreetMap: {url} (data © OpenStreetMap contributors, ODbL licence)."
   },
   "gps": {
     "denied": "Allow access to your location in the browser settings.",

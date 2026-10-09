@@ -5,7 +5,7 @@ import {
   type OverpassRelation, sortOsmRoutes, stitchWays, toOsmRoute,
 } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
-import fontainebleau from './fixtures/overpass-fontainebleau.json'
+import fontainebleau from '../fixtures/overpass-fontainebleau.json'
 
 // About 100 m apart, zigzagging: simplifying the line keeps every point.
 const A: LngLat = [2.6, 48.4]

@@ -441,7 +441,13 @@
     "incomplete": "Incomplet",
     "incompleteHint": "Ses tronçons ne se raccordent pas dans OpenStreetMap : il ne peut pas être importé tel quel.",
     "attribution": "Données {link}, sous licence ODbL.",
-    "osmContributors": "© les contributeurs d'OpenStreetMap"
+    "osmContributors": "© les contributeurs d'OpenStreetMap",
+    "import": "Importer dans l'éditeur",
+    "importLabel": "Importer {name} dans l'éditeur",
+    "replaceDraft": "Remplacer le tracé en cours dans l'éditeur par ce parcours balisé ?",
+    "imported": "Parcours balisé importé",
+    "importedPoints": "{count} points. OpenStreetMap ne donne pas l'altitude : le dénivelé ne sera pas calculé.",
+    "importedDescription": "D'après le parcours balisé « {name} » d'OpenStreetMap : {url} (données © les contributeurs d'OpenStreetMap, licence ODbL)."
   },
   "gps": {
     "denied": "Autorise l'accès à ta position dans les réglages du navigateur.",

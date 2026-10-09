@@ -1,5 +1,7 @@
 ---
 paths:
+  - "app/utils/osmImport.ts"
+  - "test/nuxt/osmDiscover.test.ts"
   - "shared/utils/osmRoutes.ts"
   - "app/utils/overpass.ts"
   - "app/utils/osmRouteLayers.ts"
@@ -19,4 +21,6 @@ paths:
 - Stitching (`stitchWays`): ways chained in member order and turned as needed (an out-and-back may use a way twice), then the pieces joined nearest ends first when ≤ `MAX_GAP_M` = 30 m apart (members out of order, small mapping gaps). Roles `alternative`, `excursion`, `approach`, `connection`… and sub-relations are ignored. Anything left apart → `complete: false`, drawn dashed, badge "Incomplet", not importable. In Fontainebleau 36 relations of 56 are complete; the others turn in the middle of a way or branch. Lines are simplified (~1 m) and rounded to 6 decimals.
 - Page: searches when it opens (first view of the map, unless results already cover it) and when the kind changes (old results cleared at once); otherwise only with "Chercher dans cette zone", shown when the view isn't covered by the last search. Overpass is too slow and limited to search on every move. Entry points: home panel link and the empty editor's button; both call `discover.startFrom(view)` so the page opens on their map view. The store keeps view and results when coming back from the editor.
 - List order (`sortOsmRoutes`): complete first, then local → international (`network` lwn/rwn/nwn/iwn, lcn…), then name with numbers in order; unnamed ("Parcours sans nom") last. Map: all routes in dataviz blue, the hovered or selected one redrawn on top in `ROUTE_COLOR` (layer filter, no data rebuild). The source carries the OSM attribution (ODbL) whatever the basemap; the panel repeats it.
-- Tests: `test/unit/fixtures/overpass-fontainebleau.json` holds 4 real relations (closed loop, members out of order, incomplete, sub-relation).
+- Import ("Importer dans l'éditeur", selected complete route only): `discover.importIntoEditor` resets the editor if it was editing a saved route (a new draft asks for confirmation first, in the page), then `editor.importTrack(osmRouteTrack(route))` (resampled like a GPX, `imported` segment, no elevations: OSM has none, so no D+ until #71), sets the sport from `OSM_KIND_SPORTS`, and fills an empty description with the relation's URL and the ODbL attribution; the name comes from `importTrack` (name, else ref) when empty. Then `/routes/create`.
+- e2e: `fixtures.ts` answers every `**/api/interpreter` (any Overpass instance) with no route; `signed-in.spec.ts` serves the Fontainebleau fixture from maps.mail.ru after a 504 from overpass-api.de, and moves the map with a mocked MapTiler place (the home view, France, is too wide).
+- Tests: `test/fixtures/overpass-fontainebleau.json` (also used by the e2e test) holds 4 real relations (closed loop, members out of order, incomplete, sub-relation).

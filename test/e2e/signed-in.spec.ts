@@ -156,6 +156,50 @@ test('imports a GPX file dropped on the editor map', async ({ page }) => {
   await expect(page.getByLabel('Nom')).toHaveValue('Tour déposé')
 })
 
+// Marked routes come from 4 real relations of Fontainebleau; the first Overpass instance is busy, as it often is.
+test('finds marked routes around a place and imports one into the editor', async ({ page }) => {
+  const fontainebleau = readFileSync('test/fixtures/overpass-fontainebleau.json', 'utf8')
+  await page.route('https://overpass-api.de/api/interpreter', route => route.fulfill({ status: 504, body: 'busy' }))
+  await page.route('https://maps.mail.ru/osm/tools/overpass/api/interpreter', route =>
+    route.fulfill({ contentType: 'application/json', body: fontainebleau }))
+  await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({
+    json: { features: [{ place_name: 'Fontainebleau, Seine-et-Marne, France', center: [2.65, 48.41] }] },
+  }))
+
+  await page.goto('/')
+  await waitForMap(page)
+  await page.getByRole('link', { name: 'Parcours balisés OpenStreetMap dans cette zone' }).click()
+  await expect(page).toHaveURL('/discover')
+  await waitForMap(page)
+  // The home map shows the whole of France: too wide for Overpass.
+  await expect(page.getByText('La zone affichée est trop grande')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Chercher dans cette zone' })).toBeDisabled()
+
+  await page.getByRole('combobox', { name: 'Rechercher un lieu' }).fill('Fontainebleau')
+  await page.getByRole('option', { name: 'Fontainebleau, Seine-et-Marne, France' }).click()
+  await page.getByRole('button', { name: 'Chercher dans cette zone' }).click()
+
+  const results = page.getByRole('list', { name: 'Parcours balisés trouvés' })
+  await expect(results.getByRole('listitem')).toHaveCount(4)
+  await expect(page.getByText('4 parcours balisés').filter({ visible: true })).toBeVisible()
+
+  // Its ways don't connect: it can't be imported.
+  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ }).click()
+  await expect(page.getByText('Ses tronçons ne se raccordent pas')).toBeVisible()
+  await expect(page.getByRole('button', { name: /^Importer/ })).toHaveCount(0)
+
+  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 1\b/ }).click()
+  await page.getByRole('button', { name: 'Importer Sentier Denecourt-Colinet 1 dans l\'éditeur' }).click()
+
+  await expect(page).toHaveURL('/routes/create')
+  await expect(page.getByText('Parcours balisé importé').first()).toBeVisible()
+  await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 1')
+  await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Randonnée')
+  await expect(page.getByLabel('Description')).toHaveValue(/openstreetmap\.org\/relation\/389996/)
+  // A 3.8 km loop in OpenStreetMap.
+  await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)
+})
+
 // Loops are mocked by the fixtures: a square of the asked length, turned by the seed.
 for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
   test(`generates loops from a start and a distance, then edits the chosen one, on a ${device.name}`, async ({ page }) => {

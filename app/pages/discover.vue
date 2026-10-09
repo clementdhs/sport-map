@@ -19,8 +19,15 @@ const route = useRoute()
 const router = useRouter()
 if (Object.keys(route.query).length) discover.applyState(parseOsmDiscoverQuery(route.query))
 const pageQuery = computed(() => JSON.stringify(osmDiscoverQuery({ kind: discover.kind, filters: discover.filters, view: discover.view })))
+// Written with history.replaceState, not router.replace: a navigation at each map move would run the route
+// middleware, and a navigateTo() called meanwhile ("Importer") would be dropped, Nuxt taking it for a middleware's
+// redirect. vue-router keeps the URL of the current history entry in its state (`current`) and rewrites the entry
+// with it when the page is left: it gets the new one too.
 onMounted(() => {
-  watch(pageQuery, query => router.replace({ query: JSON.parse(query) }), { immediate: true })
+  watch(pageQuery, (query) => {
+    const { fullPath, href } = router.resolve({ path: route.path, query: JSON.parse(query) })
+    window.history.replaceState({ ...window.history.state, current: fullPath }, '', href)
+  }, { immediate: true })
 })
 
 const kindItems = computed(() => OSM_ROUTE_KINDS.map(value =>

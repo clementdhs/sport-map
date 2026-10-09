@@ -169,7 +169,7 @@ test('finds marked routes around a place and imports one into the editor', async
   await page.goto('/')
   await waitForMap(page)
   await page.getByRole('link', { name: 'Parcours balisés OpenStreetMap dans cette zone' }).click()
-  await expect(page).toHaveURL('/discover')
+  await expect(page).toHaveURL(/\/discover(\?|$)/)
   await waitForMap(page)
   // The home map shows the whole of France: too wide for Overpass.
   await expect(page.getByText('La zone affichée est trop grande')).toBeVisible()
@@ -198,6 +198,11 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(page.getByLabel('Description')).toHaveValue(/openstreetmap\.org\/relation\/389996/)
   // A 3.8 km loop in OpenStreetMap.
   await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)
+
+  // Back to the same search, its URL (written without navigating) kept in the history.
+  await page.goBack()
+  await expect(page).toHaveURL(/\/discover\?at=48\.\d+,2\.\d+,\d/)
+  await expect(results.getByRole('listitem')).toHaveCount(4)
 })
 
 // Of the 4 Fontainebleau relations: 2 loops (one tagged, one closing on itself), 1 one-way route, 1 whose ways don't

@@ -327,7 +327,11 @@
   "errors": {
     "gpxNoTrack": "Ce fichier ne contient aucune trace ni itinéraire.",
     "offlineTooLong": "Parcours trop long pour être préparé : il épuiserait le quota mensuel de la carte.",
-    "photoTooLarge": "{name} : photo trop lourde, même compressée"
+    "photoTooLarge": "{name} : photo trop lourde, même compressée",
+    "gpxInvalid": "Ce fichier n'est pas un GPX valide.",
+    "gpxTooShort": "La trace contient moins de 2 points.",
+    "gpxOneFile": "Dépose un seul fichier GPX à la fois.",
+    "gpxNotGpx": "Seuls les fichiers GPX (.gpx) peuvent être importés."
   },
   "editor": {
     "replaceWithGpx": "Remplacer le tracé en cours par ce fichier GPX ?",
@@ -375,7 +379,8 @@
     "submitCreate": "Enregistrer le parcours",
     "submitEdit": "Enregistrer les modifications",
     "notOwner": "Tu ne peux modifier que tes propres parcours",
-    "editTitle": "Modifier « {name} »"
+    "editTitle": "Modifier « {name} »",
+    "dropGpx": "Dépose ton fichier GPX pour l'importer"
   },
   "loop": {
     "open": "Générer une boucle",

@@ -83,7 +83,7 @@ describe('readGpxFile', () => {
   })
 
   it('rejects something that is not XML', async () => {
-    await expect(readGpxFile(gpxFile('ceci n\'est pas du xml <<<'))).rejects.toThrow()
+    await expect(readGpxFile(gpxFile('ceci n\'est pas du xml <<<'))).rejects.toThrow('errors.gpxInvalid')
   })
 })
 

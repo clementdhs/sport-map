@@ -327,7 +327,11 @@
   "errors": {
     "gpxNoTrack": "This file contains no track or route.",
     "offlineTooLong": "Route too long to prepare: it would use up the map's monthly quota.",
-    "photoTooLarge": "{name}: photo too large, even compressed"
+    "photoTooLarge": "{name}: photo too large, even compressed",
+    "gpxInvalid": "This file is not a valid GPX.",
+    "gpxTooShort": "The track has fewer than 2 points.",
+    "gpxOneFile": "Drop a single GPX file at a time.",
+    "gpxNotGpx": "Only GPX files (.gpx) can be imported."
   },
   "editor": {
     "replaceWithGpx": "Replace the current track with this GPX file?",
@@ -375,7 +379,8 @@
     "submitCreate": "Save the route",
     "submitEdit": "Save changes",
     "notOwner": "You can only edit your own routes",
-    "editTitle": "Edit “{name}”"
+    "editTitle": "Edit “{name}”",
+    "dropGpx": "Drop your GPX file to import it"
   },
   "loop": {
     "open": "Generate a loop",

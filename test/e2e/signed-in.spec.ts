@@ -122,6 +122,40 @@ test('moves the editor map to a searched place without touching the track', asyn
   await expect(distance).toHaveText(drawn!)
 })
 
+test('imports a GPX file dropped on the editor map', async ({ page }) => {
+  await page.goto('/routes/create')
+  await waitForMap(page)
+
+  const gpx = `<?xml version="1.0"?><gpx version="1.1" creator="e2e" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>Tour déposé</name><trkseg>
+    <trkpt lat="45.899" lon="6.129"><ele>450</ele></trkpt><trkpt lat="45.905" lon="6.135"><ele>480</ele></trkpt><trkpt lat="45.910" lon="6.140"><ele>470</ele></trkpt>
+  </trkseg></trk></gpx>`
+  // Playwright can't drag files from the OS: dispatch the drag events with a DataTransfer built in the page.
+  const drop = async (files: { name: string, content: string }[]) => {
+    const dataTransfer = await page.evaluateHandle((files) => {
+      const transfer = new DataTransfer()
+      for (const { name, content } of files) transfer.items.add(new File([content], name, { type: 'application/gpx+xml' }))
+      return transfer
+    }, files)
+    const zone = page.locator('[data-gpx-dropzone]')
+    await zone.dispatchEvent('dragenter', { dataTransfer })
+    await expect(page.getByText('Dépose ton fichier GPX pour l\'importer')).toBeVisible()
+    await zone.dispatchEvent('drop', { dataTransfer })
+    await expect(page.getByText('Dépose ton fichier GPX pour l\'importer')).toHaveCount(0)
+  }
+
+  await drop([{ name: 'notes.txt', content: 'pas un gpx' }])
+  await expect(page.getByText('Seuls les fichiers GPX (.gpx) peuvent être importés.').first()).toBeVisible()
+  await drop([{ name: 'a.gpx', content: gpx }, { name: 'b.gpx', content: gpx }])
+  await expect(page.getByText('Dépose un seul fichier GPX à la fois.').first()).toBeVisible()
+  await expect(page.locator('p.text-3xl')).toHaveText('0 m')
+
+  await drop([{ name: 'tour.gpx', content: gpx }])
+  await expect(page.getByText('Trace importée').first()).toBeVisible()
+  await expect(page.locator('p.text-3xl')).not.toHaveText('0 m')
+  await expect(page.getByText('Profil altimétrique')).toBeVisible()
+  await expect(page.getByLabel('Nom')).toHaveValue('Tour déposé')
+})
+
 // Loops are mocked by the fixtures: a square of the asked length, turned by the seed.
 for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
   test(`generates loops from a start and a distance, then edits the chosen one, on a ${device.name}`, async ({ page }) => {

@@ -30,11 +30,43 @@ const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.
 const gpxInput = useTemplateRef('gpxInput')
 const importing = ref(false)
 
-async function onGpxSelected(event: Event) {
+function onGpxSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = '' // allow re-selecting the same file
-  if (!file) return
+  if (file) importGpx(file)
+}
+
+// Dropping a file on the map imports it like the button. dragenter / dragleave fire for every child
+// crossed, hence the counter.
+const dragDepth = ref(0)
+const draggingFile = computed(() => dragDepth.value > 0)
+const carriesFiles = (event: DragEvent) => event.dataTransfer?.types.includes('Files') ?? false
+
+function onDragEnter(event: DragEvent) {
+  if (carriesFiles(event)) dragDepth.value++
+}
+
+function onDragLeave(event: DragEvent) {
+  if (carriesFiles(event)) dragDepth.value = Math.max(0, dragDepth.value - 1)
+}
+
+function onDrop(event: DragEvent) {
+  dragDepth.value = 0
+  const files = [...event.dataTransfer?.files ?? []]
+  if (!files.length) return
+  if (files.length > 1) {
+    toast.add({ title: t('editor.importFailed'), description: t('errors.gpxOneFile'), color: 'error' })
+    return
+  }
+  if (!files[0]!.name.toLowerCase().endsWith('.gpx')) {
+    toast.add({ title: t('editor.importFailed'), description: t('errors.gpxNotGpx'), color: 'error' })
+    return
+  }
+  importGpx(files[0]!)
+}
+
+async function importGpx(file: File) {
   if (editor.waypoints.length && !window.confirm(t('editor.replaceWithGpx'))) return
 
   importing.value = true
@@ -82,9 +114,26 @@ async function onSubmit() {
 <template>
   <MapSheetLayout :back="back">
     <template #map>
-      <ClientOnly>
-        <MapRouteEditor :hover-point="hoverPoint" :focus="focus" />
-      </ClientOnly>
+      <div
+        class="relative size-full"
+        data-gpx-dropzone
+        @dragenter.prevent="onDragEnter"
+        @dragover.prevent
+        @dragleave="onDragLeave"
+        @drop.prevent="onDrop"
+      >
+        <ClientOnly>
+          <MapRouteEditor :hover-point="hoverPoint" :focus="focus" />
+        </ClientOnly>
+        <div
+          v-if="draggingFile"
+          class="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-lg border-2 border-dashed border-primary bg-primary/10 backdrop-blur-[1px]"
+        >
+          <p class="flex items-center gap-2 rounded-md bg-default px-4 py-2 font-medium shadow">
+            <UIcon name="i-lucide-file-up" class="size-5 text-primary" />{{ t('editor.dropGpx') }}
+          </p>
+        </div>
+      </div>
     </template>
 
     <template #search>

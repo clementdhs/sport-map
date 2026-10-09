@@ -37,7 +37,7 @@ export function resampleTrack(positions: Position[], maxPoints = MAX_ROUTE_POINT
 
 export async function readGpxFile(file: File): Promise<ImportedTrack> {
   const document = new DOMParser().parseFromString(await file.text(), 'application/xml')
-  if (document.querySelector('parsererror')) throw new Error("Ce fichier n'est pas un GPX valide.")
+  if (document.querySelector('parsererror')) throw new LocalizedError('errors.gpxInvalid')
 
   const first = gpx(document).features.find((feature): feature is Feature<LineString | MultiLineString> =>
     feature.geometry?.type === 'LineString' || feature.geometry?.type === 'MultiLineString')
@@ -47,7 +47,7 @@ export async function readGpxFile(file: File): Promise<ImportedTrack> {
   const positions = first.geometry.type === 'LineString'
     ? first.geometry.coordinates
     : first.geometry.coordinates.flat()
-  if (positions.length < 2) throw new Error('La trace contient moins de 2 points.')
+  if (positions.length < 2) throw new LocalizedError('errors.gpxTooShort')
 
   const points = resampleTrack(positions)
   const round = (value: number) => Math.round(value * 1e6) / 1e6

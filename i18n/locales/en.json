@@ -447,7 +447,28 @@
     "replaceDraft": "Replace the track being drawn in the editor with this marked route?",
     "imported": "Marked route imported",
     "importedPoints": "{count} points. OpenStreetMap has no altitudes: the elevation gain won't be calculated.",
-    "importedDescription": "Based on the marked route “{name}” from OpenStreetMap: {url} (data © OpenStreetMap contributors, ODbL licence)."
+    "importedDescription": "Based on the marked route “{name}” from OpenStreetMap: {url} (data © OpenStreetMap contributors, ODbL licence).",
+    "shownCount": "{shown} marked route out of {count} | {shown} marked routes out of {count}",
+    "noneFiltered": "No route matches the filters.",
+    "outAndBackDistance": "{distance} there and back",
+    "shapes": {
+      "loop": "Loop",
+      "linear": "One way"
+    },
+    "filters": {
+      "outAndBack": "Count one-way routes there and back",
+      "outAndBackHint": "An 8 km one-way route also counts as 16 km.",
+      "shape": "Route shape",
+      "shapes": {
+        "all": "All",
+        "loop": "Loops",
+        "linear": "One way"
+      },
+      "difficulty": "Maximum difficulty",
+      "anyDifficulty": "Any difficulty",
+      "difficultyHint": "Ungraded routes stay shown: OpenStreetMap mostly grades paths, rarely routes.",
+      "scope": "Reach"
+    }
   },
   "gps": {
     "denied": "Allow access to your location in the browser settings.",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OsmRoute } from '#shared/utils/osmRoutes'
+import type { OsmRoute, OsmRouteKind } from '#shared/utils/osmRoutes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 
 // Marked routes of OpenStreetMap around the map view (#69). Map page: MapSheetLayout replaces the header with its
@@ -13,11 +13,26 @@ useSeoMeta({ title: () => `${t('discover.title')} — sport-map` })
 const discover = useOsmDiscoverStore()
 const focus = ref<MapFocus | null>(null)
 
+// The URL holds the kind, the filters and the view (#70), to share a search. Without any (a link of the app), the
+// page keeps the store's, then writes them.
+const route = useRoute()
+const router = useRouter()
+if (Object.keys(route.query).length) discover.applyState(parseOsmDiscoverQuery(route.query))
+const pageQuery = computed(() => JSON.stringify(osmDiscoverQuery({ kind: discover.kind, filters: discover.filters, view: discover.view })))
+onMounted(() => {
+  watch(pageQuery, query => router.replace({ query: JSON.parse(query) }), { immediate: true })
+})
+
 const kindItems = computed(() => OSM_ROUTE_KINDS.map(value =>
   ({ value, label: t(`discover.kinds.${value}`), icon: SPORT_ICONS[OSM_KIND_SPORTS[value]] })))
+const kind = computed({
+  get: () => discover.kind,
+  set: (value: OsmRouteKind) => discover.setKind(value),
+})
 
 const label = (route: OsmRoute) => route.name ?? route.ref ?? t('discover.unnamed')
 const scopeOf = (route: OsmRoute) => osmRouteScope(route.network)
+const shapeOf = (route: OsmRoute) => osmRouteShape(route)
 const shownId = computed(() => discover.highlightedId ?? discover.selectedId)
 
 // The first view of the map starts a search, unless results already cover it (coming back from the editor).
@@ -34,7 +49,11 @@ const statusLabel = computed(() => {
   if (discover.loading) return t('discover.searching')
   if (discover.error) return t('discover.failed')
   if (!discover.searched) return discover.tooWide ? t('discover.zoomIn') : t('discover.title')
-  return discover.routes.length ? t('discover.count', { count: discover.routes.length }, discover.routes.length) : t('discover.none')
+  const count = discover.routes.length
+  if (!count) return t('discover.none')
+  const shown = discover.shownRoutes.length
+  if (shown < count) return t('discover.shownCount', { shown, count }, shown)
+  return t('discover.count', { count }, count)
 })
 
 // Picked in the list: framed on the map. Picked on the map: shown in the list.
@@ -72,7 +91,7 @@ async function selectOnMap(id: number) {
     <template #map>
       <ClientOnly>
         <MapOsmRoutes
-          :routes="discover.routes"
+          :routes="discover.shownRoutes"
           :highlighted-id="shownId"
           :focus="focus"
           :center="discover.view.center"
@@ -98,7 +117,10 @@ async function selectOnMap(id: number) {
 
     <h1 class="text-lg font-semibold max-md:sr-only">{{ t('discover.title') }}</h1>
 
-    <UTabs v-model="discover.kind" :items="kindItems" :content="false" size="sm" :aria-label="t('discover.kind')" />
+    <UTabs v-model="kind" :items="kindItems" :content="false" size="sm" :aria-label="t('discover.kind')" />
+    <div>
+      <OsmRouteFilters />
+    </div>
 
     <template v-if="!discover.viewSearched">
       <UButton
@@ -130,8 +152,8 @@ async function selectOnMap(id: number) {
       :actions="[{ label: t('discover.retry'), color: 'neutral', variant: 'outline', onClick: () => discover.search() }]"
     />
 
-    <ul v-if="discover.routes.length" class="space-y-2" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
-      <li v-for="route in discover.routes" :id="`osm-route-${route.id}`" :key="route.id">
+    <ul v-if="discover.shownRoutes.length" class="space-y-2" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
+      <li v-for="route in discover.shownRoutes" :id="`osm-route-${route.id}`" :key="route.id">
         <button
           type="button"
           class="w-full rounded-md border p-3 text-left"
@@ -146,6 +168,8 @@ async function selectOnMap(id: number) {
           <span class="block font-medium">{{ label(route) }}</span>
           <span class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
             <span>{{ formatDistance(route.distance_m) }}</span>
+            <span v-if="shapeOf(route) === 'linear'">· {{ t('discover.outAndBackDistance', { distance: formatDistance(2 * route.distance_m) }) }}</span>
+            <UBadge v-if="shapeOf(route) !== 'unknown'" :label="t(`discover.shapes.${shapeOf(route)}`)" :icon="shapeOf(route) === 'loop' ? 'i-lucide-repeat' : 'i-lucide-move-right'" color="neutral" variant="subtle" size="sm" />
             <UBadge v-if="scopeOf(route)" :label="t(`discover.scopes.${scopeOf(route)}`)" color="neutral" variant="subtle" size="sm" />
             <UBadge v-if="route.name && route.ref" :label="route.ref" color="neutral" variant="outline" size="sm" />
             <UBadge v-if="!route.complete" :label="t('discover.incomplete')" icon="i-lucide-unlink" color="warning" variant="subtle" size="sm" />
@@ -168,6 +192,10 @@ async function selectOnMap(id: number) {
         </template>
       </li>
     </ul>
+    <div v-else-if="discover.routes.length" class="space-y-2">
+      <p class="text-sm text-muted">{{ t('discover.noneFiltered') }}</p>
+      <UButton :label="t('filters.reset')" icon="i-lucide-rotate-ccw" color="neutral" variant="outline" size="sm" @click="discover.resetFilters" />
+    </div>
     <p v-else-if="discover.searched && !discover.loading && !discover.error" class="text-sm text-muted">
       {{ t('discover.noneHint') }}
     </p>

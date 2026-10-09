@@ -7,7 +7,7 @@ import { osmRouteTrack } from '~/utils/osmImport'
 const line = (count: number): LngLat[] => Array.from({ length: count }, (_, i) => [2.6, 48.4 + i * 0.00001])
 
 const route = (overrides: Partial<OsmRoute>): OsmRoute => ({
-  id: 1, route: 'hiking', name: 'Tour du lac', ref: 'PR 3', network: 'lwn', roundtrip: null, complete: true, distance_m: 0, lines: [line(100)], ...overrides,
+  id: 1, route: 'hiking', name: 'Tour du lac', ref: 'PR 3', network: 'lwn', roundtrip: null, grade: null, complete: true, distance_m: 0, lines: [line(100)], ...overrides,
 })
 
 describe('osmRouteTrack', () => {

@@ -447,7 +447,28 @@
     "replaceDraft": "Remplacer le tracé en cours dans l'éditeur par ce parcours balisé ?",
     "imported": "Parcours balisé importé",
     "importedPoints": "{count} points. OpenStreetMap ne donne pas l'altitude : le dénivelé ne sera pas calculé.",
-    "importedDescription": "D'après le parcours balisé « {name} » d'OpenStreetMap : {url} (données © les contributeurs d'OpenStreetMap, licence ODbL)."
+    "importedDescription": "D'après le parcours balisé « {name} » d'OpenStreetMap : {url} (données © les contributeurs d'OpenStreetMap, licence ODbL).",
+    "shownCount": "{shown} parcours balisé sur {count} | {shown} parcours balisés sur {count}",
+    "noneFiltered": "Aucun parcours ne correspond aux filtres.",
+    "outAndBackDistance": "{distance} en aller-retour",
+    "shapes": {
+      "loop": "Boucle",
+      "linear": "Aller simple"
+    },
+    "filters": {
+      "outAndBack": "Compter les allers simples en aller-retour",
+      "outAndBackHint": "Un aller simple de 8 km compte aussi pour 16 km.",
+      "shape": "Forme du parcours",
+      "shapes": {
+        "all": "Tous",
+        "loop": "Boucles",
+        "linear": "Allers simples"
+      },
+      "difficulty": "Difficulté maximale",
+      "anyDifficulty": "Toutes les difficultés",
+      "difficultyHint": "Les parcours sans cotation restent affichés : OpenStreetMap cote surtout les chemins, rarement les parcours.",
+      "scope": "Envergure"
+    }
   },
   "gps": {
     "denied": "Autorise l'accès à ta position dans les réglages du navigateur.",

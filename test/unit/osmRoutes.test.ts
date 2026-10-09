@@ -72,6 +72,18 @@ describe('toOsmRoute', () => {
     expect(route!.distance_m).toBe(Math.round(distance(A, B, { units: 'meters' })))
   })
 
+  it.each([
+    [{ route: 'hiking', sac_scale: 'mountain_hiking' }, 2],
+    [{ route: 'foot', sac_scale: 'difficult_alpine_hiking' }, 6],
+    [{ route: 'mtb', 'mtb:scale': '2+' }, 2],
+    [{ route: 'mtb', 'mtb:scale': '0' }, 0],
+    [{ route: 'mtb', 'mtb:scale': 'S3' }, null],
+    [{ route: 'bicycle', sac_scale: 'hiking' }, null],
+    [{ route: 'hiking' }, null],
+  ])('reads the difficulty of %o', (tags, grade) => {
+    expect(toOsmRoute({ type: 'relation', id: 1, tags, members: [way([A, B])] })!.grade).toBe(grade)
+  })
+
   it('leaves missing tags empty', () => {
     expect(toOsmRoute({ type: 'relation', id: 1, members: [way([A, B])] }))
       .toMatchObject({ route: '', name: null, ref: null, network: null, roundtrip: null })
@@ -152,7 +164,7 @@ describe('search area', () => {
 
 describe('route list', () => {
   const route = (id: number, overrides: Partial<OsmRoute> = {}): OsmRoute => ({
-    id, route: 'hiking', name: null, ref: null, network: 'lwn', roundtrip: null, complete: true, distance_m: 1000, lines: [[A, B]], ...overrides,
+    id, route: 'hiking', name: null, ref: null, network: 'lwn', roundtrip: null, grade: null, complete: true, distance_m: 1000, lines: [[A, B]], ...overrides,
   })
 
   it.each([

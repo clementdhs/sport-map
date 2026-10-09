@@ -57,6 +57,9 @@ export interface OsmRoute {
   network: string | null
   // The `roundtrip` tag, when the relation has one
   roundtrip: boolean | null
+  // Difficulty, when the relation has one: T1 to T6 (1 to 6, sac_scale) for walking routes, S0 to S6 (0 to 6,
+  // mtb:scale) for MTB ones. Most relations have none: OSM grades the paths themselves.
+  grade: number | null
   // Whether its ways could be joined into a single line
   complete: boolean
   distance_m: number
@@ -185,6 +188,19 @@ function simplifyLine(line: LngLat[]): LngLat[] {
 
 const tag = (tags: Record<string, string>, key: string) => tags[key]?.trim() || null
 
+const SAC_SCALE = ['hiking', 'mountain_hiking', 'demanding_mountain_hiking', 'alpine_hiking', 'demanding_alpine_hiking', 'difficult_alpine_hiking']
+
+function osmGrade(tags: Record<string, string>): number | null {
+  if (tags.route === 'mtb') {
+    // "2", or "2+" / "2-" for a finer grade.
+    const grade = tag(tags, 'mtb:scale')?.match(/^([0-6])[+-]?$/)?.[1]
+    return grade === undefined ? null : Number(grade)
+  }
+  if (tags.route !== 'hiking' && tags.route !== 'foot') return null
+  const index = SAC_SCALE.indexOf(tag(tags, 'sac_scale') ?? '')
+  return index < 0 ? null : index + 1
+}
+
 // A route relation from Overpass, or null when none of its ways has a geometry.
 export function toOsmRoute(relation: OverpassRelation): OsmRoute | null {
   const ways = relation.members
@@ -204,6 +220,7 @@ export function toOsmRoute(relation: OverpassRelation): OsmRoute | null {
     ref: tag(tags, 'ref'),
     network: tag(tags, 'network'),
     roundtrip: roundtrip === 'yes' ? true : roundtrip === 'no' ? false : null,
+    grade: osmGrade(tags),
     complete: lines.length === 1,
     distance_m: Math.round(lines.reduce((sum, line) => sum + length(lineString(line), { units: 'meters' }), 0)),
     lines,

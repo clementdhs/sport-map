@@ -200,6 +200,47 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)
 })
 
+// Of the 4 Fontainebleau relations: 2 loops (one tagged, one closing on itself), 1 one-way route, 1 whose ways don't
+// connect (shape unknown).
+test('filters the marked routes and keeps the filters and the view in the URL', async ({ page }) => {
+  const fontainebleau = readFileSync('test/fixtures/overpass-fontainebleau.json', 'utf8')
+  await page.route('**/api/interpreter', route => route.fulfill({ contentType: 'application/json', body: fontainebleau }))
+
+  // A shared link: the page opens on its view and searches at once.
+  await page.goto('/discover?at=48.41,2.65,12')
+  const results = page.getByRole('list', { name: 'Parcours balisés trouvés' })
+  await expect(results.getByRole('listitem')).toHaveCount(4)
+
+  await page.getByRole('button', { name: 'Filtres' }).click()
+  await page.getByRole('tab', { name: 'Boucles' }).click()
+  await expect(results.getByRole('listitem')).toHaveCount(2)
+  await expect(page.getByText('2 parcours balisés sur 4').filter({ visible: true })).toBeVisible()
+  await expect(results.getByRole('button', { name: /^Sentier Denecourt-Colinet 1\b/ })).toBeVisible()
+
+  await page.getByRole('tab', { name: 'Allers simples' }).click()
+  await expect(results.getByRole('listitem')).toHaveCount(1)
+  const oneWay = results.getByRole('button', { name: /^Sentier Denecourt-Colinet 7\b/ })
+  await expect(oneWay).toContainText('Aller simple')
+  await expect(oneWay).toContainText('en aller-retour')
+  await page.getByRole('checkbox', { name: 'National', exact: true }).check()
+  await expect(page.getByRole('button', { name: 'Filtres, 2 actifs' })).toBeVisible()
+  await expect(page).toHaveURL(/shape=linear/)
+  await expect(page).toHaveURL(/scope=national/)
+
+  // The local route is hidden by the scope: nothing left, and the filters can be reset from the list.
+  await page.keyboard.press('Escape')
+  await expect(results).toHaveCount(0)
+  await expect(page.getByText('Aucun parcours ne correspond aux filtres.')).toBeVisible()
+
+  // Found again in the history or shared: same filters, same view.
+  await page.reload()
+  await expect(page.getByText('Aucun parcours ne correspond aux filtres.')).toBeVisible()
+  await expect(page).toHaveURL(/at=48\.41,2\.65,12/)
+  await page.getByRole('button', { name: 'Réinitialiser' }).click()
+  await expect(results.getByRole('listitem')).toHaveCount(4)
+  await expect(page).not.toHaveURL(/shape=/)
+})
+
 // Loops are mocked by the fixtures: a square of the asked length, turned by the seed.
 for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
   test(`generates loops from a start and a distance, then edits the chosen one, on a ${device.name}`, async ({ page }) => {

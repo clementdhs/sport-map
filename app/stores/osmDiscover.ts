@@ -1,9 +1,10 @@
 import { type Bbox, bboxContains, fitsOsmSearch, OSM_KIND_SPORTS, type OsmRoute, type OsmRouteKind, osmSearchBbox, sortOsmRoutes } from '#shared/utils/osmRoutes'
+import { activeOsmFilterCount, defaultOsmFilters, matchesOsmFilters, type OsmDiscoverState, type OsmRouteFilters } from '#shared/utils/osmFilters'
 import type { MapViewState } from '~/stores/routeSearch'
 
 // Marked routes of OpenStreetMap around the map view (#69). Overpass is slow and allows few queries: the page searches
 // when it opens and when the kind changes, then only when asked ("Chercher dans cette zone"). The store outlives the
-// page, so coming back from the editor finds the same view and results.
+// page, so coming back from the editor finds the same view and results. Quick filters (#70) only hide loaded routes.
 export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   // Not useI18n(): the store may first be used outside a component's setup.
   const { $i18n } = useNuxtApp()
@@ -20,13 +21,20 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   const error = ref<unknown>(null)
   const highlightedId = ref<number | null>(null)
   const selectedId = ref<number | null>(null)
+  const filters = ref<OsmRouteFilters>(defaultOsmFilters())
   let controller: AbortController | undefined
 
   const tooWide = computed(() => !!bounds.value && !fitsOsmSearch(bounds.value))
   // The results cover the view: no need to offer a new search.
   const viewSearched = computed(() => !!bounds.value && !!searched.value && searched.value.kind === kind.value
     && bboxContains(searched.value.bbox, bounds.value))
-  const selected = computed(() => routes.value.find(route => route.id === selectedId.value) ?? null)
+  const shownRoutes = computed(() => routes.value.filter(route => matchesOsmFilters(route, filters.value)))
+  const activeFilterCount = computed(() => activeOsmFilterCount(filters.value))
+
+  // A route hidden by the filters is no longer selected.
+  watch(shownRoutes, (shown) => {
+    if (!shown.some(route => route.id === selectedId.value)) selectedId.value = null
+  })
 
   async function search() {
     if (!bounds.value || tooWide.value) return
@@ -87,16 +95,43 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   }
 
   // The other kind's results would be misleading, even while the new ones load.
-  watch(kind, () => {
+  function clearResults() {
+    controller?.abort()
+    loading.value = false
+    error.value = null
     routes.value = []
     searched.value = null
     selectedId.value = null
     highlightedId.value = null
+  }
+
+  function setKind(next: OsmRouteKind) {
+    if (next === kind.value) return
+    kind.value = next
+    clearResults()
+    // Walking and MTB grades aren't on the same scale.
+    filters.value.maxGrade = null
     search()
-  })
+  }
+
+  function resetFilters() {
+    filters.value = defaultOsmFilters()
+  }
+
+  // The page's URL: a shared link, or the page found again in the history. The page searches once the map shows the
+  // view.
+  function applyState(state: OsmDiscoverState) {
+    if (state.kind !== kind.value) {
+      kind.value = state.kind
+      clearResults()
+    }
+    filters.value = state.filters
+    if (state.view) startFrom(state.view)
+  }
 
   return {
-    kind, view, bounds, routes, searched, loading, error, highlightedId, selectedId, tooWide, viewSearched, selected,
-    search, setView, startFrom, searchIfNeeded, importIntoEditor,
+    kind, view, bounds, routes, searched, loading, error, highlightedId, selectedId, filters, tooWide, viewSearched,
+    shownRoutes, activeFilterCount, search, setView, startFrom, searchIfNeeded, importIntoEditor, setKind, resetFilters,
+    applyState,
   }
 })

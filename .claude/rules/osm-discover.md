@@ -1,5 +1,8 @@
 ---
 paths:
+  - "shared/utils/osmFilters.ts"
+  - "app/components/OsmRouteFilters.vue"
+  - "test/unit/osmFilters.test.ts"
   - "app/utils/osmImport.ts"
   - "test/nuxt/osmDiscover.test.ts"
   - "shared/utils/osmRoutes.ts"
@@ -22,5 +25,7 @@ paths:
 - Page: searches when it opens (first view of the map, unless results already cover it) and when the kind changes (old results cleared at once); otherwise only with "Chercher dans cette zone", shown when the view isn't covered by the last search. Overpass is too slow and limited to search on every move. Entry points: home panel link and the empty editor's button; both call `discover.startFrom(view)` so the page opens on their map view. The store keeps view and results when coming back from the editor.
 - List order (`sortOsmRoutes`): complete first, then local → international (`network` lwn/rwn/nwn/iwn, lcn…), then name with numbers in order; unnamed ("Parcours sans nom") last. Map: all routes in dataviz blue, the hovered or selected one redrawn on top in `ROUTE_COLOR` (layer filter, no data rebuild). The source carries the OSM attribution (ODbL) whatever the basemap; the panel repeats it.
 - Import ("Importer dans l'éditeur", selected complete route only): `discover.importIntoEditor` resets the editor if it was editing a saved route (a new draft asks for confirmation first, in the page), then `editor.importTrack(osmRouteTrack(route))` (resampled like a GPX, `imported` segment, no elevations: OSM has none, so no D+ until #71), sets the sport from `OSM_KIND_SPORTS`, and fills an empty description with the relation's URL and the ODbL attribution; the name comes from `importTrack` (name, else ref) when empty. Then `/routes/create`.
+- Quick filters (#70, `shared/utils/osmFilters.ts`, button `OsmRouteFilters.vue` built like the home page's `SearchFilters`): computed on the loaded routes (`discover.shownRoutes`), no request. The sport filter is the kind tabs (one query per kind, then the tab cache). Distance 0–100 km (100 = no maximum) on the stitched length, optionally counting one-way routes twice. Shape (`osmRouteShape`): `roundtrip` tag first, else start–end ≤ 200 m (as the home page's "Boucles uniquement"), else unknown when the ways don't connect; unknown shapes only show with "Tous". Max difficulty from the relation's `sac_scale` (T1–T3, harder grouped) or `mtb:scale` (S0–S2), reset on kind change (`setKind`): rare on relations, ungraded routes always show. Scope from `network`; routes without one always show. A selected route hidden by a filter is unselected.
+- URL: `osmDiscoverQuery` / `parseOsmDiscoverQuery` keep kind, filters and view (`at=lat,lng,zoom`) in the query, only what differs from the defaults; the page replaces it on each change. A URL with a query is applied at setup (`discover.applyState`, before the map mounts); without one (the app's links), the page keeps the store's state and writes it.
 - e2e: `fixtures.ts` answers every `**/api/interpreter` (any Overpass instance) with no route; `signed-in.spec.ts` serves the Fontainebleau fixture from maps.mail.ru after a 504 from overpass-api.de, and moves the map with a mocked MapTiler place (the home view, France, is too wide).
 - Tests: `test/fixtures/overpass-fontainebleau.json` (also used by the e2e test) holds 4 real relations (closed loop, members out of order, incomplete, sub-relation).

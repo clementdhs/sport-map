@@ -68,7 +68,7 @@ Puis ouvre http://localhost:3000.
   npm run test:e2e      # build de production + navigateur Chromium
   ```
 
-  Tous ces tests tournent aussi automatiquement sur GitHub Actions à chaque push (`.github/workflows/ci.yml`), sans aucun secret.
+  Tous ces tests tournent aussi automatiquement sur GitHub Actions à chaque push (`.github/workflows/ci.yml`), sans aucun secret : les types et les tests unitaires dans un job, les tests de bout en bout dans un autre, en parallèle. Un push qui ne touche que des fichiers `.md` ou `.claude/` ne lance pas la CI.
 
   Les tests visent uniquement le Supabase local (jamais le projet en ligne). Ils recréent à chaque lancement un compte et un parcours de test, et simulent le fond de carte et le calcul d'itinéraire : aucun quota MapTiler ou OpenRouteService n'est consommé. Premier lancement : `npx playwright install chromium`.
 

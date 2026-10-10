@@ -9,6 +9,8 @@ import type { FlyoverLayers } from '~/utils/routeLayers'
 export interface FlyoverSubject {
   kind: 'route' | 'outing'
   track: FlyoverTrack
+  // The outing replayed
+  id?: string
 }
 
 export const FLYOVER_SPEEDS = [0.5, 1, 2, 4]

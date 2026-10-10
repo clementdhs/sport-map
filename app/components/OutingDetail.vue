@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import type { OutingDetail } from '#shared/types/routes'
-import type { LngLat, SportType } from '#shared/utils/routes'
+import type { LngLat, OutingTrackPoint, SportType } from '#shared/utils/routes'
 import type { Split } from '~/utils/splits'
 
 // Detail of an outing, opened from the route's Passages tab: its speed (or pace) along the way over the
-// elevation profile, and its moving time per kilometre. Its GPS points are only loaded now.
+// elevation profile, and its moving time per kilometre. Its GPS points are only loaded now, and can be replayed
+// in a 3D flyover (#74) by the route page.
 const props = defineProps<{
   routeId: string
   outingId: string
   sport: SportType
+  // Metres along this outing of the flyover replaying it
+  marker?: number | null
 }>()
 
 const emit = defineEmits<{
   hover: [point: LngLat | null]
+  replay: [track: OutingTrackPoint[]]
 }>()
 
 const { t } = useI18n()
@@ -53,7 +57,15 @@ const formatElevation = (meters: number | null) => `${formatNumber(Math.round(me
     />
     <p v-else-if="!splits.length" class="text-sm text-muted">{{ t('outings.tooShort') }}</p>
     <template v-else>
-      <OutingChart :samples="samples" :pace="pace" @hover="emit('hover', $event)" />
+      <UButton
+        icon="i-lucide-drone"
+        :label="t('outings.replay3d')"
+        color="neutral"
+        variant="outline"
+        size="sm"
+        @click="emit('replay', data!.track)"
+      />
+      <OutingChart :samples="samples" :pace="pace" :marker="marker" @hover="emit('hover', $event)" />
 
       <div class="space-y-2">
         <p class="text-sm font-medium">{{ t('outings.splits.title') }}</p>

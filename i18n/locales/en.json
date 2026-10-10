@@ -627,6 +627,7 @@
     "stopFailedHint": "Without network, the family still sees your last location, 12 h at most."
   },
   "outings": {
+    "replay3d": "Replay in 3D",
     "estimate": "Estimated time: ~{duration} moving",
     "times": "{total} in total, {moving} moving",
     "moving": "Moving",

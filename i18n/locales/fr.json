@@ -627,6 +627,7 @@
     "stopFailedHint": "Sans réseau, la famille voit encore ta dernière position, 12 h au plus."
   },
   "outings": {
+    "replay3d": "Rejouer en 3D",
     "estimate": "Durée estimée : ~{duration} en mouvement",
     "times": "{total} au total, {moving} en mouvement",
     "moving": "En mouvement",

@@ -8,6 +8,8 @@ const props = defineProps<{
   samples: SpeedSample[]
   // Minutes per km rather than km/h; faster stays up
   pace: boolean
+  // Metres along the outing of a flyover's moving point (#74), shown when nothing is hovered
+  marker?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -111,6 +113,17 @@ const active = computed(() => {
   }
 })
 
+// The flyover's point, on the nearest sample (they are spread evenly along the outing).
+const flyoverMarker = computed(() => {
+  if (props.marker == null || activeIndex.value !== null || !totalM.value) return null
+  const index = Math.round((Math.min(props.marker, totalM.value) / totalM.value) * (props.samples.length - 1))
+  const value = values.value[index] ?? null
+  return {
+    left: (toX(Math.min(props.marker, totalM.value)) / WIDTH) * 100,
+    top: value === null ? null : (toY(value) / HEIGHT) * 100,
+  }
+})
+
 function onPointerMove(event: PointerEvent) {
   const rect = plot.value!.getBoundingClientRect()
   const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width))
@@ -193,6 +206,19 @@ const summary = computed(() => {
             vector-effect="non-scaling-stroke"
           />
         </svg>
+
+        <template v-if="flyoverMarker">
+          <div
+            class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40"
+            :style="{ left: `${flyoverMarker.left}%` }"
+            data-testid="chart-flyover-marker"
+          />
+          <div
+            v-if="flyoverMarker.top !== null"
+            class="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-(--ui-bg)"
+            :style="{ left: `${flyoverMarker.left}%`, top: `${flyoverMarker.top}%`, backgroundColor: ROUTE_COLOR }"
+          />
+        </template>
 
         <template v-if="active">
           <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${active.left}%` }" />

@@ -579,6 +579,18 @@ test.describe('recording an outing', () => {
     await expect(detail.getByRole('rowheader')).toHaveText(['1', '200 m'])
     await expect(detail.getByTestId('split').first()).toContainText(/\d+:\d\d \/km/)
 
+    // Replayed in a flyover, at its own pace: the controls give its moving time, the chart shows the point.
+    await detail.getByRole('button', { name: 'Rejouer en 3D' }).click()
+    const controls = page.getByRole('group', { name: 'Commandes du survol' })
+    await expect(controls).toBeVisible()
+    await expect(detail.getByTestId('chart-flyover-marker')).toBeVisible()
+    await controls.getByRole('button', { name: 'Pause' }).click()
+    await controls.getByRole('slider', { name: 'Position du survol' }).press('End')
+    await expect(controls).toContainText(/1,20 km \/ 1,20 km · \d+ min/)
+    await controls.getByRole('button', { name: 'Arrêter le survol' }).click()
+    await expect(controls).toHaveCount(0)
+    await expect(detail.getByTestId('chart-flyover-marker')).toHaveCount(0)
+
     // Listed among the completed routes of the profile, with its times.
     await page.goto('/profile')
     await waitForHydration(page)

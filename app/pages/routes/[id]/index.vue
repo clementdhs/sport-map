@@ -2,7 +2,7 @@
 import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail, RouteOuting, RoutePhoto, ViewerActivity } from '#shared/types/routes'
-import type { ActivityType, LngLat } from '#shared/utils/routes'
+import type { ActivityType, LngLat, OutingTrackPoint } from '#shared/utils/routes'
 import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
@@ -44,6 +44,12 @@ watch(() => !!flyover.subject, (active) => {
 function flyOverRoute() {
   flyover.start({ kind: 'route', track: routeFlyover(coordinates.value, parcours.value?.elevation_profile) })
 }
+function replayOuting(id: string, track: OutingTrackPoint[]) {
+  flyover.start({ kind: 'outing', id, track: outingFlyover(track) })
+}
+const replayed = computed(() => (flyover.subject?.kind === 'outing' && flyover.subject.id && flyover.along !== null
+  ? { outingId: flyover.subject.id, along: flyover.along }
+  : null))
 
 // Slopes, when the route has elevations: steepest grade, main climb, and colours for the map and the profile.
 const slopes = computed(() => {
@@ -440,7 +446,9 @@ useSeoMeta({
           :sport="parcours.sport_type"
           :distance-m="parcours.distance_m"
           :elevation-gain-m="parcours.elevation_gain_m"
+          :replay="replayed"
           @hover="hoverPoint = $event"
+          @replay="replayOuting"
         />
       </template>
     </UTabs>

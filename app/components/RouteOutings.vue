@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RouteOuting } from '#shared/types/routes'
-import type { LngLat, SportType } from '#shared/utils/routes'
+import type { LngLat, OutingTrackPoint, SportType } from '#shared/utils/routes'
 
 // "Outings" tab of a route page: the outings recorded with the GPS while following the route (or recording
 // it), by everyone who can see it, with their moving time against the estimated duration. Outings whose GPS
@@ -10,12 +10,15 @@ const props = defineProps<{
   sport: SportType
   distanceM: number
   elevationGainM: number | null
+  // The outing a flyover replays (#74), and metres along it of its moving point
+  replay?: { outingId: string, along: number } | null
 }>()
 const outings = defineModel<RouteOuting[]>('outings', { required: true })
 
 const emit = defineEmits<{
   // Position under the cursor on an outing's chart, for the map
   hover: [point: LngLat | null]
+  replay: [outingId: string, track: OutingTrackPoint[]]
 }>()
 
 const opened = ref<string | null>(null)
@@ -104,7 +107,9 @@ async function remove(outing: RouteOuting) {
           :route-id="routeId"
           :outing-id="outing.id"
           :sport="sport"
+          :marker="replay?.outingId === outing.id ? replay.along : null"
           @hover="emit('hover', $event)"
+          @replay="emit('replay', outing.id, $event)"
         />
       </li>
     </ul>

@@ -5,11 +5,14 @@ paths:
   - "app/components/FlyoverControls.vue"
   - "app/components/map/RouteDisplay.vue"
   - "app/pages/routes/[id]/index.vue"
+  - "app/components/OutingDetail.vue"
+  - "app/components/OutingChart.vue"
 ---
 
 # 3D flyover (#74)
 
 - "Survol 3D" (route page, beside "Suivre"): the page owns `useFlyover()` (state, animation loop, camera), `RouteDisplay` attaches its map once loaded, `FlyoverControls` floats in `MapSheetLayout`'s `overlay` slot. Pure logic in `app/utils/flyover.ts` (unit-tested): a `FlyoverTrack` maps the flyover's progress to metres along through its `timeline` (metres for a route, moving seconds for an outing: pauses skipped).
+- Outing replay: "Rejouer en 3D" in an outing's detail (Passages tab) hands its GPS points to the page, which starts `{ kind: 'outing', id, track: outingFlyover(track) }`: same duration as a route of that length, at the outing's own moving pace, its track drawn in the GPS colour over the route. The controls add the moving time reached and use the smoothed GPS altitudes (a plain bar when one is missing); the outing's chart (`OutingChart marker`) shows the point instead of the route's profile.
 - Camera: one `jumpTo` per frame, centre on the moving point (MapLibre keeps it on the ground and raises a camera that would end up inside the relief), pitch 60, bearing towards the direction of travel over ±1 s of flyover, smoothed with a 1 s time constant. Zoom from the ground speed (`flyoverZoom`, ~200 px/s at ×1, zoom 12 to 15); base duration 30 s up to 10 km, 60 s from 50 km.
 - The camera's `padding` keeps the point between the top bar, the open sheet and the controls; unlike other moves (`map-sheet.md`) it is passed to `jumpTo`/`easeTo` on purpose, and the stop's `easeTo` restores the padding with the starting view.
 - Relief: `MapView force3d` turns the terrain on without touching the saved 2D/3D choice (its 3D button shows pressed and disabled meanwhile). Without an elevation source (no MapTiler key, e2e) the flyover only tilts.

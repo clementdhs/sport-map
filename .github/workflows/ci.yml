@@ -1,8 +1,13 @@
 name: CI
 
 # Every branch: a pushed feature branch gets its result before being merged into main.
+# A push that only touches documentation or Claude's files runs nothing. If CI ever becomes a required
+# check for merging, a workflow skipped this way leaves the pull request waiting: filter in the jobs instead.
 on:
   push:
+    paths-ignore:
+      - '**/*.md'
+      - '.claude/**'
   workflow_dispatch:
 
 # A newer push on the same branch makes the running check pointless.
@@ -13,11 +18,12 @@ concurrency:
 permissions:
   contents: read
 
+# Two jobs in parallel: the end-to-end tests don't wait for the types and unit tests.
 jobs:
-  test:
-    name: Types, tests unitaires et de bout en bout
+  checks:
+    name: Types et tests unitaires
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
@@ -33,6 +39,20 @@ jobs:
 
       - name: Tests unitaires et du store
         run: npm test
+
+  e2e:
+    name: Tests de bout en bout
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
 
       # Docker is available on GitHub-hosted Ubuntu runners. No secret needed: the e2e tests only use this
       # local Supabase and mock the map and routing services.

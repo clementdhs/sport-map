@@ -14,6 +14,8 @@ if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
 
+const { refresh: refreshMenuUsername } = useMyUsername()
+
 const form = ref<ProfileUpdate>({
   username: profile.value?.username ?? '',
   display_name: profile.value?.display_name ?? '',
@@ -28,8 +30,8 @@ async function saveProfile() {
   try {
     await $fetch('/api/profile/me', { method: 'PATCH', body: form.value })
     toast.add({ title: t('settings.profileUpdated'), color: 'success', icon: 'i-lucide-check' })
-    // The profile link and the account deletion use the username.
-    if (usernameChanged.value) await refresh()
+    // The profile link, the account deletion and the account menu use the username.
+    if (usernameChanged.value) await Promise.all([refresh(), refreshMenuUsername()])
   }
   catch (err) {
     toast.add({

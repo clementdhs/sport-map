@@ -11,9 +11,12 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const { t } = useI18n()
 const languageItems = useLanguageItems()
+const { data: username } = useMyUsername()
+// The username, also the sign-in name; the e-mail until it is known.
+const accountName = computed(() => username.value ?? user.value?.email ?? '')
 
 const userMenu = computed<DropdownMenuItem[][]>(() => [
-  [{ label: user.value?.email ?? '', type: 'label' }],
+  [{ label: accountName.value, type: 'label' }],
   [
     { label: t('header.profile'), icon: 'i-lucide-user', to: '/profile' },
     { label: t('live.title'), icon: 'i-lucide-radio', to: '/live' },
@@ -48,7 +51,7 @@ async function signOut() {
       color="neutral"
       variant="ghost"
       icon="i-lucide-circle-user"
-      :label="user.email"
+      :label="accountName"
       :ui="{ label: 'hidden sm:inline' }"
     />
   </UDropdownMenu>

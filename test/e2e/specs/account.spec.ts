@@ -101,7 +101,7 @@ test('edits the profile and the appearance from the settings, reached through th
   await page.goto('/profile')
   // Signed-in users change the appearance in the settings, not from the header.
   await expect(page.getByRole('button', { name: 'Apparence' })).toHaveCount(0)
-  await page.getByRole('button', { name: users.account.email }).click()
+  await page.getByRole('button', { name: users.account.username }).click()
   await page.getByRole('menuitem', { name: 'Paramètres' }).click()
   await expect(page).toHaveURL(/\/settings$/)
   await expect(page.getByRole('heading', { name: 'Paramètres', level: 1 })).toBeVisible()

@@ -17,7 +17,7 @@ git diff --name-status origin/main -- supabase/migrations/
 git status --porcelain -- supabase/migrations/
 ```
 
-- A migration that already exists on `origin/main` has been applied to the hosted project (`ship-issue` runs `npm run db:push` before pushing). Any `M` or `D` on such a file is a **blocker**: the change must go in a new migration file.
+- A migration that already exists on `origin/main` has been applied to the hosted project (`ship-issue` has Clem run `npm run db:push` before the pull request is merged). Any `M` or `D` on such a file is a **blocker**: the change must go in a new migration file.
 - A new file's timestamp must sort after every existing migration.
 
 Read `.claude/rules/migrations.md` and `.claude/rules/family-access.md` first, then each new migration in full. Read older migrations only when you need a table's or policy's existing definition (grep for its name).

@@ -1,6 +1,7 @@
 // `npm run dev:local`: the dev server on the local Supabase (Docker, `npm run db:start`) instead of the
 // hosted project, to try migrations and features before pushing them. MapTiler and OpenRouteService keys
 // still come from .env: process variables take precedence over .env, so only Supabase is overridden.
+// Extra arguments go to `nuxt dev`, e.g. `npm run dev:local -- --port 3001` for a second worktree.
 import { execSync, spawn } from 'node:child_process'
 
 let status
@@ -19,7 +20,7 @@ if (!/^http:\/\/(127\.0\.0\.1|localhost)[:/]/.test(url ?? '')) {
 }
 
 console.log(`Supabase local : ${url} (studio désactivé, comptes sans e-mail de confirmation)`)
-const child = spawn('npx', ['nuxt', 'dev'], {
+const child = spawn('npx', ['nuxt', 'dev', ...process.argv.slice(2)], {
   stdio: 'inherit',
   shell: true,
   env: {

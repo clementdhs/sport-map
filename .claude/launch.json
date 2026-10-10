@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:local"],
       "port": 3000
+    },
+    {
+      "name": "sport-map-local-db-3001",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:local", "--", "--port", "3001"],
+      "port": 3001
     }
   ]
 }

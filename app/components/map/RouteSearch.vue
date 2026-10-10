@@ -98,5 +98,5 @@ watch(() => props.focus, (focus) => {
 </script>
 
 <template>
-  <MapView :center="center" :zoom="zoom" @load="onLoad" />
+  <MapView relief :center="center" :zoom="zoom" @load="onLoad" />
 </template>

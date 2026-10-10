@@ -101,5 +101,5 @@ watch(() => props.highlightedId, (id, previousId) => {
 </script>
 
 <template>
-  <MapView :bounds="bounds" @load="onLoad" />
+  <MapView relief :bounds="bounds" @load="onLoad" />
 </template>

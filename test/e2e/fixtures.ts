@@ -47,6 +47,20 @@ export const EMPTY_MAP_STYLE = {
 // A transparent 1×1 PNG, for raster tiles (Plan IGN basemap).
 const EMPTY_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64')
 
+// The empty style plus an elevation source, which the 3D view needs, with every tile at sea level (terrain-RGB
+// pixel 1, 134, 160 = 0 m).
+const RELIEF_MAP_STYLE = {
+  ...EMPTY_MAP_STYLE,
+  sources: { 'terrain-rgb': { type: 'raster-dem', tiles: ['https://api.maptiler.com/tiles/terrain-rgb-v2/{z}/{x}/{y}.png'], tileSize: 256 } },
+}
+const SEA_LEVEL_DEM_TILE = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGNgbFsAAAGzASgo2PpvAAAAAElFTkSuQmCC', 'base64')
+
+// Instead of the empty style, for the next page loads.
+export async function mockReliefStyle(page: Page) {
+  await page.route('https://api.maptiler.com/maps/**', route => route.fulfill({ json: RELIEF_MAP_STYLE }))
+  await page.route('https://api.maptiler.com/tiles/**', route => route.fulfill({ contentType: 'image/png', body: SEA_LEVEL_DEM_TILE }))
+}
+
 async function mockExternalServices(page: Page) {
   await page.route('https://api.maptiler.com/maps/**', route => route.fulfill({ json: EMPTY_MAP_STYLE }))
   // No place found, unless a test mocks its own results.

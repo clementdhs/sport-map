@@ -9,6 +9,9 @@ const props = withDefaults(defineProps<{
   // Initial view framing these bounds, rather than center and zoom: the first tiles loaded are the right
   // ones (which matters offline, where only the prepared ones exist).
   bounds?: LngLatBoundsLike
+  // Offers the 3D view (relief and tilted map), when the style has an elevation source. Left out of the editor
+  // (placing points on a tilted map is less precise) and of follow/record (battery, GPU).
+  relief?: boolean
 }>(), {
   center: () => [2.35, 46.6],
   zoom: 5,
@@ -26,11 +29,15 @@ const styleUrl = mapStyleUrl(maptilerKey)
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
-// Basemap picked by the visitor, and the button picking it (a MapLibre control filled by a teleport).
+// Basemap picked by the visitor, and the button picking it (a MapLibre control filled by a teleport, which
+// also holds the 3D button).
 const basemap = ref<Basemap>(DEFAULT_BASEMAP)
 const online = ref(true)
 const basemapControl = shallowRef<HTMLElement>()
 let setBasemap: ((basemap: Basemap) => void) | undefined
+// The style's elevation source when the 3D view is offered, and whether it is shown.
+const reliefSource = ref<string>()
+const view3d = ref(false)
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
 const loaded = ref(false)
 // Exposed as data-map-center ("lng,lat") so end-to-end tests check where the map went.
@@ -47,6 +54,8 @@ onMounted(async () => {
   if (!container.value) return
   basemap.value = loadBasemap()
   online.value = navigator.onLine
+  // Tilted from the start, so that initial bounds are framed as they will be seen.
+  const saved3d = props.relief && loadMap3d()
   window.addEventListener('online', updateOnline)
   window.addEventListener('offline', updateOnline)
 
@@ -59,6 +68,7 @@ onMounted(async () => {
     style: styleUrl,
     center: props.center,
     zoom: props.zoom,
+    pitch: saved3d ? PITCH_3D : 0,
     // MapLibre's own control labels (English by default).
     locale: {
       'Map.Title': t('map.title'),
@@ -89,6 +99,10 @@ onMounted(async () => {
   instance.once('style.load', () => {
     setBasemap = addBasemapLayers(instance)
     setBasemap(shownBasemap(basemap.value, online.value))
+    reliefSource.value = props.relief ? demSource(instance.getStyle()) : undefined
+    view3d.value = saved3d && !!reliefSource.value
+    if (view3d.value) setMap3d(instance, reliefSource.value!, true, false)
+    else if (saved3d) instance.setPitch(0)
   })
   instance.once('load', () => {
     emit('load', instance)
@@ -126,6 +140,13 @@ const basemapItems = computed(() => BASEMAPS.map(id => ({
   },
 })))
 
+function toggle3d() {
+  if (!map.value || !reliefSource.value) return
+  view3d.value = !view3d.value
+  saveMap3d(view3d.value)
+  setMap3d(map.value, reliefSource.value, view3d.value)
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('online', updateOnline)
   window.removeEventListener('offline', updateOnline)
@@ -141,5 +162,17 @@ onBeforeUnmount(() => {
         <UIcon name="i-lucide-layers" class="size-4 text-neutral-800" />
       </button>
     </UDropdownMenu>
+    <button
+      v-if="reliefSource"
+      type="button"
+      class="flex items-center justify-center text-xs font-bold"
+      :class="view3d ? 'text-primary' : 'text-neutral-800'"
+      :title="t('map.view3d')"
+      :aria-label="t('map.view3d')"
+      :aria-pressed="view3d"
+      @click="toggle3d"
+    >
+      3D
+    </button>
   </Teleport>
 </template>

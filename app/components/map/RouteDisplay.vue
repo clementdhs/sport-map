@@ -34,6 +34,6 @@ watch(() => props.hoverPoint, (point) => {
 </script>
 
 <template>
-  <MapView @load="onLoad" />
+  <MapView relief @load="onLoad" />
   <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
 </template>

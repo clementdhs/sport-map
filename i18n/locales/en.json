@@ -685,6 +685,7 @@
     "toggleAttribution": "Toggle attribution",
     "title": "Map",
     "basemap": "Basemap",
+    "view3d": "3D view (terrain)",
     "basemaps": {
       "maptiler": "MapTiler Outdoor",
       "ignPlan": "Plan IGN (France)"

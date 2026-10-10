@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import type { LiveShareDetail, LiveShareStarted, LiveShareSummary } from '../../shared/types/live'
 import { insertRows, supabaseAdmin } from './admin'
-import { E2E_USER, EMPTY_MAP_STYLE, expect, familyRequest, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
+import { E2E_USER, EMPTY_MAP_STYLE, expect, familyRequest, mockReliefStyle, routeAction, SEEDED_REVIEW, SEEDED_ROUTE_NAME, signedOutRequest, test, waitForHydration, waitForMap } from './fixtures'
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -861,6 +861,36 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   await waitForHydration(page)
   await page.getByRole('button', { name: 'Fond de carte' }).click()
   await expect(page.getByRole('menuitemcheckbox', { name: 'Plan IGN' })).toBeChecked()
+})
+
+test('offers the 3D view when the style has elevations, and keeps it on the device', async ({ page }) => {
+  const view3d = page.getByRole('button', { name: 'Vue 3D (relief)' })
+  // The fixtures' empty style has no elevation source: no 3D button.
+  await page.goto('/')
+  await waitForMap(page)
+  await expect(page.getByRole('button', { name: 'Fond de carte' })).toBeVisible()
+  await expect(view3d).toHaveCount(0)
+
+  await mockReliefStyle(page)
+  await page.reload()
+  await waitForMap(page)
+  await waitForHydration(page)
+  await expect(view3d).toHaveAttribute('aria-pressed', 'false')
+  await view3d.click()
+  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+
+  // Remembered on the device, and offered on the route page too.
+  await page.reload()
+  await waitForMap(page)
+  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  await waitForMap(page)
+  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+  // Follow mode stays in 2D.
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
+  await waitForMap(page)
+  await expect(page.getByRole('button', { name: 'Fond de carte' })).toBeVisible()
+  await expect(view3d).toHaveCount(0)
 })
 
 test('counts a completed route in the profile statistics', async ({ page }) => {

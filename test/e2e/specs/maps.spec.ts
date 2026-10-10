@@ -23,6 +23,51 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   await expect(page.getByRole('menuitemcheckbox', { name: 'Plan IGN' })).toBeChecked()
 })
 
+test('explains the map in a legend that follows the basemap shown', async ({ page }) => {
+  const ignLegendRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('PLANIGNV2-legend')) ignLegendRequests.push(request.url())
+  })
+  await page.goto('/')
+  await waitForMap(page)
+  await waitForHydration(page)
+
+  // Opened with the keyboard: a popover on a computer.
+  const button = page.getByRole('button', { name: 'Légende' })
+  await button.focus()
+  await page.keyboard.press('Enter')
+  const legend = page.getByRole('dialog', { name: 'Légende' })
+  await expect(legend.getByRole('tab', { name: 'Fond de carte' })).toHaveAttribute('aria-selected', 'true')
+  await expect(legend.getByText('MapTiler Outdoor')).toBeVisible()
+  // The fixtures' empty style has none of MapTiler's layers: no basemap part.
+  await expect(legend.getByText('Pas de légende pour ce fond de carte.')).toBeVisible()
+  await expect(legend.locator('[data-legend-sample]')).toHaveCount(0)
+
+  // The app's own symbols, whatever the basemap.
+  await legend.getByRole('tab', { name: 'Tracés et symboles' }).click()
+  await expect(legend.getByText('Départ', { exact: true })).toBeVisible()
+  await expect(legend.getByText('Point d\'eau')).toBeVisible()
+  await expect(legend.getByText('Ta position et ta direction')).toBeVisible()
+  await expect(legend.getByText('Plus de 15 %')).toBeVisible()
+
+  // The basemap changed while it is open: it stays open and shows the official Plan IGN legend, loaded only now.
+  await legend.getByRole('tab', { name: 'Fond de carte' }).click()
+  expect(ignLegendRequests).toEqual([])
+  await page.getByRole('button', { name: 'Fond de carte' }).click()
+  await page.getByRole('menuitemcheckbox', { name: 'Plan IGN' }).click()
+  await expect(legend.getByRole('img', { name: 'Légende officielle du Plan IGN' })).toBeVisible()
+  expect(ignLegendRequests).toHaveLength(1)
+  await page.keyboard.press('Escape')
+  await expect(legend).toHaveCount(0)
+  await expect(button).toBeFocused()
+
+  // A drawer on a phone.
+  await page.setViewportSize({ width: 390, height: 844 })
+  await button.click()
+  await expect(legend.getByRole('heading', { name: 'Légende' })).toBeVisible()
+  await expect(legend.getByText('Plan IGN', { exact: true })).toBeVisible()
+})
+
 test('offers the 3D view when the style has elevations, and keeps it on the device', async ({ page }) => {
   const view3d = page.getByRole('button', { name: 'Vue 3D (relief)' })
   // The fixtures' empty style has no elevation source: no 3D button.

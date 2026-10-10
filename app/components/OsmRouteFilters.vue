@@ -8,15 +8,7 @@ const discover = useOsmDiscoverStore()
 const { t } = useI18n()
 const open = ref(false)
 
-// Same breakpoint as the page layout (md). Starts as a phone so hydration matches the server.
-const isDesktop = ref(false)
-onMounted(() => {
-  const query = window.matchMedia('(min-width: 768px)')
-  isDesktop.value = query.matches
-  query.addEventListener('change', (event) => {
-    isDesktop.value = event.matches
-  })
-})
+const isDesktop = useIsDesktop()
 const panelSlot = computed(() => isDesktop.value ? 'content' : 'body')
 
 // "unit" follows the numbers, e.g. "km" or "m D+".

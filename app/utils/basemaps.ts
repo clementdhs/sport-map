@@ -15,6 +15,9 @@ const IGN_PLAN_TILES = 'https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&
   + '&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM_0_19&FORMAT=image/png'
   + '&TILEMATRIX={z}&TILECOL={x}&TILEROW={y}'
 const IGN_ATTRIBUTION = '<a href="https://www.ign.fr/" target="_blank" rel="noopener">© IGN</a> – Plan IGN'
+// Official legend of Plan IGN, declared by the WMTS GetCapabilities (LegendURL): a 300 × 6000 px PNG of ~420 KB,
+// loaded only when the map legend shows it.
+export const IGN_PLAN_LEGEND_URL = 'https://data.geopf.fr/annexes/ressources/legendes/GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2-legend.png'
 
 export function parseBasemap(value: string | null | undefined): Basemap {
   return BASEMAPS.find(basemap => basemap === value) ?? DEFAULT_BASEMAP

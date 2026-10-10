@@ -3,19 +3,16 @@
 // under a bottom sheet with three positions (collapsed to its title, half height, full height, which stops
 // under the floating top bar), moved by dragging its header or with the expand / collapse buttons.
 // The `actions` slot (main buttons) floats above the sheet on phones and tops the side panel from md up.
+// The `overlay` slot (flyover controls) floats at the bottom of the map, above the sheet on phones.
 // From md up the side panel can be collapsed (the map takes the whole width and the title floats over it) and resized.
 import type { ComponentPublicInstance } from 'vue'
 
 export type SheetSnap = 'collapsed' | 'half' | 'full'
 
-const props = withDefaults(defineProps<{
-  defaultSnap?: SheetSnap
+defineProps<{
   // Fallback of MapTopBar's back button; no back button without it.
   back?: string
-}>(), {
-  defaultSnap: 'half',
-  back: undefined,
-})
+}>()
 
 const { t } = useI18n()
 
@@ -27,7 +24,8 @@ const SNAP_HEIGHTS: Record<SheetSnap, string> = {
   full: 'calc(100% - var(--sheet-top))',
 }
 
-const snap = ref<SheetSnap>(props.defaultSnap)
+// Sheet position, which a page may change (the route page collapses it during a flyover).
+const snap = defineModel<SheetSnap>('snap', { default: 'half' })
 const index = computed(() => SNAPS.indexOf(snap.value))
 
 function move(step: 1 | -1) {
@@ -207,8 +205,16 @@ const actionsHidden = computed(() => dragHeight.value === null
     class="relative flex h-dvh flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"
     :style="{ '--sheet-height': sheetHeight, '--panel-width': `${panelWidth}px` }"
   >
-    <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:static md:min-h-0 md:flex-1">
+    <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:relative md:min-h-0 md:flex-1">
       <slot name="map" />
+      <!-- Above the sheet's edge on phones (like the actions), clear of the scale and attribution. -->
+      <div
+        v-if="$slots.overlay"
+        class="pointer-events-none absolute inset-x-3 bottom-[max(calc(var(--sheet-height)-var(--sheet-peek)+0.75rem),2.5rem)] z-10 flex justify-center *:pointer-events-auto md:bottom-10"
+        :class="{ 'max-md:hidden': actionsHidden, 'transition-[bottom] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
+      >
+        <slot name="overlay" />
+      </div>
     </div>
 
     <!-- Top left of the map: MapLibre's controls are on the right, the scale and attribution at the bottom.

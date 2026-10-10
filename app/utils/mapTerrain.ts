@@ -32,6 +32,11 @@ export function saveMap3d(on: boolean) {
 // Relief and tilt together. The relief shares its source with the style's hillshade, which then gets coarser
 // tiles in 3D: a second source would load every elevation tile twice.
 export function setMap3d(map: Map, source: string, on: boolean, animate = true) {
-  map.setTerrain(on ? { source, exaggeration: TERRAIN_EXAGGERATION } : null)
+  setRelief(map, source, on)
   map.easeTo({ pitch: on ? PITCH_3D : 0, ...(animate ? {} : { duration: 0 }) })
+}
+
+// Relief alone: a flyover (#74) tilts the camera itself.
+export function setRelief(map: Map, source: string, on: boolean) {
+  map.setTerrain(on ? { source, exaggeration: TERRAIN_EXAGGERATION } : null)
 }

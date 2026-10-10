@@ -12,6 +12,8 @@ const props = withDefaults(defineProps<{
   // Offers the 3D view (relief and tilted map), when the style has an elevation source. Left out of the editor
   // (placing points on a tilted map is less precise) and of follow/record (battery, GPU).
   relief?: boolean
+  // Relief shown whatever the visitor's choice, without changing it (flyover, #74, which tilts the camera itself).
+  force3d?: boolean
 }>(), {
   center: () => [2.35, 46.6],
   zoom: 5,
@@ -103,6 +105,7 @@ onMounted(async () => {
     view3d.value = saved3d && !!reliefSource.value
     if (view3d.value) setMap3d(instance, reliefSource.value!, true, false)
     else if (saved3d) instance.setPitch(0)
+    if (props.force3d && !view3d.value && reliefSource.value) setRelief(instance, reliefSource.value, true)
   })
   instance.once('load', () => {
     emit('load', instance)
@@ -140,8 +143,12 @@ const basemapItems = computed(() => BASEMAPS.map(id => ({
   },
 })))
 
+watch(() => props.force3d, (on) => {
+  if (map.value && reliefSource.value && !view3d.value) setRelief(map.value, reliefSource.value, !!on)
+})
+
 function toggle3d() {
-  if (!map.value || !reliefSource.value) return
+  if (!map.value || !reliefSource.value || props.force3d) return
   view3d.value = !view3d.value
   saveMap3d(view3d.value)
   setMap3d(map.value, reliefSource.value, view3d.value)
@@ -166,10 +173,11 @@ onBeforeUnmount(() => {
       v-if="reliefSource"
       type="button"
       class="flex items-center justify-center text-xs font-bold"
-      :class="view3d ? 'text-primary' : 'text-neutral-800'"
+      :class="view3d || force3d ? 'text-primary' : 'text-neutral-800'"
       :title="t('map.view3d')"
       :aria-label="t('map.view3d')"
-      :aria-pressed="view3d"
+      :aria-pressed="view3d || force3d"
+      :disabled="force3d"
       @click="toggle3d"
     >
       3D

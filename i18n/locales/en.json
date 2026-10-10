@@ -325,6 +325,16 @@
     "at": "at {distance}",
     "grade": "Grade: {grade} %"
   },
+  "flyover": {
+    "start": "3D flyover",
+    "controls": "Flyover controls",
+    "play": "Play",
+    "pause": "Pause",
+    "replay": "Replay",
+    "speed": "Speed ×{speed}",
+    "stop": "Stop the flyover",
+    "position": "Flyover position"
+  },
   "errors": {
     "gpxNoTrack": "This file contains no track or route.",
     "offlineTooLong": "Route too long to prepare: it would use up the map's monthly quota.",

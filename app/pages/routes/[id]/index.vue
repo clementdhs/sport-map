@@ -3,6 +3,7 @@ import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail, RouteOuting, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat } from '#shared/utils/routes'
+import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
 
@@ -24,6 +25,25 @@ if (error.value || !parcours.value) {
 
 const coordinates = computed(() => (parcours.value?.geometry.coordinates ?? []) as LngLat[])
 const hoverPoint = ref<LngLat | null>(null)
+
+// 3D flyover (#74) of the route, or of an outing from the Passages tab. On phones the sheet collapses meanwhile,
+// leaving the map to the flyover and its controls, and comes back where it was afterwards.
+const flyover = useFlyover()
+const sheetSnap = ref<SheetSnap>('half')
+let snapBeforeFlyover: SheetSnap | null = null
+watch(() => !!flyover.subject, (active) => {
+  if (active) {
+    snapBeforeFlyover = sheetSnap.value
+    sheetSnap.value = 'collapsed'
+  }
+  else if (snapBeforeFlyover) {
+    sheetSnap.value = snapBeforeFlyover
+    snapBeforeFlyover = null
+  }
+})
+function flyOverRoute() {
+  flyover.start({ kind: 'route', track: routeFlyover(coordinates.value, parcours.value?.elevation_profile) })
+}
 
 // Slopes, when the route has elevations: steepest grade, main climb, and colours for the map and the profile.
 const slopes = computed(() => {
@@ -206,7 +226,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <MapSheetLayout v-if="parcours" back="/">
+  <MapSheetLayout v-if="parcours" v-model:snap="sheetSnap" back="/">
     <template #map>
       <ClientOnly>
         <MapRouteDisplay
@@ -214,8 +234,13 @@ useSeoMeta({
           :pois="parcours.pois"
           :line-gradient="trackGradient"
           :hover-point="hoverPoint"
+          :flyover="flyover"
         />
       </ClientOnly>
+    </template>
+
+    <template v-if="flyover.subject" #overlay>
+      <FlyoverControls :flyover="flyover" />
     </template>
 
     <template #title>
@@ -265,12 +290,23 @@ useSeoMeta({
     </div>
 
     <div class="space-y-2">
-      <UButton
-        :to="`/routes/${parcours.id}/follow`"
-        icon="i-lucide-navigation"
-        :label="t('route.follow')"
-        block
-      />
+      <div class="flex gap-2">
+        <UButton
+          :to="`/routes/${parcours.id}/follow`"
+          icon="i-lucide-navigation"
+          :label="t('route.follow')"
+          class="flex-1 justify-center"
+        />
+        <UButton
+          icon="i-lucide-drone"
+          :label="t('flyover.start')"
+          color="neutral"
+          variant="outline"
+          class="flex-1 justify-center"
+          :disabled="!flyover.ready || coordinates.length < 2"
+          @click="flyOverRoute"
+        />
+      </div>
       <div class="flex gap-2">
         <UButton
           :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
@@ -314,6 +350,7 @@ useSeoMeta({
             :coordinates="coordinates"
             :elevations="parcours.elevation_profile"
             :grades="colouring === 'slopes' ? slopes?.profile.grades : null"
+            :marker="flyover.subject?.kind === 'route' ? flyover.along : null"
             @hover="hoverPoint = $event"
           />
 

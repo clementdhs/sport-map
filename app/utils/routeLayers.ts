@@ -150,7 +150,7 @@ export function addLiveTrackLayers(map: Map): (coordinates: LngLat[]) => void {
 // Live GPS position: a dot, or an arrow pointing the direction of travel when it is known, and a halo sized
 // to the fix's accuracy (in meters, so it depends on the zoom).
 const GPS_SOURCE = 'gps-position'
-const GPS_COLOR = '#2563eb'
+export const GPS_COLOR = '#2563eb'
 const GPS_ARROW = 'gps-arrow'
 
 export interface GpsPosition {
@@ -236,5 +236,53 @@ export function addGpsLayers(map: Map): (fix: GpsPosition | null, headingDeg: nu
     current = fix
     heading = headingDeg
     update()
+  }
+}
+
+// Flyover (#74): the moving point, and when an outing is replayed its own GPS track, in the GPS colour above the
+// route. Removed when the flyover stops.
+const FLYOVER_POINT_SOURCE = 'flyover-point'
+const FLYOVER_TRACK_SOURCE = 'flyover-track'
+
+export interface FlyoverLayers {
+  move: (point: LngLat) => void
+  remove: () => void
+}
+
+export function addFlyoverLayers(map: Map, gpsTrack: LngLat[] | null): FlyoverLayers {
+  const color = gpsTrack ? GPS_COLOR : ROUTE_COLOR
+  const layers: string[] = []
+  if (gpsTrack) {
+    map.addSource(FLYOVER_TRACK_SOURCE, { type: 'geojson', data: lineData(gpsTrack) })
+    map.addLayer({
+      id: 'flyover-track-casing',
+      type: 'line',
+      source: FLYOVER_TRACK_SOURCE,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': '#ffffff', 'line-width': 7 },
+    })
+    map.addLayer({
+      id: 'flyover-track',
+      type: 'line',
+      source: FLYOVER_TRACK_SOURCE,
+      layout: { 'line-cap': 'round', 'line-join': 'round' },
+      paint: { 'line-color': GPS_COLOR, 'line-width': 4 },
+    })
+    layers.push('flyover-track-casing', 'flyover-track')
+  }
+  map.addSource(FLYOVER_POINT_SOURCE, { type: 'geojson', data: hoverData(null) })
+  map.addLayer({
+    id: FLYOVER_POINT_SOURCE,
+    type: 'circle',
+    source: FLYOVER_POINT_SOURCE,
+    paint: { 'circle-radius': 8, 'circle-color': color, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 3 },
+  })
+  layers.push(FLYOVER_POINT_SOURCE)
+  return {
+    move: point => map.getSource<GeoJSONSource>(FLYOVER_POINT_SOURCE)?.setData(hoverData(point)),
+    remove: () => {
+      for (const id of layers) if (map.getLayer(id)) map.removeLayer(id)
+      for (const id of [FLYOVER_POINT_SOURCE, FLYOVER_TRACK_SOURCE]) if (map.getSource(id)) map.removeSource(id)
+    },
   }
 }

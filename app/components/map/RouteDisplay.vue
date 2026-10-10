@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Map } from 'maplibre-gl'
 import type { LngLat, Poi } from '#shared/utils/routes'
+import type { Flyover } from '~/composables/useFlyover'
 
 const props = defineProps<{
   coordinates: LngLat[]
@@ -9,6 +10,8 @@ const props = defineProps<{
   lineGradient?: unknown[] | null
   // Position hovered on the elevation profile
   hoverPoint?: LngLat | null
+  // The page's flyover (#74), which moves this map's camera
+  flyover?: Flyover
 }>()
 
 const map = shallowRef<Map>()
@@ -22,6 +25,8 @@ function onLoad(instance: Map) {
   instance.fitBounds(routeBounds(props.coordinates), { padding: padding(48), duration: 0 })
   if (props.lineGradient) setRouteGradient(instance, props.lineGradient)
   map.value = instance
+  // The moving point stays between the top bar and the open sheet.
+  props.flyover?.attach(instance, () => padding(0))
 }
 
 watch(() => props.lineGradient, (gradient) => {
@@ -34,6 +39,6 @@ watch(() => props.hoverPoint, (point) => {
 </script>
 
 <template>
-  <MapView relief @load="onLoad" />
+  <MapView relief :force3d="!!flyover?.subject" @load="onLoad" />
   <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
 </template>

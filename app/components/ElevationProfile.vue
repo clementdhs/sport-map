@@ -10,6 +10,8 @@ const props = defineProps<{
   elevations: number[]
   // Signed grade (%) at each point: colours the line by slope and adds it to the tooltip
   grades?: number[] | null
+  // Metres along the track of a flyover's moving point (#74), shown when nothing is hovered
+  marker?: number | null
 }>()
 
 const emit = defineEmits<{
@@ -93,7 +95,19 @@ const active = computed(() => {
   }
 })
 
-function nearestIndex(meters: number): number {
+// The flyover's point, between the track's points.
+const flyoverMarker = computed(() => {
+  const meters = props.marker
+  if (meters == null || activeIndex.value !== null || !totalM.value) return null
+  const i = Math.max(1, firstAtOrAfter(meters))
+  const [m0, m1] = [distances.value[i - 1]!, distances.value[i]!]
+  const [e0, e1] = [props.elevations[i - 1]!, props.elevations[i]!]
+  const ratio = m1 > m0 ? Math.min(1, Math.max(0, (meters - m0) / (m1 - m0))) : 1
+  const elevation = e0 + (e1 - e0) * ratio
+  return { left: (toX(Math.min(meters, totalM.value)) / WIDTH) * 100, top: (toY(elevation) / HEIGHT) * 100 }
+})
+
+function firstAtOrAfter(meters: number): number {
   let low = 0
   let high = distances.value.length - 1
   while (low < high) {
@@ -101,6 +115,11 @@ function nearestIndex(meters: number): number {
     if (distances.value[mid]! < meters) low = mid + 1
     else high = mid
   }
+  return low
+}
+
+function nearestIndex(meters: number): number {
+  const low = firstAtOrAfter(meters)
   if (low > 0 && meters - distances.value[low - 1]! < distances.value[low]! - meters) return low - 1
   return low
 }
@@ -191,6 +210,15 @@ const summary = computed(() =>
             vector-effect="non-scaling-stroke"
           />
         </svg>
+
+        <template v-if="flyoverMarker">
+          <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${flyoverMarker.left}%` }" />
+          <div
+            class="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-(--ui-bg)"
+            :style="{ left: `${flyoverMarker.left}%`, top: `${flyoverMarker.top}%`, backgroundColor: ROUTE_COLOR }"
+            data-testid="profile-flyover-marker"
+          />
+        </template>
 
         <template v-if="active">
           <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${active.left}%` }" />

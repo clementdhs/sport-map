@@ -325,6 +325,16 @@
     "at": "à {distance}",
     "grade": "Pente : {grade} %"
   },
+  "flyover": {
+    "start": "Survol 3D",
+    "controls": "Commandes du survol",
+    "play": "Lecture",
+    "pause": "Pause",
+    "replay": "Rejouer",
+    "speed": "Vitesse ×{speed}",
+    "stop": "Arrêter le survol",
+    "position": "Position du survol"
+  },
   "errors": {
     "gpxNoTrack": "Ce fichier ne contient aucune trace ni itinéraire.",
     "offlineTooLong": "Parcours trop long pour être préparé : il épuiserait le quota mensuel de la carte.",

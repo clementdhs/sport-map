@@ -892,6 +892,37 @@ test('offers the 3D view when the style has elevations, and keeps it on the devi
   await expect(view3d).toHaveCount(0)
 })
 
+test('flies over a route, and goes back to the starting view when stopped', async ({ page }) => {
+  // The fixtures' empty style has no relief: the flyover only tilts the camera, which CI runners draw quickly.
+  await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
+  await waitForMap(page)
+  await waitForHydration(page)
+  const map = page.locator('[data-map-loaded]')
+  const startingView = await map.getAttribute('data-map-center')
+  const controls = page.getByRole('group', { name: 'Commandes du survol' })
+  const position = controls.getByRole('slider', { name: 'Position du survol' })
+
+  await page.getByRole('button', { name: 'Survol 3D' }).click()
+  await expect(controls).toBeVisible()
+  // The moving point advances, on the controls' profile and on the route's.
+  await expect.poll(async () => Number(await position.getAttribute('aria-valuenow'))).toBeGreaterThan(0)
+  await expect(page.getByTestId('profile-flyover-marker')).toBeVisible()
+
+  await controls.getByRole('button', { name: 'Pause' }).click()
+  await expect(controls.getByRole('button', { name: 'Lecture' })).toBeVisible()
+  await controls.getByRole('button', { name: 'Vitesse ×1' }).click()
+  await expect(controls.getByRole('button', { name: 'Vitesse ×2' })).toBeVisible()
+  // Moved to the arrival with the keyboard: the flyover is over and can start again.
+  await position.press('End')
+  await expect(position).toHaveAttribute('aria-valuenow', (await position.getAttribute('aria-valuemax'))!)
+  await expect(controls.getByRole('button', { name: 'Rejouer' })).toBeVisible()
+
+  await controls.getByRole('button', { name: 'Arrêter le survol' }).click()
+  await expect(controls).toHaveCount(0)
+  await expect(page.getByTestId('profile-flyover-marker')).toHaveCount(0)
+  await expect(map).toHaveAttribute('data-map-center', startingView!)
+})
+
 test('counts a completed route in the profile statistics', async ({ page }) => {
   const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')
   const emptyStats = page.getByText('Marque des parcours comme faits')

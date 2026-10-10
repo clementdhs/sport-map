@@ -81,6 +81,15 @@ Un projet Supabase gratuit est mis en pause après 7 jours sans activité. Le wo
 
 Pour le lancer à la main : onglet *Actions* → « Garder Supabase actif » → *Run workflow*.
 
+## Quota MapTiler
+
+L'offre gratuite de MapTiler s'arrête à 100 000 requêtes par période de facturation, sans prévenir. Le workflow `.github/workflows/maptiler-quota.yml` lit chaque jour la consommation de la période en cours (API Analytics) et, au-delà du seuil, ouvre une issue « Quota MapTiler à N % » (ou met à jour celle qui est ouverte) ; il la ferme quand la consommation repasse sous le seuil. Il a besoin, dans les réglages du dépôt :
+
+- le **secret** `MAPTILER_SERVICE_TOKEN` : un jeton de service MapTiler Cloud (*Credentials*) ;
+- en option, les **variables** `MAPTILER_QUOTA` (100000 par défaut) et `MAPTILER_ALERT_PERCENT` (70 par défaut).
+
+Pour le lancer à la main : onglet *Actions* → « Quota MapTiler » → *Run workflow*.
+
 ## Suivi des erreurs (Sentry)
 
 Les erreurs du navigateur et du serveur remontent à [Sentry](https://sentry.io) en production, sans donnée personnelle (ni cookies, ni en-têtes, ni paramètres d'URL, ni utilisateur). Les erreurs « normales » (404, connexion requise…) sont ignorées. Sans DSN, rien n'est envoyé : c'est le cas en local et dans les tests.

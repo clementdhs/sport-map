@@ -1,0 +1,87 @@
+name: Quota MapTiler
+
+# The free MapTiler plan stops serving maps at 100,000 requests per billing period, without warning.
+# Once a day, this reads the usage of the current period from the Analytics API and, above a threshold,
+# opens an issue (or updates the open one). Below the threshold, it closes that issue if any.
+# A failed API call fails the run, and GitHub emails the failure.
+on:
+  schedule:
+    - cron: '41 6 * * *' # every day at 06:41 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    name: Consommation de la période en cours
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Lecture de l'API Analytics et issue d'alerte
+        env:
+          # Secret and optional variables of the repository, see README (never in the repository).
+          MAPTILER_TOKEN: ${{ secrets.MAPTILER_SERVICE_TOKEN }}
+          QUOTA: ${{ vars.MAPTILER_QUOTA || '100000' }}
+          THRESHOLD: ${{ vars.MAPTILER_ALERT_PERCENT || '70' }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if [ -z "$MAPTILER_TOKEN" ]; then
+            echo "::error::Secret MAPTILER_SERVICE_TOKEN manquant dans les réglages du dépôt."
+            exit 1
+          fi
+          if ! [[ "$QUOTA" =~ ^[1-9][0-9]*$ && "$THRESHOLD" =~ ^[0-9]+$ ]]; then
+            echo "::error::Les variables MAPTILER_QUOTA et MAPTILER_ALERT_PERCENT doivent être des entiers (sans espace)."
+            exit 1
+          fi
+
+          # The token stays in a curl config file read from stdin, so it never shows up in a command line.
+          status=$(printf 'header = "Authorization: Token %s"\n' "$MAPTILER_TOKEN" | curl --config - \
+            --silent --show-error --retry 3 --retry-delay 20 --max-time 30 \
+            --output usage.json --write-out '%{http_code}' \
+            'https://service.maptiler.com/v1/analytics/api_usage/timeline?period=current_billing_period&classifier=services&group=request')
+          if [ "$status" != 200 ]; then
+            echo "::error::L'API Analytics de MapTiler a répondu $status."
+            cat usage.json; echo
+            exit 1
+          fi
+
+          # Requests per service (labels from the legend), then the total. estimated_data is a projection, not counted.
+          jq -r '(.legend | map({(.item_id): .label}) | add) as $labels
+            | .datasets[] | "\($labels[.item_id] // .item_id) : \([.data[].value] | add // 0)"' usage.json
+          total=$(jq '[.datasets[].data[].value] | add // 0 | floor' usage.json)
+          since=$(jq -r '.since' usage.json)
+          percent=$(( total * 100 / QUOTA ))
+          echo "Total depuis le $since : $total requêtes sur $QUOTA ($percent %), seuil d'alerte : $THRESHOLD %."
+
+          # The single alert issue is found by its title prefix among the open issues; its title carries
+          # the last percentage reported.
+          alert=$(gh issue list --state open --limit 200 --json number,title \
+            --jq '[.[] | select(.title | startswith("Quota MapTiler à "))][0] // empty | "\(.number) \(.title)"')
+          issue=${alert%% *}
+          previous=0
+          if [[ "$alert" =~ à\ ([0-9]+) ]]; then previous=${BASH_REMATCH[1]}; fi
+          title="Quota MapTiler à $percent %"
+          body="La période en cours (depuis le $since) compte **$total requêtes** MapTiler sur un quota de $QUOTA, soit **$percent %** (seuil d'alerte : $THRESHOLD %).
+
+          Au quota, les cartes MapTiler s'arrêtent jusqu'à la période suivante. Détail par service : page Analytics de MapTiler Cloud.
+
+          Issue tenue à jour chaque jour par le workflow « Quota MapTiler », fermée automatiquement quand la consommation repasse sous le seuil."
+
+          if [ "$percent" -ge "$THRESHOLD" ]; then
+            if [ -n "$issue" ]; then
+              gh issue edit "$issue" --title "$title" --body "$body"
+              echo "Issue #$issue mise à jour."
+              # Editing notifies nobody: a comment does, each time usage enters a new ten-percent step.
+              if [ $(( percent / 10 )) -gt $(( previous / 10 )) ]; then
+                gh issue comment "$issue" --body "Consommation passée à **$percent %** ($total requêtes sur $QUOTA)."
+              fi
+            else
+              gh issue create --title "$title" --body "$body"
+            fi
+          elif [ -n "$issue" ]; then
+            gh issue close "$issue" --comment "Consommation repassée sous le seuil : $total requêtes ($percent %) depuis le $since."
+            echo "Issue #$issue fermée."
+          fi

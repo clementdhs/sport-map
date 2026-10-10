@@ -100,7 +100,7 @@ onMounted(async () => {
   // Before the first tiles are requested, so that a basemap drawn over the style doesn't load the style's own.
   instance.once('style.load', () => {
     setBasemap = addBasemapLayers(instance)
-    setBasemap(shownBasemap(basemap.value, online.value))
+    setBasemap(shown.value)
     reliefSource.value = props.relief ? demSource(instance.getStyle()) : undefined
     view3d.value = saved3d && !!reliefSource.value
     if (view3d.value) setMap3d(instance, reliefSource.value!, true, false)
@@ -131,7 +131,9 @@ function updateOnline() {
   online.value = navigator.onLine
 }
 
-watch([basemap, online], () => setBasemap?.(shownBasemap(basemap.value, online.value)))
+// The basemap on screen, which the legend explains.
+const shown = computed(() => shownBasemap(basemap.value, online.value))
+watch(shown, () => setBasemap?.(shown.value))
 
 const basemapItems = computed(() => BASEMAPS.map(id => ({
   label: t(`map.basemaps.${id}`),
@@ -169,6 +171,8 @@ onBeforeUnmount(() => {
         <UIcon name="i-lucide-layers" class="size-4 text-neutral-800" />
       </button>
     </UDropdownMenu>
+    <!-- Lazy: the style expression evaluator it reads the basemap with stays out of the page's bundle. -->
+    <LazyMapLegend :map="map" :basemap="shown" />
     <button
       v-if="reliefSource"
       type="button"

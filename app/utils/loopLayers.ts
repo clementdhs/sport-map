@@ -1,6 +1,7 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
 import type { GeoJSONSource, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
+import { START_COLOR } from '~/utils/routeLayers'
 
 // Automatic loop proposals (#50), over the editor's layers (its track is hidden meanwhile).
 
@@ -68,7 +69,7 @@ export function addLoopLayers(map: Map) {
     id: 'loop-start',
     type: 'circle',
     source: START_SOURCE,
-    paint: { 'circle-radius': 7, 'circle-color': '#16a34a', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    paint: { 'circle-radius': 7, 'circle-color': START_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
   })
 }
 

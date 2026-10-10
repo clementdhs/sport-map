@@ -3,6 +3,9 @@ import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map } fr
 import type { LngLat } from '#shared/utils/routes'
 
 export const ROUTE_COLOR = '#ea580c'
+// Start and end markers, on every map that shows them.
+export const START_COLOR = '#16a34a'
+export const END_COLOR = '#dc2626'
 
 const LINE_SOURCE = 'route-line'
 const POINTS_SOURCE = 'route-points'
@@ -68,7 +71,7 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
     source: POINTS_SOURCE,
     paint: {
       'circle-radius': ['match', ['get', 'role'], 'via', 4, 7],
-      'circle-color': ['match', ['get', 'role'], 'start', '#16a34a', 'end', '#dc2626', '#ffffff'],
+      'circle-color': ['match', ['get', 'role'], 'start', START_COLOR, 'end', END_COLOR, '#ffffff'],
       'circle-stroke-color': ['match', ['get', 'role'], 'via', ROUTE_COLOR, '#ffffff'],
       'circle-stroke-width': 2,
     },
@@ -174,7 +177,12 @@ function gpsData(map: Map, fix: GpsPosition | null, headingDeg: number | null): 
   }
 }
 
-// A navigation arrow pointing north, 32 px, in the dot's colors (white outline, readable on any basemap).
+// A navigation arrow pointing north, in a 32 px square, in the dot's colors (white outline, readable on any
+// basemap). Its corners are shared with the map legend.
+export const GPS_ARROW_POINTS: readonly [number, number][] = [[16, 3], [27, 28], [16, 22], [5, 28]]
+// Width of its white outline.
+export const GPS_ARROW_OUTLINE = 5
+
 function arrowImage(): ImageData {
   const ratio = 2
   const canvas = document.createElement('canvas')
@@ -182,13 +190,10 @@ function arrowImage(): ImageData {
   const context = canvas.getContext('2d')!
   context.scale(ratio, ratio)
   context.beginPath()
-  context.moveTo(16, 3)
-  context.lineTo(27, 28)
-  context.lineTo(16, 22)
-  context.lineTo(5, 28)
+  for (const [x, y] of GPS_ARROW_POINTS) context.lineTo(x, y)
   context.closePath()
   context.lineJoin = 'round'
-  context.lineWidth = 5
+  context.lineWidth = GPS_ARROW_OUTLINE
   context.strokeStyle = '#ffffff'
   context.stroke()
   context.fillStyle = GPS_COLOR

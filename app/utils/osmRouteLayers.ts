@@ -2,13 +2,15 @@ import type { FeatureCollection, LineString, MultiLineString, Point } from 'geoj
 import type { FilterSpecification, GeoJSONSource, Map } from 'maplibre-gl'
 import type { OsmRoute } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
-import { ROUTE_COLOR } from '~/utils/routeLayers'
+import { END_COLOR, ROUTE_COLOR, START_COLOR } from '~/utils/routeLayers'
 
 // Marked routes of OpenStreetMap (#69): dozens of lines that often share paths, all in one colour; the highlighted one
 // is drawn again on top, in the colour of the app's routes.
 
-// Categorical slot 1 of the dataviz palette, as the first loop proposal.
-const LINE_COLOR = '#2a78d6'
+// Categorical slot 1 of the dataviz palette, as the first loop proposal. Shared with the map legend.
+export const OSM_ROUTE_LINE = { color: '#2a78d6', width: 3, opacity: 0.8 }
+// The pieces of a route whose ways don't connect.
+export const OSM_INCOMPLETE_DASHES = [2, 1.5]
 const SOURCE = 'osm-routes'
 const HIGHLIGHT_LAYERS = ['osm-routes-highlight-casing', 'osm-routes-highlight']
 export const OSM_ROUTES_HIT_LAYER = 'osm-routes-hit'
@@ -32,7 +34,7 @@ const highlightFilter = (id: number | null): FilterSpecification => ['==', ['get
 export function addOsmRouteLayers(map: Map) {
   map.addSource(SOURCE, { type: 'geojson', data: routesData([], () => ''), attribution: ATTRIBUTION })
 
-  const line = { 'line-color': LINE_COLOR, 'line-width': 3, 'line-opacity': 0.8 }
+  const line = { 'line-color': OSM_ROUTE_LINE.color, 'line-width': OSM_ROUTE_LINE.width, 'line-opacity': OSM_ROUTE_LINE.opacity }
   map.addLayer({
     id: 'osm-routes',
     type: 'line',
@@ -41,14 +43,13 @@ export function addOsmRouteLayers(map: Map) {
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: line,
   })
-  // The pieces of a route whose ways don't connect.
   map.addLayer({
     id: 'osm-routes-incomplete',
     type: 'line',
     source: SOURCE,
     filter: ['!', ['get', 'complete']],
     layout: { 'line-join': 'round' },
-    paint: { ...line, 'line-dasharray': [2, 1.5] },
+    paint: { ...line, 'line-dasharray': OSM_INCOMPLETE_DASHES },
   })
   map.addLayer({
     id: HIGHLIGHT_LAYERS[0]!,
@@ -137,7 +138,7 @@ export function addOsmSectionLayers(map: Map) {
     source: SECTION_ENDS_SOURCE,
     paint: {
       'circle-radius': 8,
-      'circle-color': ['match', ['get', 'end'], 'from', '#16a34a', '#dc2626'],
+      'circle-color': ['match', ['get', 'end'], 'from', START_COLOR, END_COLOR],
       'circle-stroke-color': '#ffffff',
       'circle-stroke-width': 2,
     },

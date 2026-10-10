@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { OsmRoute, OsmRouteKind } from '#shared/utils/osmRoutes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
+import type { ImportedTrack } from '~/utils/gpx'
 
 // Marked routes of OpenStreetMap around the map view (#69). Map page: MapSheetLayout replaces the header with its
 // floating top bar.
@@ -11,6 +12,8 @@ const errorMessage = useErrorMessage()
 useSeoMeta({ title: () => `${t('discover.title')} — sport-map` })
 
 const discover = useOsmDiscoverStore()
+// A section of a marked route being chosen (#72): the panel and the map show only that route.
+const sectionStore = useOsmSectionStore()
 const focus = ref<MapFocus | null>(null)
 
 // The URL holds the kind, the filters and the view (#70), to share a search. Without any (a link of the app), the
@@ -72,27 +75,54 @@ const statusLabel = computed(() => {
   return t('discover.count', { count }, count)
 })
 
-// Picked in the list: framed on the map. Picked on the map: shown in the list.
-function selectInList(route: OsmRoute) {
-  discover.selectedId = route.id
+function frame(route: OsmRoute) {
   const bbox = osmRouteBbox(route)
   focus.value = { center: [(bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2], bbox }
 }
 
+// Picked in the list: framed on the map. Picked on the map: shown in the list.
+function selectInList(route: OsmRoute) {
+  discover.selectedId = route.id
+  frame(route)
+}
+
+function startSection(route: OsmRoute) {
+  sectionStore.start(route)
+  frame(route)
+}
+
+const sectionLayer = computed(() => sectionStore.ends && { coordinates: sectionStore.coordinates, ...sectionStore.ends })
+// Title of the collapsed sheet on phones.
+const sectionTitle = computed(() => {
+  const gain = sectionStore.gainStatus === 'known'
+    ? t('discover.gain', { gain: sectionStore.gain })
+    : t(sectionStore.gainStatus === 'pending' ? 'discover.gainPending' : 'discover.gainUnknown')
+  return t('discover.section.summary', { distance: formatDistance(sectionStore.length), gain })
+})
+const km = (meters: number) => formatNumber(meters / 1000, { maximumFractionDigits: 1 })
+
 const editor = useRouteEditorStore()
 const toast = useToast()
 
-async function importRoute(route: OsmRoute) {
+async function importRoute(route: OsmRoute, track?: ImportedTrack) {
   // A new route being drawn would be lost; a saved one being edited stays as it was.
   if (!editor.editingId && editor.waypoints.length && !window.confirm(t('discover.replaceDraft'))) return
-  discover.importIntoEditor(route)
+  discover.importIntoEditor(route, track)
+  sectionStore.stop()
   toast.add({
-    title: t('discover.imported'),
+    title: t(track ? 'discover.section.imported' : 'discover.imported'),
     description: t('discover.importedPoints', { count: editor.track.coordinates.length }),
     color: 'success',
     icon: 'i-lucide-file-check',
   })
   await navigateTo('/routes/create')
+}
+
+function importSection() {
+  const route = sectionStore.route
+  const { from = 0, to = 0 } = sectionStore.section ?? {}
+  const track = sectionStore.track(t('discover.section.name', { name: route ? label(route) : '', from: km(from), to: km(to) }))
+  if (route && track) importRoute(route, track)
 }
 
 async function selectOnMap(id: number) {
@@ -107,15 +137,18 @@ async function selectOnMap(id: number) {
     <template #map>
       <ClientOnly>
         <MapOsmRoutes
-          :routes="discover.shownRoutes"
-          :highlighted-id="shownId"
+          :routes="sectionStore.route ? [sectionStore.route] : discover.shownRoutes"
+          :highlighted-id="sectionStore.route ? null : shownId"
           :focus="focus"
           :center="discover.view.center"
           :zoom="discover.view.zoom"
           :label="label"
+          :section="sectionLayer"
           @view-change="onViewChange"
           @hover="discover.highlightedId = $event"
           @select="selectOnMap"
+          @pick="sectionStore.pick"
+          @move-end="sectionStore.moveEnd"
         />
       </ClientOnly>
     </template>
@@ -125,7 +158,8 @@ async function selectOnMap(id: number) {
     </template>
 
     <template #title>
-      <span class="flex items-center gap-2">
+      <span v-if="sectionStore.route" class="truncate">{{ sectionTitle }}</span>
+      <span v-else class="flex items-center gap-2">
         <span class="truncate">{{ statusLabel }}</span>
         <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 shrink-0 animate-spin text-muted" aria-hidden="true" />
       </span>
@@ -133,96 +167,110 @@ async function selectOnMap(id: number) {
 
     <h1 class="text-lg font-semibold max-md:sr-only">{{ t('discover.title') }}</h1>
 
-    <UTabs v-model="kind" :items="kindItems" :content="false" size="sm" :aria-label="t('discover.kind')" />
-    <div>
-      <OsmRouteFilters />
-    </div>
+    <OsmSectionPanel v-if="sectionStore.route" :name="label(sectionStore.route)" @import="importSection" />
 
-    <template v-if="!discover.viewSearched">
-      <UButton
-        icon="i-lucide-search"
-        :label="t('discover.searchHere')"
-        block
-        :loading="discover.loading"
-        :disabled="discover.tooWide"
-        @click="discover.search()"
+    <template v-else>
+      <UTabs v-model="kind" :items="kindItems" :content="false" size="sm" :aria-label="t('discover.kind')" />
+      <div>
+        <OsmRouteFilters />
+      </div>
+
+      <template v-if="!discover.viewSearched">
+        <UButton
+          icon="i-lucide-search"
+          :label="t('discover.searchHere')"
+          block
+          :loading="discover.loading"
+          :disabled="discover.tooWide"
+          @click="discover.search()"
+        />
+        <p v-if="discover.tooWide" class="-mt-2 text-sm text-muted">
+          <UIcon name="i-lucide-zoom-in" class="mr-1 align-text-bottom" />{{ t('discover.zoomInHint') }}
+        </p>
+      </template>
+
+      <!-- Shown by the sheet title on mobile, still read out from here. -->
+      <p class="flex items-center gap-2 text-sm text-muted max-md:sr-only" aria-live="polite">
+        {{ statusLabel }}
+        <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
+      </p>
+      <p v-if="discover.computingElevationId !== null && discover.elevationsLeft" class="-mt-2 flex items-center gap-2 text-xs text-muted">
+        <UIcon name="i-lucide-mountain" class="size-3.5" aria-hidden="true" />
+        {{ t('discover.elevationsLeft', { count: discover.elevationsLeft }, discover.elevationsLeft) }}
+      </p>
+
+      <UAlert
+        v-if="discover.error"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-triangle-alert"
+        :title="t('discover.failed')"
+        :description="errorMessage(discover.error)"
+        :actions="[{ label: t('discover.retry'), color: 'neutral', variant: 'outline', onClick: () => discover.search() }]"
       />
-      <p v-if="discover.tooWide" class="-mt-2 text-sm text-muted">
-        <UIcon name="i-lucide-zoom-in" class="mr-1 align-text-bottom" />{{ t('discover.zoomInHint') }}
+
+      <ul v-if="discover.shownRoutes.length" class="space-y-2" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
+        <li v-for="route in discover.shownRoutes" :id="`osm-route-${route.id}`" :key="route.id">
+          <button
+            type="button"
+            class="w-full rounded-md border p-3 text-left"
+            :class="shownId === route.id ? 'border-primary' : 'border-default'"
+            :aria-pressed="discover.selectedId === route.id"
+            @mouseenter="discover.highlightedId = route.id"
+            @mouseleave="discover.highlightedId = null"
+            @focus="discover.highlightedId = route.id"
+            @blur="discover.highlightedId = null"
+            @click="selectInList(route)"
+          >
+            <span class="block font-medium">{{ label(route) }}</span>
+            <span class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
+              <span>{{ formatDistance(route.distance_m) }}</span>
+              <span v-if="shapeOf(route) === 'linear'">· {{ t('discover.outAndBackDistance', { distance: formatDistance(2 * route.distance_m) }) }}</span>
+              <span class="inline-flex items-center gap-1">
+                · {{ gainLabel(route) }}
+                <UIcon v-if="discover.computingElevationId === route.id" name="i-lucide-loader-circle" class="size-3.5 animate-spin" aria-hidden="true" />
+              </span>
+              <UBadge v-if="shapeOf(route) !== 'unknown'" :label="t(`discover.shapes.${shapeOf(route)}`)" :icon="shapeOf(route) === 'loop' ? 'i-lucide-repeat' : 'i-lucide-move-right'" color="neutral" variant="subtle" size="sm" />
+              <UBadge v-if="scopeOf(route)" :label="t(`discover.scopes.${scopeOf(route)}`)" color="neutral" variant="subtle" size="sm" />
+              <UBadge v-if="route.name && route.ref" :label="route.ref" color="neutral" variant="outline" size="sm" />
+              <UBadge v-if="!route.complete" :label="t('discover.incomplete')" icon="i-lucide-unlink" color="warning" variant="subtle" size="sm" />
+            </span>
+          </button>
+          <div v-if="discover.selectedId === route.id" class="mt-2 space-y-2">
+            <UButton
+              v-if="route.complete"
+              icon="i-lucide-route"
+              :label="t('discover.import')"
+              :aria-label="t('discover.importLabel', { name: label(route) })"
+              size="sm"
+              block
+              @click="importRoute(route)"
+            />
+            <p v-else class="px-1 text-sm text-muted">
+              {{ t('discover.incompleteHint') }}
+            </p>
+            <!-- A long-distance path no filter keeps, or a piece of a route whose ways don't connect. -->
+            <UButton
+              icon="i-lucide-scissors"
+              :label="t('discover.section.start')"
+              :aria-label="t('discover.section.startLabel', { name: label(route) })"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              block
+              @click="startSection(route)"
+            />
+          </div>
+        </li>
+      </ul>
+      <div v-else-if="discover.routes.length" class="space-y-2">
+        <p class="text-sm text-muted">{{ t('discover.noneFiltered') }}</p>
+        <UButton :label="t('filters.reset')" icon="i-lucide-rotate-ccw" color="neutral" variant="outline" size="sm" @click="discover.resetFilters" />
+      </div>
+      <p v-else-if="discover.searched && !discover.loading && !discover.error" class="text-sm text-muted">
+        {{ t('discover.noneHint') }}
       </p>
     </template>
-
-    <!-- Shown by the sheet title on mobile, still read out from here. -->
-    <p class="flex items-center gap-2 text-sm text-muted max-md:sr-only" aria-live="polite">
-      {{ statusLabel }}
-      <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" aria-hidden="true" />
-    </p>
-    <p v-if="discover.computingElevationId !== null && discover.elevationsLeft" class="-mt-2 flex items-center gap-2 text-xs text-muted">
-      <UIcon name="i-lucide-mountain" class="size-3.5" aria-hidden="true" />
-      {{ t('discover.elevationsLeft', { count: discover.elevationsLeft }, discover.elevationsLeft) }}
-    </p>
-
-    <UAlert
-      v-if="discover.error"
-      color="error"
-      variant="subtle"
-      icon="i-lucide-triangle-alert"
-      :title="t('discover.failed')"
-      :description="errorMessage(discover.error)"
-      :actions="[{ label: t('discover.retry'), color: 'neutral', variant: 'outline', onClick: () => discover.search() }]"
-    />
-
-    <ul v-if="discover.shownRoutes.length" class="space-y-2" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
-      <li v-for="route in discover.shownRoutes" :id="`osm-route-${route.id}`" :key="route.id">
-        <button
-          type="button"
-          class="w-full rounded-md border p-3 text-left"
-          :class="shownId === route.id ? 'border-primary' : 'border-default'"
-          :aria-pressed="discover.selectedId === route.id"
-          @mouseenter="discover.highlightedId = route.id"
-          @mouseleave="discover.highlightedId = null"
-          @focus="discover.highlightedId = route.id"
-          @blur="discover.highlightedId = null"
-          @click="selectInList(route)"
-        >
-          <span class="block font-medium">{{ label(route) }}</span>
-          <span class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
-            <span>{{ formatDistance(route.distance_m) }}</span>
-            <span v-if="shapeOf(route) === 'linear'">· {{ t('discover.outAndBackDistance', { distance: formatDistance(2 * route.distance_m) }) }}</span>
-            <span class="inline-flex items-center gap-1">
-              · {{ gainLabel(route) }}
-              <UIcon v-if="discover.computingElevationId === route.id" name="i-lucide-loader-circle" class="size-3.5 animate-spin" aria-hidden="true" />
-            </span>
-            <UBadge v-if="shapeOf(route) !== 'unknown'" :label="t(`discover.shapes.${shapeOf(route)}`)" :icon="shapeOf(route) === 'loop' ? 'i-lucide-repeat' : 'i-lucide-move-right'" color="neutral" variant="subtle" size="sm" />
-            <UBadge v-if="scopeOf(route)" :label="t(`discover.scopes.${scopeOf(route)}`)" color="neutral" variant="subtle" size="sm" />
-            <UBadge v-if="route.name && route.ref" :label="route.ref" color="neutral" variant="outline" size="sm" />
-            <UBadge v-if="!route.complete" :label="t('discover.incomplete')" icon="i-lucide-unlink" color="warning" variant="subtle" size="sm" />
-          </span>
-        </button>
-        <template v-if="discover.selectedId === route.id">
-          <UButton
-            v-if="route.complete"
-            icon="i-lucide-route"
-            :label="t('discover.import')"
-            :aria-label="t('discover.importLabel', { name: label(route) })"
-            size="sm"
-            block
-            class="mt-2"
-            @click="importRoute(route)"
-          />
-          <p v-else class="mt-1 px-1 text-sm text-muted">
-            {{ t('discover.incompleteHint') }}
-          </p>
-        </template>
-      </li>
-    </ul>
-    <div v-else-if="discover.routes.length" class="space-y-2">
-      <p class="text-sm text-muted">{{ t('discover.noneFiltered') }}</p>
-      <UButton :label="t('filters.reset')" icon="i-lucide-rotate-ccw" color="neutral" variant="outline" size="sm" @click="discover.resetFilters" />
-    </div>
-    <p v-else-if="discover.searched && !discover.loading && !discover.error" class="text-sm text-muted">
-      {{ t('discover.noneHint') }}
-    </p>
 
     <p class="text-xs text-muted">
       <i18n-t keypath="discover.attribution" scope="global">

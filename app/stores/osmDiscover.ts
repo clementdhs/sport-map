@@ -2,6 +2,7 @@ import { type Bbox, bboxContains, fitsOsmSearch, OSM_KIND_SPORTS, type OsmRoute,
 import { activeOsmFilterCount, defaultOsmFilters, matchesOsmFilters, type OsmDiscoverState, type OsmRouteFilters } from '#shared/utils/osmFilters'
 import type { OsmRouteElevation } from '#shared/types/osm'
 import type { MapViewState } from '~/stores/routeSearch'
+import type { ImportedTrack } from '~/utils/gpx'
 
 // What the list shows of a route's elevation gain (#71): known, being computed or waiting for it, or unknown (a route
 // that can't be imported, or whose computation failed).
@@ -177,13 +178,13 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
     bounds.value = null
   }
 
-  // Starts a new route in the editor from a complete marked route: its sport, and its source in the description
-  // (with the attribution the ODbL asks for).
-  function importIntoEditor(route: OsmRoute) {
+  // Starts a new route in the editor from a complete marked route, or a section of one (#72): its sport, and its
+  // source in the description (with the attribution the ODbL asks for).
+  function importIntoEditor(route: OsmRoute, track: ImportedTrack = osmRouteTrack(route)) {
     const editor = useRouteEditorStore()
     // A saved route being edited stays as it was.
     if (editor.editingId) editor.reset()
-    editor.importTrack(osmRouteTrack(route))
+    editor.importTrack(track)
     editor.details.sport_type = OSM_KIND_SPORTS[searched.value?.kind ?? kind.value]
     if (!editor.details.description) {
       editor.details.description = $i18n.t('discover.importedDescription', {

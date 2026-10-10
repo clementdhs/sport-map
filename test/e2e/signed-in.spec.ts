@@ -187,7 +187,7 @@ test('finds marked routes around a place and imports one into the editor', async
   const incomplete = results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ })
   await expect(incomplete).toContainText('D+ inconnu')
   await incomplete.click()
-  await expect(page.getByText('Ses tronçons ne se raccordent pas')).toBeVisible()
+  await expect(page.getByText('Ses morceaux ne se raccordent pas')).toBeVisible()
   await expect(page.getByRole('button', { name: /^Importer/ })).toHaveCount(0)
 
   // The gains of the others are computed from the fake elevations (#71).
@@ -210,6 +210,59 @@ test('finds marked routes around a place and imports one into the editor', async
   await page.goBack()
   await expect(page).toHaveURL(/\/discover\?at=48\.\d+,2\.\d+,\d/)
   await expect(results.getByRole('listitem')).toHaveCount(4)
+})
+
+// A section of a marked route (#72), chosen with its fields; the map's taps and drags were checked by hand.
+test('extracts a section of a marked route and imports it into the editor', async ({ page }) => {
+  const fontainebleau = readFileSync('test/fixtures/overpass-fontainebleau.json', 'utf8')
+  await page.route('**/api/interpreter', route => route.fulfill({ contentType: 'application/json', body: fontainebleau }))
+
+  await page.goto('/discover?at=48.41,2.65,12')
+  const results = page.getByRole('list', { name: 'Parcours balisés trouvés' })
+  await expect(results.getByRole('listitem')).toHaveCount(4)
+
+  // Its ways don't connect: a section stays on one of its pieces.
+  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 15\b/ }).click()
+  await page.getByRole('button', { name: 'Extraire un tronçon de Sentier Denecourt-Colinet 15' }).click()
+  await expect(page.getByText('Ses morceaux ne se raccordent pas : le tronçon reste sur un seul.')).toBeVisible()
+  await page.getByRole('button', { name: 'Revenir à la liste' }).click()
+
+  await results.getByRole('button', { name: /^Sentier Denecourt-Colinet 7\b/ }).click()
+  await page.getByRole('button', { name: 'Extraire un tronçon de Sentier Denecourt-Colinet 7' }).click()
+  const panel = page.getByRole('region', { name: 'Extraire un tronçon' })
+  await expect(panel.getByText('Sentier Denecourt-Colinet 7', { exact: true })).toBeVisible()
+  await expect(results).toHaveCount(0)
+
+  // A field is applied when it loses the focus, and then updates the others.
+  await panel.getByRole('spinbutton', { name: 'Départ (km)' }).fill('1')
+  await panel.getByRole('spinbutton', { name: 'Départ (km)' }).press('Tab')
+  await expect(panel.getByRole('spinbutton', { name: 'Distance (km)' })).toHaveValue('9,7')
+  await panel.getByRole('spinbutton', { name: 'Distance (km)' }).fill('2')
+  await panel.getByRole('spinbutton', { name: 'Distance (km)' }).press('Tab')
+  await expect(panel.getByRole('spinbutton', { name: 'Arrivée (km)' })).toHaveValue('3')
+
+  // An arrival before the departure: the route is walked the other way.
+  const arrival = panel.getByRole('spinbutton', { name: 'Arrivée (km)' })
+  await arrival.fill('0,5')
+  await arrival.press('Tab')
+  await expect(panel.getByText('Il est parcouru dans l\'autre sens que le tracé d\'OpenStreetMap.')).toBeVisible()
+  await expect(panel.getByRole('spinbutton', { name: 'Distance (km)' })).toHaveValue('0,5')
+  await arrival.fill('3')
+  await arrival.press('Tab')
+  await expect(panel.getByText('Il est parcouru dans l\'autre sens')).toHaveCount(0)
+
+  // Its elevations come from the fake IGN once the ends stay still.
+  const summary = panel.getByText(/Tronçon de 2,00 km · D\+ \d+ m/)
+  await expect(summary).toBeVisible()
+  const gain = (await summary.textContent())!.match(/D\+ (\d+) m/)![1]!
+
+  await panel.getByRole('button', { name: 'Importer le tronçon dans l\'éditeur' }).click()
+  await expect(page).toHaveURL('/routes/create')
+  await expect(page.getByText('Tronçon importé').first()).toBeVisible()
+  await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 7, km 1 à 3')
+  await expect(page.locator('p.text-3xl')).toHaveText(/^(1,9\d|2,00) km$/)
+  // The editor keeps the section's elevations.
+  await expect(page.getByText('Dénivelé +', { exact: true }).locator('xpath=following-sibling::p')).toHaveText(`${gain} m`)
 })
 
 // Of the 4 Fontainebleau relations: 2 loops (one tagged, one closing on itself), 1 one-way route, 1 whose ways don't

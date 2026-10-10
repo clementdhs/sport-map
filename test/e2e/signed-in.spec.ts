@@ -879,13 +879,12 @@ test('offers the 3D view when the style has elevations, and keeps it on the devi
   await view3d.click()
   await expect(view3d).toHaveAttribute('aria-pressed', 'true')
 
-  // Remembered on the device, and offered on the route page too.
+  // Remembered on the device, and offered on the route page too. The button shows once the style is read: a
+  // map opening in 3D isn't awaited, since drawing the relief without a GPU (CI runners) takes over 15 s.
   await page.reload()
-  await waitForMap(page)
-  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+  await expect(view3d).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
-  await waitForMap(page)
-  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+  await expect(view3d).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
   // Follow mode stays in 2D.
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
   await waitForMap(page)

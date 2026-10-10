@@ -38,9 +38,11 @@ process.env.E2E_MAILPIT_URL = supabase.mailUrl
 export default defineConfig({
   testDir: 'test/e2e',
   globalSetup: './test/e2e/global-setup.ts',
-  // Spec files run in parallel, the tests of a file in order. Each worker has its own users (global setup).
+  // Spec files run in parallel, the tests of a file in order. Each worker has its own users (global setup). The
+  // CI runners have 2 cores, already busy with the server, Supabase and maps drawn without a GPU: measured slower
+  // there with 2 workers (6 min 50 s against 5 min 42 s) and 3 (7 min 38 s), with timeouts.
   fullyParallel: false,
-  workers: 2,
+  workers: process.env.CI ? 1 : 2,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {

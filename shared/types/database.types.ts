@@ -181,6 +181,24 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          count: number
+          key: string
+          started_at: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          started_at?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          started_at?: string
+        }
+        Relationships: []
+      }
       osm_route_elevations: {
         Row: {
           computed_at: string
@@ -205,24 +223,6 @@ export type Database = {
           loss_m?: number
           relation_id?: number
           version?: number
-        }
-        Relationships: []
-      }
-      login_attempts: {
-        Row: {
-          count: number
-          key: string
-          started_at: string
-        }
-        Insert: {
-          count?: number
-          key: string
-          started_at?: string
-        }
-        Update: {
-          count?: number
-          key?: string
-          started_at?: string
         }
         Relationships: []
       }

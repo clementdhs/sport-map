@@ -26,6 +26,8 @@ export default async function globalSetup(config: FullConfig) {
   await fetch(`${process.env.E2E_MAILPIT_URL}/api/v1/messages`, { method: 'DELETE' })
   // Gains of marked routes are shared, not tied to a user: computed again from the fake elevations.
   await supabaseAdmin('/rest/v1/osm_route_elevations?relation_id=gt.0', { method: 'DELETE' })
+  // Every test signs in from the same IP: a run started again right away must not hit the sign-in limit.
+  await supabaseAdmin('/rest/v1/login_attempts?count=gt.0', { method: 'DELETE' })
 
   // Every test user, including the workers of a run with more of them and the throwaway accounts of a test that
   // failed halfway.

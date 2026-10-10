@@ -9,19 +9,27 @@ useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
 
 const toast = useToast()
 const errorMessage = useErrorMessage()
-const { data: profile, error } = await useFetch<ProfileInfo>('/api/profile/me/info')
+const { data: profile, error, refresh } = await useFetch<ProfileInfo>('/api/profile/me/info')
 if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
 
-const form = ref<ProfileUpdate>({ display_name: profile.value?.display_name ?? '', bio: profile.value?.bio ?? '' })
+const form = ref<ProfileUpdate>({
+  username: profile.value?.username ?? '',
+  display_name: profile.value?.display_name ?? '',
+  bio: profile.value?.bio ?? '',
+})
 const saving = ref(false)
+// The username is also the sign-in name: changing it is worth a warning.
+const usernameChanged = computed(() => !!profile.value && form.value.username.trim() !== profile.value.username)
 
 async function saveProfile() {
   saving.value = true
   try {
     await $fetch('/api/profile/me', { method: 'PATCH', body: form.value })
     toast.add({ title: t('settings.profileUpdated'), color: 'success', icon: 'i-lucide-check' })
+    // The profile link and the account deletion use the username.
+    if (usernameChanged.value) await refresh()
   }
   catch (err) {
     toast.add({
@@ -56,11 +64,23 @@ function onPasswordChanged() {
         <template #username>@{{ profile.username }}</template>
       </i18n-t>
       <UForm :schema="profileUpdateSchemaLocalized" :state="form" class="space-y-4" @submit="saveProfile">
+        <UFormField :label="t('settings.username')" name="username" :hint="t('settings.usernameHint')">
+          <!-- Fixed ids: the generated ones differ between the server and the browser on this page (it awaits its
+               data), which left the labels pointing at nothing after a reload. -->
+          <UInput id="profile-username" v-model="form.username" autocomplete="username" autocapitalize="none" :spellcheck="false" class="w-full" />
+        </UFormField>
+        <UAlert
+          v-if="usernameChanged"
+          color="warning"
+          variant="subtle"
+          icon="i-lucide-triangle-alert"
+          :description="t('settings.usernameChangeWarning', { username: form.username.trim() })"
+        />
         <UFormField :label="t('settings.displayName')" name="display_name" :hint="t('settings.displayNameHint', { username: profile.username })">
-          <UInput v-model="form.display_name" class="w-full" />
+          <UInput id="profile-display-name" v-model="form.display_name" class="w-full" />
         </UFormField>
         <UFormField :label="t('settings.bio')" name="bio">
-          <UTextarea v-model="form.bio" :rows="4" autoresize class="w-full" />
+          <UTextarea id="profile-bio" v-model="form.bio" :rows="4" autoresize class="w-full" />
         </UFormField>
         <UButton type="submit" :label="t('settings.saveProfile')" :loading="saving" />
       </UForm>

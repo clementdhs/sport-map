@@ -35,6 +35,9 @@
     "email": "Email",
     "emailPlaceholder": "you{'@'}example.com",
     "emailRequired": "Email required",
+    "identifier": "Username or email",
+    "identifierPlaceholder": "clem or you{'@'}example.com",
+    "identifierRequired": "Username or email required",
     "password": "Password",
     "passwordRequired": "Password required",
     "passwordMin": "At least {n} characters",
@@ -45,7 +48,7 @@
       "familyOnly": "Access is for the family only: ask the administrator for an account.",
       "forgotLink": "Forgot your password?",
       "emailNotConfirmed": "Confirm your email address before signing in.",
-      "invalidCredentials": "Wrong email or password."
+      "invalidCredentials": "Wrong username, email or password."
     },
     "forgot": {
       "title": "Forgotten password",
@@ -812,6 +815,9 @@
     "publicProfile": "your profile",
     "displayName": "Display name",
     "displayNameHint": "Otherwise: {username}",
+    "username": "Username",
+    "usernameHint": "Also your sign-in name",
+    "usernameChangeWarning": "Once saved, sign in with {username}: the old username stops working, and so do links to your profile that use it.",
     "bio": "Bio",
     "saveProfile": "Save the profile",
     "changePassword": "Change the password",
@@ -872,6 +878,7 @@
   },
   "validation": {
     "usernameRequired": "Type your username",
+    "usernameFormat": "3 to 30 letters without accents, digits or _",
     "minChars": "At least {min} characters",
     "maxChars": "{max} characters maximum",
     "passwordsDiffer": "The two passwords are different",
@@ -886,6 +893,10 @@
   },
   "api": {
     "signInRequired": "Sign-in required",
+    "invalidLogin": "Wrong username or password",
+    "tooManyLogins": "Too many sign-in attempts: try again in a few minutes",
+    "loginFailed": "Couldn't sign in right now, try again later",
+    "usernameTaken": "This username is already taken",
     "routeNotFound": "Route not found",
     "outingNotFound": "Outing not found",
     "deleteOutingFailed": "Couldn't delete the outing",

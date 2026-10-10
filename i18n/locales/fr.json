@@ -35,6 +35,9 @@
     "email": "Email",
     "emailPlaceholder": "toi{'@'}exemple.fr",
     "emailRequired": "Email requis",
+    "identifier": "Pseudo ou email",
+    "identifierPlaceholder": "clem ou toi{'@'}exemple.fr",
+    "identifierRequired": "Pseudo ou email requis",
     "password": "Mot de passe",
     "passwordRequired": "Mot de passe requis",
     "passwordMin": "{n} caractères minimum",
@@ -45,7 +48,7 @@
       "familyOnly": "L'accès est réservé à la famille : demande un compte à l'administrateur.",
       "forgotLink": "Mot de passe oublié ?",
       "emailNotConfirmed": "Confirme ton adresse email avant de te connecter.",
-      "invalidCredentials": "Email ou mot de passe incorrect."
+      "invalidCredentials": "Pseudo, email ou mot de passe incorrect."
     },
     "forgot": {
       "title": "Mot de passe oublié",
@@ -751,7 +754,7 @@
     "delete": "Supprimer mon compte",
     "deleteWarning": "Ton compte, tes parcours, leurs photos, tes avis, tes sorties et tes collections seront effacés {forever}. Les notes des parcours que tu as évalués seront recalculées sans les tiennes. Pense à télécharger tes données avant.",
     "forever": "définitivement",
-    "confirmLabel": "Pour confirmer, saisis ton nom d'utilisateur : {username}",
+    "confirmLabel": "Pour confirmer, saisis ton pseudo : {username}",
     "deleteForever": "Supprimer définitivement"
   },
   "collection": {
@@ -812,6 +815,9 @@
     "publicProfile": "ton profil",
     "displayName": "Nom affiché",
     "displayNameHint": "Sinon : {username}",
+    "username": "Pseudo",
+    "usernameHint": "Sert aussi à te connecter",
+    "usernameChangeWarning": "Après l'enregistrement, connecte-toi avec {username} : l'ancien pseudo ne marchera plus, ni les liens vers ton profil qui l'utilisent.",
     "bio": "Bio",
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
@@ -871,7 +877,8 @@
     "source": "D'après OpenStreetMap, au moment du tracé. Les routes sans revêtement renseigné comptent comme goudron."
   },
   "validation": {
-    "usernameRequired": "Saisis ton nom d'utilisateur",
+    "usernameRequired": "Saisis ton pseudo",
+    "usernameFormat": "3 à 30 lettres sans accent, chiffres ou _",
     "minChars": "{min} caractères minimum",
     "maxChars": "{max} caractères maximum",
     "passwordsDiffer": "Les deux mots de passe sont différents",
@@ -886,6 +893,10 @@
   },
   "api": {
     "signInRequired": "Connexion requise",
+    "invalidLogin": "Pseudo ou mot de passe incorrect",
+    "tooManyLogins": "Trop d'essais de connexion : réessaie dans quelques minutes",
+    "loginFailed": "Connexion impossible pour le moment, réessaie plus tard",
+    "usernameTaken": "Ce pseudo est déjà pris",
     "routeNotFound": "Parcours introuvable",
     "outingNotFound": "Passage introuvable",
     "deleteOutingFailed": "Impossible de supprimer le passage",
@@ -933,7 +944,7 @@
     "loopOffTarget": "Pas de boucle de cette distance dans cette direction",
     "exportFailed": "Impossible de préparer l'export",
     "exportPhotosFailed": "Impossible de préparer l'export des photos",
-    "usernameMismatch": "Le nom d'utilisateur saisi ne correspond pas",
+    "usernameMismatch": "Le pseudo saisi ne correspond pas",
     "saveRecordingFailed": "Impossible d'enregistrer la sortie",
     "saveRouteFailed": "Impossible d'enregistrer le parcours",
     "saveChangesFailed": "Impossible d'enregistrer les modifications",
@@ -969,7 +980,7 @@
     },
     "readme": {
       "intro": "Données de {username} sur sport-map, exportées le {date}.",
-      "profile": "ton profil (nom d'utilisateur, nom affiché, bio, e-mail, date d'inscription)",
+      "profile": "ton profil (pseudo, nom affiché, bio, e-mail, date d'inscription)",
       "routes": "tes parcours : description, statistiques, points d'intérêt, visibilité",
       "gpx": "le tracé de chaque parcours, à ouvrir dans une application GPS",
       "photos": "les photos de tes parcours, un dossier par parcours",

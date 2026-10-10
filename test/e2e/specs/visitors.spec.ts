@@ -23,7 +23,7 @@ test('sends visitors to the sign-in page, whatever the page, then back to it onc
 
   await page.goto(`/routes/${ROUTE_ID()}`)
   await waitForHydration(page)
-  await page.locator('input[name="email"]').fill(SEED_OWNER.email)
+  await page.locator('input[name="identifier"]').fill(SEED_OWNER.email)
   await page.locator('input[name="password"]').fill(SEED_OWNER.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page).toHaveURL(`/routes/${ROUTE_ID()}`)
@@ -203,7 +203,7 @@ test('resets a forgotten password from the email link, opened in another browser
 
   await page.goto('/login')
   await waitForHydration(page)
-  await page.locator('input[name="email"]').fill(RESET_USER.email)
+  await page.locator('input[name="identifier"]').fill(RESET_USER.email)
   await page.locator('input[name="password"]').fill('encore-un-autre')
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()

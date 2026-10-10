@@ -2,7 +2,7 @@
 
 Web app (installable PWA) to create, share and discover running / hiking / cycling routes on a map, in the spirit of OpenRunner. UI text is in French.
 
-The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Reference the issue in the commit that completes it (`Closes #N`) and file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes how an issue is tested, committed and pushed.
+The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Each issue gets its own branch and pull request (`Closes #N`), squash-merged once Clem approves it; file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes the whole cycle (branch, checks, code review, PR, merge) and parallel sessions in worktrees.
 
 Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes, 3D flyover) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
 

@@ -28,3 +28,6 @@ test/e2e/.auth
 .env
 .env.*
 !.env.example
+
+# Session worktrees created by the Claude desktop app
+.claude/worktrees

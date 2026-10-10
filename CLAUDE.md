@@ -37,7 +37,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - `npm run db:push`: apply migrations to the hosted project (linked)
 - `npm run db:types`: regenerate DB types (project must be linked)
 - `npm test`: Vitest, `test/unit` (pure functions, Node, explicit imports with `#shared` / `~` aliases) and `test/nuxt` (Nuxt environment, for stores; mock API calls with `registerEndpoint`). Run it after any change.
-- `npm run db:start` then `npm run test:e2e`: Playwright on the production build against the local Supabase (Docker); `E2E_SKIP_BUILD=1` reuses an existing `npm run build`. Test users and data are recreated by `test/e2e/global-setup.ts`; map style and `/api/routing/segment` are mocked in `test/e2e/fixtures.ts`. Never point e2e tests at the hosted project.
+- `npm run db:start` then `npm run test:e2e`: Playwright on the production build against the local Supabase (Docker); `E2E_SKIP_BUILD=1` reuses an existing `npm run build`. One spec per feature in `test/e2e/specs/`, run on 2 workers locally (1 on CI), each with its own users (`.claude/rules/e2e.md`). Test users and data are recreated by `test/e2e/global-setup.ts`; map style and `/api/routing/segment` are mocked in `test/e2e/fixtures.ts`. Never point e2e tests at the hosted project.
 
 ## Testing
 - New logic in `shared/` or `app/utils/` gets unit tests; editor/store behaviour gets a `test/nuxt` test; user-facing flows get an e2e test.

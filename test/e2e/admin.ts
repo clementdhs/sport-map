@@ -18,3 +18,11 @@ export function insertRows<T>(table: string, rows: object[]): Promise<T[]> {
     body: JSON.stringify(rows),
   })
 }
+
+// Files left in the local storage bucket for a route.
+export function storedPhotoFiles(routeId: string): Promise<{ name: string }[]> {
+  return supabaseAdmin('/storage/v1/object/list/route-photos', {
+    method: 'POST',
+    body: JSON.stringify({ prefix: `${routeId}/` }),
+  })
+}

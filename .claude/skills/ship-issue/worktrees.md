@@ -27,7 +27,7 @@ Docker runs a single local Supabase, the same whichever folder starts it.
 
 ## Conflicts
 
-Files that both sessions often change (`npm run pr:impact` flags them): `i18n/locales/fr.json` and `en.json`, `test/e2e/signed-in.spec.ts`, `shared/types/database.types.ts`. The second PR to merge resolves them:
+Files that both sessions often change (`npm run pr:impact` flags them): `i18n/locales/fr.json` and `en.json`, `shared/types/database.types.ts`. The second PR to merge resolves them:
 
 - in a worktree created by the app, with the `sync_with_base_branch` tool (the app fetches and merges on the host); then resolve what it reports, commit and push;
 - in the main folder, `git fetch -q` and `git merge origin/main`.

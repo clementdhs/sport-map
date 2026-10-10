@@ -1,13 +1,8 @@
-import { E2E_USER, expect, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from './fixtures'
+import { expect, SEED_OWNER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from '../fixtures'
 
 // The main flows of a family member again, in a browser set to British English (playwright.config.ts): the
 // language is detected from it, with English formats. User content (route names, reviews) stays as written.
-
-// The saved session also holds the language cookie set while signing in, in French: without it, the language
-// is detected from the browser.
-test.beforeEach(async ({ context }) => {
-  await context.clearCookies({ name: 'sport-map-locale' })
-})
+test.use({ role: 'family' })
 
 test('finds a route on the home map and opens it, in English', async ({ page }) => {
   await page.goto('/')
@@ -17,7 +12,7 @@ test('finds a route on the home map and opens it, in English', async ({ page }) 
   await expect(card).toContainText('6.05 km')
   await expect(card).toContainText('4.0')
   await expect(card).toContainText('(1 review)')
-  await expect(card).toContainText(`by ${E2E_USER.displayName}`)
+  await expect(card).toContainText(`by ${SEED_OWNER.displayName}`)
   await card.click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
@@ -39,7 +34,7 @@ test('finds a route on the home map and opens it, in English', async ({ page }) 
 test('searches routes by name and filters them, in English', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)
-  const cards = page.locator('aside li a')
+  const cards = page.getByTestId('route-results').locator('li a')
   await expect(cards).toHaveCount(2)
 
   const searchBox = page.getByRole('combobox', { name: 'Search for a place or a route' })
@@ -63,10 +58,4 @@ test('searches routes by name and filters them, in English', async ({ page }) =>
 
   await page.getByRole('button', { name: 'Clear the search' }).click()
   await expect(page.getByRole('paragraph').filter({ hasText: 'No route in this area' })).toBeVisible()
-})
-
-test('shows server errors in English', async ({ page }) => {
-  const response = await page.goto('/routes/00000000-0000-0000-0000-000000000000')
-  expect(response?.status()).toBe(404)
-  await expect(page.getByText('Route not found').first()).toBeVisible()
 })

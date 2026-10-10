@@ -1,16 +1,23 @@
-import { type APIRequestContext, test as base, expect, type Page, type PlaywrightWorkerArgs } from '@playwright/test'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { type APIRequestContext, test as base, type Browser, expect, type Page } from '@playwright/test'
 
-// Session of the test account, saved by auth.setup.ts and reused by the signed-in tests.
-export const AUTH_FILE = 'test/e2e/.auth/user.json'
-// Session of another family member, who browses the test account's routes (family specs).
-export const FAMILY_AUTH_FILE = 'test/e2e/.auth/family.json'
+// Every test user has an address on this domain: the global setup deletes them all before recreating them.
+export const TEST_EMAIL_DOMAIN = '@sport-map.test'
 
-// Test-only account, created in the local Supabase by the global setup.
-export const E2E_USER = {
-  email: 'e2e@sport-map.test',
+export interface TestUser {
+  email: string
+  password: string
+  username: string
+  // Set by the global setup, so route cards show it instead of the username.
+  displayName?: string
+}
+
+// Owner of the seeded routes, shared by every worker. Its pages are never signed in, but visitors.spec.ts tries the
+// sign-in page with it.
+export const SEED_OWNER = {
+  email: `e2e${TEST_EMAIL_DOMAIN}`,
   password: 'e2e-local-password',
   username: 'e2e_user',
-  // Set by the global setup, so route cards show it instead of the username
   displayName: 'Coureur e2e',
 }
 
@@ -19,23 +26,46 @@ export const SEEDED_LOOP_NAME = 'Tour e2e des crêtes'
 
 // Test account whose password the reset test changes, so as not to disturb the others.
 export const RESET_USER = {
-  email: 'e2e-reset@sport-map.test',
+  email: `e2e-reset${TEST_EMAIL_DOMAIN}`,
   password: 'e2e-reset-initial',
   username: 'e2e_reset',
 }
 
-// Family member who doesn't own the seeded routes: the app is for signed-in members only.
-export const FAMILY_USER = {
-  email: 'e2e-famille@sport-map.test',
-  password: 'e2e-famille-password',
-  username: 'e2e_famille',
+// Other test users, created by the global setup to review and report.
+export const E2E_NEIGHBORS = [1, 2, 3].map(i => ({ email: `e2e-voisin${i}${TEST_EMAIL_DOMAIN}`, username: `e2e_voisin${i}` }))
+
+// Review by the first neighbor of the seeded point-to-point route and of each worker's own route.
+export const SEEDED_REVIEW = { rating: 4, comment: 'Très jolie balade au bord du lac.' }
+
+// Who a test's pages are signed in as: the test account or a family member who doesn't own its routes.
+export type Role = 'account' | 'family'
+
+export interface WorkerUsers {
+  account: TestUser & { displayName: string }
+  family: TestUser
 }
 
-// Other test users, created by the global setup to review and report.
-export const E2E_NEIGHBORS = [1, 2, 3].map(i => ({ email: `e2e-voisin${i}@sport-map.test`, username: `e2e_voisin${i}` }))
+// Each parallel worker (`parallelIndex`) has its own test account and family member, created by the global setup:
+// tests running at the same time never share a quota, a profile, outings or a position share.
+export function workerUsers(index: number): WorkerUsers {
+  const n = index + 1
+  return {
+    account: { email: `e2e-compte-${n}${TEST_EMAIL_DOMAIN}`, password: `e2e-compte-${n}-password`, username: `e2e_compte_${n}`, displayName: `Compte e2e ${n}` },
+    family: { email: `e2e-famille-${n}${TEST_EMAIL_DOMAIN}`, password: `e2e-famille-${n}-password`, username: `e2e_famille_${n}` },
+  }
+}
 
-// Review of the seeded point-to-point route by the first neighbor.
-export const SEEDED_REVIEW = { rating: 4, comment: 'Très jolie balade au bord du lac.' }
+// The test account of each worker also owns a route visible to the family, reviewed by the first neighbor. Like
+// every route visible to the family that tests create, it lies far from France (see FAR_AWAY).
+export const ACCOUNT_ROUTE_NAME = 'Belvédère e2e du compte'
+
+// Sessions saved by the workers, one file per role and worker: the global setup deletes them with the users.
+export const AUTH_DIR = 'test/e2e/.auth'
+
+// The search tests count every route visible to the family in France, and the routes whose name or description
+// match their words, while other workers run. Routes visible to the family that other tests create lie here, in
+// New Zealand, with other words in their names.
+export const FAR_AWAY = { place_name: 'Queenstown, Nouvelle-Zélande', center: [168.66, -45.03], bbox: [168.6, -45.08, 168.72, -44.98] }
 
 // A style without any source: the map loads instantly and offline.
 export const EMPTY_MAP_STYLE = {
@@ -103,7 +133,73 @@ async function mockExternalServices(page: Page) {
   })
 }
 
-export const test = base.extend<{ mockServices: void }>({
+// Signs in through the sign-in page, in French, and saves the session without the language cookie: the language
+// of each test then comes from its browser (en-GB in the English project).
+async function signIn(browser: Browser, baseURL: string, user: TestUser, file: string) {
+  const context = await browser.newContext({ baseURL, locale: 'fr-FR', serviceWorkers: 'block' })
+  const page = await context.newPage()
+  await mockExternalServices(page)
+  await page.goto('/login')
+  await waitForHydration(page)
+  // By name: the password label also matches the "Afficher le mot de passe" toggle.
+  await page.locator('input[name="email"]').fill(user.email)
+  await page.locator('input[name="password"]').fill(user.password)
+  await page.getByRole('button', { name: 'Se connecter' }).click()
+  // Signed in, on the home page: its floating map bar has the account menu.
+  await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()
+  const state = await context.storageState()
+  await context.close()
+  mkdirSync(AUTH_DIR, { recursive: true })
+  writeFileSync(file, JSON.stringify({ ...state, cookies: state.cookies.filter(cookie => cookie.name !== 'sport-map-locale') }))
+}
+
+interface TestFixtures {
+  mockServices: void
+  // Who the page is signed in as, set per spec or describe with test.use({ role }); nobody by default.
+  role: Role | null
+  // A new API context signed in as one of the worker's users, or signed out (null). Disposed after the test.
+  requestAs: (role: Role | null) => Promise<APIRequestContext>
+}
+
+interface WorkerFixtures {
+  users: WorkerUsers
+  // The id of the route owned by the worker's test account (ACCOUNT_ROUTE_NAME).
+  accountRouteId: string
+  // The saved sessions of the worker's users.
+  authFiles: Record<Role, string>
+}
+
+export const test = base.extend<TestFixtures, WorkerFixtures>({
+  role: [null, { option: true }],
+  users: [async ({}, use, workerInfo) => {
+    await use(workerUsers(workerInfo.parallelIndex))
+  }, { scope: 'worker' }],
+  accountRouteId: [async ({}, use, workerInfo) => {
+    await use(process.env.E2E_ACCOUNT_ROUTE_IDS!.split(',')[workerInfo.parallelIndex]!)
+  }, { scope: 'worker' }],
+  // Both users signed in before the worker's first test, outside its timeout: a test may need the other one late.
+  authFiles: [async ({ browser, users }, use, workerInfo) => {
+    const files = {} as Record<Role, string>
+    for (const role of ['account', 'family'] as const) {
+      // Kept on disk: a worker started again after a failure, or for the other project, has the same
+      // parallelIndex, hence the same users.
+      files[role] = `${AUTH_DIR}/${role}-${workerInfo.parallelIndex}.json`
+      if (!existsSync(files[role])) await signIn(browser, workerInfo.project.use.baseURL!, users[role], files[role])
+    }
+    await use(files)
+  }, { scope: 'worker', timeout: 60_000 }],
+  storageState: async ({ storageState, role, authFiles }, use) => {
+    await use(role ? authFiles[role] : storageState)
+  },
+  requestAs: async ({ playwright, baseURL, authFiles }, use) => {
+    const contexts: APIRequestContext[] = []
+    await use(async (role) => {
+      const context = await playwright.request.newContext({ baseURL, storageState: role ? authFiles[role] : { cookies: [], origins: [] } })
+      contexts.push(context)
+      return context
+    })
+    for (const context of contexts) await context.dispose()
+  },
   mockServices: [async ({ page }, use) => {
     await mockExternalServices(page)
     await use()
@@ -123,14 +219,16 @@ export async function waitForHydration(page: Page) {
   await expect(page.locator('html[data-hydrated]')).toBeAttached({ timeout: 15_000 })
 }
 
-// Requests as another family member, from a test signed in as the test account.
-export function familyRequest(playwright: PlaywrightWorkerArgs['playwright'], baseURL: string): Promise<APIRequestContext> {
-  return playwright.request.newContext({ baseURL, storageState: FAMILY_AUTH_FILE })
-}
-
-// Requests without any session, e.g. from a test signed in as the test account.
-export function signedOutRequest(playwright: PlaywrightWorkerArgs['playwright'], baseURL: string): Promise<APIRequestContext> {
-  return playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } })
+// Moves the editor's map to FAR_AWAY, before drawing a route that will be visible to the family.
+export async function moveEditorFarAway(page: Page) {
+  await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({ json: { features: [FAR_AWAY] } }))
+  await page.getByRole('combobox', { name: 'Rechercher un lieu' }).fill('Queenstown')
+  await page.getByRole('option', { name: FAR_AWAY.place_name }).click()
+  // data-map-center changes once the map has stopped moving.
+  await expect.poll(async () => {
+    const [lng, lat] = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number)
+    return Math.abs(lng! - FAR_AWAY.center[0]!) < 0.05 && Math.abs(lat! - FAR_AWAY.center[1]!) < 0.05
+  }, { timeout: 10_000 }).toBe(true)
 }
 
 // Secondary actions of a route page are in its "…" menu, which only opens once the page is hydrated.

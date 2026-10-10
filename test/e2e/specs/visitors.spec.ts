@@ -1,5 +1,5 @@
-import { E2E_USER, expect, RESET_USER, test, waitForHydration } from './fixtures'
-import { passwordResetLink } from './mail'
+import { expect, RESET_USER, SEED_OWNER, test, waitForHydration } from '../fixtures'
+import { passwordResetLink } from '../mail'
 
 // The app is for the family only: without a session, every page leads to the sign-in page and the API refuses
 // everything, except link previews of shared routes.
@@ -10,7 +10,7 @@ const UNKNOWN_ID = '00000000-0000-0000-0000-000000000000'
 test('sends visitors to the sign-in page, whatever the page, then back to it once signed in', async ({ page }) => {
   await page.goto('/')
   await expect(page).toHaveURL(/\/login$/)
-  for (const path of [`/routes/${ROUTE_ID()}`, `/routes/${ROUTE_ID()}/follow`, '/routes/create', `/profile/${E2E_USER.username}`, `/collections/${UNKNOWN_ID}`]) {
+  for (const path of [`/routes/${ROUTE_ID()}`, `/routes/${ROUTE_ID()}/follow`, '/routes/create', `/profile/${SEED_OWNER.username}`, `/collections/${UNKNOWN_ID}`]) {
     await page.goto(path)
     await expect(page, path).toHaveURL(`/login?redirect=${path}`)
   }
@@ -23,8 +23,8 @@ test('sends visitors to the sign-in page, whatever the page, then back to it onc
 
   await page.goto(`/routes/${ROUTE_ID()}`)
   await waitForHydration(page)
-  await page.locator('input[name="email"]').fill(E2E_USER.email)
-  await page.locator('input[name="password"]').fill(E2E_USER.password)
+  await page.locator('input[name="email"]').fill(SEED_OWNER.email)
+  await page.locator('input[name="password"]').fill(SEED_OWNER.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page).toHaveURL(`/routes/${ROUTE_ID()}`)
 })
@@ -37,7 +37,7 @@ test('refuses API requests without a session, reads included', async ({ request 
     `/api/routes/${ROUTE_ID()}/gpx`,
     `/api/routes/${ROUTE_ID()}/reviews`,
     `/api/routes/${ROUTE_ID()}/weather`,
-    `/api/profile/${E2E_USER.username}`,
+    `/api/profile/${SEED_OWNER.username}`,
     `/api/collections/${UNKNOWN_ID}`,
   ]) {
     const response = await request.get(path)

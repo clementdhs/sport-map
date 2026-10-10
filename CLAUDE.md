@@ -4,6 +4,8 @@ Web app (installable PWA) to create, share and discover running / hiking / cycli
 
 The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Each issue gets its own branch and pull request (`Closes #N`), squash-merged once Clem approves it; file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes the whole cycle (branch, checks, code review, PR, merge) and parallel sessions in worktrees.
 
+Dependabot (`.github/dependabot.yml`) opens its own PRs, without an issue: one grouped PR for npm minor and patch updates on Mondays, one for GitHub Actions each month, plus security fixes. Before asking Clem for the go, read the release notes of the updated packages for breaking changes and check that the branch CI (e2e included) is green; merge with `gh pr merge <M> --squash`. Dependabot skips npm major versions: upgrading one is an issue of its own.
+
 Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes, 3D flyover, map legend) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
 
 ## Stack

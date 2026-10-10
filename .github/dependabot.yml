@@ -1,0 +1,40 @@
+# Dependency updates. Security fixes are enabled in the repository settings; the cooldown, grouping and
+# pull request limit below only apply to version updates.
+# The Android project (android/) is left out: Capacitor pins its Gradle versions and its upgrades go
+# through `npx cap migrate`.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Europe/Paris
+    # A release must be a week old before it is proposed: compromised npm releases are usually pulled within days.
+    cooldown:
+      default-days: 7
+    # Minor and patch updates come as one pull request a week.
+    groups:
+      npm-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+    # Major versions (Nuxt, Nuxt UI, MapLibre, Supabase…) change their APIs: each one gets its own issue,
+    # upgraded by hand.
+    ignore:
+      - dependency-name: '*'
+        update-types: [version-update:semver-major]
+    open-pull-requests-limit: 3
+    labels: [infra]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      timezone: Europe/Paris
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions:
+        patterns: ['*']
+    labels: [infra]

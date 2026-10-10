@@ -8,6 +8,8 @@ on:
   schedule:
     - cron: '41 6 * * *' # every day at 06:41 UTC
   workflow_dispatch:
+  push: # TEMP: test on the branch before merging, removed before merge
+    branches: ['77-maptiler-quota-alert']
 
 permissions:
   issues: write

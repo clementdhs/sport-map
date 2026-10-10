@@ -1,12 +1,7 @@
-import { expect, test, waitForMap } from './fixtures'
+import { expect, test, waitForMap } from '../fixtures'
 
 // Creating a route again, in a browser set to British English (playwright.config.ts).
-
-// The saved session also holds the language cookie set while signing in, in French: without it, the language
-// is detected from the browser.
-test.beforeEach(async ({ context }) => {
-  await context.clearCookies({ name: 'sport-map-locale' })
-})
+test.use({ role: 'account' })
 
 test('draws, saves and deletes a route, in English', async ({ page }) => {
   await page.goto('/routes/create')

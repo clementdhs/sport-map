@@ -1,7 +1,6 @@
 import { execSync } from 'node:child_process'
 import { defineConfig, devices } from '@playwright/test'
 import { FAKE_WEATHER_PORT } from './test/e2e/fake-weather'
-import { AUTH_FILE, FAMILY_AUTH_FILE } from './test/e2e/fixtures'
 
 const PORT = 3100
 const baseURL = `http://localhost:${PORT}`
@@ -39,8 +38,9 @@ process.env.E2E_MAILPIT_URL = supabase.mailUrl
 export default defineConfig({
   testDir: 'test/e2e',
   globalSetup: './test/e2e/global-setup.ts',
+  // Spec files run in parallel, the tests of a file in order. Each worker has its own users (global setup).
   fullyParallel: false,
-  workers: 1,
+  workers: 2,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
   use: {
@@ -52,35 +52,11 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [
-    { name: 'setup', testMatch: /auth\.setup\.ts/ },
-    // Without a session: everything leads to the sign-in page.
-    { name: 'anonymous', testMatch: /anonymous\.spec\.ts/, use: { ...devices['Desktop Chrome'] } },
-    // Another family member browsing the test account's routes.
-    {
-      name: 'family',
-      testMatch: /family\.spec\.ts/,
-      dependencies: ['setup'],
-      use: { ...devices['Desktop Chrome'], storageState: FAMILY_AUTH_FILE },
-    },
-    {
-      name: 'signed-in',
-      testMatch: /signed-in\.spec\.ts/,
-      dependencies: ['setup'],
-      use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE },
-    },
+    // Every feature, in French. A spec signs its pages in as the worker's test account or family member with
+    // test.use({ role }); without it, they have no session.
+    { name: 'fr', testMatch: /specs\/.*\.spec\.ts$/, testIgnore: /\.en\.spec\.ts$/, use: { ...devices['Desktop Chrome'] } },
     // The main flows again (search, route page, creation) in a browser set to English, the detected language.
-    {
-      name: 'family-en',
-      testMatch: /family\.en\.spec\.ts/,
-      dependencies: ['setup'],
-      use: { ...devices['Desktop Chrome'], storageState: FAMILY_AUTH_FILE, locale: 'en-GB' },
-    },
-    {
-      name: 'signed-in-en',
-      testMatch: /signed-in\.en\.spec\.ts/,
-      dependencies: ['setup'],
-      use: { ...devices['Desktop Chrome'], storageState: AUTH_FILE, locale: 'en-GB' },
-    },
+    { name: 'en', testMatch: /specs\/.*\.en\.spec\.ts$/, use: { ...devices['Desktop Chrome'], locale: 'en-GB' } },
   ],
   // The production build, as deployed, pointed at the local Supabase. No map or routing key: the tests
   // mock those requests, so they run offline and never use the free-tier quotas.

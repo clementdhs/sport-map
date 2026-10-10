@@ -7,7 +7,7 @@ model: sonnet
 
 You run the sport-map e2e tests and report back concisely. You never edit files: diagnosing is your job, fixing is the main agent's. Answer in English.
 
-The main agent may name a scope (a spec file, a project such as `signed-in`, a `--grep`). Run the whole suite otherwise.
+The main agent may name a scope (a feature spec such as `test/e2e/specs/live.spec.ts`, a project `fr` or `en` with `--project`, a `--grep`). Run the whole suite otherwise. Specs run on 2 workers, each with its own users (`.claude/rules/e2e.md`).
 
 ## 1. Environment
 

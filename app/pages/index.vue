@@ -121,7 +121,7 @@ watch(() => search.results, (results) => {
         <RouteCardSkeleton />
       </li>
     </ul>
-    <ul v-else-if="search.results.length" class="space-y-2" :class="{ 'opacity-60': search.loading }">
+    <ul v-else-if="search.results.length" class="space-y-2" :class="{ 'opacity-60': search.loading }" data-testid="route-results">
       <li
         v-for="route in search.results"
         :key="route.id"

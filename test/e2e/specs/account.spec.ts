@@ -27,7 +27,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   await context.clearCookies()
   await page.goto('/login')
   await waitForHydration(page)
-  await page.locator('input[name="email"]').fill(account.email)
+  await page.locator('input[name="identifier"]').fill(account.email)
   await page.locator('input[name="password"]').fill(account.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()

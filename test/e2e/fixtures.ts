@@ -142,7 +142,7 @@ async function signIn(browser: Browser, baseURL: string, user: TestUser, file: s
   await page.goto('/login')
   await waitForHydration(page)
   // By name: the password label also matches the "Afficher le mot de passe" toggle.
-  await page.locator('input[name="email"]').fill(user.email)
+  await page.locator('input[name="identifier"]').fill(user.email)
   await page.locator('input[name="password"]').fill(user.password)
   await page.getByRole('button', { name: 'Se connecter' }).click()
   // Signed in, on the home page: its floating map bar has the account menu.

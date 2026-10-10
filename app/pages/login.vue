@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
+import type { LoginSession } from '#shared/types/auth'
 
-type LoginState = { email: string, password: string }
+// One field takes a username or an e-mail.
+type LoginState = { identifier: string, password: string }
 
 const { t, locale } = useI18n()
 useSeoMeta({ title: () => `${t('auth.login.title')} — sport-map` })
@@ -35,33 +37,61 @@ if (sharedRouteId) {
 }
 
 const fields = computed<AuthFormField[]>(() => [
-  { name: 'email', type: 'email', label: t('auth.email'), placeholder: t('auth.emailPlaceholder'), required: true },
+  {
+    name: 'identifier',
+    type: 'text',
+    label: t('auth.identifier'),
+    placeholder: t('auth.identifierPlaceholder'),
+    required: true,
+    autocomplete: 'username',
+    autocapitalize: 'none',
+    spellcheck: false,
+  },
   { name: 'password', type: 'password', label: t('auth.password'), required: true },
 ])
 
 const loading = ref(false)
 const errorMessage = ref('')
+const apiErrorMessage = useErrorMessage()
 
 function validate(state: Partial<LoginState>): FormError[] {
   const errors: FormError[] = []
-  if (!state.email) errors.push({ name: 'email', message: t('auth.emailRequired') })
+  if (!state.identifier?.trim()) errors.push({ name: 'identifier', message: t('auth.identifierRequired') })
   if (!state.password) errors.push({ name: 'password', message: t('auth.passwordRequired') })
   return errors
+}
+
+async function signInWithEmail(email: string, password: string): Promise<string> {
+  const { error } = await supabase.auth.signInWithPassword({ email, password })
+  if (!error) return ''
+  return error.code === 'email_not_confirmed'
+    ? t('auth.login.emailNotConfirmed')
+    : error.code === 'invalid_credentials'
+      ? t('auth.login.invalidCredentials')
+      : error.message
+}
+
+// The server finds the account's e-mail and signs in: the page only gets the session.
+async function signInWithUsername(username: string, password: string): Promise<string> {
+  try {
+    const session = await $fetch<LoginSession>('/api/auth/login', { method: 'POST', body: { username, password } })
+    const { error } = await supabase.auth.setSession(session)
+    return error ? error.message : ''
+  }
+  catch (err) {
+    // Same message as a wrong e-mail or password.
+    return (err as { statusCode?: number }).statusCode === 401 ? t('auth.login.invalidCredentials') : apiErrorMessage(err)
+  }
 }
 
 async function onSubmit(event: FormSubmitEvent<LoginState>) {
   loading.value = true
   errorMessage.value = ''
-  const { error } = await supabase.auth.signInWithPassword(event.data)
+  const identifier = event.data.identifier.trim()
+  errorMessage.value = isEmailLogin(identifier)
+    ? await signInWithEmail(identifier, event.data.password)
+    : await signInWithUsername(identifier, event.data.password)
   loading.value = false
-
-  if (error) {
-    errorMessage.value = error.code === 'email_not_confirmed'
-      ? t('auth.login.emailNotConfirmed')
-      : error.code === 'invalid_credentials'
-        ? t('auth.login.invalidCredentials')
-        : error.message
-  }
 }
 </script>
 

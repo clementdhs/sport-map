@@ -1,5 +1,6 @@
 import { distance, lineString, nearestPointOnLine } from '@turf/turf'
 import * as z from 'zod'
+import { USERNAME_PATTERN } from './auth'
 
 export type LngLat = [lng: number, lat: number]
 
@@ -165,6 +166,7 @@ export const ACTIVITY_TYPES = ['saved', 'completed'] as const
 export type ActivityType = typeof ACTIVITY_TYPES[number]
 
 export const profileUpdateSchema = z.object({
+  username: z.string().trim().regex(USERNAME_PATTERN, 'validation.usernameFormat'),
   display_name: z.string().trim().max(60, 'validation.maxChars'),
   bio: z.string().trim().max(500, 'validation.maxChars'),
 })

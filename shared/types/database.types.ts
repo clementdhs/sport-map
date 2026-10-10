@@ -181,6 +181,24 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          count: number
+          key: string
+          started_at: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          started_at?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          started_at?: string
+        }
+        Relationships: []
+      }
       osm_route_elevations: {
         Row: {
           computed_at: string
@@ -572,7 +590,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      consume_login_attempt: {
+        Args: {
+          ip_key: string
+          ip_limit: number
+          username_key: string
+          username_limit: number
+          window_seconds: number
+        }
+        Returns: boolean
+      }
       consume_routing_quota: { Args: { daily_limit: number }; Returns: number }
+      login_email: { Args: { login_username: string }; Returns: string }
       route_geojson: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {

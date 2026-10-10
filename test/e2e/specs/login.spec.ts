@@ -78,6 +78,9 @@ test('signs in with the new username once changed in the settings, no longer wit
     await expect(page.getByText('Profil mis à jour').first()).toBeVisible()
     await expect(page.getByText(/^Après l'enregistrement/)).toBeHidden()
     await expect(page.getByRole('link', { name: 'ton profil' })).toHaveAttribute('href', `/profile/${renamed}`)
+    // The account menu shows the username, not the e-mail, and follows the change without a reload.
+    await expect(page.getByRole('button', { name: renamed })).toBeVisible()
+    await expect(page.getByRole('button', { name: account.email })).toHaveCount(0)
 
     const login = (username: string) => request.post('/api/auth/login', { data: { username, password: account.password } })
     expect((await login(account.username)).status()).toBe(401)

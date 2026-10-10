@@ -28,17 +28,17 @@
   "dependencies": {
     "@capacitor-community/background-geolocation": "^1.2.26",
     "@capacitor-community/text-to-speech": "^8.0.2",
-    "@capacitor/app": "^8.1.1",
+    "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/local-notifications": "^8.3.1",
-    "@iconify-json/lucide": "^1.2.137",
+    "@iconify-json/lucide": "^1.2.139",
     "@maplibre/maplibre-gl-style-spec": "^26.4.4",
-    "@nuxt/ui": "^4.11.2",
+    "@nuxt/ui": "^4.11.3",
     "@nuxtjs/i18n": "^10.6.0",
     "@nuxtjs/supabase": "^2.0.10",
     "@pinia/nuxt": "^1.0.2",
     "@resvg/resvg-js": "^2.6.2",
-    "@sentry/nuxt": "^11.1.0",
+    "@sentry/nuxt": "^11.4.0",
     "@tmcw/togeojson": "^7.1.2",
     "@turf/turf": "^7.4.0",
     "@vite-pwa/nuxt": "^1.1.1",
@@ -54,15 +54,15 @@
   "devDependencies": {
     "@capacitor/android": "^8.5.2",
     "@capacitor/cli": "^8.5.2",
-    "@nuxt/test-utils": "^4.3.2",
+    "@nuxt/test-utils": "^4.3.3",
     "@playwright/test": "^1.63.0",
     "@types/geojson": "^7946.0.16",
     "@vite-pwa/assets-generator": "^1.0.4",
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^20.14.5",
-    "supabase": "^2.118.0",
+    "supabase": "^2.119.0",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.2",
-    "vue-tsc": "^3.3.11"
+    "vitest": "^5.0.3",
+    "vue-tsc": "^3.3.12"
   }
 }

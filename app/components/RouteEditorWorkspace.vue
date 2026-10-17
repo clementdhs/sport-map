@@ -32,6 +32,7 @@ const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
 const errorMessage = useErrorMessage()
 const saving = ref(false)
 
+const sportLabel = computed(() => t(`sports.${editor.details.sport_type}`))
 const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
 const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.${value}`), icon: POI_ICONS[value] })))
 
@@ -149,19 +150,20 @@ async function onSubmit() {
     </template>
 
     <template #title>
-      {{ loop.open ? t('loop.title') : formatDistance(editor.distanceM) }}
+      {{ loop.open ? t('loop.title') : editor.waypoints.length >= 2 ? formatDistance(editor.distanceM) : editor.details.name.trim() || t('editor.newRoute') }}
     </template>
 
     <LoopGenerator v-if="loop.open" />
 
     <template v-else>
-      <div class="flex items-center justify-between gap-4">
-        <USwitch
-          v-model="editor.snapToPaths"
-          :label="t('editor.snap')"
-          :description="editor.snapToPaths
-            ? t('editor.snapOn', { sport: t(`sports.${editor.details.sport_type}`) })
-            : t('editor.snapOff')"
+      <!-- The sport comes first: it decides how the segments are routed. -->
+      <div class="flex items-center gap-2">
+        <USelect
+          v-model="editor.details.sport_type"
+          :items="sportItems"
+          :icon="SPORT_ICONS[editor.details.sport_type]"
+          :aria-label="t('filters.sport')"
+          class="min-w-0 flex-1"
         />
         <div class="flex gap-2">
           <!-- Without a track, the panel shows the same action as a full-width button. -->
@@ -207,6 +209,28 @@ async function onSubmit() {
           </UTooltip>
         </div>
       </div>
+      <USwitch
+        v-model="editor.snapToPaths"
+        :label="t('editor.snap')"
+        :description="editor.snapToPaths ? t('editor.snapOn', { sport: sportLabel }) : t('editor.snapOff')"
+      />
+      <UAlert
+        v-if="editor.outdatedSegmentCount"
+        color="info"
+        variant="subtle"
+        icon="i-lucide-route"
+        :title="t('editor.outdated', editor.outdatedSegmentCount)"
+        :description="t('editor.outdatedHint', { sport: sportLabel })"
+        :actions="[{
+          label: t('editor.reroute', { sport: sportLabel }),
+          icon: 'i-lucide-refresh-cw',
+          color: 'info',
+          variant: 'solid',
+          disabled: editor.isRouting || editor.routingQuotaReached,
+          onClick: () => editor.rerouteForSport(),
+        }]"
+        orientation="vertical"
+      />
 
       <div class="grid grid-cols-3 gap-3">
         <div class="col-span-3">
@@ -372,10 +396,6 @@ async function onSubmit() {
       <UForm :schema="routeDetailsSchemaLocalized" :state="editor.details" class="space-y-4" @submit="onSubmit">
         <UFormField :label="t('collections.name')" name="name" required>
           <UInput v-model="editor.details.name" :placeholder="t('editor.namePlaceholder')" class="w-full" />
-        </UFormField>
-
-        <UFormField :label="t('filters.sport')" name="sport_type">
-          <USelect v-model="editor.details.sport_type" :items="sportItems" class="w-full" />
         </UFormField>
 
         <UFormField :label="t('collections.description')" name="description">

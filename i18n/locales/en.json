@@ -403,7 +403,11 @@
     "notOwner": "You can only edit your own routes",
     "editTitle": "Edit “{name}”",
     "dropGpx": "Drop your GPX file to import it",
-    "fromOsm": "Start from a marked route"
+    "fromOsm": "Start from a marked route",
+    "newRoute": "New route",
+    "outdated": "{count} segment follows the paths of another sport | {count} segments follow the paths of another sport",
+    "outdatedHint": "Changing the sport leaves the drawn track as it is: only new segments follow the paths suited to {sport}.",
+    "reroute": "Recompute for {sport}"
   },
   "loop": {
     "open": "Generate a loop",

@@ -15,6 +15,9 @@ interface Segment {
   elevations: number[] | null
   // Surface, way type and trail difficulty, indexed in the segment's coordinates; null unless snapped to paths
   wayInfo: WayInfo | null
+  // OpenRouteService profile a snapped segment was last routed with (null until then, and for other modes): a new
+  // sport leaves the drawn segments as they are until the user routes them again for it.
+  profile: string | null
   loading: boolean
 }
 
@@ -125,6 +128,11 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   const isLoop = computed(() => waypoints.value.length >= 3
     && distance(waypoints.value[0]!, waypoints.value.at(-1)!, { units: 'meters' }) < LOOP_TOLERANCE_M)
   const canFinish = computed(() => waypoints.value.length >= 2 && !isLoop.value && !isRouting.value)
+  const currentProfile = computed(() => ROUTING_PROFILES[details.value.sport_type])
+  // A snapped segment routed for a sport whose profile differs from the current one.
+  const isOutdated = (segment: Segment) =>
+    segment.mode === 'snap' && segment.profile !== null && segment.profile !== currentProfile.value
+  const outdatedSegmentCount = computed(() => segments.value.filter(isOutdated).length)
 
   function saveSnapshot() {
     const snapshot: Snapshot = JSON.parse(JSON.stringify({ waypoints: waypoints.value, segments: segments.value, pois: pois.value }))
@@ -132,7 +140,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   }
 
   function newSegment(from: LngLat, to: LngLat, mode: RoutingMode): Segment {
-    return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, wayInfo: null, loading: true }
+    return { id: nextSegmentId++, mode, coordinates: [from, to], elevations: null, wayInfo: null, profile: null, loading: true }
   }
 
   // A routing request refused for the daily quota: warns once (several can be in flight) and stops routing.
@@ -164,11 +172,12 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     }
     const from = coordinates[0]!
     const to = coordinates.at(-1)!
+    const sport = details.value.sport_type
     inFlight.add(id)
     try {
       const result = await $fetch<RoutingSegmentResponse>('/api/routing/segment', {
         method: 'POST',
-        body: { from, to, mode, sport_type: details.value.sport_type },
+        body: { from, to, mode, sport_type: sport },
       })
       if (result.quota_remaining !== undefined) routingQuotaRemaining.value = result.quota_remaining
       const index = segments.value.findIndex(s => s.id === id)
@@ -177,6 +186,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
       segment.coordinates = result.coordinates
       segment.elevations = result.elevations
       segment.wayInfo = result.way_info ?? null
+      if (mode === 'snap') segment.profile = ROUTING_PROFILES[sport]
       // Snapping moves the ends onto the nearest path: keep the markers on the track.
       waypoints.value[index + 1] = result.coordinates.at(-1)!
       if (index === 0) waypoints.value[0] = result.coordinates[0]!
@@ -286,6 +296,21 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     }
   }
 
+  // Routes again, for the current sport, the snapped segments routed for another one. Each keeps its track until
+  // the new one arrives, so a refused request (daily quota, routing error) leaves it as it was. Undoable.
+  function rerouteForSport() {
+    if (!outdatedSegmentCount.value || isRouting.value || routingQuotaReached.value) return
+    saveSnapshot()
+    const rerouted: Segment[] = []
+    segments.value = segments.value.map((segment) => {
+      if (!isOutdated(segment)) return segment
+      const copy = { ...segment, id: nextSegmentId++, loading: true }
+      rerouted.push(copy)
+      return copy
+    })
+    rerouted.forEach(routeSegment)
+  }
+
   // Routed like any new segment, in the current mode.
   function returnToStart() {
     if (!canFinish.value) return
@@ -312,7 +337,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   function importTrack({ name, coordinates, elevations }: ImportedTrack) {
     saveSnapshot()
     waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
-    const segment: Segment = { id: nextSegmentId++, mode: 'imported', coordinates, elevations, wayInfo: null, loading: !elevations }
+    const segment: Segment = { id: nextSegmentId++, mode: 'imported', coordinates, elevations, wayInfo: null, profile: null, loading: !elevations }
     segments.value = [segment]
     // They were placed on the replaced track.
     pois.value = []
@@ -354,7 +379,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     const indices = loopWaypointIndices(loop.coordinates)
     waypoints.value = indices.map(i => loop.coordinates[i]!)
     segments.value = indices.slice(1).map((end, k) =>
-      ({ id: nextSegmentId++, mode: 'snap', loading: false, ...sliceTrack(loop, indices[k]!, end) }))
+      ({ id: nextSegmentId++, mode: 'snap', profile: currentProfile.value, loading: false, ...sliceTrack(loop, indices[k]!, end) }))
     // They were placed on the replaced track.
     pois.value = []
     replacedCount.value++
@@ -428,12 +453,14 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
     if (isUsableState(route.editor_state, coordinates.length)) {
       waypoints.value = route.editor_state.waypoints
+      // Its snapped segments were routed for the route's sport.
+      const profile = ROUTING_PROFILES[route.sport_type]
       segments.value = route.editor_state.segments.map(({ mode, start, end }) =>
-        ({ id: nextSegmentId++, mode, loading: false, ...slice(start, end) }))
+        ({ id: nextSegmentId++, mode, profile: mode === 'snap' ? profile : null, loading: false, ...slice(start, end) }))
     }
     else {
       waypoints.value = [coordinates[0]!, coordinates.at(-1)!]
-      segments.value = [{ id: nextSegmentId++, mode: 'locked', loading: false, ...slice(0, coordinates.length - 1) }]
+      segments.value = [{ id: nextSegmentId++, mode: 'locked', profile: null, loading: false, ...slice(0, coordinates.length - 1) }]
     }
     replacedCount.value++
   }
@@ -467,9 +494,9 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
 
   return {
     waypoints, segments, pois, placingPoi, details, snapToPaths, track, distanceM, elevation, isRouting, canSave, canUndo, replacedCount,
-    editingId, isLoop, canFinish, routingQuotaReached, routingQuotaRemaining,
+    editingId, isLoop, canFinish, routingQuotaReached, routingQuotaRemaining, outdatedSegmentCount,
     canEditWaypoint, canInsertInSegment, isRoutingQuotaError,
-    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack,
+    addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack, rerouteForSport,
     addPoi, removePoi, importTrack, loadLoop, loadRoute, undo, clearPoints, reset, save,
   }
 })

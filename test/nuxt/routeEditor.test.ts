@@ -120,6 +120,7 @@ beforeEach(() => {
   routingQuota = null
   createdBody = undefined
   updatedBody = undefined
+  useToast().clear()
 })
 
 describe('drawing', () => {
@@ -153,6 +154,93 @@ describe('drawing', () => {
     expect(routingCalls[0]!.mode).toBe('straight')
     // Nothing is known of the ways a straight line crosses.
     expect(editor.track.wayInfo).toBeNull()
+  })
+})
+
+describe('changing the sport', () => {
+  it('leaves the drawn segments as they are, and routes the new ones for the new sport', async () => {
+    const editor = await drawABC()
+    expect(editor.outdatedSegmentCount).toBe(0)
+
+    editor.details.sport_type = 'mountain_biking'
+    expect(editor.outdatedSegmentCount).toBe(2)
+    editor.addWaypoint([6.4, 45.95])
+    await settled(editor)
+    expect(routingCalls.map(call => call.sport_type)).toEqual(['running', 'running', 'mountain_biking'])
+    expect(editor.outdatedSegmentCount).toBe(2)
+
+    // Back to a sport routed the same way: nothing is outdated any more, but the new segment now is.
+    editor.details.sport_type = 'running'
+    expect(editor.outdatedSegmentCount).toBe(1)
+  })
+
+  it('ignores sports sharing a profile, straight lines and imported tracks', async () => {
+    const editor = useRouteEditorStore()
+    editor.details.sport_type = 'trail'
+    editor.importTrack({ name: null, coordinates: [A, B], elevations: [100, 120] })
+    editor.addWaypoint(C)
+    editor.snapToPaths = false
+    editor.addWaypoint([6.4, 45.95])
+    await settled(editor)
+
+    editor.details.sport_type = 'hiking'
+    expect(editor.outdatedSegmentCount).toBe(0)
+    editor.details.sport_type = 'cycling'
+    expect(editor.outdatedSegmentCount).toBe(1)
+  })
+
+  it('routes the outdated segments again for the new sport, undoably', async () => {
+    const editor = await drawABC()
+    editor.snapToPaths = false
+    editor.addWaypoint([6.4, 45.95])
+    await settled(editor)
+    editor.details.sport_type = 'road_cycling'
+    routingCalls.length = 0
+
+    editor.rerouteForSport()
+    expect(editor.isRouting).toBe(true)
+    await settled(editor)
+    // The straight segment stays as it was.
+    expect(routingCalls).toEqual([
+      expect.objectContaining({ from: A, to: B, mode: 'snap', sport_type: 'road_cycling' }),
+      expect.objectContaining({ from: B, to: C, mode: 'snap', sport_type: 'road_cycling' }),
+    ])
+    expect(editor.outdatedSegmentCount).toBe(0)
+    expect(editor.track.coordinates).toHaveLength(7)
+
+    editor.undo()
+    expect(editor.outdatedSegmentCount).toBe(2)
+  })
+
+  it('keeps the track when the daily quota refuses to route it again', async () => {
+    const editor = await drawABC()
+    const before = editor.track.coordinates
+    editor.details.sport_type = 'hiking'
+    routingQuota = 0
+
+    editor.rerouteForSport()
+    await settled(editor)
+    expect(editor.routingQuotaReached).toBe(true)
+    expect(editor.track.coordinates).toEqual(before)
+    expect(editor.outdatedSegmentCount).toBe(2)
+    // Nothing more is asked once the quota is used up.
+    routingCalls.length = 0
+    editor.rerouteForSport()
+    expect(routingCalls).toHaveLength(0)
+  })
+
+  it('knows a reloaded route was routed for its own sport', async () => {
+    const editor = await drawABC()
+    editor.details.name = 'Boucle test'
+    editor.details.sport_type = 'cycling'
+    editor.rerouteForSport()
+    await settled(editor)
+    await editor.save()
+
+    editor.loadRoute(routeDetail(createdBody!))
+    expect(editor.outdatedSegmentCount).toBe(0)
+    editor.details.sport_type = 'running'
+    expect(editor.outdatedSegmentCount).toBe(2)
   })
 })
 

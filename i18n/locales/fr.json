@@ -182,6 +182,8 @@
     "save": "Sauvegarder",
     "saved": "Sauvegardé",
     "complete": "Je l'ai fait",
+    "completeShort": "Fait",
+    "moreShort": "Plus",
     "completedOn": "Fait le {date}",
     "moreActions": "Plus d'actions",
     "yourOuting": "Ta sortie : {total}, dont {moving} en mouvement",
@@ -193,9 +195,9 @@
       "none": "Aucune",
       "slopes": "Pente",
       "surface": "Surface",
-      "difficulty": "Difficulté"
+      "difficulty": "Difficulté",
+      "legend": "Légende des couleurs du tracé"
     },
-    "slopesLegend": "Légende des pentes",
     "pois": "Points d'intérêt",
     "deleteTitle": "Supprimer ce parcours ?",
     "deleteDescription": "Il disparaîtra aussi des parcours sauvegardés et réalisés des autres utilisateurs. Cette action est définitive."

@@ -176,6 +176,8 @@ onBeforeUnmount(() => {
     </UDropdownMenu>
     <!-- Lazy: the style expression evaluator it reads the basemap with stays out of the page's bundle. -->
     <LazyMapLegend :map="map" :basemap="shown" />
+    <!-- Page-specific buttons of the group (route page: track colours). -->
+    <slot name="controls" />
     <button
       v-if="reliefSource"
       type="button"

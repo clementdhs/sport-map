@@ -42,8 +42,10 @@ const reliefSource = ref<string>()
 const view3d = ref(false)
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
 const loaded = ref(false)
-// Exposed as data-map-center ("lng,lat") so end-to-end tests check where the map went.
+// Exposed as data-map-center ("lng,lat") and data-map-bearing (whole degrees clockwise from north, 0 to 359) so
+// end-to-end tests check where the map went and how it is turned.
 const center = ref<string>()
+const bearing = ref<string>()
 
 onMounted(async () => {
   // maplibre-gl touches `window` at import time, so load it client-side only.
@@ -123,6 +125,7 @@ onMounted(async () => {
   instance.on('moveend', () => {
     const { lng, lat } = instance.getCenter()
     center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
+    bearing.value = String((Math.round(instance.getBearing()) + 360) % 360)
   })
   map.value = instance
 })
@@ -164,7 +167,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" :data-map-center="center" />
+  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" :data-map-center="center" :data-map-bearing="bearing" />
   <Teleport v-if="basemapControl" :to="basemapControl">
     <UDropdownMenu :items="basemapItems" :content="{ side: 'left', align: 'start' }">
       <button type="button" class="flex items-center justify-center" :title="t('map.basemap')" :aria-label="t('map.basemap')">

@@ -594,7 +594,9 @@
     "backgroundGps": "GPS on with the screen off",
     "keepScreenOn": "Keep the screen on while following",
     "record": "Record the outing",
-    "finishDescription": "It's added to this route's outings, and the route is marked as completed."
+    "finishDescription": "It's added to this route's outings, and the route is marked as completed.",
+    "headingUp": "Turn the map to the direction of travel",
+    "noCompass": "Compass unavailable: the map only turns while you move"
   },
   "live": {
     "title": "Outings in progress",

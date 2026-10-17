@@ -174,7 +174,7 @@ function discardOuting() {
     <!-- The panel sits below the map, not over it, so the map's attribution stays visible. -->
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteFollow :coordinates="coordinates" :fix="fix" :follow="follow" @stop-follow="follow = false" />
+        <MapRouteFollow v-model:follow="follow" :coordinates="coordinates" :fix="fix" />
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->

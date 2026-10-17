@@ -84,15 +84,30 @@ const ways = computed(() => {
   }
 })
 
-// What colours the track on the map (and, for slopes, the elevation profile).
-type TrackColouring = 'none' | 'slopes' | 'surface' | 'difficulty'
-const colouring = ref<TrackColouring>('none')
+// What colours the track on the map (and, for slopes, the elevation profile): none, slopes, surface or difficulty.
+const colouring = ref('none')
 const colouringItems = computed(() => [
   { label: t('route.colouring.none'), value: 'none' },
   ...(slopes.value ? [{ label: t('route.colouring.slopes'), value: 'slopes' }] : []),
   ...(ways.value ? [{ label: t('route.colouring.surface'), value: 'surface' }] : []),
   ...(ways.value?.difficulty ? [{ label: t('route.colouring.difficulty'), value: 'difficulty' }] : []),
 ])
+// Legend of the colouring picked, beside its choice on the map: every slope class, the surface and difficulty
+// classes found on this route.
+const colouringLegend = computed(() => {
+  const entries = (classes: readonly { key: string, color: string }[], labels: string, present?: { cls: number }[]) =>
+    (present ? present.map(({ cls }) => classes[cls]!) : classes)
+      .map(({ key, color }) => ({ key, color, label: t(`${labels}.${key}`) }))
+  const difficulty = ways.value?.difficulty
+  switch (colouring.value) {
+    case 'slopes': return entries(SLOPE_CLASSES, 'slopes')
+    case 'surface': return ways.value ? entries(SURFACE_CLASSES, 'ways.surface', ways.value.surface.shares) : []
+    case 'difficulty': return difficulty
+      ? entries(DIFFICULTY_CLASSES[difficulty.scale], `ways.${difficulty.scale}`, difficulty.shares)
+      : []
+    default: return []
+  }
+})
 const trackGradient = computed(() => {
   switch (colouring.value) {
     case 'slopes': return slopes.value?.gradient ?? null
@@ -142,6 +157,9 @@ async function toggleActivity(type: ActivityType) {
     pendingActivity.value = null
   }
 }
+
+// Secondary actions: icon above a short label, sharing the row evenly ("Fait le 18 oct." may take two lines).
+const actionUi = { base: 'flex-col justify-center gap-1 px-1 py-2 text-xs', leadingIcon: 'size-5', label: 'max-w-full text-center leading-tight' }
 
 const collectionsOpen = ref(false)
 const deleteOpen = ref(false)
@@ -241,7 +259,11 @@ useSeoMeta({
           :line-gradient="trackGradient"
           :hover-point="hoverPoint"
           :flyover="flyover"
-        />
+        >
+          <template v-if="colouringItems.length > 1" #controls>
+            <MapTrackColouring v-model="colouring" :items="colouringItems" :legend="colouringLegend" />
+          </template>
+        </MapRouteDisplay>
       </ClientOnly>
     </template>
 
@@ -296,45 +318,53 @@ useSeoMeta({
       </div>
     </div>
 
+    <!-- One main action (#103), then the others as a row of icons with short labels. -->
     <div class="space-y-2">
-      <div class="flex gap-2">
+      <UButton
+        :to="`/routes/${parcours.id}/follow`"
+        icon="i-lucide-navigation"
+        :label="t('route.follow')"
+        size="lg"
+        block
+      />
+      <div class="grid grid-cols-4 gap-1">
         <UButton
-          :to="`/routes/${parcours.id}/follow`"
-          icon="i-lucide-navigation"
-          :label="t('route.follow')"
-          class="flex-1 justify-center"
+          :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
+          :label="viewer.saved ? t('route.saved') : t('route.save')"
+          :color="viewer.saved ? 'primary' : 'neutral'"
+          variant="ghost"
+          :loading="pendingActivity === 'saved'"
+          :ui="actionUi"
+          @click="toggleActivity('saved')"
+        />
+        <UButton
+          :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
+          :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.completeShort')"
+          :aria-label="viewer.completed_at ? undefined : t('route.complete')"
+          :color="viewer.completed_at ? 'primary' : 'neutral'"
+          variant="ghost"
+          :loading="pendingActivity === 'completed'"
+          :ui="actionUi"
+          @click="toggleActivity('completed')"
         />
         <UButton
           icon="i-lucide-drone"
           :label="t('flyover.start')"
           color="neutral"
-          variant="outline"
-          class="flex-1 justify-center"
+          variant="ghost"
+          :ui="actionUi"
           :disabled="!flyover.ready || coordinates.length < 2"
           @click="flyOverRoute"
         />
-      </div>
-      <div class="flex gap-2">
-        <UButton
-          :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
-          :label="viewer.saved ? t('route.saved') : t('route.save')"
-          :color="viewer.saved ? 'primary' : 'neutral'"
-          :variant="viewer.saved ? 'soft' : 'outline'"
-          :loading="pendingActivity === 'saved'"
-          class="flex-1 justify-center"
-          @click="toggleActivity('saved')"
-        />
-        <UButton
-          :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
-          :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.complete')"
-          :color="viewer.completed_at ? 'primary' : 'neutral'"
-          :variant="viewer.completed_at ? 'soft' : 'outline'"
-          :loading="pendingActivity === 'completed'"
-          class="flex-1 justify-center"
-          @click="toggleActivity('completed')"
-        />
         <UDropdownMenu :items="moreActions" :content="{ align: 'end' }" :ui="{ content: 'w-72' }">
-          <UButton icon="i-lucide-ellipsis" color="neutral" variant="outline" :aria-label="t('route.moreActions')" />
+          <UButton
+            icon="i-lucide-ellipsis"
+            :label="t('route.moreShort')"
+            :aria-label="t('route.moreActions')"
+            color="neutral"
+            variant="ghost"
+            :ui="actionUi"
+          />
         </UDropdownMenu>
       </div>
     </div>
@@ -351,6 +381,9 @@ useSeoMeta({
       <template #overview>
         <div class="space-y-4">
           <p v-if="parcours.description" class="whitespace-pre-line">{{ parcours.description }}</p>
+
+          <!-- Before the details: it is what one checks before setting off (#103). -->
+          <RouteWeather :route-id="parcours.id" />
 
           <ElevationProfile
             v-if="parcours.elevation_profile?.length === coordinates.length"
@@ -371,24 +404,6 @@ useSeoMeta({
             </template>
           </p>
 
-          <div v-if="colouringItems.length > 1" class="space-y-2">
-            <URadioGroup
-              v-model="colouring"
-              :legend="t('route.colouring.title')"
-              :items="colouringItems"
-              orientation="horizontal"
-              variant="table"
-              indicator="hidden"
-              size="sm"
-              :ui="{ legend: 'text-sm font-medium mb-1.5', item: 'flex-1 justify-center px-2 py-1.5', label: 'text-center' }"
-            />
-            <ul v-if="colouring === 'slopes'" class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted" :aria-label="t('route.slopesLegend')">
-              <li v-for="slopeClass in SLOPE_CLASSES" :key="slopeClass.key" class="flex items-center gap-1">
-                <span class="h-1 w-4 rounded-full" :style="{ backgroundColor: slopeClass.color }" aria-hidden="true" />{{ t(`slopes.${slopeClass.key}`) }}
-              </li>
-            </ul>
-          </div>
-
           <div v-if="ways" class="space-y-3">
             <RouteBreakdown :title="t('ways.surfaceTitle')" :classes="SURFACE_CLASSES" :shares="ways.surface.shares" labels="ways.surface" />
             <RouteBreakdown
@@ -400,8 +415,6 @@ useSeoMeta({
             />
             <p class="text-xs text-muted">{{ t('ways.source') }}</p>
           </div>
-
-          <RouteWeather :route-id="parcours.id" />
 
           <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
             <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>

@@ -37,7 +37,7 @@ useSeoMeta({
     </div>
 
     <ul v-if="data.routes.length" class="space-y-2">
-      <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" /></li>
+      <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" hide-owner /></li>
     </ul>
     <UEmpty v-else icon="i-lucide-route" :title="t('profile.noPublic')" />
   </UContainer>

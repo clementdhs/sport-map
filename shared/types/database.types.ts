@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   graphql_public: {
     Tables: {
@@ -500,6 +500,7 @@ export type Database = {
           way_info: Json | null
           route_geojson: Json | null
           route_preview: Json | null
+          route_thumbnail: Json | null
         }
         Insert: {
           cover_image_url?: string | null
@@ -614,6 +615,12 @@ export type Database = {
           error: true
         } & "the function public.route_preview with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
+      route_thumbnail: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_thumbnail with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       search_routes: {
         Args: {
           loops_only?: boolean
@@ -644,6 +651,7 @@ export type Database = {
           rating_avg: number
           rating_count: number
           sport_type: Database["public"]["Enums"]["sport_type"]
+          thumbnail: Json
         }[]
       }
       search_text: { Args: { value: string }; Returns: string }
@@ -651,6 +659,7 @@ export type Database = {
         Args: { hidden: boolean; review_id: string }
         Returns: boolean
       }
+      track_thumbnail: { Args: { track: unknown }; Returns: Json }
     }
     Enums: {
       activity_type: "saved" | "completed"

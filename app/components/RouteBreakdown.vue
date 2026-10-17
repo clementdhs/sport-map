@@ -17,7 +17,9 @@ const id = useId()
 
 const items = computed(() => props.shares.map(({ cls, share }) => ({
   ...props.classes[cls]!,
-  share,
+  // Rounded: server and client compute the shares from distances that differ in the last float digits, and the full
+  // value in the inline style would be a hydration mismatch.
+  grow: Math.round(share * 10000) / 10000,
   // Under 1 %, "0 %" would read as absent.
   percent: share < 0.01 ? `< ${formatNumber(0.01, { style: 'percent' })}` : formatNumber(share, { style: 'percent', maximumFractionDigits: 0 }),
 })))
@@ -27,7 +29,7 @@ const items = computed(() => props.shares.map(({ cls, share }) => ({
   <section class="space-y-1.5" :aria-labelledby="id">
     <h2 :id="id" class="text-sm font-medium">{{ title }}</h2>
     <div class="flex h-2 gap-0.5 overflow-hidden rounded-full" aria-hidden="true">
-      <span v-for="item in items" :key="item.key" class="min-w-0.5" :style="{ flex: `${item.share} 1 0`, backgroundColor: item.color }" />
+      <span v-for="item in items" :key="item.key" class="min-w-0.5" :style="{ flex: `${item.grow} 1 0`, backgroundColor: item.color }" />
     </div>
     <ul class="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
       <li v-for="item in items" :key="item.key" class="flex items-center gap-1">

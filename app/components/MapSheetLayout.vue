@@ -1,8 +1,8 @@
 <script setup lang="ts">
-// Map page layout, without the app header. From md up: map beside a side panel. Below md: full-screen map
-// under a bottom sheet with three positions (collapsed to its title, half height, full height, which stops
-// under the floating top bar), moved by dragging its header or with the expand / collapse buttons.
-// The `actions` slot (main buttons) floats above the sheet on phones and tops the side panel from md up.
+// Map page layout. From md up: app header, then the map beside a side panel. Below md: map under a bottom sheet with
+// three positions (collapsed to its title, half height, full height, which stops under the floating top bar), moved
+// by dragging its header or with the expand / collapse buttons, above the tab bar. Full-screen pages (the editor)
+// have neither header nor tab bar.
 // The `overlay` slot (flyover controls) floats at the bottom of the map, above the sheet on phones.
 // From md up the side panel can be collapsed (the map takes the whole width and the title floats over it) and resized.
 import type { ComponentPublicInstance } from 'vue'
@@ -12,6 +12,8 @@ export type SheetSnap = 'collapsed' | 'half' | 'full'
 defineProps<{
   // Fallback of MapTopBar's back button; no back button without it.
   back?: string
+  // No app header nor tab bar (#101).
+  fullscreen?: boolean
 }>()
 
 const { t } = useI18n()
@@ -166,10 +168,11 @@ function onPointerUp(event: PointerEvent) {
   snap.value = SNAPS.reduce((best, s) => Math.abs(heights[s] - height) < Math.abs(heights[best] - height) ? s : best)
 }
 
-// Map height hidden by an element at the top (the bar, or the bar with the search slot), from the top of the page.
+// Map height hidden by an element at the top (the bar, or the bar with the search slot), from the top of the layout.
+// The bar is hidden from md up when the app header replaces it: nothing hidden then.
 function topInset(element = topBar.value) {
   if (!root.value || !element) return 0
-  return element.getBoundingClientRect().bottom - root.value.getBoundingClientRect().top
+  return Math.max(0, element.getBoundingClientRect().bottom - root.value.getBoundingClientRect().top)
 }
 
 function measure() {
@@ -193,154 +196,145 @@ provide(MAP_INSET_KEY, () => {
 })
 
 const sheetHeight = computed(() => dragHeight.value === null ? SNAP_HEIGHTS[snap.value] : `${dragHeight.value}px`)
-// The floating actions leave when the sheet covers the map, and while it is dragged above half height.
-const actionsHidden = computed(() => dragHeight.value === null
+// The overlay leaves when the sheet covers the map, and while it is dragged above half height.
+const overlayHidden = computed(() => dragHeight.value === null
   ? snap.value === 'full'
   : dragHeight.value > root.value!.getBoundingClientRect().height / 2 + 1)
 </script>
 
 <template>
-  <div
-    ref="root"
-    class="relative flex h-dvh flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"
-    :style="{ '--sheet-height': sheetHeight, '--panel-width': `${panelWidth}px` }"
-  >
-    <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:relative md:min-h-0 md:flex-1">
-      <slot name="map" />
-      <!-- Above the sheet's edge on phones (like the actions), clear of the scale and attribution. -->
+  <div class="flex h-dvh flex-col">
+    <AppHeader v-if="!fullscreen" class="max-md:hidden" />
+    <div
+      ref="root"
+      class="relative flex min-h-0 flex-1 flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"
+      :style="{ '--sheet-height': sheetHeight, '--panel-width': `${panelWidth}px` }"
+    >
+      <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:relative md:min-h-0 md:flex-1">
+        <slot name="map" />
+        <!-- Above the sheet's edge on phones, clear of the scale and attribution. -->
+        <div
+          v-if="$slots.overlay"
+          class="pointer-events-none absolute inset-x-3 bottom-[max(calc(var(--sheet-height)-var(--sheet-peek)+0.75rem),2.5rem)] z-10 flex justify-center *:pointer-events-auto md:bottom-10"
+          :class="{ 'max-md:hidden': overlayHidden, 'transition-[bottom] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
+        >
+          <slot name="overlay" />
+        </div>
+      </div>
+
+      <!-- Top left of the map: MapLibre's controls are on the right, the scale and attribution at the bottom.
+           The search slot goes under the bar, or beside it when the map is wide enough. -->
       <div
-        v-if="$slots.overlay"
-        class="pointer-events-none absolute inset-x-3 bottom-[max(calc(var(--sheet-height)-var(--sheet-peek)+0.75rem),2.5rem)] z-10 flex justify-center *:pointer-events-auto md:bottom-10"
-        :class="{ 'max-md:hidden': actionsHidden, 'transition-[bottom] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
+        ref="topArea"
+        class="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-12 left-3 z-10 flex flex-col items-start gap-2 *:pointer-events-auto md:right-auto lg:flex-row lg:items-center"
       >
-        <slot name="overlay" />
+        <div ref="topBar">
+          <MapTopBar :back="back" :header="!fullscreen" />
+        </div>
+        <div v-if="$slots.search" class="w-full md:w-72 lg:w-80">
+          <slot name="search" />
+        </div>
       </div>
-    </div>
 
-    <!-- Top left of the map: MapLibre's controls are on the right, the scale and attribution at the bottom.
-         The search slot goes under the bar, or beside it when the map is wide enough. -->
-    <div
-      ref="topArea"
-      class="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-12 left-3 z-10 flex flex-col items-start gap-2 *:pointer-events-auto md:right-auto lg:flex-row lg:items-center"
-    >
-      <div ref="topBar">
-        <MapTopBar :back="back" />
-      </div>
-      <div v-if="$slots.search" class="w-full md:w-72 lg:w-80">
-        <slot name="search" />
-      </div>
-    </div>
-
-    <!-- Collapsed side panel: its title stays over the map, left of MapLibre's controls, and reopens it. -->
-    <div
-      v-if="panel.collapsed"
-      class="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-14 z-10 hidden max-w-xs items-center gap-1 rounded-lg border border-default bg-default py-1 pr-1 pl-3 shadow-md md:flex"
-    >
-      <div class="min-w-0 flex-1 truncate font-medium">
-        <slot name="title" />
-      </div>
-      <UButton
-        ref="showButton"
-        icon="i-lucide-panel-right-open"
-        color="neutral"
-        variant="ghost"
-        :aria-label="t('sheet.show')"
-        aria-expanded="false"
-        :aria-controls="panelId"
-        @click="setPanelCollapsed(false)"
-      />
-    </div>
-
-    <!-- Following the sheet's edge, high enough to clear the scale and attribution when it is collapsed. -->
-    <div
-      v-if="$slots.actions"
-      v-show="!actionsHidden"
-      class="absolute right-3 bottom-[max(calc(var(--sheet-height)+0.75rem),calc(var(--sheet-peek)+2.5rem))] z-10 flex gap-2 *:rounded-full *:shadow-md md:hidden"
-      :class="{ 'transition-[bottom] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
-    >
-      <slot name="actions" />
-    </div>
-
-    <aside
-      :id="panelId"
-      class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
-      :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panel.collapsed }"
-      :data-sheet="snap"
-      :data-panel="panel.collapsed ? 'collapsed' : 'expanded'"
-    >
-      <!-- Left edge resizing the panel from md up, dragged or moved with the arrow keys; highlighted when used. -->
+      <!-- Collapsed side panel: its title stays over the map, left of MapLibre's controls, and reopens it. -->
       <div
-        role="separator"
-        tabindex="0"
-        aria-orientation="vertical"
-        :aria-label="t('sheet.resize')"
-        :aria-controls="panelId"
-        :aria-valuenow="panelWidth"
-        :aria-valuemin="SIDE_PANEL_WIDTH.min"
-        :aria-valuemax="panelMaxWidth"
-        class="absolute inset-y-0 -left-1.5 hidden w-3 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors hover:after:bg-primary focus-visible:after:w-1 focus-visible:after:bg-primary md:block"
-        :class="{ 'after:bg-primary': resizing }"
-        @pointerdown="onResizeStart"
-        @pointermove="onResizeMove"
-        @pointerup="onResizeEnd"
-        @pointercancel="onResizeEnd"
-        @keydown="onResizeKey"
-      />
-
-      <!-- Tab on the panel's edge, over the map, collapsing it from md up. -->
-      <UButton
-        ref="collapseButton"
-        icon="i-lucide-chevron-right"
-        color="neutral"
-        variant="outline"
-        class="absolute top-1/2 right-full hidden h-12 -translate-y-1/2 rounded-r-none bg-default px-1 shadow-md ring-default md:flex"
-        :aria-label="t('sheet.collapse')"
-        aria-expanded="true"
-        :aria-controls="panelId"
-        @click="setPanelCollapsed(true)"
-      />
-
-      <div
-        ref="header"
-        class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col px-4 select-none active:cursor-grabbing md:hidden"
-        @pointerdown="onPointerDown"
-        @pointermove="onPointerMove"
-        @pointerup="onPointerUp"
-        @pointercancel="onPointerUp"
+        v-if="panel.collapsed"
+        class="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-14 z-10 hidden max-w-xs items-center gap-1 rounded-lg border border-default bg-default py-1 pr-1 pl-3 shadow-md md:flex"
       >
-        <div class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-accented" aria-hidden="true" />
-        <div class="flex min-h-0 flex-1 items-center gap-2">
-          <div class="min-w-0 flex-1 truncate font-medium">
-            <slot name="title" />
+        <div class="min-w-0 flex-1 truncate font-medium">
+          <slot name="title" />
+        </div>
+        <UButton
+          ref="showButton"
+          icon="i-lucide-panel-right-open"
+          color="neutral"
+          variant="ghost"
+          :aria-label="t('sheet.show')"
+          aria-expanded="false"
+          :aria-controls="panelId"
+          @click="setPanelCollapsed(false)"
+        />
+      </div>
+
+      <aside
+        :id="panelId"
+        class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
+        :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panel.collapsed }"
+        :data-sheet="snap"
+        :data-panel="panel.collapsed ? 'collapsed' : 'expanded'"
+      >
+        <!-- Left edge resizing the panel from md up, dragged or moved with the arrow keys; highlighted when used. -->
+        <div
+          role="separator"
+          tabindex="0"
+          aria-orientation="vertical"
+          :aria-label="t('sheet.resize')"
+          :aria-controls="panelId"
+          :aria-valuenow="panelWidth"
+          :aria-valuemin="SIDE_PANEL_WIDTH.min"
+          :aria-valuemax="panelMaxWidth"
+          class="absolute inset-y-0 -left-1.5 hidden w-3 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors hover:after:bg-primary focus-visible:after:w-1 focus-visible:after:bg-primary md:block"
+          :class="{ 'after:bg-primary': resizing }"
+          @pointerdown="onResizeStart"
+          @pointermove="onResizeMove"
+          @pointerup="onResizeEnd"
+          @pointercancel="onResizeEnd"
+          @keydown="onResizeKey"
+        />
+
+        <!-- Tab on the panel's edge, over the map, collapsing it from md up. -->
+        <UButton
+          ref="collapseButton"
+          icon="i-lucide-chevron-right"
+          color="neutral"
+          variant="outline"
+          class="absolute top-1/2 right-full hidden h-12 -translate-y-1/2 rounded-r-none bg-default px-1 shadow-md ring-default md:flex"
+          :aria-label="t('sheet.collapse')"
+          aria-expanded="true"
+          :aria-controls="panelId"
+          @click="setPanelCollapsed(true)"
+        />
+
+        <div
+          ref="header"
+          class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col px-4 select-none active:cursor-grabbing md:hidden"
+          @pointerdown="onPointerDown"
+          @pointermove="onPointerMove"
+          @pointerup="onPointerUp"
+          @pointercancel="onPointerUp"
+        >
+          <div class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-accented" aria-hidden="true" />
+          <div class="flex min-h-0 flex-1 items-center gap-2">
+            <div class="min-w-0 flex-1 truncate font-medium">
+              <slot name="title" />
+            </div>
+            <UButton
+              icon="i-lucide-chevron-down"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('sheet.collapse')"
+              :disabled="snap === 'collapsed'"
+              @click="move(-1)"
+            />
+            <UButton
+              icon="i-lucide-chevron-up"
+              color="neutral"
+              variant="ghost"
+              :aria-label="t('sheet.expand')"
+              :disabled="snap === 'full'"
+              @click="move(1)"
+            />
           </div>
-          <UButton
-            icon="i-lucide-chevron-down"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('sheet.collapse')"
-            :disabled="snap === 'collapsed'"
-            @click="move(-1)"
-          />
-          <UButton
-            icon="i-lucide-chevron-up"
-            color="neutral"
-            variant="ghost"
-            :aria-label="t('sheet.expand')"
-            :disabled="snap === 'full'"
-            @click="move(1)"
-          />
         </div>
-      </div>
 
-      <div
-        class="min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-default p-4 md:border-t-0"
-        :inert="mobile && snap === 'collapsed'"
-      >
-        <div v-if="$slots.actions" class="flex gap-2 *:flex-1 *:justify-center max-md:hidden">
-          <slot name="actions" />
+        <div
+          class="min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-default p-4 md:border-t-0"
+          :inert="mobile && snap === 'collapsed'"
+        >
+          <slot />
         </div>
-        <slot />
-      </div>
-    </aside>
+      </aside>
+    </div>
+    <AppTabBar v-if="!fullscreen" class="md:hidden" />
   </div>
 </template>

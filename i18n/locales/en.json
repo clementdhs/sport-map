@@ -1,6 +1,7 @@
 {
   "header": {
     "account": "My account",
+    "accountNamed": "My account ({name})",
     "record": "Record an outing",
     "create": "Create a route",
     "login": "Sign in",
@@ -776,6 +777,14 @@
       "parking": "Car park",
       "castle": "Castle, ruins"
     }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "map": "Map",
+    "discover": "Discover",
+    "new": "Create or record",
+    "live": "Live",
+    "profile": "Profile"
   },
   "mapBar": {
     "label": "Navigation",

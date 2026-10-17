@@ -12,6 +12,7 @@ useSeoMeta({ title: () => `${props.error.statusMessage ?? t('error.title')} — 
 <template>
   <UApp :locale="uiLocales[locale]">
     <AppHeader />
-    <UError :error="error" />
+    <UError :error="error" class="max-md:pb-[calc(4rem+env(safe-area-inset-bottom))]" />
+    <AppTabBar class="fixed inset-x-0 bottom-0 z-40 md:hidden" />
   </UApp>
 </template>

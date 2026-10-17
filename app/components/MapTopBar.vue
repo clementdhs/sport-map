@@ -1,8 +1,10 @@
 <script setup lang="ts">
-// Floating bar at the top left of the map pages, which have no header: back button, logo and account menu.
+// Floating bar at the top left of the map pages: back button, logo and account menu. When the app header is shown
+// from md up (every map page but the editor), the bar keeps only the back button there.
 const props = defineProps<{
   // Where the back button leads when the page was opened directly (no previous page in the app).
   back?: string
+  header?: boolean
 }>()
 
 const { t } = useI18n()
@@ -15,7 +17,11 @@ function goBack() {
 </script>
 
 <template>
-  <nav class="flex items-center gap-0.5 rounded-full bg-default p-1 shadow-md ring ring-default" :aria-label="t('mapBar.label')">
+  <nav
+    class="flex items-center gap-0.5 rounded-full bg-default p-1 shadow-md ring ring-default"
+    :class="{ 'md:hidden': header && !back }"
+    :aria-label="t('mapBar.label')"
+  >
     <UButton
       v-if="back"
       icon="i-lucide-arrow-left"
@@ -25,9 +31,11 @@ function goBack() {
       class="rounded-full"
       @click="goBack"
     />
-    <ULink to="/" class="rounded-full p-1" :aria-label="t('mapBar.home')">
+    <ULink to="/" class="rounded-full p-1" :class="{ 'md:hidden': header }" :aria-label="t('mapBar.home')">
       <AppLogo class="size-7" />
     </ULink>
-    <AccountMenu compact />
+    <div class="flex" :class="{ 'md:hidden': header }">
+      <AccountMenu compact />
+    </div>
   </nav>
 </template>

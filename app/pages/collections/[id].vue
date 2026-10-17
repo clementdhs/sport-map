@@ -4,7 +4,7 @@ import type { CollectionInput } from '#shared/utils/collections'
 
 const { formatDistance, formatDate } = useFormat()
 
-// Map page: MapSheetLayout replaces the header with its floating top bar.
+// Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
 const route = useRoute()
 const toast = useToast()

@@ -2,7 +2,7 @@
 import type { SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
 
-// Map page: MapSheetLayout replaces the header with its floating top bar.
+// Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
 const { t } = useI18n()
 useSeoMeta({
@@ -69,18 +69,6 @@ watch(() => search.results, (results) => {
           @hover="highlightedId = $event"
         />
       </ClientOnly>
-    </template>
-
-    <template #actions>
-      <UButton
-        to="/record"
-        icon="i-lucide-circle-dot"
-        :label="t('mapBar.record')"
-        :aria-label="t('header.record')"
-        color="neutral"
-        variant="outline"
-      />
-      <UButton to="/routes/create" icon="i-lucide-plus" :label="t('mapBar.create')" :aria-label="t('header.create')" />
     </template>
 
     <template #title>

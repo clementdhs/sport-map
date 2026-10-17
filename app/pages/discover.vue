@@ -3,8 +3,8 @@ import type { OsmRoute, OsmRouteKind } from '#shared/utils/osmRoutes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 import type { ImportedTrack } from '~/utils/gpx'
 
-// Marked routes of OpenStreetMap around the map view (#69). Map page: MapSheetLayout replaces the header with its
-// floating top bar.
+// Marked routes of OpenStreetMap around the map view (#69). Map page: MapSheetLayout brings its own header (md up),
+// tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
 const { t } = useI18n()
 const { formatDistance, formatNumber } = useFormat()
@@ -133,7 +133,7 @@ async function selectOnMap(id: number) {
 </script>
 
 <template>
-  <MapSheetLayout back="/">
+  <MapSheetLayout>
     <template #map>
       <ClientOnly>
         <MapOsmRoutes

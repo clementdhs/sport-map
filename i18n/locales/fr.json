@@ -1,6 +1,7 @@
 {
   "header": {
     "account": "Mon compte",
+    "accountNamed": "Mon compte ({name})",
     "record": "Enregistrer une sortie",
     "create": "Créer un parcours",
     "login": "Connexion",
@@ -776,6 +777,14 @@
       "parking": "Parking",
       "castle": "Château, ruines"
     }
+  },
+  "nav": {
+    "label": "Navigation principale",
+    "map": "Carte",
+    "discover": "Découvrir",
+    "new": "Créer ou enregistrer",
+    "live": "En direct",
+    "profile": "Profil"
   },
   "mapBar": {
     "label": "Navigation",

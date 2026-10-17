@@ -796,6 +796,13 @@
       "completed": "Réalisés",
       "stats": "Statistiques"
     },
+    "tabsShort": {
+      "created": "Créés",
+      "saved": "Sauvegardés",
+      "collections": "Collections",
+      "completed": "Faits",
+      "stats": "Stats"
+    },
     "memberSince": "membre depuis le {date}",
     "viewPublic": "Voir mon profil tel que la famille le voit",
     "noCreated": "Aucun parcours créé",

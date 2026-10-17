@@ -130,7 +130,8 @@ useSeoMeta({
       <UBadge v-else icon="i-lucide-lock" :label="t('profile.privateCollection')" color="neutral" variant="subtle" />
     </div>
 
-    <h1 class="text-2xl font-semibold">{{ info.name }}</h1>
+    <!-- Phones: the sheet title already shows the name; the heading stays for screen readers. -->
+    <h1 class="text-2xl font-semibold max-md:sr-only">{{ info.name }}</h1>
 
     <p class="text-sm text-muted">
       {{ t('route.by') }}

@@ -261,7 +261,8 @@ useSeoMeta({
         <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
       </div>
 
-      <h1 class="text-2xl font-semibold">{{ parcours.name }}</h1>
+      <!-- Phones: the sheet title already shows the name; the heading stays for screen readers. -->
+      <h1 class="text-2xl font-semibold max-md:sr-only">{{ parcours.name }}</h1>
 
       <p class="text-sm text-muted">
         {{ t('route.by') }}

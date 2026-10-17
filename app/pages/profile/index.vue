@@ -21,11 +21,11 @@ if (error.value) {
 const { data: collections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
 
 const tabs = computed(() => [
-  { label: t('profile.tabs.created'), slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
-  { label: t('profile.tabs.saved'), slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
-  { label: t('profile.tabs.collections'), slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
-  { label: t('profile.tabs.completed'), slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
-  { label: t('profile.tabs.stats'), slot: 'stats' as const, icon: 'i-lucide-chart-column' },
+  { label: t('profile.tabs.created'), short: t('profile.tabsShort.created'), slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
+  { label: t('profile.tabs.saved'), short: t('profile.tabsShort.saved'), slot: 'saved' as const, badge: data.value?.saved.length ?? 0, icon: 'i-lucide-bookmark' },
+  { label: t('profile.tabs.collections'), short: t('profile.tabsShort.collections'), slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
+  { label: t('profile.tabs.completed'), short: t('profile.tabsShort.completed'), slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
+  { label: t('profile.tabs.stats'), short: t('profile.tabsShort.stats'), slot: 'stats' as const, icon: 'i-lucide-chart-column' },
 ])
 </script>
 
@@ -49,7 +49,21 @@ const tabs = computed(() => [
       </div>
     </div>
 
-    <UTabs :items="tabs" variant="link" class="w-full">
+    <!-- Phones: icon and count on top, short label below, so the 5 tabs fit from 360 px.
+         The full label stays the tab's accessible name. -->
+    <UTabs
+      :items="tabs"
+      variant="link"
+      class="w-full"
+      :ui="{
+        trigger: 'max-sm:w-auto max-sm:flex-auto max-sm:flex-wrap max-sm:gap-x-1 max-sm:gap-y-0.5 max-sm:px-1',
+        label: 'max-sm:order-last max-sm:basis-full max-sm:text-center max-sm:text-xs',
+      }"
+    >
+      <template #default="{ item }">
+        <span class="sm:hidden" aria-hidden="true">{{ item.short }}</span>
+        <span class="max-sm:sr-only">{{ item.label }}</span>
+      </template>
       <template #created>
         <ul v-if="data.created.length" class="space-y-2 pt-2">
           <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" /></li>

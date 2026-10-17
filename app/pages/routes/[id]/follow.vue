@@ -197,7 +197,8 @@ function discardOuting() {
             variant="solid"
             class="shadow-md"
           />
-          <p class="truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">{{ parcours.name }}</p>
+          <!-- No room for it on phones next to the buttons; the page title keeps it. -->
+          <p class="hidden truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md sm:block">{{ parcours.name }}</p>
           <VoiceGuideSettings
             class="ml-auto"
             :prefs="voice.prefs.value"

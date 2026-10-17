@@ -44,6 +44,38 @@ test.describe('as the test account', () => {
       await expect(page).toHaveURL(/\/$/)
     })
   }
+
+  test('keeps the profile tabs, the route name and the follow bar readable on a small phone', async ({ page, accountRouteId }) => {
+    await page.setViewportSize({ width: 360, height: 740 })
+    await page.goto('/profile')
+    await waitForHydration(page)
+    // Short labels under the icons, none cut off; the full label stays the tab's name.
+    for (const [name, short] of [['Mes parcours', 'Créés'], ['Sauvegardés', 'Sauvegardés'], ['Collections', 'Collections'], ['Réalisés', 'Faits'], ['Statistiques', 'Stats']]) {
+      const tab = page.getByRole('tab', { name: new RegExp(name) })
+      await expect(tab.locator('[aria-hidden="true"]', { hasText: new RegExp(`^${short}$`) })).toBeVisible()
+      // The count badge has a label slot too, after the tab's own.
+      const label = tab.locator('[data-slot="label"]').first()
+      expect(await label.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
+    }
+
+    // The sheet title shows the name; the h1 is only there for screen readers.
+    await page.goto(`/routes/${accountRouteId}`)
+    await waitForMap(page)
+    await expect(page.locator('aside[data-sheet]')).toContainText(ACCOUNT_ROUTE_NAME)
+    const heading = page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })
+    await expect(heading).toHaveCount(1)
+    expect((await heading.boundingBox())?.width).toBeLessThanOrEqual(1)
+
+    // No truncated name between the follow bar's buttons.
+    await page.goto(`/routes/${accountRouteId}/follow`)
+    await waitForMap(page)
+    await expect(page.getByRole('link', { name: 'Quitter' })).toBeVisible()
+    // Exact: the route announcer also holds the name, in the page title.
+    const barName = page.getByText(ACCOUNT_ROUTE_NAME, { exact: true })
+    await expect(barName).toBeHidden()
+    await page.setViewportSize({ width: 768, height: 1024 })
+    await expect(barName).toBeVisible()
+  })
 })
 
 test('moves the bottom sheet over the map on a phone with its buttons, the keyboard or a drag', async ({ page }) => {

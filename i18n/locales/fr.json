@@ -594,7 +594,9 @@
     "backgroundGps": "GPS actif écran éteint",
     "keepScreenOn": "Garde l'écran allumé pendant le suivi",
     "record": "Enregistrer la sortie",
-    "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé."
+    "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé.",
+    "headingUp": "Orienter la carte dans le sens de la marche",
+    "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement"
   },
   "live": {
     "title": "Sorties en cours",

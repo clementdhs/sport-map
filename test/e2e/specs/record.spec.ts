@@ -86,4 +86,62 @@ test.describe('recording an outing', () => {
     await page.getByRole('tab', { name: /Réalisés/ }).click()
     await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
   })
+
+  test('turns the map with the direction of travel, then with the phone compass when stopped', async ({ page, context }) => {
+    // Fake clock: a GPS course gets old, and the compass takes over, with Date.now().
+    await page.clock.install({ time: new Date('2026-10-17T08:00:00Z') })
+    const map = page.locator('[data-map-loaded]')
+    const toggle = page.getByRole('button', { name: 'Orienter la carte dans le sens de la marche' })
+    // `meters` east of the start.
+    const walkEast = (meters: number) => context.setGeolocation({
+      ...START,
+      longitude: START.longitude + meters / (111_194.93 * Math.cos((START.latitude * Math.PI) / 180)),
+    })
+    // A compass reading of a phone lying flat: alpha turns counter-clockwise from north.
+    const compass = (alpha: number) => page.evaluate((alpha) => {
+      const type = 'ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation'
+      window.dispatchEvent(new DeviceOrientationEvent(type, { alpha, beta: 0, gamma: 0, absolute: true }))
+    }, alpha)
+
+    await page.goto('/record')
+    await waitForMap(page)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    // Kept on the phone.
+    await page.reload()
+    await waitForMap(page)
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    // Zoomed in on the position, still north up: no direction yet.
+    await expect(map).toHaveAttribute('data-map-center', '6.1200,45.9000', { timeout: 10_000 })
+    await expect(map).toHaveAttribute('data-map-bearing', '0')
+
+    // Walking east: east is up.
+    await page.clock.fastForward(5000)
+    await walkEast(30)
+    await expect(map).toHaveAttribute('data-map-bearing', '90')
+
+    // Stopped, facing west: the compass turns the map.
+    await page.clock.fastForward(15_000)
+    await compass(90)
+    await expect(map).toHaveAttribute('data-map-bearing', '270')
+
+    // A gesture on the map stops following; "Recentrer" brings it back, turned with the direction.
+    const box = (await map.boundingBox())!
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2 + 40, { steps: 5 })
+    await page.mouse.up()
+    const recenter = page.getByRole('button', { name: 'Recentrer' })
+    await expect(recenter).toBeVisible()
+    await page.clock.fastForward(2000)
+    await compass(315)
+    await recenter.click()
+    await expect(map).toHaveAttribute('data-map-bearing', '45')
+
+    // MapLibre's compass brings north up back, and keeps it.
+    await page.getByRole('button', { name: 'Réorienter vers le nord' }).click()
+    await expect(map).toHaveAttribute('data-map-bearing', '0')
+    await expect(toggle).toHaveAttribute('aria-pressed', 'false')
+  })
 })

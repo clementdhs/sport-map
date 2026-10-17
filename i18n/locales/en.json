@@ -142,7 +142,7 @@
   },
   "routeCard": {
     "private": "Private",
-    "loop": "loop",
+    "loop": "Loop",
     "gain": "+{gain} m",
     "by": "by {name}",
     "reviews": "{count} review | {count} reviews"

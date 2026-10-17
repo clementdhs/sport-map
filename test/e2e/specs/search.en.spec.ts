@@ -47,7 +47,7 @@ test('searches routes by name and filters them, in English', async ({ page }) =>
   await expect(page.getByRole('paragraph').filter({ hasText: '1 route for “crêtes”' })).toBeVisible()
   await expect(cards).toHaveCount(1)
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
-  await expect(cards.first()).toContainText('loop')
+  await expect(cards.first()).toContainText('Loop')
 
   await page.getByRole('button', { name: 'Filters' }).click()
   await page.getByRole('combobox', { name: 'Sport' }).click()

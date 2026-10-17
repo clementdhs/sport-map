@@ -2,6 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 // Account menu of the header and of the map pages' floating bar. Compact: icon buttons only.
+// Profile and live shares are in the main navigation (#101): the menu keeps what concerns the account.
 defineProps<{
   compact?: boolean
 }>()
@@ -18,8 +19,6 @@ const accountName = computed(() => username.value ?? user.value?.email ?? '')
 const userMenu = computed<DropdownMenuItem[][]>(() => [
   [{ label: accountName.value, type: 'label' }],
   [
-    { label: t('header.profile'), icon: 'i-lucide-user', to: '/profile' },
-    { label: t('live.title'), icon: 'i-lucide-radio', to: '/live' },
     { label: t('header.settings'), icon: 'i-lucide-settings', to: '/settings' },
     { label: t('language.label'), icon: 'i-lucide-languages', children: languageItems.value },
   ],
@@ -52,7 +51,8 @@ async function signOut() {
       variant="ghost"
       icon="i-lucide-circle-user"
       :label="accountName"
-      :ui="{ label: 'hidden sm:inline' }"
+      :aria-label="t('header.accountNamed', { name: accountName })"
+      :ui="{ label: 'hidden max-md:sm:inline lg:inline' }"
     />
   </UDropdownMenu>
   <!-- Signed-in users find these in the account menu and the settings. -->

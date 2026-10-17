@@ -6,34 +6,64 @@ test.use({ role: 'family' })
 test.describe('as the test account', () => {
   test.use({ role: 'account' })
 
-  // Map pages have no header: a floating bar (back, logo, account menu) and the main buttons over the map.
+  // Main navigation (#101): tab bar on phones (map pages keep a floating bar: back, logo, account), the same header
+  // on every page from md up; the editor and recording stay full screen.
   for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'computer', width: 1280, height: 800 }]) {
-    test(`reaches the account menu, creation, recording and back from the map pages, on a ${device.name}`, async ({ page }) => {
+    test(`goes through the main navigation, creation, recording and back, on a ${device.name}`, async ({ page }) => {
+      const phone = device.name === 'phone'
       await page.setViewportSize({ width: device.width, height: device.height })
       await page.goto('/')
       await waitForMap(page)
-      await expect(page.getByRole('banner')).toHaveCount(0)
+      const nav = page.getByRole('navigation', { name: 'Navigation principale' })
+      await expect(page.getByRole('banner')).toHaveCount(phone ? 0 : 1)
+      await expect(nav.getByRole('link', { name: 'Carte' })).toHaveAttribute('aria-current', 'page')
       // Nothing to go back to from the home page.
       await expect(page.getByRole('button', { name: 'Retour' })).toHaveCount(0)
 
-      await page.getByRole('link', { name: 'Créer un parcours' }).click()
+      // Creating and recording: the tab bar's central button on phones, two header buttons on computers.
+      async function openNew(name: string) {
+        if (phone) {
+          await nav.getByRole('button', { name: 'Créer ou enregistrer' }).click()
+          await page.getByRole('menuitem', { name }).click()
+        }
+        else {
+          await page.getByRole('banner').getByRole('link', { name }).click()
+        }
+      }
+      await openNew('Créer un parcours')
       await expect(page).toHaveURL(/\/routes\/create$/)
       await waitForMap(page)
+      await expect(nav).toHaveCount(0)
       await page.getByRole('button', { name: 'Retour' }).click()
       await expect(page).toHaveURL(/\/$/)
 
-      await page.getByRole('link', { name: 'Enregistrer une sortie' }).click()
+      await openNew('Enregistrer une sortie')
       await expect(page).toHaveURL(/\/record$/)
+      await expect(nav).toHaveCount(0)
       await page.getByRole('link', { name: 'Quitter' }).click()
       await expect(page).toHaveURL(/\/$/)
 
-      // Opened from the profile, a route goes back to it; opened directly, to the home page.
+      await nav.getByRole('link', { name: 'Découvrir' }).click()
+      await expect(page).toHaveURL(/\/discover/)
+      await expect(nav.getByRole('link', { name: 'Découvrir' })).toHaveAttribute('aria-current', 'page')
+      await nav.getByRole('link', { name: 'En direct' }).click()
+      await expect(page).toHaveURL(/\/live$/)
+      await expect(page.getByRole('heading', { name: 'Sorties en cours', level: 1 })).toBeVisible()
+
+      // The account menu keeps the account's own entries.
       await page.getByRole('button', { name: 'Mon compte' }).click()
-      await page.getByRole('menuitem', { name: 'Mon profil' }).click()
+      await expect(page.getByRole('menuitem', { name: 'Paramètres' })).toBeVisible()
+      await expect(page.getByRole('menuitem', { name: 'Mon profil' })).toHaveCount(0)
+      await page.keyboard.press('Escape')
+
+      // Opened from the profile, a route goes back to it, the map section current; opened directly, to the home page.
+      await nav.getByRole('link', { name: 'Profil' }).click()
       await expect(page).toHaveURL(/\/profile$/)
+      await expect(nav.getByRole('link', { name: 'Profil' })).toHaveAttribute('aria-current', 'page')
       await expect(page.getByRole('banner')).toBeVisible()
       await page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) }).click()
       await expect(page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })).toBeVisible()
+      await expect(nav.getByRole('link', { name: 'Carte' })).toHaveAttribute('aria-current', 'true')
       const routeUrl = page.url()
       await page.getByRole('button', { name: 'Retour' }).click()
       await expect(page).toHaveURL(/\/profile$/)
@@ -103,10 +133,13 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await expect(expand).toBeDisabled()
 
   // Dragging its header: to the bottom collapses it, then a third of the way up opens it at half height.
-  // Once its height animation is over, the full sheet starts right under the floating top bar, still reachable.
+  // Once its height animation is over, the full sheet starts right under the floating top bar, still reachable,
+  // and ends on the tab bar.
   await expect(async () => expect((await sheet.boundingBox())!.y).toBeLessThan(100)).toPass()
   await expect(page.getByRole('button', { name: 'Mon compte' })).toBeInViewport()
-  await expect(page.getByRole('link', { name: 'Créer un parcours' })).toHaveCount(0)
+  const tabBar = (await page.getByRole('navigation', { name: 'Navigation principale' }).boundingBox())!
+  const sheetBox = (await sheet.boundingBox())!
+  expect(sheetBox.y + sheetBox.height).toBeCloseTo(tabBar.y, 0)
   const header = (await sheet.getByText('2 parcours dans cette zone').first().boundingBox())!
   const x = header.x + 40
   await page.mouse.move(x, header.y + 5)
@@ -115,9 +148,10 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
 
-  await page.mouse.move(x, 780)
+  // The collapsed header sits right above the tab bar.
+  await page.mouse.move(x, tabBar.y - 30)
   await page.mouse.down()
-  await page.mouse.move(x, 550, { steps: 5 })
+  await page.mouse.move(x, tabBar.y - 260, { steps: 5 })
   await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
 })

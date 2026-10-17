@@ -120,7 +120,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <MapSheetLayout :back="back">
+  <MapSheetLayout :back="back" fullscreen>
     <template #map>
       <div
         class="relative size-full"

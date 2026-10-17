@@ -7,7 +7,7 @@ import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
 
-// Map page: MapSheetLayout replaces the header with its floating top bar.
+// Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
 const route = useRoute()
 const user = useSupabaseUser()

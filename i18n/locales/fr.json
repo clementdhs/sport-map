@@ -401,7 +401,11 @@
     "notOwner": "Tu ne peux modifier que tes propres parcours",
     "editTitle": "Modifier « {name} »",
     "dropGpx": "Dépose ton fichier GPX pour l'importer",
-    "fromOsm": "Partir d'un parcours balisé"
+    "fromOsm": "Partir d'un parcours balisé",
+    "newRoute": "Nouveau parcours",
+    "outdated": "{count} segment suit les chemins d'un autre sport | {count} segments suivent les chemins d'un autre sport",
+    "outdatedHint": "Changer de sport ne modifie pas le tracé déjà dessiné : seuls les nouveaux segments suivent les chemins adaptés à {sport}.",
+    "reroute": "Recalculer pour {sport}"
   },
   "loop": {
     "open": "Générer une boucle",

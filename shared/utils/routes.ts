@@ -18,6 +18,17 @@ export const SPORT_ICONS: Record<SportType, string> = {
   mountain_biking: 'i-lucide-trees',
 }
 
+// The OpenRouteService profile each sport is routed with. Trail and hiking share theirs: switching between them
+// leaves the editor's track as it is.
+export const ROUTING_PROFILES: Record<SportType, string> = {
+  running: 'foot-walking',
+  trail: 'foot-hiking',
+  hiking: 'foot-hiking',
+  cycling: 'cycling-regular',
+  road_cycling: 'cycling-road',
+  mountain_biking: 'cycling-mountain',
+}
+
 // How a sport moves: runners follow their pace, cyclists their speed.
 export type SportKind = 'run' | 'walk' | 'ride'
 

@@ -1,19 +1,10 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
-import type { LngLat, SportType, WayInfo, WayRange } from '#shared/utils/routes'
+import { type LngLat, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
 
 type LngLatEle = [lng: number, lat: number, ele: number]
 
 const ORS_URL = 'https://api.openrouteservice.org'
-
-const PROFILES: Record<SportType, string> = {
-  running: 'foot-walking',
-  trail: 'foot-hiking',
-  hiking: 'foot-hiking',
-  cycling: 'cycling-regular',
-  road_cycling: 'cycling-road',
-  mountain_biking: 'cycling-mountain',
-}
 
 // ORS error codes: 2009 = no route between the points, 2010 = no routable way near a point,
 // 2004 = request exceeds the server limits (e.g. distance).
@@ -69,7 +60,7 @@ function toWayInfo(extras: OrsExtras | undefined, profile: string): WayInfo | nu
 type OrsFeature = { geometry: { coordinates: LngLatEle[] }, properties?: { extras?: OrsExtras, summary?: { distance?: number } } }
 
 async function directions(event: H3Event, sport: SportType, body: Record<string, unknown>) {
-  const profile = PROFILES[sport]
+  const profile = ROUTING_PROFILES[sport]
   const result = await orsPost<{ features: OrsFeature[] }>(
     event,
     `/v2/directions/${profile}/geojson`,

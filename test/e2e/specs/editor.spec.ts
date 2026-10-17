@@ -25,6 +25,22 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page.getByText('Profil altimétrique')).toBeVisible()
   await expect(page.getByText('0 m', { exact: true })).toHaveCount(0)
 
+  // Another sport leaves the drawn track as it is, until it is routed again for it.
+  const sports: string[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/segment')) sports.push(request.postDataJSON().sport_type)
+  })
+  const outdated = page.getByText("2 segments suivent les chemins d'un autre sport")
+  for (const [sport, value] of [['Course sur route', 'running'], ['VTT', 'mountain_biking']] as const) {
+    await page.getByRole('combobox', { name: 'Sport' }).click()
+    await page.getByRole('option', { name: sport }).click()
+    await expect(outdated).toBeVisible()
+    sports.length = 0
+    await page.getByRole('button', { name: `Recalculer pour ${sport}` }).click()
+    await expect(outdated).toHaveCount(0)
+    expect(sports).toEqual([value, value])
+  }
+
   // A point of interest, placed by clicking near the first segment.
   await page.getByRole('button', { name: 'Ajouter' }).click()
   await map.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } })
@@ -139,6 +155,8 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await page.setViewportSize({ width: device.width, height: device.height })
     await page.goto('/routes/create')
     await waitForMap(page)
+    // Without a track, the sheet's title (shown on phones) names the page rather than a distance of 0 m.
+    if (device.name === 'phone') await expect(page.getByText('Nouveau parcours', { exact: true })).toBeVisible()
 
     await page.getByRole('button', { name: 'Générer une boucle' }).click()
     const panel = page.getByRole('region', { name: 'Boucle automatique' })

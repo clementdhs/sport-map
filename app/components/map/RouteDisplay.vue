@@ -39,6 +39,10 @@ watch(() => props.hoverPoint, (point) => {
 </script>
 
 <template>
-  <MapView relief :force3d="!!flyover?.subject" @load="onLoad" />
+  <MapView relief :force3d="!!flyover?.subject" @load="onLoad">
+    <template v-if="$slots.controls" #controls>
+      <slot name="controls" />
+    </template>
+  </MapView>
   <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
 </template>

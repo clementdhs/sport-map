@@ -22,28 +22,41 @@ test('summarises the slopes and the ways of a route and colours the track on dem
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
   await waitForMap(page)
   await expect(page.getByText(/Pente max : \d+ %/)).toBeVisible()
-  const legend = page.getByRole('list', { name: 'Légende des pentes' })
-  await expect(legend).toHaveCount(0)
-  // The radios are hidden behind their labels, which users click.
-  const colouring = page.getByRole('group', { name: 'Couleurs du tracé' })
-  await colouring.getByText('Pente', { exact: true }).click()
-  await expect(page.getByRole('radio', { name: 'Pente' })).toBeChecked()
-  await expect(legend).toContainText('Plus de 15 %')
-
   // A street then a dirt path graded T2, on the hiking scale since the route is a running one.
   await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Goudron\s+\d+\s%/)
   await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Sentier\s+\d+\s%/)
   await expect(page.getByRole('region', { name: /Difficulté des sentiers/ })).toContainText('T2 randonnée en montagne')
-  await colouring.getByText('Surface', { exact: true }).click()
+  // The weather comes before the details of the ways (#103).
+  await expect(page.getByRole('region', { name: 'Météo au départ' })).toBeVisible()
+  const weatherBox = await page.getByRole('region', { name: 'Météo au départ' }).boundingBox()
+  const surfaceBox = await page.getByRole('region', { name: 'Type de surface' }).boundingBox()
+  expect(weatherBox!.y).toBeLessThan(surfaceBox!.y)
+
+  // The colouring is picked from the map's controls, with its legend.
+  const legend = page.getByRole('list', { name: 'Légende des couleurs du tracé' })
+  await page.getByRole('button', { name: 'Couleurs du tracé' }).click()
+  const colouring = page.getByRole('group', { name: 'Couleurs du tracé' })
+  await expect(colouring.getByRole('radio', { name: 'Aucune' })).toBeChecked()
   await expect(legend).toHaveCount(0)
+  await colouring.getByText('Pente', { exact: true }).click()
+  await expect(colouring.getByRole('radio', { name: 'Pente' })).toBeChecked()
+  await expect(legend).toContainText('Plus de 15 %')
+  // It stays open while the map is moved.
+  await page.locator('.maplibregl-canvas').click({ position: { x: 20, y: 300 } })
+  await colouring.getByText('Surface', { exact: true }).click()
+  await expect(legend).toContainText('Goudron')
+  await expect(legend).not.toContainText('Plus de 15 %')
   await colouring.getByText('Difficulté', { exact: true }).click()
-  await expect(page.getByRole('radio', { name: 'Difficulté' })).toBeChecked()
+  await expect(colouring.getByRole('radio', { name: 'Difficulté' })).toBeChecked()
+  await expect(legend).toContainText('T2 randonnée en montagne')
   // The seeded route stays under 5 %: one slope class, whose gradient has no stop (#63).
   expect(mapErrors).toEqual([])
 })
 
 test('shows nothing about the ways of a route drawn without them', async ({ page }) => {
   await page.goto(`/routes/${process.env.E2E_LOOP_ID}`)
+  await waitForMap(page)
+  await page.getByRole('button', { name: 'Couleurs du tracé' }).click()
   await expect(page.getByRole('radio', { name: 'Pente' })).toBeVisible()
   await expect(page.getByRole('radio', { name: 'Surface' })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Type de surface' })).toHaveCount(0)

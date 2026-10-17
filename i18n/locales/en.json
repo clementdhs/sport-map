@@ -182,6 +182,8 @@
     "save": "Save",
     "saved": "Saved",
     "complete": "I did it",
+    "completeShort": "Done",
+    "moreShort": "More",
     "completedOn": "Done on {date}",
     "moreActions": "More actions",
     "yourOuting": "Your outing: {total}, {moving} of it moving",
@@ -193,9 +195,9 @@
       "none": "None",
       "slopes": "Slope",
       "surface": "Surface",
-      "difficulty": "Difficulty"
+      "difficulty": "Difficulty",
+      "legend": "Track colour legend"
     },
-    "slopesLegend": "Slope legend",
     "pois": "Points of interest",
     "deleteTitle": "Delete this route?",
     "deleteDescription": "It will also disappear from other users' saved and completed routes. This can't be undone."

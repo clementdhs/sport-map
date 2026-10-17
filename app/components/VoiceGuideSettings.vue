@@ -9,6 +9,8 @@ const props = defineProps<{
   background: boolean
 }>()
 const emit = defineEmits<{ update: [prefs: VoicePrefs] }>()
+// Two roots (button and modal): the page's classes go to the button.
+defineOptions({ inheritAttrs: false })
 
 const { t } = useI18n()
 const open = ref(false)
@@ -28,6 +30,7 @@ const items = computed(() => VOICE_ANNOUNCEMENTS.map(value => ({ value, label: t
 
 <template>
   <UButton
+    v-bind="$attrs"
     :icon="prefs.enabled && supported ? 'i-lucide-volume-2' : 'i-lucide-volume-x'"
     :aria-label="t('voice.title')"
     color="neutral"

@@ -798,6 +798,13 @@
       "completed": "Done",
       "stats": "Statistics"
     },
+    "tabsShort": {
+      "created": "Mine",
+      "saved": "Saved",
+      "collections": "Collections",
+      "completed": "Done",
+      "stats": "Stats"
+    },
     "memberSince": "member since {date}",
     "viewPublic": "View my profile as the family sees it",
     "noCreated": "No route created",

@@ -15,6 +15,10 @@ test('finds a route of another member on the home map and opens it', async ({ pa
   await expect(card).toContainText('(1 avis)')
   // Its author by display name, not username.
   await expect(card).toContainText(`par ${SEED_OWNER.displayName}`)
+  // Its outline and its stats.
+  await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
+  await expect(card).toContainText('Course sur route')
+  await expect(card).toContainText(/D\+ \d+ m/)
   await card.click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
@@ -76,7 +80,7 @@ test('keeps only loops and sorts the results', async ({ page }) => {
   await page.getByRole('combobox', { name: 'Trier par' }).click()
   await page.getByRole('option', { name: 'Plus longs' }).click()
   await expect(cards.first()).toContainText(SEEDED_LOOP_NAME)
-  await expect(cards.first()).toContainText('boucle')
+  await expect(cards.first()).toContainText('Boucle')
 
   await page.getByRole('combobox', { name: 'Trier par' }).click()
   await page.getByRole('option', { name: 'Plus courts' }).click()

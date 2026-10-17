@@ -66,7 +66,7 @@ const tabs = computed(() => [
       </template>
       <template #created>
         <ul v-if="data.created.length" class="space-y-2 pt-2">
-          <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" /></li>
+          <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" hide-owner /></li>
         </ul>
         <UEmpty
           v-else

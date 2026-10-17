@@ -71,6 +71,8 @@ export type RouteListItem = {
   // Display name of the owner, or their username when they chose none
   owner_name: string
   created_at: string
+  // Outline drawn by the route card (thumbnailPath), null when the track can't be drawn
+  thumbnail: string | null
 }
 
 export type RouteSummary = RouteListItem & {

@@ -121,7 +121,10 @@ test('edits the profile and the appearance from the settings, reached through th
   await page.getByRole('link', { name: 'Mon profil' }).click()
   await expect(page.getByRole('heading', { name: users.account.displayName, level: 1 })).toBeVisible()
   await expect(page.getByText('Bio mise à jour depuis les paramètres')).toBeVisible()
-  await expect(page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })).toContainText(`par ${users.account.displayName}`)
+  // Its own routes, drawn, without "by" on its own profile.
+  const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
+  await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
+  await expect(card).not.toContainText(`par ${users.account.displayName}`)
   await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })

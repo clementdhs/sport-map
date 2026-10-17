@@ -29,8 +29,9 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     console.error('[GET /api/routes]', error)
     throw apiError(event, 500, 'api.searchFailed')
   }
-  return (data as SearchRow[]).map(({ marker_lng, marker_lat, ...route }) => ({
+  return (data as SearchRow[]).map(({ marker_lng, marker_lat, thumbnail, ...route }) => ({
     ...route,
+    thumbnail: thumbnailPath(thumbnail),
     is_public: true, // the search only returns public routes
     marker: [marker_lng, marker_lat],
   }))

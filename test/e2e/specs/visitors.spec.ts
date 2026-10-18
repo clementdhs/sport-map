@@ -101,7 +101,7 @@ test('lets visitors pick the light or dark mode and an accent color, kept after 
   await page.getByRole('button', { name: 'Violet' }).click()
   await expect(page.getByRole('button', { name: 'Violet' })).toHaveAttribute('aria-pressed', 'true')
   await expect(html).toHaveAttribute('data-accent', 'violet')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7c3aed')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7f22fe')
 
   // Rendered by the server with the chosen accent (cookie), the mode restored from localStorage.
   const response = await page.reload()

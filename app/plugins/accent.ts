@@ -1,5 +1,5 @@
 // Applies the visitor's accent color: Nuxt UI's primary color (its colors plugin regenerates the CSS
-// variables from app config), the <html> attribute main.css uses for the light-mode shade, and the
+// variables from app config), the accent and its light-mode shade (used by main.css) on <html>, and the
 // browser's theme color.
 export default defineNuxtPlugin(() => {
   const { accent } = useAccent()
@@ -10,7 +10,7 @@ export default defineNuxtPlugin(() => {
   }, { immediate: true })
 
   useHead({
-    htmlAttrs: { 'data-accent': accent },
+    htmlAttrs: { 'data-accent': accent, 'data-accent-shade': () => ACCENT_LIGHT_SHADES[accent.value] },
     meta: [{ name: 'theme-color', content: () => ACCENT_COLORS[accent.value] }],
   })
 })

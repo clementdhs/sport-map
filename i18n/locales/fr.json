@@ -25,8 +25,14 @@
     "accents": {
       "indigo": "Indigo",
       "violet": "Violet",
+      "fuchsia": "Fuchsia",
+      "pink": "Rose",
+      "yellow": "Ambre",
+      "lime": "Vert vif",
+      "green": "Vert",
+      "teal": "Sarcelle",
       "sky": "Bleu ciel",
-      "green": "Vert"
+      "slate": "Ardoise"
     }
   },
   "error": {

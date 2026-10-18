@@ -1,14 +1,16 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* Light mode: a darker primary than Nuxt UI's 500, so white text on buttons passes WCAG AA
-   (ACCENT_LIGHT_SHADES in shared/utils/theme.ts). */
+/* Light mode: a darker primary than Nuxt UI's 500, so white text on buttons passes WCAG AA. The accent plugin
+   sets the shade (ACCENT_LIGHT_SHADES in shared/utils/theme.ts) on <html>. */
 :root:not(.dark) {
   --ui-primary: var(--ui-color-primary-600);
 }
-:root:not(.dark)[data-accent="sky"],
-:root:not(.dark)[data-accent="green"] {
+:root:not(.dark)[data-accent-shade="700"] {
   --ui-primary: var(--ui-color-primary-700);
+}
+:root:not(.dark)[data-accent-shade="800"] {
+  --ui-primary: var(--ui-color-primary-800);
 }
 
 /* Key figures (distances, durations, elevation): Barlow Semi Condensed, downloaded at build time by @nuxt/fonts

@@ -33,7 +33,7 @@ const modes = [
     </fieldset>
     <fieldset class="space-y-2">
       <legend class="text-sm font-medium">{{ t('theme.accent') }}</legend>
-      <div class="flex gap-3">
+      <div class="grid w-fit grid-cols-5 gap-3">
         <button
           v-for="value in ACCENTS"
           :key="value"

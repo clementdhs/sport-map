@@ -4,19 +4,22 @@ import { UDrawer, UPopover } from '#components'
 import type { Basemap } from '~/utils/basemaps'
 import type { BasemapLegend } from '~/utils/mapLegend'
 
-// "Légende" button of the map controls (#76): a popover on a computer, a drawer on a phone. Its basemap tab
-// follows the basemap shown (MapTiler offline, whatever was picked), even while it is open.
+// Map legend (#76), opened from the "Calques" panel (#104): a popover beside its button on a computer, a drawer on a
+// phone. Its basemap tab follows the basemap shown (MapTiler offline, whatever was picked), even while it is open.
 const props = defineProps<{
   map?: Map
   basemap: Basemap
+  // The "Calques" button: where the popover sits, and where focus goes back when it closes.
+  reference?: HTMLElement
 }>()
+const open = defineModel<boolean>('open', { default: false })
 
 const { t } = useI18n()
 const isDesktop = useIsDesktop()
-const open = ref(false)
 const panelSlot = computed(() => isDesktop.value ? 'content' : 'body')
 
-// Read from the loaded style while open, again when the style or its sprite arrive later.
+// Read from the loaded style while open (from the start: it mounts open), again when the style or its sprite arrive
+// later.
 const maptiler = shallowRef<BasemapLegend>()
 let readStyle: (() => void) | undefined
 function stopReading() {
@@ -32,7 +35,7 @@ watch(open, (isOpen) => {
   }
   readStyle()
   map.on('styledata', readStyle)
-})
+}, { immediate: true })
 onBeforeUnmount(stopReading)
 
 const tab = ref('basemap')
@@ -41,11 +44,25 @@ const tabs = computed(() => [
   { label: t('mapLegend.appTab'), value: 'app', slot: 'app' as const },
 ])
 
-// On a computer the legend stays open while the map is moved or its basemap changed (picker's menu included), to
-// be read beside what it explains. Escape, its button or a click elsewhere close it.
+// On a computer the legend stays open while the map is moved, to be read beside what it explains. Escape, the
+// "Calques" button or a click elsewhere close it.
 function keepOpenOnMap(event: CustomEvent<{ originalEvent: Event }>) {
   const target = event.detail.originalEvent.target
-  if (target instanceof Element && target.closest('.maplibregl-map, [role="menu"]')) event.preventDefault()
+  if (target instanceof Element && target.closest('.maplibregl-map')) event.preventDefault()
+}
+
+// The drawer (vaul) leaves focus where it was, so as not to raise a phone's keyboard: here on the panel's
+// "Légende" button, gone once the panel closed. Focus goes to the drawer instead, for keyboards and screen readers.
+function focusDrawer(event: Event) {
+  if (event.target instanceof HTMLElement) event.target.focus()
+}
+
+// Without a trigger of its own, focus goes back to the "Calques" button, unless a click elsewhere moved it.
+function focusReference(event: Event) {
+  event.preventDefault()
+  const active = document.activeElement
+  const inside = active && event.target instanceof Node && event.target.contains(active)
+  if (!active || active === document.body || inside) props.reference?.focus()
 }
 </script>
 
@@ -54,13 +71,9 @@ function keepOpenOnMap(event: CustomEvent<{ originalEvent: Event }>) {
     :is="isDesktop ? UPopover : UDrawer"
     v-model:open="open"
     v-bind="isDesktop
-      ? { content: { 'side': 'left', 'align': 'start', 'aria-label': t('mapLegend.title'), 'onInteractOutside': keepOpenOnMap } }
-      : { title: t('mapLegend.title') }"
+      ? { reference, content: { 'side': 'left', 'align': 'start', 'aria-label': t('mapLegend.title'), 'onInteractOutside': keepOpenOnMap, 'onCloseAutoFocus': focusReference } }
+      : { title: t('mapLegend.title'), content: { onOpenAutoFocus: focusDrawer, onCloseAutoFocus: focusReference } }"
   >
-    <button type="button" class="flex items-center justify-center" :title="t('mapLegend.title')" :aria-label="t('mapLegend.title')">
-      <UIcon name="i-lucide-info" class="size-4 text-neutral-800" />
-    </button>
-
     <template #[panelSlot]>
       <div :class="{ 'w-88 p-3': isDesktop }">
         <UTabs v-model="tab" :items="tabs" variant="link" size="sm" class="gap-3">

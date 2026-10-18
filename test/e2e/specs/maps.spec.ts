@@ -9,9 +9,10 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   const attribution = page.locator('.maplibregl-ctrl-attrib-inner')
   await expect(attribution).not.toContainText('IGN')
 
-  await page.getByRole('button', { name: 'Fond de carte' }).click()
-  await expect(page.getByRole('menuitemcheckbox', { name: 'MapTiler Outdoor' })).toBeChecked()
-  await page.getByRole('menuitemcheckbox', { name: 'Plan IGN' }).click()
+  // Picked in the "Calques" panel (#104).
+  await page.getByRole('button', { name: 'Calques' }).click()
+  await expect(page.getByRole('radio', { name: 'MapTiler Outdoor' })).toBeChecked()
+  await page.getByRole('radio', { name: 'Plan IGN' }).click()
   await expect(attribution).toContainText('Plan IGN')
 
   // Remembered on the device: the map opens on it again.
@@ -19,8 +20,33 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   await waitForMap(page)
   await expect(attribution).toContainText('Plan IGN')
   await waitForHydration(page)
-  await page.getByRole('button', { name: 'Fond de carte' }).click()
-  await expect(page.getByRole('menuitemcheckbox', { name: 'Plan IGN' })).toBeChecked()
+  await page.getByRole('button', { name: 'Calques' }).click()
+  await expect(page.getByRole('radio', { name: 'Plan IGN' })).toBeChecked()
+})
+
+test('keeps the map controls compact on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+  await waitForMap(page)
+  await waitForHydration(page)
+  // Pinching zooms; the compass only shows while the map is turned.
+  const compass = page.getByRole('button', { name: 'Réorienter vers le nord' })
+  await expect(page.getByRole('button', { name: 'Calques' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Zoom avant' })).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Zoom arrière' })).toBeHidden()
+  await expect(compass).toBeHidden()
+
+  await page.locator('.maplibregl-canvas').focus()
+  await page.keyboard.press('Shift+ArrowRight')
+  await expect(compass).toBeVisible()
+  await compass.click()
+  await expect(page.locator('[data-map-loaded]')).toHaveAttribute('data-map-bearing', '0')
+  await expect(compass).toBeHidden()
+
+  // A computer keeps the zoom buttons and the compass.
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await expect(page.getByRole('button', { name: 'Zoom avant' })).toBeVisible()
+  await expect(compass).toBeVisible()
 })
 
 test('explains the map in a legend that follows the basemap shown', async ({ page }) => {
@@ -32,11 +58,14 @@ test('explains the map in a legend that follows the basemap shown', async ({ pag
   await waitForMap(page)
   await waitForHydration(page)
 
-  // Opened with the keyboard: a popover on a computer.
-  const button = page.getByRole('button', { name: 'Légende' })
-  await button.focus()
+  // Opened with the keyboard from the "Calques" panel, in its place: a popover on a computer.
+  const layers = page.getByRole('button', { name: 'Calques' })
+  const panel = page.getByRole('dialog', { name: 'Calques' })
+  await layers.focus()
   await page.keyboard.press('Enter')
+  await panel.getByRole('button', { name: 'Légende' }).press('Enter')
   const legend = page.getByRole('dialog', { name: 'Légende' })
+  await expect(panel).toHaveCount(0)
   await expect(legend.getByRole('tab', { name: 'Fond de carte' })).toHaveAttribute('aria-selected', 'true')
   await expect(legend.getByText('MapTiler Outdoor')).toBeVisible()
   // The fixtures' empty style has none of MapTiler's layers: no basemap part.
@@ -50,50 +79,68 @@ test('explains the map in a legend that follows the basemap shown', async ({ pag
   await expect(legend.getByText('Ta position et ta direction')).toBeVisible()
   await expect(legend.getByText('Plus de 15 %')).toBeVisible()
 
-  // The basemap changed while it is open: it stays open and shows the official Plan IGN legend, loaded only now.
-  await legend.getByRole('tab', { name: 'Fond de carte' }).click()
-  expect(ignLegendRequests).toEqual([])
-  await page.getByRole('button', { name: 'Fond de carte' }).click()
-  await page.getByRole('menuitemcheckbox', { name: 'Plan IGN' }).click()
-  await expect(legend.getByRole('img', { name: 'Légende officielle du Plan IGN' })).toBeVisible()
-  expect(ignLegendRequests).toHaveLength(1)
+  // Closed, focus goes back to the panel's button.
   await page.keyboard.press('Escape')
   await expect(legend).toHaveCount(0)
-  await expect(button).toBeFocused()
+  await expect(layers).toBeFocused()
 
-  // A drawer on a phone.
+  // Under Plan IGN, it shows the official legend, loaded only now.
+  expect(ignLegendRequests).toEqual([])
+  await layers.click()
+  await panel.getByRole('radio', { name: 'Plan IGN' }).click()
+  await panel.getByRole('button', { name: 'Légende' }).click()
+  // It reopens on the tab left open.
+  await expect(legend.getByRole('tab', { name: 'Tracés et symboles' })).toHaveAttribute('aria-selected', 'true')
+  await legend.getByRole('tab', { name: 'Fond de carte' }).click()
+  await expect(legend.getByRole('img', { name: 'Légende officielle du Plan IGN' })).toBeVisible()
+  expect(ignLegendRequests).toHaveLength(1)
+  // The panel opens in its place again.
+  await layers.click()
+  await expect(panel).toBeVisible()
+  await expect(legend).toHaveCount(0)
+  await page.keyboard.press('Escape')
+
+  // A drawer on a phone, which takes focus.
   await page.setViewportSize({ width: 390, height: 844 })
-  await button.click()
+  await layers.click()
+  await panel.getByRole('button', { name: 'Légende' }).click()
   await expect(legend.getByRole('heading', { name: 'Légende' })).toBeVisible()
+  await expect(legend).toBeFocused()
   await expect(legend.getByText('Plan IGN', { exact: true })).toBeVisible()
 })
 
 test('offers the 3D view when the style has elevations, and keeps it on the device', async ({ page }) => {
-  const view3d = page.getByRole('button', { name: 'Vue 3D (relief)' })
-  // The fixtures' empty style has no elevation source: no 3D button.
+  const layers = page.getByRole('button', { name: 'Calques' })
+  const view3d = page.getByRole('switch', { name: 'Vue 3D (relief)' })
+  // The fixtures' empty style has no elevation source: no 3D switch in the "Calques" panel.
   await page.goto('/')
   await waitForMap(page)
-  await expect(page.getByRole('button', { name: 'Fond de carte' })).toBeVisible()
+  await layers.click()
+  await expect(page.getByRole('radio', { name: 'Plan IGN' })).toBeVisible()
   await expect(view3d).toHaveCount(0)
 
   await mockReliefStyle(page)
   await page.reload()
   await waitForMap(page)
   await waitForHydration(page)
-  await expect(view3d).toHaveAttribute('aria-pressed', 'false')
+  await layers.click()
+  await expect(view3d).toHaveAttribute('aria-checked', 'false')
   await view3d.click()
-  await expect(view3d).toHaveAttribute('aria-pressed', 'true')
+  await expect(view3d).toHaveAttribute('aria-checked', 'true')
 
-  // Remembered on the device, and offered on the route page too. The button shows once the style is read: a
-  // map opening in 3D isn't awaited, since drawing the relief without a GPU (CI runners) takes over 15 s.
+  // Remembered on the device, and offered on the route page too, read on the map's container once the style is
+  // read: a map opening in 3D is neither awaited nor clicked, since drawing the relief without a GPU (CI runners)
+  // takes over 15 s and keeps the page too busy for clicks.
+  const map3d = page.locator('[data-map-3d]')
   await page.reload()
-  await expect(view3d).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
+  await expect(map3d).toHaveCount(1, { timeout: 15_000 })
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
-  await expect(view3d).toHaveAttribute('aria-pressed', 'true', { timeout: 15_000 })
+  await expect(map3d).toHaveCount(1, { timeout: 15_000 })
   // Follow mode stays in 2D.
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
   await waitForMap(page)
-  await expect(page.getByRole('button', { name: 'Fond de carte' })).toBeVisible()
+  await layers.click()
+  await expect(page.getByRole('radio', { name: 'Plan IGN' })).toBeVisible()
   await expect(view3d).toHaveCount(0)
 })
 

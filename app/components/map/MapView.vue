@@ -42,7 +42,8 @@ const layersOpen = ref(false)
 const legendOpen = ref(false)
 const legendUsed = ref(false)
 let setBasemap: ((basemap: Basemap) => void) | undefined
-// The style's elevation source when the 3D view is offered, and whether it is shown.
+// The style's elevation source when the 3D view is offered, and whether it is shown (data-map-3d, for end-to-end
+// tests: a map opening in 3D without a GPU is too busy to be clicked).
 const reliefSource = ref<string>()
 const view3d = ref(false)
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
@@ -210,6 +211,7 @@ onBeforeUnmount(() => {
     :data-map-center="center"
     :data-map-bearing="bearing"
     :data-map-flat="flat || undefined"
+    :data-map-3d="view3d || undefined"
   />
   <Teleport v-if="layersControl" :to="layersControl">
     <UPopover v-model:open="layersOpen" :content="layersContent">

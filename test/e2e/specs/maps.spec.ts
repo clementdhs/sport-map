@@ -128,14 +128,14 @@ test('offers the 3D view when the style has elevations, and keeps it on the devi
   await view3d.click()
   await expect(view3d).toHaveAttribute('aria-checked', 'true')
 
-  // Remembered on the device, and offered on the route page too. The switch shows once the style is read: a
-  // map opening in 3D isn't awaited, since drawing the relief without a GPU (CI runners) takes over 15 s.
+  // Remembered on the device, and offered on the route page too, read on the map's container once the style is
+  // read: a map opening in 3D is neither awaited nor clicked, since drawing the relief without a GPU (CI runners)
+  // takes over 15 s and keeps the page too busy for clicks.
+  const map3d = page.locator('[data-map-3d]')
   await page.reload()
-  await layers.click()
-  await expect(view3d).toHaveAttribute('aria-checked', 'true', { timeout: 15_000 })
+  await expect(map3d).toHaveCount(1, { timeout: 15_000 })
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}`)
-  await layers.click()
-  await expect(view3d).toHaveAttribute('aria-checked', 'true', { timeout: 15_000 })
+  await expect(map3d).toHaveCount(1, { timeout: 15_000 })
   // Follow mode stays in 2D.
   await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
   await waitForMap(page)

@@ -871,11 +871,11 @@
     "deleted": "Compte supprimé",
     "deletedHint": "Toutes tes données ont été effacées.",
     "title": "Mes données",
-    "description": "Télécharge une archive de tout ce que tu as mis sur sport-map (profil, parcours en GPX, photos, avis, sorties, collections, réglages), ou supprime définitivement ton compte.",
+    "description": "Télécharge une archive de tout ce que tu as mis sur sport-map (profil et sa photo, parcours en GPX, photos, avis, sorties, collections, réglages), ou supprime définitivement ton compte.",
     "export": "Télécharger mes données",
     "deleteTitle": "Supprimer mon compte ?",
     "delete": "Supprimer mon compte",
-    "deleteWarning": "Ton compte, tes parcours, leurs photos, tes avis, tes sorties, tes collections et tes réglages seront effacés {forever}. Les notes des parcours que tu as évalués seront recalculées sans les tiennes. Pense à télécharger tes données avant.",
+    "deleteWarning": "Ton compte, ta photo de profil, tes parcours, leurs photos, tes avis, tes sorties, tes collections et tes réglages seront effacés {forever}. Les notes des parcours que tu as évalués seront recalculées sans les tiennes. Pense à télécharger tes données avant.",
     "forever": "définitivement",
     "confirmLabel": "Pour confirmer, saisis ton pseudo : {username}",
     "deleteForever": "Supprimer définitivement"
@@ -959,7 +959,24 @@
     "bio": "Bio",
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
-    "appearanceHint": "Gardée sur cet appareil."
+    "appearanceHint": "Gardée sur cet appareil.",
+    "avatar": {
+      "title": "Photo de profil",
+      "choose": "Choisir une photo",
+      "change": "Changer la photo",
+      "file": "Fichier de la photo de profil",
+      "delete": "Supprimer la photo",
+      "deleteConfirm": "Supprimer ta photo de profil ? Tes initiales la remplaceront.",
+      "deleted": "Photo de profil supprimée",
+      "deleteFailed": "Photo de profil non supprimée",
+      "saved": "Photo de profil enregistrée",
+      "saveFailed": "Photo de profil non enregistrée",
+      "save": "Enregistrer la photo",
+      "frameTitle": "Cadrer la photo",
+      "frameLabel": "Photo à cadrer : fais-la glisser, ou utilise les flèches et les touches + et −",
+      "frameHint": "Visible par l'équipe, en rond, à côté de ton nom.",
+      "zoom": "Zoom"
+    }
   },
   "sports": {
     "running": "Course sur route",
@@ -1074,6 +1091,9 @@
     "photoUnreadable": "Photo enregistrée mais illisible",
     "photoFormat": "Format de photo non pris en charge",
     "savePhotoFailed": "Impossible d'enregistrer la photo",
+    "avatarTooLarge": "Photo de profil trop lourde (256 Ko maximum)",
+    "saveAvatarFailed": "Impossible d'enregistrer la photo de profil",
+    "deleteAvatarFailed": "Impossible de supprimer la photo de profil",
     "weatherUnavailable": "Météo indisponible pour le moment",
     "segmentTooLong": "Segment trop long pour suivre les chemins",
     "routingTooFast": "Trop de calculs en peu de temps, réessaie dans une minute",
@@ -1108,6 +1128,7 @@
     "files": {
       "readme": "LISEZMOI.txt",
       "profile": "profil.json",
+      "avatar": "photo-de-profil",
       "routes": "parcours.json",
       "reviews": "avis.json",
       "activity": "activite.json",
@@ -1123,6 +1144,7 @@
     "readme": {
       "intro": "Données de {username} sur sport-map, exportées le {date}.",
       "profile": "ton profil (pseudo, nom affiché, bio, e-mail, date d'inscription)",
+      "avatar": "ta photo de profil",
       "routes": "tes parcours : description, statistiques, points d'intérêt, visibilité",
       "gpx": "le tracé de chaque parcours, à ouvrir dans une application GPS",
       "photos": "les photos de tes parcours, un dossier par parcours",

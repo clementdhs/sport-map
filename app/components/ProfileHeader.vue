@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ProfileInfo, ProfileSummary } from '#shared/types/routes'
 
-// Top of a profile, the member's own or another one's: initials avatar, name, and the current year's totals.
+// Top of a profile, the member's own or another one's: avatar (photo or initials), name, and the current year's totals.
 const props = defineProps<{
   profile: ProfileInfo
   summary: ProfileSummary
@@ -19,9 +19,9 @@ const summaryTitleId = useId()
 <template>
   <div class="space-y-4">
     <div class="flex items-center gap-4">
-      <!-- Accent colour, like the solid buttons. The name is the heading next to it. -->
+      <!-- The name is the heading next to it. -->
       <span class="flex shrink-0" aria-hidden="true" data-testid="profile-avatar">
-        <UAvatar :text="initials(name)" size="3xl" :ui="{ root: 'bg-primary', fallback: 'text-inverted' }" />
+        <MemberAvatar :name="name" :path="profile.avatar_path" size="3xl" />
       </span>
       <div class="min-w-0 flex-1 space-y-1">
         <h1 class="text-2xl font-semibold break-words">{{ name }}</h1>

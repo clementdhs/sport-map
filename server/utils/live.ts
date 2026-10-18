@@ -5,7 +5,7 @@ import type { LiveShareSummary } from '#shared/types/live'
 // A share in progress with its sharer, its route and its latest point (embedded live_positions, sorted and
 // limited by the query: see liveShareSummaries).
 export const LIVE_SHARE_COLUMNS
-  = 'id, user_id, started_at, expires_at, route_id, user:profiles(username, display_name), route:routes(id, name), live_positions(fixed_at)' as const
+  = 'id, user_id, started_at, expires_at, route_id, user:profiles(username, display_name, avatar_path), route:routes(id, name), live_positions(fixed_at)' as const
 
 interface LiveShareRow {
   id: string
@@ -13,7 +13,7 @@ interface LiveShareRow {
   started_at: string
   expires_at: string
   route_id: string | null
-  user: { username: string, display_name: string | null } | null
+  user: { username: string, display_name: string | null, avatar_path: string | null } | null
   route: { id: string, name: string } | null
   live_positions: { fixed_at: string }[]
 }
@@ -22,6 +22,7 @@ export function toLiveShareSummary(row: LiveShareRow, userId: string): LiveShare
   return {
     id: row.id,
     user_name: row.user?.display_name ?? row.user?.username ?? '',
+    user_avatar_path: row.user?.avatar_path ?? null,
     is_mine: row.user_id === userId,
     route: row.route,
     follows_route: row.route_id !== null,

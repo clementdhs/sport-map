@@ -12,9 +12,13 @@ const supabase = useSupabaseClient()
 const toast = useToast()
 const { t } = useI18n()
 const languageItems = useLanguageItems()
-const { data: username } = useMyUsername()
+const { data: me } = useMyProfile()
 // The username, also the sign-in name; the e-mail until it is known.
-const accountName = computed(() => username.value ?? user.value?.email ?? '')
+const accountName = computed(() => me.value?.username ?? user.value?.email ?? '')
+// The profile photo in place of the icon (#150), once signed.
+const avatarSrc = useAvatarUrl(() => me.value?.avatar_path)
+const avatar = computed(() => avatarSrc.value ? { src: avatarSrc.value, alt: '', icon: 'i-lucide-circle-user' } : undefined)
+const icon = computed(() => avatar.value ? undefined : 'i-lucide-circle-user')
 
 const userMenu = computed<DropdownMenuItem[][]>(() => [
   [{ label: accountName.value, type: 'label' }],
@@ -41,7 +45,8 @@ async function signOut() {
       v-if="compact"
       color="neutral"
       variant="ghost"
-      icon="i-lucide-circle-user"
+      :icon="icon"
+      :avatar="avatar"
       :aria-label="t('header.account')"
       class="rounded-full"
     />
@@ -49,7 +54,8 @@ async function signOut() {
       v-else
       color="neutral"
       variant="ghost"
-      icon="i-lucide-circle-user"
+      :icon="icon"
+      :avatar="avatar"
       :label="accountName"
       :aria-label="t('header.accountNamed', { name: accountName })"
       :ui="{ label: 'hidden max-md:sm:inline lg:inline' }"

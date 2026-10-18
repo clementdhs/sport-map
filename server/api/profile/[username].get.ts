@@ -7,7 +7,7 @@ export default defineEventHandler(async (event): Promise<PublicProfile> => {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, username, display_name, bio, created_at')
+    .select('id, username, display_name, bio, created_at, avatar_path')
     .eq('username', username)
     .maybeSingle()
 

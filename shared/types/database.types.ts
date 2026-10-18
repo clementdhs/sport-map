@@ -228,7 +228,7 @@ export type Database = {
       }
       profiles: {
         Row: {
-          avatar_url: string | null
+          avatar_path: string | null
           bio: string | null
           created_at: string
           display_name: string | null
@@ -237,7 +237,7 @@ export type Database = {
           username: string
         }
         Insert: {
-          avatar_url?: string | null
+          avatar_path?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
@@ -246,7 +246,7 @@ export type Database = {
           username: string
         }
         Update: {
-          avatar_url?: string | null
+          avatar_path?: string | null
           bio?: string | null
           created_at?: string
           display_name?: string | null
@@ -675,6 +675,7 @@ export type Database = {
           marker_lat: number
           marker_lng: number
           name: string
+          owner_avatar_path: string
           owner_name: string
           rating_avg: number
           rating_count: number

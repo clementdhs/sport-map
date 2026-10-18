@@ -9,7 +9,7 @@ export default defineEventHandler(async (event): Promise<ProfileInfo> => {
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, display_name, bio, created_at')
+    .select('username, display_name, bio, created_at, avatar_path')
     .eq('id', user.sub)
     .single()
 

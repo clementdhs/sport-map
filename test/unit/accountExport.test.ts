@@ -23,6 +23,7 @@ const data: AccountData = {
   profile: { username: 'clem', display_name: 'Clem', bio: null, email: 'clem@example.test', created_at: '2026-01-01T00:00:00Z' },
   routes: [route('aaaaaaaa-1111-4000-8000-000000000001', 'Tour du lac'), route('bbbbbbbb-2222-4000-8000-000000000002', 'Tour du lac')],
   photos: [{ route_id: 'bbbbbbbb-2222-4000-8000-000000000002', storage_path: 'bbbbbbbb-2222-4000-8000-000000000002/p1.webp', created_at: '2026-09-02T08:00:00Z' }],
+  avatar: 'cccccccc-3333-4000-8000-000000000003/dddddddd-4444-4000-8000-000000000004.jpg',
   reviews: [{ route_id: 'x', rating: 4, comment: 'Belle vue' }],
   activity: [],
   outings: [{ route_id: 'x', started_at: '2026-09-28T08:00:00Z', duration_s: 3600, moving_s: 3000, distance_m: 9800 }],
@@ -82,6 +83,18 @@ describe('accountArchive', () => {
     expect(archive.photos).toEqual([
       { path: 'photos/tour-du-lac-bbbbbbbb/p1.webp', storage_path: 'bbbbbbbb-2222-4000-8000-000000000002/p1.webp' },
     ])
+  })
+
+  it('adds the profile photo next to the profile, named in the language of the archive', () => {
+    expect(archive.avatar).toEqual({ path: 'photo-de-profil.jpg', storage_path: data.avatar })
+    expect(JSON.parse(file('profil.json')!)).toMatchObject({ username: 'clem', photo: 'photo-de-profil.jpg' })
+    expect(file('LISEZMOI.txt')).toMatch(/^photo-de-profil\.jpg +ta photo de profil$/m)
+    expect(accountArchive(data, 'en').avatar?.path).toBe('profile-photo.jpg')
+
+    const withoutPhoto = accountArchive({ ...data, avatar: null })
+    expect(withoutPhoto.avatar).toBeNull()
+    expect(JSON.parse(withoutPhoto.files.find(entry => entry.path === 'profil.json')!.content)).toMatchObject({ photo: null })
+    expect(withoutPhoto.files[0]!.content).not.toContain('photo-de-profil')
   })
 
   it('exports no settings for an account that never saved any', () => {

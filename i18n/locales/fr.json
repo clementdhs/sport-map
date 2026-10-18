@@ -105,6 +105,7 @@
     "textEmptyHint": "Essaie d'autres mots ou élargis les filtres.",
     "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
     "createFirst": "crée le premier parcours",
+    "cluster": "{count} parcours ici, zoomer pour les voir | {count} parcours ici, zoomer pour les voir",
     "discoverOsm": "Parcours balisés OpenStreetMap dans cette zone"
   },
   "searchBox": {

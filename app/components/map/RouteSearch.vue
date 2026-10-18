@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FeatureCollection, Point } from 'geojson'
-import type { GeoJSONSource, Map, MapLayerMouseEvent, Popup } from 'maplibre-gl'
+import type { GeoJSONSource, Map, MapLayerMouseEvent, Marker, Popup } from 'maplibre-gl'
 import type { RouteSummary } from '#shared/types/routes'
 import type { LngLat } from '#shared/utils/routes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
@@ -22,9 +22,17 @@ const emit = defineEmits<{
 const SOURCE = 'search-results'
 const LAYER = 'search-results'
 
+const { t, locale } = useI18n()
 const map = shallowRef<Map>()
-const { focusOn } = useMapPadding()
+const { focusOn, offset } = useMapPadding()
 let popup: Popup | undefined
+let MarkerClass: typeof Marker | undefined
+// Groups of nearby starts are HTML buttons (keyboard and screen readers reach them, and they need no glyphs).
+// Keyed by cluster id, count and place: an id only holds for one data set, and a search refetched with the same
+// results keeps its buttons (and the keyboard focus).
+let clusterMarkers: Record<string, Marker> = {}
+// The route hovered in the list or on the map, drawn above the groups so that it shows even when grouped.
+let highlightMarker: Marker | undefined
 
 function resultsData(results: RouteSummary[]): FeatureCollection<Point> {
   return {
@@ -41,18 +49,84 @@ function emitView(instance: Map) {
   emit('viewChange', mapViewState(instance))
 }
 
-async function onLoad(instance: Map) {
-  const { Popup } = await import('maplibre-gl')
-  popup = new Popup({ closeButton: false, closeOnClick: false, offset: 12 })
+function labelCluster(button: HTMLElement) {
+  button.title = t('home.cluster', Number(button.dataset.routeCluster))
+  button.setAttribute('aria-label', button.title)
+}
 
-  // promoteId lets the highlight use feature state, without rebuilding the data.
-  instance.addSource(SOURCE, { type: 'geojson', data: resultsData(props.results), promoteId: 'id' })
+function clusterMarker(instance: Map, clusterId: number, count: number, lngLat: LngLat): Marker {
+  const button = document.createElement('button')
+  button.type = 'button'
+  button.className = 'flex cursor-pointer items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+  const size = count < 10 ? 28 : count < 50 ? 34 : 40
+  button.style.width = button.style.height = `${size}px`
+  button.style.backgroundColor = ROUTE_COLOR
+  button.textContent = String(count)
+  button.dataset.routeCluster = String(count)
+  labelCluster(button)
+  button.addEventListener('click', async (event) => {
+    // Not a click on the map below.
+    event.stopPropagation()
+    // Rejected when the results changed since: the group is gone.
+    const zoom = await instance.getSource<GeoJSONSource>(SOURCE)?.getClusterExpansionZoom(clusterId).catch(() => undefined)
+    if (zoom !== undefined) instance.easeTo({ center: lngLat, zoom, offset: offset() })
+  })
+  return new MarkerClass!({ element: button }).setLngLat(lngLat).addTo(instance)
+}
+
+// Called on every render: shows a button for each group drawn by the clustered source, and only those.
+function syncClusters(instance: Map) {
+  if (!instance.isSourceLoaded(SOURCE)) return
+  const next: Record<string, Marker> = {}
+  for (const feature of instance.querySourceFeatures(SOURCE)) {
+    const { cluster, cluster_id: id, point_count: count } = feature.properties
+    if (!cluster) continue
+    const lngLat = (feature.geometry as Point).coordinates as LngLat
+    const key = `${id}:${count}:${lngLat}`
+    // A group that crosses tile edges comes once per tile.
+    next[key] ??= clusterMarkers[key] ?? clusterMarker(instance, id, count, lngLat)
+  }
+  for (const [key, marker] of Object.entries(clusterMarkers)) {
+    if (!next[key]) marker.remove()
+  }
+  clusterMarkers = next
+}
+
+function showHighlight() {
+  const instance = map.value
+  if (!instance) return
+  const route = props.highlightedId ? props.results.find(({ id }) => id === props.highlightedId) : undefined
+  if (!route) {
+    highlightMarker?.remove()
+    return
+  }
+  if (!highlightMarker) {
+    const dot = document.createElement('div')
+    // No pointer events: under the mouse, it would end the map hover that shows it.
+    // A ring rather than a dot, so that it stands out from a group below it.
+    dot.className = 'pointer-events-none size-6 rounded-full bg-white shadow-md ring-2 ring-white'
+    dot.style.border = `6px solid ${ROUTE_COLOR}`
+    dot.style.zIndex = '1'
+    dot.dataset.routeHighlight = ''
+    highlightMarker = new MarkerClass!({ element: dot })
+  }
+  highlightMarker.setLngLat(route.marker).addTo(instance)
+}
+
+async function onLoad(instance: Map) {
+  const maplibre = await import('maplibre-gl')
+  MarkerClass = maplibre.Marker
+  popup = new maplibre.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
+
+  instance.addSource(SOURCE, { type: 'geojson', data: resultsData(props.results), cluster: true, clusterRadius: 40 })
+  // Starts outside any group; the groups themselves are HTML markers (syncClusters).
   instance.addLayer({
     id: LAYER,
     type: 'circle',
     source: SOURCE,
+    filter: ['!', ['has', 'point_count']],
     paint: {
-      'circle-radius': ['case', ['boolean', ['feature-state', 'highlighted'], false], 10, 7],
+      'circle-radius': 7,
       'circle-color': ROUTE_COLOR,
       'circle-stroke-color': '#ffffff',
       'circle-stroke-width': 2,
@@ -76,24 +150,34 @@ async function onLoad(instance: Map) {
     const id = event.features?.[0]?.properties.id
     if (id) navigateTo(`/routes/${id}`)
   })
+  instance.on('render', () => syncClusters(instance))
   instance.on('moveend', () => emitView(instance))
 
   map.value = instance
   emitView(instance)
+  showHighlight()
 }
 
 watch(() => props.results, (results) => {
-  map.value?.getSource<GeoJSONSource>(SOURCE)?.setData(resultsData(results))
+  const source = map.value?.getSource<GeoJSONSource>(SOURCE)
+  if (!source) return
+  source.setData(resultsData(results))
+  showHighlight()
 })
 
-watch(() => props.highlightedId, (id, previousId) => {
-  if (!map.value) return
-  if (previousId) map.value.setFeatureState({ source: SOURCE, id: previousId }, { highlighted: false })
-  if (id) map.value.setFeatureState({ source: SOURCE, id }, { highlighted: true })
+watch(() => props.highlightedId, showHighlight)
+
+watch(locale, () => {
+  for (const marker of Object.values(clusterMarkers)) labelCluster(marker.getElement())
 })
 
 watch(() => props.focus, (focus) => {
   if (map.value && focus) focusOn(map.value, focus)
+})
+
+onBeforeUnmount(() => {
+  for (const marker of Object.values(clusterMarkers)) marker.remove()
+  highlightMarker?.remove()
 })
 </script>
 

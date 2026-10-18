@@ -105,6 +105,7 @@
     "textEmptyHint": "Try other words or widen the filters.",
     "zoneEmptyHint": "Move the map, change the filters, or {link}.",
     "createFirst": "create the first route",
+    "cluster": "{count} route here, zoom in to see it | {count} routes here, zoom in to see them",
     "discoverOsm": "OpenStreetMap marked routes in this area"
   },
   "searchBox": {

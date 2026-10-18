@@ -35,6 +35,36 @@ test('finds a route of another member on the home map and opens it', async ({ pa
   await expect(reviews.getByRole('button', { name: 'Publier mon avis' })).toBeVisible()
 })
 
+test('groups nearby starts on the home map, keeps the hovered route visible and zooms on a group', async ({ page }) => {
+  await page.goto('/')
+  await waitForMap(page)
+
+  // At the scale of France, both seeded routes near Annecy make one group.
+  const group = page.getByRole('button', { name: '2 parcours ici, zoomer pour les voir' })
+  await expect(group).toBeVisible()
+  await expect(group).toHaveText('2')
+
+  // A route hovered in the list shows above its group, until the mouse leaves its card.
+  const highlight = page.locator('[data-route-highlight]')
+  await expect(highlight).toHaveCount(0)
+  await page.getByRole('link', { name: new RegExp(SEEDED_ROUTE_NAME) }).hover()
+  await expect(highlight).toBeVisible()
+  await page.getByTestId('route-results').locator('li a').filter({ hasText: SEEDED_LOOP_NAME }).hover()
+  await expect(highlight).toBeVisible()
+  await group.hover()
+  await expect(highlight).toHaveCount(0)
+
+  // A click zooms on the group, until its routes are apart.
+  await group.click()
+  await expect(group).toBeHidden()
+  await expect(page.locator('[data-route-cluster]')).toHaveCount(0)
+  await expect.poll(async () => {
+    const [lng, lat] = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number)
+    return Math.abs(lng! - 6.16) < 0.1 && Math.abs(lat! - 45.9) < 0.1
+  }, { timeout: 10_000 }).toBe(true)
+  await expect(page.getByTestId('route-results').locator('li a')).toHaveCount(2)
+})
+
 test('filters the search from the filters popover, counts and resets them', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

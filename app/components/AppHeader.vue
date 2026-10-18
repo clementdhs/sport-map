@@ -3,6 +3,7 @@
 // a live share): logo, main navigation, record / create, account. Below md the tab bar holds the navigation and
 // the map pages show MapTopBar instead.
 const user = useSupabaseUser()
+const route = useRoute()
 const { t } = useI18n()
 const items = useMainNav()
 const newItems = useNewItems()
@@ -10,6 +11,10 @@ const newItems = useNewItems()
 
 <template>
   <UHeader to="/" :toggle="false" :ui="{ root: 'border-b-0', center: 'hidden md:flex' }">
+    <!-- Pages showing the logo in large (sign-in) set `headerLogo: false` in their meta: no second one up here. -->
+    <template v-if="route.meta.headerLogo === false" #left>
+      <span />
+    </template>
     <!-- On 360 px phones, visitors' buttons don't fit beside the name; from md to lg, the navigation doesn't.
          Outside the slot: UHeader names the logo link after the slot's text, comments included in dev. -->
     <template #title>

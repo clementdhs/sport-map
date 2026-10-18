@@ -5,6 +5,9 @@ import type { LoginSession } from '#shared/types/auth'
 // One field takes a username or an e-mail.
 type LoginState = { identifier: string, password: string }
 
+// The hero shows the logo: the header doesn't repeat it.
+definePageMeta({ headerLogo: false })
+
 const { t, locale } = useI18n()
 useSeoMeta({ title: () => `${t('auth.login.title')} — sport-map` })
 
@@ -97,8 +100,21 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 
 <template>
   <div class="relative isolate flex min-h-[calc(100dvh-var(--ui-header-height))] flex-col overflow-hidden">
-    <!-- Relief and contour lines of the Écrins, tinted with the accent (scripts/login-background.py). -->
+    <!-- Relief and contour lines of the Écrins in gray (scripts/login-background.py), fading into the page color
+         under the header, around the form and at the bottom, with a dotted route like the logo's. -->
     <div class="login-relief absolute inset-0 -z-10" aria-hidden="true" />
+    <div class="login-fade absolute inset-0 -z-10" aria-hidden="true" />
+    <!-- Landscape from sm up, portrait below: the form hides the middle of the page. -->
+    <svg class="login-trail absolute inset-0 -z-10 size-full max-sm:hidden" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <path d="M90 660 C170 600 220 690 320 630 S430 430 530 470 S650 650 770 560 S880 300 990 330 S1080 220 1110 170" />
+      <circle cx="90" cy="660" r="9" class="start" />
+      <circle cx="1110" cy="170" r="9" class="end" />
+    </svg>
+    <svg class="login-trail absolute inset-0 -z-10 size-full sm:hidden" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <path d="M40 725 C120 705 90 650 20 600 S10 420 60 360 S30 200 110 140 S300 120 350 60" />
+      <circle cx="40" cy="725" r="7" class="start" />
+      <circle cx="350" cy="60" r="7" class="end" />
+    </svg>
     <UContainer class="flex flex-1 flex-col items-center gap-6 py-8 sm:py-14">
       <div class="login-hero flex flex-col items-center gap-3 px-6 py-2 text-center">
         <AppLogo class="size-16 sm:size-20" />
@@ -126,7 +142,8 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
           </template>
         </UAuthForm>
       </UPageCard>
-      <p class="mt-auto rounded-full bg-default/85 px-2.5 py-0.5 text-xs text-toned">{{ t('auth.login.reliefCredit') }}</p>
+      <!-- Required by the Licence Ouverte (source and date), kept small and pale. -->
+      <p class="mt-auto self-end text-[0.6875rem] text-muted">{{ t('auth.login.reliefCredit') }}</p>
     </UContainer>
   </div>
 </template>
@@ -141,21 +158,45 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 @supports (mask-mode: luminance) {
   .login-relief {
     display: block;
-    background-color: var(--ui-primary);
+    background-color: var(--ui-text-muted);
     mask-image: url('/img/login-relief.webp'), url('/img/login-contours.svg');
     mask-mode: luminance, alpha;
     mask-position: center;
     mask-size: cover;
-    opacity: 0.35;
+    opacity: 0.22;
   }
 
-  /* The dark mode's lighter accent stands out more. */
   .dark .login-relief {
-    opacity: 0.25;
+    opacity: 0.3;
   }
 }
 
-/* A veil of the page color under the logo and tagline, which sit on the relief. */
+/* No seam with the header, a calm area around the form, and a plain background under the source credit. */
+.login-fade {
+  background:
+    linear-gradient(var(--ui-bg), transparent 18%, transparent 88%, var(--ui-bg)),
+    radial-gradient(ellipse min(34rem, 70vw) 30rem at 50% 45%, var(--ui-bg) 35%, transparent 100%);
+}
+
+.login-trail path {
+  fill: none;
+  stroke: var(--ui-primary);
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+  stroke-width: 4;
+  opacity: 0.6;
+  vector-effect: non-scaling-stroke;
+}
+
+.login-trail .start {
+  fill: var(--color-green-500);
+}
+
+.login-trail .end {
+  fill: var(--color-red-500);
+}
+
+/* A veil of the page color under the logo and tagline. */
 .login-hero {
   background: radial-gradient(closest-side, var(--ui-bg) 40%, color-mix(in oklab, var(--ui-bg) 70%, transparent) 75%, transparent);
 }

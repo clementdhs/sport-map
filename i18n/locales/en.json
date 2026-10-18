@@ -37,7 +37,7 @@
     "emailPlaceholder": "you{'@'}example.com",
     "emailRequired": "Email required",
     "identifier": "Username or email",
-    "identifierPlaceholder": "clem or you{'@'}example.com",
+    "identifierPlaceholder": "Your username or email",
     "identifierRequired": "Username or email required",
     "password": "Password",
     "passwordRequired": "Password required",
@@ -51,7 +51,7 @@
       "emailNotConfirmed": "Confirm your email address before signing in.",
       "invalidCredentials": "Wrong username, email or password.",
       "tagline": "Your running, hiking and cycling routes, shared with the family.",
-      "reliefCredit": "Relief: IGN, RGE ALTI® (October 2026), Licence Ouverte"
+      "reliefCredit": "Background image: IGN RGE ALTI® relief (October 2026), Licence Ouverte"
     },
     "forgot": {
       "title": "Forgotten password",

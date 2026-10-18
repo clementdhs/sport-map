@@ -1,13 +1,49 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
-import { insertRows, storedPhotoFiles, supabaseAdmin } from '../admin'
-import type { Locator } from '@playwright/test'
+import { insertRows, storedAvatarFiles, storedPhotoFiles, supabaseAdmin } from '../admin'
+import type { Locator, Page } from '@playwright/test'
 import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration } from '../fixtures'
 
 test.use({ role: 'account' })
 
 // Only its first bytes matter: the server checks the type from them.
 const JPEG_BYTES = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0xFF, 0xD9])
+
+// A PNG of a few MB (noise doesn't compress), drawn by the browser: the page has to crop and compress it.
+async function bigPhoto(page: Page, color: string): Promise<Buffer> {
+  const base64 = await page.evaluate(async (color) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 1600
+    canvas.height = 1200
+    const context = canvas.getContext('2d')!
+    context.fillStyle = color
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
+    for (let i = 0; i < pixels.data.length; i += 4) pixels.data[i] = Math.random() * 255
+    context.putImageData(pixels, 0, 0)
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(png => resolve(png!), 'image/png'))
+    return new Promise<string>((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve((reader.result as string).split(',')[1]!)
+      reader.readAsDataURL(blob)
+    })
+  }, color)
+  return Buffer.from(base64, 'base64')
+}
+
+// Whether a signed-out visitor (publishable key only) can get a signed URL for a profile photo, straight from the
+// storage API.
+async function visitorCanSignAvatar(path: string): Promise<boolean> {
+  const response = await fetch(`${process.env.E2E_SUPABASE_URL}/storage/v1/object/sign/avatars/${path}`, {
+    method: 'POST',
+    headers: { apikey: process.env.E2E_SUPABASE_PUBLIC_KEY!, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresIn: 60 }),
+  })
+  return response.ok
+}
+
+// The avatar in `scope` shows the photo as stored (256 px), not the initials.
+const showsPhoto = (scope: Locator) => expect(scope.locator('img')).toHaveJSProperty('naturalWidth', 256)
 
 test('exports the data of a throwaway account, then deletes it without leaving anything behind', async ({ page, context }) => {
   const suffix = Date.now().toString(36)
@@ -43,6 +79,9 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   expect((await page.request.put(`/api/routes/${neighborRoute!.id}/reviews`, { data: { rating: 2, comment: 'Avis RGPD e2e' } })).ok()).toBe(true)
   expect((await page.request.put(`/api/routes/${neighborRoute!.id}/activity/completed`)).ok()).toBe(true)
   expect((await page.request.post('/api/collections', { data: { name: 'Collection RGPD e2e', is_public: false, route_id: routeId } })).ok()).toBe(true)
+  expect((await page.request.post('/api/profile/me/avatar', {
+    multipart: { photo: { name: 'portrait.jpg', mimeType: 'image/jpeg', buffer: JPEG_BYTES } },
+  })).status()).toBe(201)
   expect(await ratingCount()).toBe(1)
 
   // The archive holds all of it.
@@ -62,7 +101,8 @@ test('exports the data of a throwaway account, then deletes it without leaving a
   const photos = Object.keys(files).filter(path => path.startsWith(`photos/${base}/`))
   expect(photos).toHaveLength(1)
   expect([...files[photos[0]!]!.subarray(0, 3)]).toEqual([0xFF, 0xD8, 0xFF])
-  expect(JSON.parse(text('profil.json'))).toMatchObject({ username: account.username, email: account.email })
+  expect(JSON.parse(text('profil.json'))).toMatchObject({ username: account.username, email: account.email, photo: 'photo-de-profil.jpg' })
+  expect([...files['photo-de-profil.jpg']!.subarray(0, 3)]).toEqual([0xFF, 0xD8, 0xFF])
   expect(text(`parcours/${base}.gpx`)).toContain('<name>Parcours RGPD e2e</name>')
   expect(text('avis.json')).toContain('Avis RGPD e2e')
   expect(JSON.parse(text('activite.json'))).toMatchObject([{ route_id: neighborRoute!.id, activity_type: 'completed' }])
@@ -94,6 +134,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
     expect(await supabaseAdmin(`/rest/v1/${table}?${filter}&select=*`), table).toEqual([])
   }
   expect(await storedPhotoFiles(routeId)).toEqual([])
+  expect(await storedAvatarFiles(userId)).toEqual([])
   expect(await ratingCount()).toBe(0)
   await expect(supabaseAdmin(`/auth/v1/admin/users/${userId}`)).rejects.toThrow(/404/)
 })
@@ -131,6 +172,73 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })
 
+test('sets a profile photo framed and compressed in the settings, shown to the team, then changes and deletes it', async ({ page, users, accountRouteId, newDevice }) => {
+  const [{ id: userId }] = await supabaseAdmin<[{ id: string }]>(`/rest/v1/profiles?select=id&username=eq.${users.account.username}`)
+  const settingsAvatar = page.getByTestId('settings-avatar')
+  const accountButton = page.getByRole('button', { name: `Mon compte (${users.account.username})` })
+  await page.goto('/settings')
+  await waitForHydration(page)
+  await expect(settingsAvatar).toHaveText('CE') // Compte e2e N
+  await expect(accountButton.locator('img')).toHaveCount(0)
+
+  // A photo of a few MB, framed (zoomed in and moved with the keyboard), then sent as a 256 px WebP of a few kB.
+  const source = await bigPhoto(page, '#2a6')
+  expect(source.length).toBeGreaterThan(1_000_000)
+  const choose = (buffer: Buffer) => page.getByLabel('Fichier de la photo de profil').setInputFiles({ name: 'portrait.png', mimeType: 'image/png', buffer })
+  const dialog = page.getByRole('dialog', { name: 'Cadrer la photo' })
+  const save = async () => {
+    const [request] = await Promise.all([
+      page.waitForRequest(request => request.url().endsWith('/api/profile/me/avatar') && request.method() === 'POST'),
+      dialog.getByRole('button', { name: 'Enregistrer la photo' }).click(),
+    ])
+    await expect(dialog).toBeHidden()
+    return request.postDataBuffer()!.length
+  }
+  await choose(source)
+  await dialog.getByRole('img', { name: /^Photo à cadrer/ }).focus()
+  await page.keyboard.press('+')
+  await page.keyboard.press('ArrowLeft')
+  await expect(dialog.getByRole('slider', { name: 'Zoom' })).toHaveAttribute('aria-valuenow', '1.25')
+  expect(await save()).toBeLessThan(30_000)
+  await expect(page.getByText('Photo de profil enregistrée').first()).toBeVisible()
+  await showsPhoto(settingsAvatar)
+  const [stored] = await storedAvatarFiles(userId)
+  expect(stored).toMatchObject({ name: expect.stringMatching(/\.webp$/), metadata: { mimetype: 'image/webp' } })
+  expect(stored!.metadata.size).toBeLessThan(30_000)
+
+  // In the account menu, on the profile and in the phone's tab bar.
+  await showsPhoto(accountButton)
+  await page.goto('/profile')
+  await showsPhoto(page.getByTestId('profile-avatar'))
+  await page.setViewportSize({ width: 390, height: 844 })
+  await expect(page.getByTestId('tab-avatar')).toBeVisible()
+  await page.setViewportSize({ width: 1280, height: 720 })
+
+  // The team sees it on the profile and on route cards; signed-out visitors can't reach the file.
+  const member = await newDevice('family')
+  await member.goto(`/profile/${users.account.username}`)
+  await showsPhoto(member.getByTestId('profile-avatar'))
+  expect((await member.request.put(`/api/routes/${accountRouteId}/activity/saved`)).ok()).toBe(true)
+  await member.goto('/collections/todo')
+  await showsPhoto(member.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) }))
+  expect((await member.request.delete(`/api/routes/${accountRouteId}/activity/saved`)).ok()).toBe(true)
+  expect(await visitorCanSignAvatar(`${userId}/${stored!.name}`)).toBe(false)
+
+  // Another photo replaces the file; deleting it brings the initials back and empties the folder.
+  await page.goto('/settings')
+  await waitForHydration(page)
+  await choose(await bigPhoto(page, '#c50'))
+  await save()
+  await expect.poll(async () => (await storedAvatarFiles(userId)).map(file => file.name)).not.toContain(stored!.name)
+  expect(await storedAvatarFiles(userId)).toHaveLength(1)
+  page.once('dialog', confirm => confirm.accept())
+  await page.getByRole('button', { name: 'Supprimer la photo' }).click()
+  await expect(page.getByText('Photo de profil supprimée').first()).toBeVisible()
+  await expect(settingsAvatar).toHaveText('CE')
+  await expect(accountButton.locator('img')).toHaveCount(0)
+  expect(await storedAvatarFiles(userId)).toEqual([])
+})
+
 test('offers ten accent colors in the settings, rendered by the server in a shade readable in both modes', async ({ page, context, baseURL }) => {
   // A color picked among the four offered before #144 still applies.
   await context.addCookies([{ name: 'sport-map-accent', value: 'green', url: baseURL }])
@@ -152,6 +260,8 @@ test('offers ten accent colors in the settings, rendered by the server in a shad
   const body = await response!.text()
   expect(body).toContain('data-accent="teal"')
   expect(body).toContain('data-accent-shade="700"')
+  // A click before hydration is lost and the mode never changes.
+  await waitForHydration(page)
   const primary = () => page.evaluate(() => {
     const style = getComputedStyle(document.documentElement)
     return ['--ui-primary', '--ui-color-primary-700', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))

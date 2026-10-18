@@ -19,10 +19,11 @@ export function detectPhotoType(bytes: Uint8Array): PhotoType | null {
 }
 
 // URLs of the given photos, for the current user: storage policies only sign files of routes they can read.
-export async function signPhotos(supabase: Supabase, rows: { id: string, storage_path: string }[]): Promise<RoutePhoto[]> {
+// The account export also signs the profile photo with it (AVATARS_BUCKET).
+export async function signPhotos(supabase: Supabase, rows: { id: string, storage_path: string }[], bucket = PHOTOS_BUCKET): Promise<RoutePhoto[]> {
   if (!rows.length) return []
   const { data, error } = await supabase.storage
-    .from(PHOTOS_BUCKET)
+    .from(bucket)
     .createSignedUrls(rows.map(row => row.storage_path), SIGNED_URL_TTL_S)
   if (error) {
     console.error('[photos] signing failed', error)
@@ -37,14 +38,17 @@ export async function signPhotos(supabase: Supabase, rows: { id: string, storage
 export async function removeUserPhotoFiles(admin: Supabase, userId: string) {
   const { data: routes, error } = await admin.from('routes').select('id').eq('owner_id', userId)
   if (error) throw error
-  for (const { id } of routes) {
-    const bucket = admin.storage.from(PHOTOS_BUCKET)
-    const { data: files, error: listError } = await bucket.list(id, { limit: 1000 })
-    if (listError) throw listError
-    if (!files.length) continue
-    const { error: removeError } = await bucket.remove(files.map(file => `${id}/${file.name}`))
-    if (removeError) throw removeError
-  }
+  for (const { id } of routes) await emptyStorageFolder(admin, PHOTOS_BUCKET, id)
+}
+
+// Removes every file of a folder (route photos, a member's profile photos). Throws on failure.
+export async function emptyStorageFolder(supabase: Supabase, bucketId: string, folder: string) {
+  const bucket = supabase.storage.from(bucketId)
+  const { data: files, error } = await bucket.list(folder, { limit: 1000 })
+  if (error) throw error
+  if (!files.length) return
+  const { error: removeError } = await bucket.remove(files.map(file => `${folder}/${file.name}`))
+  if (removeError) throw removeError
 }
 
 // Deleting a route deletes its photo rows (cascade) but not the files: they are removed first, while the

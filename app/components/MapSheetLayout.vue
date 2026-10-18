@@ -204,7 +204,7 @@ const overlayHidden = computed(() => dragHeight.value === null
 
 <template>
   <div class="flex h-dvh flex-col">
-    <AppHeader v-if="!fullscreen" class="max-md:hidden" />
+    <AppHeader v-if="!fullscreen" wide class="max-md:hidden" />
     <div
       ref="root"
       class="relative flex min-h-0 flex-1 flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"

@@ -879,11 +879,11 @@
     "deleted": "Account deleted",
     "deletedHint": "All your data has been erased.",
     "title": "My data",
-    "description": "Download an archive of everything you've put on sport-map (profile, routes as GPX, photos, reviews, outings, collections, settings), or delete your account for good.",
+    "description": "Download an archive of everything you've put on sport-map (profile and its photo, routes as GPX, photos, reviews, outings, collections, settings), or delete your account for good.",
     "export": "Download my data",
     "deleteTitle": "Delete my account?",
     "delete": "Delete my account",
-    "deleteWarning": "Your account, routes, their photos, your reviews, outings, collections and settings will be erased {forever}. The ratings of routes you reviewed will be recomputed without yours. Remember to download your data first.",
+    "deleteWarning": "Your account, profile photo, routes, their photos, your reviews, outings, collections and settings will be erased {forever}. The ratings of routes you reviewed will be recomputed without yours. Remember to download your data first.",
     "forever": "for good",
     "confirmLabel": "To confirm, type your username: {username}",
     "deleteForever": "Delete for good"
@@ -983,6 +983,23 @@
       "ignore": "Dismiss",
       "noSuggestion": "No GPS outing long enough to offer a pace.",
       "suggestFailed": "Couldn't work it out"
+    },
+    "avatar": {
+      "title": "Profile photo",
+      "choose": "Choose a photo",
+      "change": "Change the photo",
+      "file": "Profile photo file",
+      "delete": "Delete the photo",
+      "deleteConfirm": "Delete your profile photo? Your initials will replace it.",
+      "deleted": "Profile photo deleted",
+      "deleteFailed": "Profile photo not deleted",
+      "saved": "Profile photo saved",
+      "saveFailed": "Profile photo not saved",
+      "save": "Save the photo",
+      "frameTitle": "Frame the photo",
+      "frameLabel": "Photo to frame: drag it, or use the arrow keys and the + and − keys",
+      "frameHint": "Seen by the team, round, next to your name.",
+      "zoom": "Zoom"
     }
   },
   "sports": {
@@ -1099,6 +1116,9 @@
     "photoUnreadable": "Photo saved but unreadable",
     "photoFormat": "Unsupported photo format",
     "savePhotoFailed": "Couldn't save the photo",
+    "avatarTooLarge": "Profile photo too large (256 KB maximum)",
+    "saveAvatarFailed": "Couldn't save the profile photo",
+    "deleteAvatarFailed": "Couldn't delete the profile photo",
     "weatherUnavailable": "Weather unavailable for now",
     "segmentTooLong": "Segment too long to follow paths",
     "routingTooFast": "Too many calculations in a short time, try again in a minute",
@@ -1133,6 +1153,7 @@
     "files": {
       "readme": "README.txt",
       "profile": "profile.json",
+      "avatar": "profile-photo",
       "routes": "routes.json",
       "reviews": "reviews.json",
       "activity": "activity.json",
@@ -1148,6 +1169,7 @@
     "readme": {
       "intro": "Data of {username} on sport-map, exported on {date}.",
       "profile": "your profile (username, display name, bio, email, sign-up date)",
+      "avatar": "your profile photo",
       "routes": "your routes: description, statistics, points of interest, visibility",
       "gpx": "the track of each route, to open in a GPS app",
       "photos": "the photos of your routes, one folder per route",

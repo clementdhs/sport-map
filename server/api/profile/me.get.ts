@@ -7,7 +7,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
 
   const supabase = await serverSupabaseClient(event)
   const [profile, created, activity, outings] = await Promise.all([
-    supabase.from('profiles').select('username, display_name, bio, created_at').eq('id', user.sub).single(),
+    supabase.from('profiles').select('username, display_name, bio, created_at, avatar_path').eq('id', user.sub).single(),
     supabase.from('routes').select(ROUTE_LIST_COLUMNS).eq('owner_id', user.sub).order('created_at', { ascending: false }),
     supabase
       .from('route_activity')

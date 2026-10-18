@@ -12,6 +12,8 @@ export interface LiveShareSummary {
   id: string
   // display_name ?? username
   user_name: string
+  // Their profile photo (profiles.avatar_path), null for their initials
+  user_avatar_path: string | null
   is_mine: boolean
   // The route followed, if the viewer may see it (null too when recording freely)
   route: { id: string, name: string } | null

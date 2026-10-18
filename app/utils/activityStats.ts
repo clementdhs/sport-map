@@ -1,5 +1,6 @@
 import type { StatsOuting } from '#shared/types/routes'
 import { DEFAULT_FORMAT_LOCALE } from '#shared/utils/format'
+import { localDate } from '#shared/utils/outings'
 import type { SportType } from '#shared/utils/routes'
 
 // Totals of the outings of the profile, by week, month or year, for the statistics tab.
@@ -22,13 +23,6 @@ export interface StatsBucket {
 export const WEEKS_SHOWN = 12
 export const MONTHS_SHOWN = 12
 export const YEARS_SHOWN = 5
-
-const TIME_ZONE = 'Europe/Paris'
-
-// Local date (YYYY-MM-DD) in France, so that a Sunday evening outing stays in its week.
-export function localDate(instant: string | Date): string {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(new Date(instant))
-}
 
 const DAY_MS = 86_400_000
 const toUtc = (date: string) => Date.parse(`${date}T12:00:00Z`)

@@ -78,3 +78,9 @@ export function formatPace(speedMs: number): string {
 export function formatNumber(value: number, locale = DEFAULT_FORMAT_LOCALE, options?: Intl.NumberFormatOptions): string {
   return value.toLocaleString(locale, options)
 }
+
+// Initials of a name for an avatar: the first letters of its first two words ("Marie-Claire Dupont" gives "MD",
+// "clem" gives "C").
+export function initials(name: string): string {
+  return name.trim().split(/\s+/).slice(0, 2).map(word => [...word][0] ?? '').join('').toLocaleUpperCase()
+}

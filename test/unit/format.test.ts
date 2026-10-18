@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatDate, formatDistance, formatTime, formatDuration, formatElapsed, formatNumber, formatPace, formatRating, formatSpeed, formatStopwatch } from '#shared/utils/format'
+import { formatDate, formatDistance, formatTime, formatDuration, formatElapsed, formatNumber, formatPace, formatRating, formatSpeed, formatStopwatch, initials } from '#shared/utils/format'
 
 describe('formatDistance', () => {
   it('uses meters under 1 km', () => {
@@ -78,5 +78,14 @@ describe('formatTime', () => {
   it('gives the time of day in France, whatever the server time zone', () => {
     expect(formatTime('2026-10-04T12:05:00Z')).toBe('14:05')
     expect(formatTime('2026-12-04T08:30:00Z', 'en-GB')).toBe('09:30')
+  })
+})
+
+describe('initials', () => {
+  it('takes the first letter of the first two words, in capitals', () => {
+    expect(initials('Marie-Claire Dupont')).toBe('MD')
+    expect(initials('  jean   de la Fontaine ')).toBe('JD')
+    expect(initials('clem')).toBe('C')
+    expect(initials('Élodie')).toBe('É')
   })
 })

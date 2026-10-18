@@ -836,7 +836,13 @@
     "notFound": "Profil introuvable",
     "publicRoutes": "{count} parcours visible par la famille | {count} parcours visibles par la famille",
     "seoDescription": "{routes} de {name} sur sport-map.",
-    "noPublic": "Aucun parcours visible par la famille pour l'instant"
+    "noPublic": "Aucun parcours visible par la famille pour l'instant",
+    "summary": {
+      "title": "En {year}",
+      "distance": "Distance",
+      "outings": "Sorties",
+      "gain": "D+"
+    }
   },
   "accountData": {
     "exportFailed": "Export impossible",

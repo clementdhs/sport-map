@@ -836,7 +836,13 @@
     "notFound": "Profile not found",
     "publicRoutes": "{count} route visible to the family | {count} routes visible to the family",
     "seoDescription": "{routes} by {name} on sport-map.",
-    "noPublic": "No route visible to the family yet"
+    "noPublic": "No route visible to the family yet",
+    "summary": {
+      "title": "In {year}",
+      "distance": "Distance",
+      "outings": "Outings",
+      "gain": "Elevation gain"
+    }
   },
   "accountData": {
     "exportFailed": "Couldn't export",

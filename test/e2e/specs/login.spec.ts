@@ -20,6 +20,11 @@ test('welcomes visitors over the relief background', async ({ page, request }) =
   expect((await page.goto('/login'))?.url()).toMatch(/\/login$/)
   await expect(page.getByRole('heading', { name: 'sport-map', level: 1 })).toBeVisible()
   await expect(page.getByText('Tes parcours de course, de rando et de vélo, à partager en famille.')).toBeVisible()
+  // The logo only once: the header leaves it to the page (#126).
+  await expect(page.getByRole('banner').getByRole('link', { name: 'sport-map' })).toHaveCount(0)
+  await expect(page.locator('input[name="identifier"]')).toHaveAttribute('placeholder', 'Ton pseudo ou ton email')
+  // The Licence Ouverte requires the source and its date.
+  await expect(page.getByText(/relief IGN RGE ALTI® \(octobre 2026\)/)).toBeVisible()
   for (const file of ['/img/login-relief.webp', '/img/login-contours.svg']) {
     expect((await request.get(file)).status(), file).toBe(200)
   }

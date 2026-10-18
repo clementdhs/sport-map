@@ -37,7 +37,7 @@
     "emailPlaceholder": "toi{'@'}exemple.fr",
     "emailRequired": "Email requis",
     "identifier": "Pseudo ou email",
-    "identifierPlaceholder": "clem ou toi{'@'}exemple.fr",
+    "identifierPlaceholder": "Ton pseudo ou ton email",
     "identifierRequired": "Pseudo ou email requis",
     "password": "Mot de passe",
     "passwordRequired": "Mot de passe requis",
@@ -51,7 +51,7 @@
       "emailNotConfirmed": "Confirme ton adresse email avant de te connecter.",
       "invalidCredentials": "Pseudo, email ou mot de passe incorrect.",
       "tagline": "Tes parcours de course, de rando et de vélo, à partager en famille.",
-      "reliefCredit": "Relief : IGN, RGE ALTI® (octobre 2026), Licence Ouverte"
+      "reliefCredit": "Image de fond : relief IGN RGE ALTI® (octobre 2026), Licence Ouverte"
     },
     "forgot": {
       "title": "Mot de passe oublié",

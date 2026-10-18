@@ -1,5 +1,6 @@
 import type { RouteSummary } from '#shared/types/routes'
-import type { LngLat, RouteSearchQuery, SearchSort, SportType } from '#shared/utils/routes'
+import type { LngLat, RouteSearchQuery, SearchScope, SearchSort, SportType } from '#shared/utils/routes'
+import { loadSearchScope, saveSearchScope } from '~/utils/searchScope'
 
 export type Bounds = [minLng: number, minLat: number, maxLng: number, maxLat: number]
 
@@ -26,6 +27,8 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
   const loopsOnly = ref(false)
   const passingThrough = ref(false)
   const sort = ref<SearchSort>('nearest')
+  // Not a filter either: the member's own routes, or the team's too. Read from the device by restoreScope().
+  const scope = ref<SearchScope>('mine')
   // Name or description; searched everywhere, not only in the map view.
   const text = ref('')
   const textQuery = computed(() => {
@@ -59,6 +62,7 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
       loops: loopsOnly.value ? 'true' : undefined,
       through: passingThrough.value ? 'true' : undefined,
       sort: sort.value,
+      scope: scope.value,
       q: textQuery.value,
     }
   })
@@ -109,6 +113,16 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     debounceTimer = setTimeout(search, 250)
   })
 
+  // Called once the page is mounted: during hydration, Pinia would put back the server's value.
+  function restoreScope() {
+    scope.value = loadSearchScope()
+  }
+
+  function setScope(next: SearchScope) {
+    scope.value = next
+    saveSearchScope(next)
+  }
+
   function setView({ bounds: nextBounds, center, zoom }: MapViewState) {
     bounds.value = nextBounds
     view.value = { center, zoom }
@@ -116,6 +130,6 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
 
   return {
     sport, distanceKm, gainM, loopsOnly, passingThrough, activeFilterCount, resetFilters,
-    sort, text, textQuery, view, results, loading, failed, searched, setView,
+    sort, scope, restoreScope, setScope, text, textQuery, view, results, loading, failed, searched, setView,
   }
 })

@@ -22,7 +22,7 @@ const sample = (items, max = 3) => items.slice(0, max).join(', ') + (items.lengt
 
 // Areas where the code review runs at `high` rather than `medium` (ship-issue skill).
 const HIGH_REVIEW = {
-  'auth et accès famille': ['app/middleware/**', 'server/middleware/**', 'app/pages/{login,register,confirm,forgot-password,reset-password}.vue', 'app/plugins/account-locale.client.ts', 'supabase/config.toml', 'supabase/templates/**'],
+  'auth et accès équipe': ['app/middleware/**', 'server/middleware/**', 'app/pages/{login,register,confirm,forgot-password,reset-password}.vue', 'app/plugins/account-locale.client.ts', 'supabase/config.toml', 'supabase/templates/**'],
   'routes API': ['server/api/**', 'server/routes/**'],
   'service worker et hors ligne': ['service-worker/**', 'app/utils/offlineRoute.ts', 'shared/utils/offlineMaps.ts', 'app/plugins/offline-routes.client.ts', 'nuxt.config.ts'],
   'GPS et enregistrement': ['app/pages/record.vue', 'app/pages/routes/*/follow.vue', 'app/utils/{recorder,trackFollower,heading,nativeGeolocation,liveShare}.ts', 'app/composables/{useWatchPosition,useScreenWakeLock,useLiveShare}.ts', 'server/api/recordings.post.ts', 'android/**', 'capacitor/**'],

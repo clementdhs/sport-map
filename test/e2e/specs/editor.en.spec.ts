@@ -26,7 +26,7 @@ test('draws, saves and deletes a route, in English', async ({ page }) => {
   await page.getByLabel('Name').blur()
   await expect(page.getByText('Name required')).toBeHidden()
   // Private, so the family tests don't find it on the home map.
-  const isPublic = page.getByRole('switch', { name: 'Visible to the family' })
+  const isPublic = page.getByRole('switch', { name: 'Visible to the team' })
   await isPublic.click()
   await expect(isPublic).not.toBeChecked()
   await page.getByRole('button', { name: 'Save the route' }).click()

@@ -46,11 +46,11 @@
     "login": {
       "title": "Sign in",
       "submit": "Sign in",
-      "familyOnly": "Access is for the family only: ask the administrator for an account.",
+      "familyOnly": "Access is for the team only: ask the administrator for an account.",
       "forgotLink": "Forgot your password?",
       "emailNotConfirmed": "Confirm your email address before signing in.",
       "invalidCredentials": "Wrong username, email or password.",
-      "tagline": "Your running, hiking and cycling routes, shared with the family.",
+      "tagline": "Your running, hiking and cycling routes, shared with your team.",
       "reliefCredit": "Background image: IGN RGE ALTI® relief (October 2026), Licence Ouverte"
     },
     "forgot": {
@@ -107,6 +107,27 @@
     "textEmptyHint": "Try other words or widen the filters.",
     "zoneEmptyHint": "Move the map, change the filters, or {link}.",
     "createFirst": "create the first route",
+    "scope": {
+      "label": "Routes shown",
+      "mine": "My routes",
+      "all": "All"
+    },
+    "mine": {
+      "textNone": "None of your routes for “{query}”",
+      "textFirst": "Your first {count} routes for “{query}”",
+      "textCount": "{count} of your routes for “{query}” | {count} of your routes for “{query}”",
+      "zoneNone": "None of your routes in this area",
+      "zoneCount": "{count} of your routes in this area | {count} of your routes in this area",
+      "zoneEmptyHint": "Move the map, change the filters, or {link}.",
+      "showAll": "show the team's routes too",
+      "limit": {
+        "nearest": "Your {count} routes closest to the centre of the map",
+        "recent": "Your {count} most recent routes in the area",
+        "shortest": "Your {count} shortest routes in the area",
+        "longest": "Your {count} longest routes in the area",
+        "best_rated": "Your {count} best-rated routes in the area"
+      }
+    },
     "cluster": "{count} route here, zoom in to see it | {count} routes here, zoom in to see them",
     "discoverOsm": "OpenStreetMap marked routes in this area"
   },
@@ -310,8 +331,8 @@
     "name": "Name",
     "namePlaceholder": "Weekend in the Vosges",
     "description": "Description",
-    "public": "Visible to the family",
-    "publicHint": "Visible to every family member. Your private routes stay hidden in it.",
+    "public": "Visible to the team",
+    "publicHint": "Visible to every team member. Your private routes stay hidden in it.",
     "createAndAdd": "Create and add",
     "new": "New collection"
   },
@@ -391,8 +412,8 @@
     "poiNote": "Note (optional)",
     "poiNoteLabel": "Note for point of interest {n}",
     "namePlaceholder": "Lake loop",
-    "public": "Visible to the family",
-    "publicHint": "Visible to every family member and in the search.",
+    "public": "Visible to the team",
+    "publicHint": "Visible to every team member and in the search.",
     "noPath": "No path found",
     "noPathHint": "This segment is drawn as a straight line.",
     "dailyLimit": "Daily limit reached",
@@ -610,7 +631,7 @@
   },
   "live": {
     "title": "Outings in progress",
-    "intro": "Family members sharing their location during an outing.",
+    "intro": "Team members sharing their location during an outing.",
     "none": "Nobody is sharing their location right now.",
     "outingOf": "{name}'s outing",
     "myOuting": "Your outing",
@@ -627,19 +648,19 @@
     "banner": "{name} is out",
     "bannerLink": "See their location",
     "share": "Share my location",
-    "confirmTitle": "Share your location with the family?",
-    "confirmDescription": "The whole family will see your live location and your track on a map until the end of the outing ({hours} h at most). Nothing is kept afterwards.",
+    "confirmTitle": "Share your location with the team?",
+    "confirmDescription": "The whole team will see your live location and your track on a map until the end of the outing ({hours} h at most). Nothing is kept afterwards.",
     "confirm": "Share",
-    "sharing": "Location shared with the family",
+    "sharing": "Location shared with the team",
     "stop": "Stop",
     "sentAgo": "Sent {time} ago",
     "firstPoint": "Waiting for the GPS position…",
     "waiting": "No network: {count} location waiting | No network: {count} locations waiting",
     "ended": "Location sharing ended",
-    "endedHint": "The family no longer sees your location.",
+    "endedHint": "The team no longer sees your location.",
     "startFailed": "Couldn't share your location",
     "stopFailed": "Couldn't stop sharing",
-    "stopFailedHint": "Without network, the family still sees your last location, 12 h at most."
+    "stopFailedHint": "Without network, the team still sees your last location, 12 h at most."
   },
   "outings": {
     "replay3d": "Replay in 3D",
@@ -825,7 +846,7 @@
       "stats": "Stats"
     },
     "memberSince": "member since {date}",
-    "viewPublic": "View my profile as the family sees it",
+    "viewPublic": "View my profile as the team sees it",
     "noCreated": "No route created",
     "noCreatedHint": "Draw your first route or import a GPX file.",
     "noSaved": "No saved route",
@@ -837,9 +858,9 @@
     "noCompleted": "No route done",
     "noCompletedHint": "On a route's page, tap “I did it” to keep a history of your outings.",
     "notFound": "Profile not found",
-    "publicRoutes": "{count} route visible to the family | {count} routes visible to the family",
+    "publicRoutes": "{count} route visible to the team | {count} routes visible to the team",
     "seoDescription": "{routes} by {name} on sport-map.",
-    "noPublic": "No route visible to the family yet",
+    "noPublic": "No route visible to the team yet",
     "summary": {
       "title": "In {year}",
       "distance": "Distance",
@@ -871,7 +892,7 @@
     "copyFailed": "Couldn't copy",
     "summary": "Collection of {count} route · {distance} | Collection of {count} routes · {distance}",
     "badge": "Collection",
-    "public": "Visible to the family",
+    "public": "Visible to the team",
     "routes": "Routes",
     "copyLink": "Copy the link",
     "editTitle": "Edit the collection",
@@ -921,7 +942,7 @@
       "appearance": "Appearance and language",
       "voice": "Voice guidance"
     },
-    "profileHint": "What the family sees on {link} ({username}).",
+    "profileHint": "What the team sees on {link} ({username}).",
     "publicProfile": "your profile",
     "displayName": "Display name",
     "displayNameHint": "Otherwise: {username}",
@@ -1100,7 +1121,7 @@
       "collections": "your route collections",
       "reports": "the reviews you reported",
       "routing": "your number of route calculations today (limited per person)",
-      "live": "your location shared with the family during an outing in progress (deleted when the outing ends)",
+      "live": "your location shared with the team during an outing in progress (deleted when the outing ends)",
       "json": "The .json files are structured text (JSON), readable by most software."
     }
   }

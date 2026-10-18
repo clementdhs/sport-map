@@ -68,7 +68,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await routeAction(page, 'Modifier le parcours')
   await waitForMap(page)
   await expect(page.getByLabel('Nom')).toHaveValue('Parcours e2e')
-  await page.getByRole('switch', { name: 'Visible par la famille' }).click()
+  await page.getByRole('switch', { name: "Visible par l'équipe" }).click()
   await page.getByRole('button', { name: 'Enregistrer les modifications' }).click()
 
   await expect(page).toHaveURL(detailUrl)

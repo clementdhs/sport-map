@@ -16,7 +16,7 @@ test('sends visitors to the sign-in page, whatever the page, then back to it onc
   }
 
   // No sign-up: accounts are made by the administrator.
-  await expect(page.getByText("L'accès est réservé à la famille")).toBeVisible()
+  await expect(page.getByText("L'accès est réservé à l'équipe")).toBeVisible()
   await expect(page.getByRole('link', { name: /Inscri/ })).toHaveCount(0)
   await page.goto('/register')
   await expect(page).toHaveURL(/\/login\?redirect=/)

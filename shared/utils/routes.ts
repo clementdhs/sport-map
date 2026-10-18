@@ -189,6 +189,10 @@ export const MAX_SEARCH_RESULTS = 50
 export const SEARCH_SORTS = ['nearest', 'recent', 'shortest', 'longest', 'best_rated'] as const
 export type SearchSort = typeof SEARCH_SORTS[number]
 
+// Routes searched: the caller's own (private ones included), or those plus the ones the team can see.
+export const SEARCH_SCOPES = ['mine', 'all'] as const
+export type SearchScope = typeof SEARCH_SCOPES[number]
+
 export const routeSearchSchema = z.object({
   minLng: z.coerce.number().min(-180).max(180),
   minLat: z.coerce.number().min(-90).max(90),
@@ -204,6 +208,7 @@ export const routeSearchSchema = z.object({
   // Routes whose track crosses the view, not only those starting in it.
   through: z.stringbool().optional(),
   sort: z.enum(SEARCH_SORTS).default('nearest'),
+  scope: z.enum(SEARCH_SCOPES).default('all'),
   // Words of the name or description, wherever the route is: the view then only serves the "nearest" sort.
   q: z.string().trim().max(100).optional(),
 })

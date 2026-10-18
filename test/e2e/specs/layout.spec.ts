@@ -1,7 +1,7 @@
 import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration, waitForMap } from '../fixtures'
 
 // A family member moves the bottom sheet and the side panel; the test account goes through the map pages.
-test.use({ role: 'family' })
+test.use({ role: 'family', searchScope: 'all' })
 
 test.describe('as the test account', () => {
   test.use({ role: 'account' })

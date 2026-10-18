@@ -28,7 +28,7 @@ function rain(forecast: HalfDayForecast): string {
 <template>
   <section class="space-y-2" aria-labelledby="weather-title">
     <div class="flex items-baseline justify-between gap-2">
-      <h2 id="weather-title" class="font-medium">{{ t('weather.title') }}</h2>
+      <h2 id="weather-title" class="text-base font-semibold">{{ t('weather.title') }}</h2>
       <span v-if="data?.elevationM != null" class="text-xs text-muted">{{ t('weather.elevation', { elevation: data.elevationM }) }}</span>
     </div>
 

@@ -147,15 +147,15 @@ useSeoMeta({
     <div class="grid grid-cols-3 gap-2">
       <div class="rounded-lg bg-elevated p-3">
         <p class="text-sm text-muted">{{ t('collection.routes') }}</p>
-        <p class="text-lg font-semibold">{{ routes.length }}</p>
+        <p class="font-numbers text-xl font-semibold tabular-nums">{{ routes.length }}</p>
       </div>
       <div class="rounded-lg bg-elevated p-3">
         <p class="text-sm text-muted">{{ t('route.distance') }}</p>
-        <p class="text-lg font-semibold">{{ formatDistance(totalDistance) }}</p>
+        <p class="font-numbers text-xl font-semibold tabular-nums">{{ formatDistance(totalDistance) }}</p>
       </div>
       <div class="rounded-lg bg-elevated p-3">
         <p class="text-sm text-muted">{{ t('record.gain') }}</p>
-        <p class="text-lg font-semibold">{{ Math.round(totalGain) }} m</p>
+        <p class="font-numbers text-xl font-semibold tabular-nums">{{ Math.round(totalGain) }} m</p>
       </div>
     </div>
 

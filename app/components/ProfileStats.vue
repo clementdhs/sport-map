@@ -27,9 +27,10 @@ const metricItems = computed(() => [
   { label: t('stats.metrics.gain'), value: 'gain' },
   { label: t('stats.metrics.time'), value: 'time' },
 ])
+const sports = useSportItems()
 const sportItems = computed(() => [
   { value: 'all', label: t('filters.allSports'), icon: 'i-lucide-list' },
-  ...SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })),
+  ...sports.value,
 ])
 const SHOWN: Record<StatsPeriod, number> = { week: WEEKS_SHOWN, month: MONTHS_SHOWN, year: YEARS_SHOWN }
 const rangeLabel = computed(() => t(`stats.ranges.${period.value}`, { count: SHOWN[period.value] }))
@@ -85,19 +86,19 @@ const everyOther = computed(() => buckets.value.length > 6)
         <dl class="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('stats.outings') }}</dt>
-            <dd class="text-lg font-semibold">{{ totals.outings }}</dd>
+            <dd class="font-numbers text-xl font-semibold tabular-nums">{{ totals.outings }}</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('route.distance') }}</dt>
-            <dd class="text-lg font-semibold">{{ formatDistance(totals.distanceM) }}</dd>
+            <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatDistance(totals.distanceM) }}</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('route.gain') }}</dt>
-            <dd class="text-lg font-semibold">{{ formatNumber(Math.round(totals.gainM)) }} m</dd>
+            <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatNumber(Math.round(totals.gainM)) }} m</dd>
           </div>
           <div class="rounded-lg bg-elevated p-3">
             <dt class="text-xs text-muted">{{ t('stats.movingTime') }}</dt>
-            <dd class="text-lg font-semibold">{{ totals.movingS ? formatElapsed(totals.movingS) : '—' }}</dd>
+            <dd class="font-numbers text-xl font-semibold tabular-nums">{{ totals.movingS ? formatElapsed(totals.movingS) : '—' }}</dd>
           </div>
         </dl>
         <p v-if="metric === 'time'" class="mt-2 text-xs text-muted">

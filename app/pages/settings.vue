@@ -58,7 +58,7 @@ function onPasswordChanged() {
     </div>
 
     <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-profile-title">
-      <h2 id="settings-profile-title" class="font-medium">{{ t('settings.profile') }}</h2>
+      <h2 id="settings-profile-title" class="text-base font-semibold">{{ t('settings.profile') }}</h2>
       <i18n-t keypath="settings.profileHint" tag="p" class="text-sm text-muted" scope="global">
         <template #link>
           <ULink :to="`/profile/${profile.username}`" class="text-primary">{{ t('settings.publicProfile') }}</ULink>
@@ -89,12 +89,12 @@ function onPasswordChanged() {
     </section>
 
     <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-password-title">
-      <h2 id="settings-password-title" class="font-medium">{{ t('auth.password') }}</h2>
+      <h2 id="settings-password-title" class="text-base font-semibold">{{ t('auth.password') }}</h2>
       <NewPasswordForm :submit-label="t('settings.changePassword')" class="max-w-sm" @done="onPasswordChanged" />
     </section>
 
     <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-appearance-title">
-      <h2 id="settings-appearance-title" class="font-medium">{{ t('theme.label') }}</h2>
+      <h2 id="settings-appearance-title" class="text-base font-semibold">{{ t('theme.label') }}</h2>
       <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
       <LanguageSelect />
       <ThemeSettings />

@@ -24,6 +24,6 @@ const method = computed(() => props.elevationGainM === null
         <UIcon name="i-lucide-info" class="size-3.5" tabindex="0" :aria-label="method" />
       </UTooltip>
     </p>
-    <p class="font-semibold" :class="compact ? 'text-base' : 'text-lg'">~{{ formatDuration(minutes) }}</p>
+    <p class="font-numbers font-semibold tabular-nums" :class="compact ? 'text-lg' : 'text-xl'">~{{ formatDuration(minutes) }}</p>
   </div>
 </template>

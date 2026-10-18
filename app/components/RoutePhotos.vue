@@ -85,7 +85,7 @@ defineShortcuts({
 <template>
   <section v-if="photos.length || isOwner" class="space-y-2" aria-labelledby="photos-title">
     <div class="flex items-center justify-between gap-2">
-      <h2 id="photos-title" class="font-medium">{{ t('route.tabs.photos') }}</h2>
+      <h2 id="photos-title" class="text-base font-semibold">{{ t('route.tabs.photos') }}</h2>
       <template v-if="isOwner">
         <UButton
           icon="i-lucide-image-plus"

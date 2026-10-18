@@ -277,7 +277,7 @@ useSeoMeta({
 
     <div class="space-y-1">
       <div class="flex flex-wrap items-center gap-2">
-        <UBadge :icon="SPORT_ICONS[parcours.sport_type]" :label="t(`sports.${parcours.sport_type}`)" variant="subtle" />
+        <SportBadge :sport="parcours.sport_type" />
         <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
@@ -299,7 +299,7 @@ useSeoMeta({
     <div class="grid grid-cols-4 divide-x divide-default rounded-lg bg-elevated py-2 text-center">
       <div class="px-1">
         <p class="text-xs text-muted">{{ t('route.distance') }}</p>
-        <p class="font-semibold">{{ formatDistance(parcours.distance_m) }}</p>
+        <p class="font-numbers text-lg font-semibold tabular-nums">{{ formatDistance(parcours.distance_m) }}</p>
       </div>
       <DurationEstimate
         class="px-1"
@@ -310,11 +310,11 @@ useSeoMeta({
       />
       <div class="px-1">
         <p class="text-xs text-muted">{{ t('route.gain') }}</p>
-        <p class="font-semibold">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
+        <p class="font-numbers text-lg font-semibold tabular-nums">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
       </div>
       <div class="px-1">
         <p class="text-xs text-muted">{{ t('route.loss') }}</p>
-        <p class="font-semibold">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
+        <p class="font-numbers text-lg font-semibold tabular-nums">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
       </div>
     </div>
 
@@ -417,7 +417,7 @@ useSeoMeta({
           </div>
 
           <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
-            <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>
+            <h2 id="pois-title" class="text-base font-semibold">{{ t('route.pois') }}</h2>
             <ul class="space-y-1">
               <li
                 v-for="(poi, i) in pois"

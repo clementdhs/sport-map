@@ -9,7 +9,7 @@ const { t } = useI18n()
 const { formatDistance } = useFormat()
 const toast = useToast()
 
-const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
+const sportItems = useSportItems()
 const targetItems = computed(() => [
   { label: t('loop.distance'), value: 'distance' },
   { label: t('loop.duration'), value: 'duration' },
@@ -67,7 +67,7 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
 <template>
   <section class="space-y-4" aria-labelledby="loop-title">
     <div class="flex items-center justify-between gap-2">
-      <h2 id="loop-title" class="font-medium">{{ t('loop.title') }}</h2>
+      <h2 id="loop-title" class="text-base font-semibold">{{ t('loop.title') }}</h2>
       <UButton icon="i-lucide-x" color="neutral" variant="ghost" :aria-label="t('loop.close')" @click="loop.hide()" />
     </div>
 

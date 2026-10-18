@@ -76,7 +76,7 @@ const chosenUnit = computed({
         :data-field="tile.field"
       >
         <dt class="text-sm font-semibold tracking-wide text-toned uppercase">{{ tile.label }}</dt>
-        <dd class="leading-none font-bold whitespace-nowrap text-highlighted tabular-nums">
+        <dd class="font-numbers leading-none font-semibold whitespace-nowrap text-highlighted tabular-nums">
           <span class="text-[min(22cqw,6rem)]" data-testid="live-value">{{ tile.value }}</span>
           <span v-if="tile.unit" class="ml-1 text-[min(9cqw,2rem)]">{{ tile.unit }}</span>
         </dd>

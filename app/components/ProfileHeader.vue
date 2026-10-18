@@ -39,15 +39,15 @@ const summaryTitleId = useId()
       <dl class="grid grid-cols-3 gap-2">
         <div class="rounded-lg bg-elevated p-3">
           <dt class="text-xs text-muted">{{ t('profile.summary.distance') }}</dt>
-          <dd class="text-lg font-semibold">{{ formatDistance(summary.distance_m) }}</dd>
+          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatDistance(summary.distance_m) }}</dd>
         </div>
         <div class="rounded-lg bg-elevated p-3">
           <dt class="text-xs text-muted">{{ t('profile.summary.outings') }}</dt>
-          <dd class="text-lg font-semibold">{{ summary.outings }}</dd>
+          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ summary.outings }}</dd>
         </div>
         <div class="rounded-lg bg-elevated p-3">
           <dt class="text-xs text-muted">{{ t('profile.summary.gain') }}</dt>
-          <dd class="text-lg font-semibold">{{ formatNumber(Math.round(summary.elevation_gain_m)) }} m</dd>
+          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatNumber(Math.round(summary.elevation_gain_m)) }} m</dd>
         </div>
       </dl>
     </section>

@@ -63,7 +63,7 @@ const liveStats = computed<LiveStats>(() => {
 
 // End of the outing
 const saving = ref(false)
-const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
+const sportItems = useSportItems()
 const finishOpen = ref(false)
 const form = reactive<{ name: string, sport_type: SportType, is_public: boolean }>({
   name: '',
@@ -167,19 +167,19 @@ function discard() {
         <div v-if="!dataView" class="grid grid-cols-4 gap-2 text-center" aria-live="off">
           <div>
             <p class="text-xs text-muted">{{ t('duration.short') }}</p>
-            <p class="text-base font-semibold whitespace-nowrap sm:text-lg tabular-nums" data-testid="elapsed">{{ formatStopwatch(elapsedS) }}</p>
+            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl" data-testid="elapsed">{{ formatStopwatch(elapsedS) }}</p>
           </div>
           <div>
             <p class="text-xs text-muted">{{ t('route.distance') }}</p>
-            <p class="text-base font-semibold whitespace-nowrap sm:text-lg" data-testid="distance">{{ formatDistance(recording.distanceM) }}</p>
+            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl" data-testid="distance">{{ formatDistance(recording.distanceM) }}</p>
           </div>
           <div>
             <p class="text-xs text-muted">{{ t('record.speed') }}</p>
-            <p class="text-base font-semibold whitespace-nowrap sm:text-lg">{{ formatSpeed(recording.distanceM, recording.movingMs / 1000) }}</p>
+            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl">{{ formatSpeed(recording.distanceM, recording.movingMs / 1000) }}</p>
           </div>
           <div>
             <p class="text-xs text-muted">{{ t('record.gain') }}</p>
-            <p class="text-base font-semibold whitespace-nowrap sm:text-lg">{{ gainM != null ? `${Math.round(gainM)} m` : '—' }}</p>
+            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl">{{ gainM != null ? `${Math.round(gainM)} m` : '—' }}</p>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">

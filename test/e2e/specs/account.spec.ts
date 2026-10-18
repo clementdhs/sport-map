@@ -152,6 +152,8 @@ test('offers ten accent colors in the settings, rendered by the server in a shad
   const body = await response!.text()
   expect(body).toContain('data-accent="teal"')
   expect(body).toContain('data-accent-shade="700"')
+  // A click before hydration is lost and the mode never changes.
+  await waitForHydration(page)
   const primary = () => page.evaluate(() => {
     const style = getComputedStyle(document.documentElement)
     return ['--ui-primary', '--ui-color-primary-700', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))

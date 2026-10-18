@@ -27,8 +27,8 @@ test('adds, shows and deletes photos, and removes their files with the route', a
   await waitForMap(page)
 
   // The button reflects the change right away (it used to need a reload).
-  await page.getByRole('button', { name: 'Sauvegarder' }).click()
-  await expect(page.getByRole('button', { name: 'Sauvegardé' })).toBeVisible()
+  await page.getByRole('button', { name: 'Ajouter à ma liste « À faire »' }).click()
+  await expect(page.getByRole('button', { name: 'Retirer de ma liste « À faire »' })).toBeVisible()
 
   await page.getByRole('tab', { name: /Photos/ }).click()
   const upload = () => page.getByLabel('Choisir des photos').setInputFiles({ name: 'sommet.png', mimeType: 'image/png', buffer: PNG_1PX })

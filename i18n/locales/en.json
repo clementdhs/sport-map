@@ -182,8 +182,9 @@
     "gain": "Elevation +",
     "loss": "Elevation −",
     "follow": "Follow the route",
-    "save": "Save",
-    "saved": "Saved",
+    "todo": "To do",
+    "todoAdd": "Add to my To do list",
+    "todoRemove": "Remove from my To do list",
     "complete": "I did it",
     "completeShort": "Done",
     "moreShort": "More",
@@ -203,7 +204,7 @@
     },
     "pois": "Points of interest",
     "deleteTitle": "Delete this route?",
-    "deleteDescription": "It will also disappear from other users' saved and completed routes. This can't be undone."
+    "deleteDescription": "It will also disappear from other users' To do lists and completed routes. This can't be undone."
   },
   "reviews": {
     "saveFailed": "Couldn't save your review",
@@ -812,24 +813,15 @@
   "profile": {
     "tabs": {
       "created": "My routes",
-      "saved": "Saved",
       "collections": "Collections",
       "completed": "Done",
       "stats": "Statistics"
-    },
-    "tabsShort": {
-      "created": "Mine",
-      "saved": "Saved",
-      "collections": "Collections",
-      "completed": "Done",
-      "stats": "Stats"
     },
     "memberSince": "member since {date}",
     "viewPublic": "View my profile as the family sees it",
     "noCreated": "No route created",
     "noCreatedHint": "Draw your first route or import a GPX file.",
-    "noSaved": "No saved route",
-    "noSavedHint": "Save routes from their page to find them here.",
+    "todoHint": "the routes you want to do",
     "discover": "Discover routes",
     "privateCollection": "Private",
     "noCollections": "No collection",
@@ -883,6 +875,15 @@
     "empty": "Empty collection",
     "emptyMine": "Add routes from their page, with “Add to a collection”.",
     "emptyOther": "No visible route in this collection."
+  },
+  "todo": {
+    "name": "To do",
+    "badge": "Personal list",
+    "description": "The routes you want to do. They leave the list once you mark them as done or record an outing on them.",
+    "routesLabel": "Routes to do",
+    "removeRoute": "Remove {name} from To do",
+    "empty": "Nothing to do yet",
+    "emptyHint": "Add routes from their page, with the “To do” button."
   },
   "stats": {
     "periods": {
@@ -1095,7 +1096,7 @@
       "gpx": "the track of each route, to open in a GPS app",
       "photos": "the photos of your routes, one folder per route",
       "reviews": "the reviews you left on routes",
-      "activity": "the routes you saved or completed, with the times of your recorded outings",
+      "activity": "your To do list (type saved) and the routes you completed (type completed), with the times of your recorded outings",
       "outings": "your outings recorded with the GPS on routes (date, times, distance, GPS points with their times)",
       "collections": "your route collections",
       "reports": "the reviews you reported",

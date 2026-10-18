@@ -65,6 +65,10 @@ test.describe('follow mode', () => {
       outings: { route_id: string, moving_s: number | null }[]
     }
     const routesBefore = (await myProfile()).created.length
+    const todoIds = async () => ((await (await page.request.get('/api/collections/todo')).json()) as { routes: { id: string }[] }).routes.map(r => r.id)
+    // On the "À faire" list, which the recorded outing takes it off.
+    expect((await page.request.put(`/api/routes/${id}/activity/saved`)).ok()).toBe(true)
+    expect(await todoIds()).toContain(id)
     const done = page.getByTestId('done')
     const elapsed = page.getByTestId('recording-elapsed')
 
@@ -112,6 +116,7 @@ test.describe('follow mode', () => {
     const profile = await myProfile()
     expect(profile.created).toHaveLength(routesBefore)
     expect(profile.outings.filter(o => o.route_id === id && o.moving_s! >= 1700).length).toBeGreaterThanOrEqual(1)
+    expect(await todoIds()).not.toContain(id)
 
     // Deleted by its author.
     const count = await page.getByTestId('outing').count()

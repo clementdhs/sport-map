@@ -11,6 +11,33 @@
   --ui-primary: var(--ui-color-primary-700);
 }
 
+/* Key figures (distances, durations, elevation): Barlow Semi Condensed, downloaded at build time by @nuxt/fonts
+   and precached by the service worker. Use with `tabular-nums` so that digits line up (#108). */
+@theme {
+  --font-numbers: "Barlow Semi Condensed", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* One color per sport (#108), set by a `sport-<sport type>` class: --sport for icons and route thumbnails,
+   --sport-text on --sport-soft for badges. Contrast: 6.4:1 at least for the text, 4.9:1 for the icons. Map
+   colors (tracks, markers) don't follow the sport. */
+.sport-running { --sport-100: var(--color-orange-100); --sport-300: var(--color-orange-300); --sport-400: var(--color-orange-400); --sport-700: var(--color-orange-700); --sport-800: var(--color-orange-800); }
+.sport-trail { --sport-100: var(--color-rose-100); --sport-300: var(--color-rose-300); --sport-400: var(--color-rose-400); --sport-700: var(--color-rose-700); --sport-800: var(--color-rose-800); }
+.sport-hiking { --sport-100: var(--color-emerald-100); --sport-300: var(--color-emerald-300); --sport-400: var(--color-emerald-400); --sport-700: var(--color-emerald-700); --sport-800: var(--color-emerald-800); }
+.sport-cycling { --sport-100: var(--color-cyan-100); --sport-300: var(--color-cyan-300); --sport-400: var(--color-cyan-400); --sport-700: var(--color-cyan-700); --sport-800: var(--color-cyan-800); }
+.sport-road_cycling { --sport-100: var(--color-blue-100); --sport-300: var(--color-blue-300); --sport-400: var(--color-blue-400); --sport-700: var(--color-blue-700); --sport-800: var(--color-blue-800); }
+.sport-mountain_biking { --sport-100: var(--color-violet-100); --sport-300: var(--color-violet-300); --sport-400: var(--color-violet-400); --sport-700: var(--color-violet-700); --sport-800: var(--color-violet-800); }
+
+:is(.sport-running, .sport-trail, .sport-hiking, .sport-cycling, .sport-road_cycling, .sport-mountain_biking) {
+  --sport: var(--sport-700);
+  --sport-text: var(--sport-800);
+  --sport-soft: var(--sport-100);
+}
+.dark :is(.sport-running, .sport-trail, .sport-hiking, .sport-cycling, .sport-road_cycling, .sport-mountain_biking) {
+  --sport: var(--sport-400);
+  --sport-text: var(--sport-300);
+  --sport-soft: color-mix(in oklab, var(--sport-400) 15%, transparent);
+}
+
 /* Map popups stay light like the map itself, whatever the app theme. */
 .maplibregl-popup-content {
   color: #18181b;

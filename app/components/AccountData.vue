@@ -54,7 +54,7 @@ async function deleteAccount() {
 
 <template>
   <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="account-data-title">
-    <h2 id="account-data-title" class="font-medium">{{ t('accountData.title') }}</h2>
+    <h2 id="account-data-title" class="text-base font-semibold">{{ t('accountData.title') }}</h2>
     <p class="text-sm text-muted">
       {{ t('accountData.description') }}
     </p>

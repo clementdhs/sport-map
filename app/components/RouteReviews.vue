@@ -88,7 +88,7 @@ const showForm = computed(() => canReview.value && (!myReview.value || editing.v
 <template>
   <section id="avis" class="space-y-3" aria-labelledby="reviews-title">
     <div class="flex items-baseline justify-between gap-2">
-      <h2 id="reviews-title" class="font-medium">{{ t('route.tabs.reviews') }}</h2>
+      <h2 id="reviews-title" class="text-base font-semibold">{{ t('route.tabs.reviews') }}</h2>
       <p v-if="data?.rating_count" class="flex items-center gap-1.5 text-sm">
         <RatingStars :value="data.rating_avg ?? 0" />
         <span class="font-medium">{{ formatRating(data.rating_avg ?? 0) }}</span>

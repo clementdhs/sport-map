@@ -254,17 +254,17 @@ function discardOuting() {
       <div v-if="!dataView" class="grid grid-cols-3 gap-2 text-center">
         <div>
           <p class="text-xs text-muted">{{ t('follow.done') }}</p>
-          <p class="text-lg font-semibold" data-testid="done">{{ progress ? formatDistance(progress.doneM) : '—' }}</p>
+          <p class="font-numbers text-xl font-semibold tabular-nums" data-testid="done">{{ progress ? formatDistance(progress.doneM) : '—' }}</p>
         </div>
         <div>
           <p class="text-xs text-muted">{{ t('follow.remaining') }}</p>
-          <p class="text-lg font-semibold" data-testid="remaining">
+          <p class="font-numbers text-xl font-semibold tabular-nums" data-testid="remaining">
             {{ formatDistance(progress ? progress.remainingM : model.totalM) }}
           </p>
         </div>
         <div>
           <p class="text-xs text-muted">{{ t('follow.remainingGain') }}</p>
-          <p class="text-lg font-semibold">
+          <p class="font-numbers text-xl font-semibold tabular-nums">
             {{ progress?.remainingGainM != null ? `${Math.round(progress.remainingGainM)} m` : '—' }}
           </p>
         </div>
@@ -279,7 +279,7 @@ function discardOuting() {
         />
         <p class="min-w-0 text-sm">
           <span class="sr-only">{{ paused ? t('record.paused') : t('record.recording') }}</span>
-          <span class="text-lg font-semibold tabular-nums" data-testid="recording-elapsed">{{ formatStopwatch(elapsedMs(recording, now) / 1000) }}</span>
+          <span class="font-numbers text-xl font-semibold tabular-nums" data-testid="recording-elapsed">{{ formatStopwatch(elapsedMs(recording, now) / 1000) }}</span>
         </p>
         <UButton
           class="ml-auto"

@@ -15,6 +15,12 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
+  // The font of key figures (--font-numbers in main.css), served from /_fonts/ and precached by the service worker
+  // (woff2 in globPatterns below). Only the weights and the subset in use, to keep the precache small.
+  fonts: {
+    families: [{ name: 'Barlow Semi Condensed', provider: 'google', weights: [500, 600], styles: ['normal'], subsets: ['latin'] }],
+  },
+
   app: {
     head: {
       // Generated from public/icon.svg by `npm run pwa:assets`.

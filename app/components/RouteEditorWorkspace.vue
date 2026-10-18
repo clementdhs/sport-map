@@ -33,7 +33,7 @@ const errorMessage = useErrorMessage()
 const saving = ref(false)
 
 const sportLabel = computed(() => t(`sports.${editor.details.sport_type}`))
-const sportItems = computed(() => SPORT_TYPES.map(value => ({ value, label: t(`sports.${value}`), icon: SPORT_ICONS[value] })))
+const sportItems = useSportItems()
 const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.${value}`), icon: POI_ICONS[value] })))
 
 const gpxInput = useTemplateRef('gpxInput')
@@ -162,6 +162,7 @@ async function onSubmit() {
           v-model="editor.details.sport_type"
           :items="sportItems"
           :icon="SPORT_ICONS[editor.details.sport_type]"
+          :ui="{ leadingIcon: `sport-${editor.details.sport_type} text-(--sport)` }"
           :aria-label="t('filters.sport')"
           class="min-w-0 flex-1"
         />
@@ -238,15 +239,15 @@ async function onSubmit() {
             {{ t('route.distance') }}
             <UIcon v-if="editor.isRouting" name="i-lucide-loader-circle" class="size-4 animate-spin" :aria-label="t('editor.routing')" />
           </p>
-          <p class="text-3xl font-semibold">{{ formatDistance(editor.distanceM) }}</p>
+          <p class="font-numbers text-3xl font-semibold tabular-nums">{{ formatDistance(editor.distanceM) }}</p>
         </div>
         <div>
           <p class="text-sm text-muted">{{ t('route.gain') }}</p>
-          <p class="text-lg font-semibold">{{ editor.elevation ? `${Math.round(editor.elevation.gain)} m` : '—' }}</p>
+          <p class="font-numbers text-xl font-semibold tabular-nums">{{ editor.elevation ? `${Math.round(editor.elevation.gain)} m` : '—' }}</p>
         </div>
         <div>
           <p class="text-sm text-muted">{{ t('route.loss') }}</p>
-          <p class="text-lg font-semibold">{{ editor.elevation ? `${Math.round(editor.elevation.loss)} m` : '—' }}</p>
+          <p class="font-numbers text-xl font-semibold tabular-nums">{{ editor.elevation ? `${Math.round(editor.elevation.loss)} m` : '—' }}</p>
         </div>
         <DurationEstimate
           v-if="editor.distanceM > 0"
@@ -339,7 +340,7 @@ async function onSubmit() {
 
       <section v-if="editor.track.coordinates.length >= 2" class="space-y-3" aria-labelledby="pois-title">
         <div class="flex items-center justify-between gap-2">
-          <h2 id="pois-title" class="font-medium">{{ t('route.pois') }}</h2>
+          <h2 id="pois-title" class="text-base font-semibold">{{ t('route.pois') }}</h2>
           <UButton
             v-if="!editor.placingPoi"
             icon="i-lucide-map-pin-plus"

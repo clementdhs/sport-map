@@ -46,7 +46,7 @@ const gainLabel = computed(() => {
     <div class="flex items-center gap-2">
       <UButton icon="i-lucide-arrow-left" color="neutral" variant="ghost" :aria-label="t('discover.section.back')" @click="sectionStore.stop()" />
       <div class="min-w-0">
-        <h2 class="font-semibold">{{ t('discover.section.title') }}</h2>
+        <h2 class="text-base font-semibold">{{ t('discover.section.title') }}</h2>
         <p class="truncate text-sm text-muted">{{ name }}</p>
       </div>
     </div>

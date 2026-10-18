@@ -30,14 +30,14 @@ const stats = computed(() => {
   <NuxtLink
     :to="`/routes/${route.id}`"
     class="flex gap-3 rounded-lg border border-default p-3 transition-colors hover:bg-elevated focus-visible:bg-elevated"
-    :class="{ 'bg-elevated': highlighted }"
+    :class="[`sport-${route.sport_type}`, { 'bg-elevated': highlighted }]"
   >
     <div class="size-16 shrink-0 rounded-md bg-muted" aria-hidden="true">
-      <svg v-if="route.thumbnail" :viewBox="`0 0 ${THUMBNAIL_SIZE} ${THUMBNAIL_SIZE}`" class="size-full text-primary">
+      <svg v-if="route.thumbnail" :viewBox="`0 0 ${THUMBNAIL_SIZE} ${THUMBNAIL_SIZE}`" class="size-full text-(--sport)">
         <path :d="route.thumbnail" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" />
         <circle v-if="start" :cx="start[0]" :cy="start[1]" r="6" fill="currentColor" class="stroke-(--ui-bg-muted)" stroke-width="2" />
       </svg>
-      <UIcon v-else :name="SPORT_ICONS[route.sport_type]" class="m-5 size-6 text-dimmed" />
+      <UIcon v-else :name="SPORT_ICONS[route.sport_type]" class="m-5 size-6 text-(--sport)" />
     </div>
 
     <div class="min-w-0 flex-1">
@@ -47,7 +47,7 @@ const stats = computed(() => {
       </p>
       <div class="mt-1.5 flex flex-wrap gap-1">
         <SportBadge :sport="route.sport_type" />
-        <UBadge v-for="stat in stats" :key="stat.icon" :icon="stat.icon" :label="stat.label" color="neutral" variant="outline" size="md" class="whitespace-nowrap" />
+        <UBadge v-for="stat in stats" :key="stat.icon" :icon="stat.icon" :label="stat.label" color="neutral" variant="outline" size="md" class="font-numbers text-sm whitespace-nowrap tabular-nums" />
       </div>
       <p v-if="route.rating_count || !hideOwner" class="mt-1.5 flex flex-wrap items-center gap-x-3 text-sm">
         <span v-if="route.rating_count" class="flex items-center gap-1.5">

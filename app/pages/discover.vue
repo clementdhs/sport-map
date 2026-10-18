@@ -165,7 +165,7 @@ async function selectOnMap(id: number) {
       </span>
     </template>
 
-    <h1 class="text-lg font-semibold max-md:sr-only">{{ t('discover.title') }}</h1>
+    <h1 class="text-2xl font-semibold max-md:sr-only">{{ t('discover.title') }}</h1>
 
     <OsmSectionPanel v-if="sectionStore.route" :name="label(sectionStore.route)" @import="importSection" />
 

@@ -15,6 +15,16 @@ async function signIn(page: Page, identifier: string, password: string) {
   await page.getByRole('button', { name: 'Se connecter' }).click()
 }
 
+test('welcomes visitors over the relief background', async ({ page, request }) => {
+  // Served as is: a public/ folder named like the page would redirect /login to /login/.
+  expect((await page.goto('/login'))?.url()).toMatch(/\/login$/)
+  await expect(page.getByRole('heading', { name: 'sport-map', level: 1 })).toBeVisible()
+  await expect(page.getByText('Tes parcours de course, de rando et de vélo, à partager en famille.')).toBeVisible()
+  for (const file of ['/img/login-relief.webp', '/img/login-contours.svg']) {
+    expect((await request.get(file)).status(), file).toBe(200)
+  }
+})
+
 test('signs in with the username, whatever its case', async ({ page, users }) => {
   await signIn(page, users.family.username.toUpperCase(), users.family.password)
   await expect(page.getByRole('button', { name: 'Mon compte' })).toBeVisible()

@@ -49,7 +49,9 @@
       "familyOnly": "Access is for the family only: ask the administrator for an account.",
       "forgotLink": "Forgot your password?",
       "emailNotConfirmed": "Confirm your email address before signing in.",
-      "invalidCredentials": "Wrong username, email or password."
+      "invalidCredentials": "Wrong username, email or password.",
+      "tagline": "Your running, hiking and cycling routes, shared with the family.",
+      "reliefCredit": "Relief: IGN, RGE ALTI® (October 2026), Licence Ouverte"
     },
     "forgot": {
       "title": "Forgotten password",

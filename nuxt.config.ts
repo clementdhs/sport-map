@@ -125,6 +125,8 @@ export default defineNuxtConfig({
       // App files, and the build manifest Nuxt reads when the app starts (needed offline). Pages are
       // server-rendered: they are not precached.
       globPatterns: ['**/*.{js,css,svg,ico,png,woff2}', '_nuxt/builds/meta/*.json'],
+      // The sign-in page's background: only seen online, without a session.
+      globIgnores: ['img/login-*'],
     },
     client: {
       installPrompt: true,

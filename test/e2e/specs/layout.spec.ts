@@ -156,6 +156,34 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
 })
 
+// #142: the collapsed sheet's emptied content area kept its padding and drew the search field over the tab bar.
+test('keeps the tab bar uncovered under the collapsed sheet on a phone', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 })
+  await page.goto('/')
+  await waitForMap(page)
+  const sheet = page.locator('aside[data-sheet]')
+  await sheet.getByRole('button', { name: 'Réduire le panneau' }).click()
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  await expect(async () => expect((await sheet.boundingBox())!.height).toBeCloseTo(64, 0)).toPass()
+
+  // The top and centre of each tab's icon and of the "+" button belong to the tab bar. The content is inert while
+  // collapsed, and hit testing skips inert elements: it is made hit-testable during the check.
+  const hits = await page.getByRole('navigation', { name: 'Navigation principale' }).evaluate((nav) => {
+    const content = document.querySelector('aside[data-sheet] [inert]')!
+    content.removeAttribute('inert')
+    const targets = [...nav.querySelectorAll('a [aria-hidden="true"], button')]
+    const result = targets.flatMap((target) => {
+      const box = target.getBoundingClientRect()
+      const x = box.left + box.width / 2
+      return [box.top + 2, box.top + box.height / 2].map(y => nav.contains(document.elementFromPoint(x, y)))
+    })
+    content.setAttribute('inert', '')
+    return result
+  })
+  expect(hits).toHaveLength(10)
+  expect(hits.every(Boolean)).toBe(true)
+})
+
 test('collapses the side panel on a computer and remembers it after a reload', async ({ page }) => {
   await page.goto('/')
   await waitForMap(page)

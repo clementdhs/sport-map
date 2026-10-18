@@ -256,9 +256,11 @@ const overlayHidden = computed(() => dragHeight.value === null
         />
       </div>
 
+      <!-- Below md it clips its content: collapsed, the emptied content area keeps its padding and border, which
+           would spill onto the tab bar (#142). From md up the collapse tab overflows on purpose onto the map. -->
       <aside
         :id="panelId"
-        class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none"
+        class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none max-md:overflow-hidden"
         :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panel.collapsed }"
         :data-sheet="snap"
         :data-panel="panel.collapsed ? 'collapsed' : 'expanded'"
@@ -335,6 +337,7 @@ const overlayHidden = computed(() => dragHeight.value === null
         </div>
       </aside>
     </div>
-    <AppTabBar v-if="!fullscreen" class="md:hidden" />
+    <!-- Above the sheet (z-10), whatever the sheet draws past its edge. -->
+    <AppTabBar v-if="!fullscreen" class="relative z-20 md:hidden" />
   </div>
 </template>

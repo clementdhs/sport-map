@@ -13,6 +13,7 @@ const props = defineProps<{
   note?: string
 }>()
 
+const estimateDuration = useDurationEstimate()
 const start = computed(() => props.route.thumbnail ? thumbnailStart(props.route.thumbnail) : null)
 
 const stats = computed(() => {
@@ -20,7 +21,7 @@ const stats = computed(() => {
   return [
     { icon: 'i-lucide-move-horizontal', label: formatDistance(distance_m) },
     ...elevation_gain_m != null ? [{ icon: 'i-lucide-trending-up', label: t('routeCard.gain', { gain: Math.round(elevation_gain_m) }) }] : [],
-    { icon: 'i-lucide-clock', label: `~${formatDuration(estimateDurationMin(sport_type, distance_m, elevation_gain_m))}` },
+    { icon: 'i-lucide-clock', label: `~${formatDuration(estimateDuration(sport_type, distance_m, elevation_gain_m))}` },
     ...is_loop ? [{ icon: 'i-lucide-refresh-cw', label: t('routeCard.loop') }] : [],
   ]
 })

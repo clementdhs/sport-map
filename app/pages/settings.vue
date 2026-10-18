@@ -3,7 +3,7 @@ import type { ProfileInfo } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
 // Account settings, reached from the account menu, in sections with their own anchor (#111): profile, account
-// (password, data), appearance and language, voice guidance.
+// (password, data), appearance and language, paces per sport, voice guidance.
 const { t } = useI18n()
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
 useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
@@ -55,6 +55,7 @@ const sections = computed(() => [
   { id: 'profile', label: t('settings.sections.profile'), icon: 'i-lucide-user' },
   { id: 'account', label: t('settings.sections.account'), icon: 'i-lucide-key-round' },
   { id: 'appearance', label: t('settings.sections.appearance'), icon: 'i-lucide-palette' },
+  { id: 'paces', label: t('settings.sections.paces'), icon: 'i-lucide-timer' },
   { id: 'voice', label: t('settings.sections.voice'), icon: 'i-lucide-volume-2' },
 ])
 // Under the sticky header, plus the strip of sections on phones.
@@ -123,6 +124,14 @@ const voice = useVoicePrefs()
             <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
             <LanguageSelect />
             <ThemeSettings />
+          </div>
+        </section>
+
+        <section id="paces" :class="SECTION_CLASS" aria-labelledby="settings-paces-title">
+          <h2 id="settings-paces-title" class="text-base font-semibold">{{ t('settings.sections.paces') }}</h2>
+          <div :class="CARD_CLASS">
+            <p class="text-sm text-muted">{{ t('settings.paces.hint') }}</p>
+            <PaceSettings />
           </div>
         </section>
 

@@ -21,6 +21,7 @@ const round = (value: number) => Math.round(value * 1e6) / 1e6
 // the map, one of which becomes the editor's track.
 export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const editor = useRouteEditorStore()
+  const preferences = usePreferencesStore()
 
   const open = ref(false)
   const start = ref<LngLat | null>(null)
@@ -37,10 +38,10 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   // Answers for proposals that were cleared since are ignored.
   let generation = 0
 
-  // The distance asked for: a duration is turned into a distance at the sport's speed on the flat.
+  // The distance asked for: a duration is turned into a distance on the flat, at the member's pace (#146).
   const targetM = computed(() => target.value === 'distance'
     ? Math.round(distanceKm.value * 1000)
-    : loopLengthForDuration(editor.details.sport_type, durationMin.value))
+    : loopLengthForDuration(editor.details.sport_type, durationMin.value, preferences.values.paces[editor.details.sport_type]))
   const targetInRange = computed(() => targetM.value >= LOOP_MIN_M && targetM.value <= LOOP_MAX_M)
   const generating = computed(() => proposals.value.some(proposal => proposal.status === 'loading'))
   const canGenerate = computed(() => !!start.value && targetInRange.value && !generating.value && !editor.routingQuotaReached)

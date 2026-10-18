@@ -10,6 +10,7 @@ const { formatDistance } = useFormat()
 const toast = useToast()
 
 const sportItems = useSportItems()
+const estimateDuration = useDurationEstimate()
 const targetItems = computed(() => [
   { label: t('loop.distance'), value: 'distance' },
   { label: t('loop.duration'), value: 'duration' },
@@ -19,7 +20,7 @@ const targetItems = computed(() => [
 const targetHint = computed(() => {
   if (!loop.targetInRange) return t('loop.outOfRange', { min: formatDistance(LOOP_MIN_M), max: formatDistance(LOOP_MAX_M) })
   return loop.target === 'distance'
-    ? t('loop.flatDuration', { duration: formatDuration(estimateDurationMin(editor.details.sport_type, loop.targetM, null)) })
+    ? t('loop.flatDuration', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, null)) })
     : t('loop.flatDistance', { distance: formatDistance(loop.targetM) })
 })
 
@@ -59,7 +60,7 @@ function choose(index: number) {
 }
 
 function proposalSummary({ distanceM, gainM }: LoopProposal) {
-  const duration = formatDuration(estimateDurationMin(editor.details.sport_type, distanceM, gainM))
+  const duration = formatDuration(estimateDuration(editor.details.sport_type, distanceM, gainM))
   return t('loop.summary', { distance: formatDistance(distanceM), gain: Math.round(gainM ?? 0), duration })
 }
 </script>

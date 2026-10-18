@@ -10,10 +10,18 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
-const minutes = computed(() => estimateDurationMin(props.sport, props.distanceM, props.elevationGainM))
-const method = computed(() => props.elevationGainM === null
-  ? `${t(`duration.methods.${props.sport}`)} ${t('duration.unknownGain')}`
-  : t(`duration.methods.${props.sport}`))
+const { locale } = useFormat()
+const estimateDuration = useDurationEstimate()
+const minutes = computed(() => estimateDuration(props.sport, props.distanceM, props.elevationGainM))
+// The member's pace for the sport (#146), which the tooltip names, else the sport's default one.
+const paces = usePreference('paces')
+const pace = computed(() => paces.value[props.sport])
+const method = computed(() => {
+  const formula = pace.value === undefined
+    ? t(`duration.methods.${props.sport}`)
+    : t(`duration.myMethods.${props.sport}`, { value: formatPaceSetting(props.sport, pace.value, locale()) })
+  return props.elevationGainM === null ? `${formula} ${t('duration.unknownGain')}` : formula
+})
 </script>
 
 <template>

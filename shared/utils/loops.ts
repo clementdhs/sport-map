@@ -40,9 +40,9 @@ export function nextLoopLength(targetM: number, tries: LoopTry[]): number {
   return Math.round(Math.min(Math.max(bounded, LOOP_MIN_M), LOOP_MAX_M))
 }
 
-// Distance covered in that time on the flat, at the sport's estimated speed.
-export function loopLengthForDuration(sport: SportType, minutes: number): number {
-  return Math.round(minutes / estimateDurationMin(sport, 1000, null) * 1000)
+// Distance covered in that time on the flat, at the member's pace (#146) or the sport's default one.
+export function loopLengthForDuration(sport: SportType, minutes: number, paceMinPerKm?: number): number {
+  return Math.round(minutes / estimateDurationMin(sport, 1000, null, paceMinPerKm) * 1000)
 }
 
 // Indices of the waypoints that split a loop into segments of about the same length, first and last point

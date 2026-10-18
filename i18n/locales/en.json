@@ -354,6 +354,14 @@
       "cycling": "15 km/h average, plus 1 h per 500 m of elevation gain.",
       "road_cycling": "25 km/h average, plus 1 h per 600 m of elevation gain.",
       "mountain_biking": "12 km/h average, plus 1 h per 500 m of elevation gain."
+    },
+    "myMethods": {
+      "running": "Your pace of {value} min/km (Settings), each 100 m of elevation gain counting as 1 km on the flat (km-effort).",
+      "trail": "Your pace of {value} min/km (Settings), each 100 m of elevation gain counting as 1 km on the flat (km-effort).",
+      "hiking": "Your speed of {value} km/h (Settings), plus 1 h per 600 m of elevation gain.",
+      "cycling": "Your speed of {value} km/h (Settings), plus 1 h per 500 m of elevation gain.",
+      "road_cycling": "Your speed of {value} km/h (Settings), plus 1 h per 600 m of elevation gain.",
+      "mountain_biking": "Your speed of {value} km/h (Settings), plus 1 h per 500 m of elevation gain."
     }
   },
   "elevationProfile": {
@@ -947,6 +955,7 @@
       "profile": "Profile",
       "account": "Account",
       "appearance": "Appearance and language",
+      "paces": "My paces",
       "voice": "Voice guidance"
     },
     "profileHint": "What the team sees on {link} ({username}).",
@@ -959,7 +968,22 @@
     "bio": "Bio",
     "saveProfile": "Save the profile",
     "changePassword": "Change the password",
-    "appearanceHint": "Kept on this device."
+    "appearanceHint": "Kept on this device.",
+    "paces": {
+      "hint": "Estimated route durations follow your pace on the flat, with the climbing added. An empty field keeps the default.",
+      "paceUnit": "min/km",
+      "speedUnit": "km/h",
+      "default": "Default: {value}",
+      "invalidPace": "Type a pace between {min}:00 and {max}:00 min/km, for example 5:30.",
+      "invalidSpeed": "Type a speed between {min} and {max} km/h, for example 4.5.",
+      "suggest": "Work it out from my outings",
+      "suggestHint": "Offers the median pace of your latest GPS outings in each sport (at least {distance} km and {minutes} min), climbing taken out. You choose whether to keep it.",
+      "suggestion": "From your last outing: {value} | From your last {count} outings: {value}",
+      "use": "Use",
+      "ignore": "Dismiss",
+      "noSuggestion": "No GPS outing long enough to offer a pace.",
+      "suggestFailed": "Couldn't work it out"
+    }
   },
   "sports": {
     "running": "Road running",
@@ -1048,6 +1072,7 @@
     "unknownAction": "Unknown action",
     "loadOwnProfileFailed": "Couldn't load your profile",
     "loadPreferencesFailed": "Couldn't load your settings",
+    "loadPaceSuggestionsFailed": "Couldn't work out your pace from your outings",
     "savePreferencesFailed": "Couldn't save your settings",
     "loadProfileFailed": "Couldn't load the profile",
     "loadRouteFailed": "Couldn't load the route",

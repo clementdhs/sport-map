@@ -354,6 +354,14 @@
       "cycling": "15 km/h de moyenne, plus 1 h par 500 m de dénivelé positif.",
       "road_cycling": "25 km/h de moyenne, plus 1 h par 600 m de dénivelé positif.",
       "mountain_biking": "12 km/h de moyenne, plus 1 h par 500 m de dénivelé positif."
+    },
+    "myMethods": {
+      "running": "Ton allure de {value} min/km (Paramètres), chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).",
+      "trail": "Ton allure de {value} min/km (Paramètres), chaque 100 m de dénivelé positif comptant comme 1 km de plat (km-effort).",
+      "hiking": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 600 m de dénivelé positif.",
+      "cycling": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 500 m de dénivelé positif.",
+      "road_cycling": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 600 m de dénivelé positif.",
+      "mountain_biking": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 500 m de dénivelé positif."
     }
   },
   "elevationProfile": {
@@ -947,6 +955,7 @@
       "profile": "Profil",
       "account": "Compte",
       "appearance": "Apparence et langue",
+      "paces": "Mes allures",
       "voice": "Guidage vocal"
     },
     "profileHint": "Ce que l'équipe voit sur {link} ({username}).",
@@ -959,7 +968,22 @@
     "bio": "Bio",
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
-    "appearanceHint": "Gardée sur cet appareil."
+    "appearanceHint": "Gardée sur cet appareil.",
+    "paces": {
+      "hint": "Les durées estimées des parcours suivent ton allure sur le plat, le dénivelé s'y ajoute. Un champ vide garde la valeur par défaut.",
+      "paceUnit": "min/km",
+      "speedUnit": "km/h",
+      "default": "Par défaut : {value}",
+      "invalidPace": "Écris une allure entre {min}:00 et {max}:00 min/km, par exemple 5:30.",
+      "invalidSpeed": "Écris une vitesse entre {min} et {max} km/h, par exemple 4,5.",
+      "suggest": "Calculer depuis mes sorties",
+      "suggestHint": "Propose l'allure médiane de tes dernières sorties GPS de chaque sport (au moins {distance} km et {minutes} min), dénivelé déduit. Tu choisis de la garder ou non.",
+      "suggestion": "D'après ta dernière sortie : {value} | D'après tes {count} dernières sorties : {value}",
+      "use": "Utiliser",
+      "ignore": "Ignorer",
+      "noSuggestion": "Aucune sortie GPS assez longue pour proposer une allure.",
+      "suggestFailed": "Calcul impossible"
+    }
   },
   "sports": {
     "running": "Course sur route",
@@ -1048,6 +1072,7 @@
     "unknownAction": "Action inconnue",
     "loadOwnProfileFailed": "Impossible de charger ton profil",
     "loadPreferencesFailed": "Impossible de charger tes réglages",
+    "loadPaceSuggestionsFailed": "Impossible de calculer ton allure depuis tes sorties",
     "savePreferencesFailed": "Impossible d'enregistrer tes réglages",
     "loadProfileFailed": "Impossible de charger le profil",
     "loadRouteFailed": "Impossible de charger le parcours",

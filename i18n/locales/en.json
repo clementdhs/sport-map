@@ -708,6 +708,7 @@
     "toggleAttribution": "Toggle attribution",
     "title": "Map",
     "basemap": "Basemap",
+    "layers": "Layers",
     "view3d": "3D view (terrain)",
     "basemaps": {
       "maptiler": "MapTiler Outdoor",

@@ -16,3 +16,17 @@
   color: #18181b;
   font-weight: 500;
 }
+
+/* Phones (#104): no zoom buttons (pinching zooms), and the compass only while the map is turned or tilted. */
+@media (width < 48rem) {
+  .maplibregl-ctrl-group .maplibregl-ctrl-zoom-in,
+  .maplibregl-ctrl-group .maplibregl-ctrl-zoom-out {
+    display: none;
+  }
+  .maplibregl-ctrl-group .maplibregl-ctrl-compass {
+    border-top: none;
+  }
+  [data-map-flat] .maplibregl-ctrl-group:has(> .maplibregl-ctrl-compass) {
+    display: none;
+  }
+}

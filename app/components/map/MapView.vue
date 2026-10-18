@@ -31,11 +31,16 @@ const styleUrl = mapStyleUrl(maptilerKey)
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
-// Basemap picked by the visitor, and the button picking it (a MapLibre control filled by a teleport, which
-// also holds the 3D button).
+// Basemap picked by the visitor, and the "Calques" button (a MapLibre control filled by a teleport) opening the
+// panel that picks it, with the 3D view, the page's own controls (route page: track colours) and the legend (#104).
 const basemap = ref<Basemap>(DEFAULT_BASEMAP)
 const online = ref(true)
-const basemapControl = shallowRef<HTMLElement>()
+const layersControl = shallowRef<HTMLElement>()
+const layersButton = useTemplateRef('layersButton')
+const layersOpen = ref(false)
+// The legend opens from the panel, in its place: rendered (and its chunk loaded) once asked for.
+const legendOpen = ref(false)
+const legendUsed = ref(false)
 let setBasemap: ((basemap: Basemap) => void) | undefined
 // The style's elevation source when the 3D view is offered, and whether it is shown.
 const reliefSource = ref<string>()
@@ -46,6 +51,8 @@ const loaded = ref(false)
 // end-to-end tests check where the map went and how it is turned.
 const center = ref<string>()
 const bearing = ref<string>()
+// North up and seen from above: phones then hide the compass (data-map-flat, main.css).
+const flat = ref(true)
 
 onMounted(async () => {
   // maplibre-gl touches `window` at import time, so load it client-side only.
@@ -89,13 +96,13 @@ onMounted(async () => {
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
   instance.addControl({
     onAdd: () => {
-      basemapControl.value = document.createElement('div')
-      basemapControl.value.className = 'maplibregl-ctrl maplibregl-ctrl-group'
-      return basemapControl.value
+      layersControl.value = document.createElement('div')
+      layersControl.value.className = 'maplibregl-ctrl maplibregl-ctrl-group'
+      return layersControl.value
     },
     onRemove: () => {
-      basemapControl.value?.remove()
-      basemapControl.value = undefined
+      layersControl.value?.remove()
+      layersControl.value = undefined
     },
   }, 'top-right')
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
@@ -122,6 +129,12 @@ onMounted(async () => {
     if (shift && next.window === size.window && !instance.isMoving()) instance.panBy([shift / 2, 0], { animate: false })
     size = next
   })
+  const updateFlat = () => {
+    flat.value = instance.getBearing() === 0 && instance.getPitch() === 0
+  }
+  updateFlat()
+  instance.on('rotate', updateFlat)
+  instance.on('pitch', updateFlat)
   instance.on('moveend', () => {
     const { lng, lat } = instance.getCenter()
     center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
@@ -138,15 +151,38 @@ function updateOnline() {
 const shown = computed(() => shownBasemap(basemap.value, online.value))
 watch(shown, () => setBasemap?.(shown.value))
 
-const basemapItems = computed(() => BASEMAPS.map(id => ({
-  label: t(`map.basemaps.${id}`),
-  type: 'checkbox' as const,
-  checked: basemap.value === id,
-  onUpdateChecked: () => {
-    basemap.value = id
-    saveBasemap(id)
+const basemapItems = computed(() => BASEMAPS.map(id => ({ label: t(`map.basemaps.${id}`), value: id })))
+
+function pickBasemap(id: Basemap) {
+  basemap.value = id
+  saveBasemap(id)
+}
+
+// The panel stays open while the map is moved, to see what it changes. It gives way to the legend, which opens in
+// its place and takes focus: closing the panel then leaves it there.
+const layersContent = computed(() => ({
+  'side': 'left' as const,
+  'align': 'start' as const,
+  'aria-label': t('map.layers'),
+  'onInteractOutside': keepOpenOnMap,
+  'onCloseAutoFocus': (event: Event) => {
+    if (legendOpen.value) event.preventDefault()
   },
-})))
+}))
+
+function keepOpenOnMap(event: CustomEvent<{ originalEvent: Event }>) {
+  const target = event.detail.originalEvent.target
+  if (target instanceof Element && target.closest('.maplibregl-map')) event.preventDefault()
+}
+
+function openLegend() {
+  legendUsed.value = true
+  legendOpen.value = true
+  layersOpen.value = false
+}
+watch(layersOpen, (open) => {
+  if (open) legendOpen.value = false
+})
 
 watch(() => props.force3d, (on) => {
   if (map.value && reliefSource.value && !view3d.value) setRelief(map.value, reliefSource.value, !!on)
@@ -167,29 +203,55 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="container" class="size-full" :data-map-loaded="loaded || undefined" :data-map-center="center" :data-map-bearing="bearing" />
-  <Teleport v-if="basemapControl" :to="basemapControl">
-    <UDropdownMenu :items="basemapItems" :content="{ side: 'left', align: 'start' }">
-      <button type="button" class="flex items-center justify-center" :title="t('map.basemap')" :aria-label="t('map.basemap')">
+  <div
+    ref="container"
+    class="size-full"
+    :data-map-loaded="loaded || undefined"
+    :data-map-center="center"
+    :data-map-bearing="bearing"
+    :data-map-flat="flat || undefined"
+  />
+  <Teleport v-if="layersControl" :to="layersControl">
+    <UPopover v-model:open="layersOpen" :content="layersContent">
+      <button ref="layersButton" type="button" class="flex items-center justify-center" :title="t('map.layers')" :aria-label="t('map.layers')">
         <UIcon name="i-lucide-layers" class="size-4 text-neutral-800" />
       </button>
-    </UDropdownMenu>
-    <!-- Lazy: the style expression evaluator it reads the basemap with stays out of the page's bundle. -->
-    <LazyMapLegend :map="map" :basemap="shown" />
-    <!-- Page-specific buttons of the group (route page: track colours). -->
-    <slot name="controls" />
-    <button
-      v-if="reliefSource"
-      type="button"
-      class="flex items-center justify-center text-xs font-bold"
-      :class="view3d || force3d ? 'text-primary' : 'text-neutral-800'"
-      :title="t('map.view3d')"
-      :aria-label="t('map.view3d')"
-      :aria-pressed="view3d || force3d"
-      :disabled="force3d"
-      @click="toggle3d"
-    >
-      3D
-    </button>
+      <template #content>
+        <div class="w-60 space-y-4 p-3">
+          <URadioGroup
+            :model-value="basemap"
+            :legend="t('map.basemap')"
+            :items="basemapItems"
+            size="sm"
+            :ui="{ legend: 'text-sm font-medium mb-1.5' }"
+            @update:model-value="pickBasemap($event as Basemap)"
+          />
+          <USwitch
+            v-if="reliefSource"
+            :model-value="view3d || force3d"
+            :label="t('map.view3d')"
+            :disabled="force3d"
+            size="sm"
+            @update:model-value="toggle3d"
+          />
+          <!-- Page-specific controls (route page: track colours). -->
+          <slot name="controls" />
+          <UButton
+            :label="t('mapLegend.title')"
+            icon="i-lucide-info"
+            trailing-icon="i-lucide-chevron-right"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            block
+            class="-mx-2 w-[calc(100%+1rem)] justify-start"
+            :ui="{ trailingIcon: 'ms-auto' }"
+            @click="openLegend"
+          />
+        </div>
+      </template>
+    </UPopover>
   </Teleport>
+  <!-- Lazy: the style expression evaluator it reads the basemap with stays out of the page's bundle. -->
+  <LazyMapLegend v-if="legendUsed" v-model:open="legendOpen" :map="map" :basemap="shown" :reference="layersButton ?? undefined" />
 </template>

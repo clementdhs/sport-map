@@ -708,6 +708,7 @@
     "toggleAttribution": "Afficher les crédits",
     "title": "Carte",
     "basemap": "Fond de carte",
+    "layers": "Calques",
     "view3d": "Vue 3D (relief)",
     "basemaps": {
       "maptiler": "MapTiler Outdoor",

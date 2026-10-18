@@ -32,9 +32,9 @@ test('summarises the slopes and the ways of a route and colours the track on dem
   const surfaceBox = await page.getByRole('region', { name: 'Type de surface' }).boundingBox()
   expect(weatherBox!.y).toBeLessThan(surfaceBox!.y)
 
-  // The colouring is picked from the map's controls, with its legend.
+  // The colouring is picked in the map's "Calques" panel, with its legend.
   const legend = page.getByRole('list', { name: 'Légende des couleurs du tracé' })
-  await page.getByRole('button', { name: 'Couleurs du tracé' }).click()
+  await page.getByRole('button', { name: 'Calques' }).click()
   const colouring = page.getByRole('group', { name: 'Couleurs du tracé' })
   await expect(colouring.getByRole('radio', { name: 'Aucune' })).toBeChecked()
   await expect(legend).toHaveCount(0)
@@ -56,7 +56,7 @@ test('summarises the slopes and the ways of a route and colours the track on dem
 test('shows nothing about the ways of a route drawn without them', async ({ page }) => {
   await page.goto(`/routes/${process.env.E2E_LOOP_ID}`)
   await waitForMap(page)
-  await page.getByRole('button', { name: 'Couleurs du tracé' }).click()
+  await page.getByRole('button', { name: 'Calques' }).click()
   await expect(page.getByRole('radio', { name: 'Pente' })).toBeVisible()
   await expect(page.getByRole('radio', { name: 'Surface' })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Type de surface' })).toHaveCount(0)

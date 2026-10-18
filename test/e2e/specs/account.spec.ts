@@ -174,3 +174,57 @@ test('counts a completed route in the profile summary and statistics', async ({ 
   await expect(page.getByText('Sur les 5 dernières années', { exact: true })).toBeVisible()
   expect(Number(await outings.textContent())).toBeGreaterThanOrEqual(1)
 })
+
+test('reaches each settings section from its table of contents, on a computer and on a phone, and links to it', async ({ page }) => {
+  await page.goto('/settings')
+  await waitForHydration(page)
+  const sections = page.getByRole('navigation', { name: 'Sections des paramètres' })
+  const link = (name: string) => sections.getByRole('link', { name })
+  await expect(sections.getByRole('link')).toHaveText(['Profil', 'Compte', 'Apparence et langue', 'Guidage vocal'])
+  await expect(link('Profil')).toHaveAttribute('aria-current', 'location')
+
+  // One click and the section is in sight, with its own URL.
+  await link('Guidage vocal').click()
+  await expect(page).toHaveURL(/\/settings#voice$/)
+  await expect(link('Guidage vocal')).toHaveAttribute('aria-current', 'location')
+  await expect(page.getByRole('heading', { name: 'Guidage vocal', level: 2 })).toBeInViewport()
+
+  // Voice guidance, set here as in follow mode and kept on the device.
+  const voice = page.getByRole('switch', { name: 'Activer le guidage vocal' })
+  await expect(page.getByRole('checkbox', { name: 'Arrivée' })).toBeDisabled()
+  await voice.click()
+  await page.getByRole('checkbox', { name: 'Arrivée' }).click()
+  await page.reload()
+  await waitForHydration(page)
+  await expect(voice).toBeChecked()
+  await expect(page.getByRole('checkbox', { name: 'Arrivée' })).not.toBeChecked()
+  expect(await page.evaluate(() => localStorage.getItem('sport-map:voice'))).toBe(
+    JSON.stringify({ enabled: true, announcements: ['track', 'kilometres', 'climbs'] }),
+  )
+
+  // A link straight to a section, then the highlighted link follows the scroll.
+  await page.goto('/settings#appearance')
+  await waitForHydration(page)
+  await expect(link('Apparence et langue')).toHaveAttribute('aria-current', 'location')
+  await expect(page.getByRole('heading', { name: 'Apparence et langue', level: 2 })).toBeInViewport()
+  await page.mouse.move(600, 400)
+  await page.mouse.wheel(0, -100_000)
+  await expect(link('Profil')).toHaveAttribute('aria-current', 'location')
+
+  // Phones: a strip of sections stuck under the header, clear of the bottom tab bar.
+  await page.setViewportSize({ width: 375, height: 812 })
+  await link('Compte').click()
+  await expect(page).toHaveURL(/\/settings#account$/)
+  const strip = await sections.boundingBox()
+  const heading = await page.getByRole('heading', { name: 'Compte', level: 2 }).boundingBox()
+  expect(strip!.y).toBeGreaterThan(0)
+  expect(heading!.y).toBeGreaterThanOrEqual(strip!.y + strip!.height)
+  expect(heading!.y).toBeLessThan(strip!.y + strip!.height + 100)
+
+  await link('Guidage vocal').click()
+  await expect(link('Guidage vocal')).toBeInViewport()
+  const tabBar = await page.getByRole('navigation', { name: 'Navigation principale' }).last().boundingBox()
+  const last = await page.locator('#voice').boundingBox()
+  expect(last!.y + last!.height).toBeLessThanOrEqual(tabBar!.y)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(375)
+})

@@ -914,7 +914,13 @@
   },
   "settings": {
     "profileUpdated": "Profil mis à jour",
-    "profile": "Profil",
+    "sectionsLabel": "Sections des paramètres",
+    "sections": {
+      "profile": "Profil",
+      "account": "Compte",
+      "appearance": "Apparence et langue",
+      "voice": "Guidage vocal"
+    },
     "profileHint": "Ce que la famille voit sur {link} ({username}).",
     "publicProfile": "ton profil",
     "displayName": "Nom affiché",

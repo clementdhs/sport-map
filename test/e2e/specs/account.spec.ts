@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, storedPhotoFiles, supabaseAdmin } from '../admin'
+import type { Locator } from '@playwright/test'
 import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration } from '../fixtures'
 
 test.use({ role: 'account' })
@@ -130,8 +131,11 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })
 
-test('counts a completed route in the profile statistics', async ({ page }) => {
-  const outings = page.locator('dt', { hasText: 'Sorties' }).locator('xpath=following-sibling::dd')
+test('counts a completed route in the profile summary and statistics', async ({ page, users }) => {
+  const valueOf = (scope: Locator, label: string) => scope.locator('dt', { hasText: label }).locator('xpath=following-sibling::dd')
+  const outings = valueOf(page.getByRole('tabpanel'), 'Sorties')
+  // The current year's totals at the top of the profile, the member's own and the one the family sees.
+  const summaryOutings = valueOf(page.getByTestId('profile-summary'), 'Sorties')
   const emptyStats = page.getByText('Marque des parcours comme faits')
   const openStats = async () => {
     await page.goto('/profile')
@@ -144,6 +148,9 @@ test('counts a completed route in the profile statistics', async ({ page }) => {
   await expect(emptyStats.or(outings)).toBeVisible()
   const empty = await emptyStats.isVisible()
   const before = empty ? 0 : Number(await outings.textContent())
+  const summaryBefore = Number(await summaryOutings.textContent())
+  await expect(page.getByTestId('profile-summary')).toContainText(`En ${new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', year: 'numeric' }).format(new Date())}`)
+  await expect(page.getByTestId('profile-avatar')).toHaveText('CE') // Compte e2e N
 
   const { id } = await (await page.request.post('/api/routes', {
     data: { name: 'Parcours stats e2e', sport_type: 'road_cycling', is_public: false, coordinates: [[6.1, 45.9], [6.2, 45.95]] },
@@ -152,6 +159,14 @@ test('counts a completed route in the profile statistics', async ({ page }) => {
 
   await openStats()
   await expect(outings).toHaveText(String(before + 1))
+  await expect(summaryOutings).toHaveText(String(summaryBefore + 1))
+  // The family sees the same totals, the private route included, but not the route itself.
+  await page.goto(`/profile/${users.account.username}`)
+  await expect(summaryOutings).toHaveText(String(summaryBefore + 1))
+  await expect(page.getByText('Parcours stats e2e')).toHaveCount(0)
+  await page.goto('/profile')
+  await waitForHydration(page)
+  await page.getByRole('tab', { name: 'Statistiques' }).click()
   // Switching the period is immediate, and road cycling alone shows at least this route.
   await page.getByRole('combobox', { name: 'Sport' }).click()
   await page.getByRole('option', { name: 'Vélo de route' }).click()

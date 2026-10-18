@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { StatsOuting } from '#shared/types/routes'
-import { activityStats, localDate, metricValue, MONTHS_SHOWN, WEEKS_SHOWN, weekStart, YEARS_SHOWN } from '~/utils/activityStats'
+import { activityStats, metricValue, MONTHS_SHOWN, WEEKS_SHOWN, weekStart, YEARS_SHOWN } from '~/utils/activityStats'
+import { localDate } from '#shared/utils/outings'
 
 const NOW = new Date('2026-09-30T10:00:00Z') // a Wednesday
 

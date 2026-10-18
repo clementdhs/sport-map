@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { StatsOuting } from '#shared/types/routes'
-import { estimateGapMin, outingEnd, statsOutings } from '#shared/utils/outings'
+import { estimateGapMin, outingEnd, statsOutings, yearSummary } from '#shared/utils/outings'
 
 const outing = (routeId: string, completedAt: string, movingS: number | null): StatsOuting => ({
   route_id: routeId,
@@ -26,6 +26,26 @@ describe('statsOutings', () => {
       ['b', '2026-09-25T10:00:00Z', null],
       ['a', '2026-09-20T10:00:00Z', 3600],
     ])
+  })
+})
+
+describe('yearSummary', () => {
+  it('adds up the outings of the current French year', () => {
+    const now = new Date('2026-10-18T10:00:00Z')
+    const outings = [
+      outing('a', '2026-10-10T10:00:00Z', 3600),
+      { ...outing('b', '2026-01-01T08:00:00Z', null), elevation_gain_m: null },
+      // New Year's Eve at 23:30 in Paris: still 2025
+      outing('c', '2025-12-31T22:30:00Z', null),
+      // 00:30 on New Year's Day in Paris: 2026
+      outing('d', '2025-12-31T23:30:00Z', null),
+    ]
+    expect(yearSummary(outings, now)).toEqual({ year: 2026, distance_m: 30_000, outings: 3, elevation_gain_m: 1000 })
+  })
+
+  it('is zero without outings this year', () => {
+    expect(yearSummary([outing('a', '2025-06-01T10:00:00Z', null)], new Date('2026-01-01T00:30:00+01:00')))
+      .toEqual({ year: 2026, distance_m: 0, outings: 0, elevation_gain_m: 0 })
   })
 })
 

@@ -1,4 +1,10 @@
-import type { StatsOuting } from '../types/routes'
+import type { ProfileSummary, StatsOuting } from '../types/routes'
+
+// Local date (YYYY-MM-DD) in France, so that a Sunday evening outing stays in its week, and a New Year's Eve
+// one in its year.
+export function localDate(instant: string | Date): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' }).format(new Date(instant))
+}
 
 // When an outing ended, from its start and elapsed time.
 export function outingEnd(startedAt: string, durationS: number): string {
@@ -11,6 +17,19 @@ export function statsOutings(recorded: StatsOuting[], markedDone: StatsOuting[])
   const recordedRoutes = new Set(recorded.map(outing => outing.route_id))
   return [...recorded, ...markedDone.filter(done => !recordedRoutes.has(done.route_id))]
     .sort((a, b) => b.completed_at.localeCompare(a.completed_at))
+}
+
+// Totals of the outings of the current year, for the summary at the top of a profile.
+export function yearSummary(outings: StatsOuting[], now = new Date()): ProfileSummary {
+  const year = localDate(now).slice(0, 4)
+  const summary: ProfileSummary = { year: Number(year), distance_m: 0, outings: 0, elevation_gain_m: 0 }
+  for (const outing of outings) {
+    if (!localDate(outing.completed_at).startsWith(year)) continue
+    summary.distance_m += outing.distance_m
+    summary.elevation_gain_m += outing.elevation_gain_m ?? 0
+    summary.outings++
+  }
+  return summary
 }
 
 // Gap between an outing's moving time and the route's estimated duration, in minutes rounded to 5 like the

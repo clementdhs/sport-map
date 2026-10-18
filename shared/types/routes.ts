@@ -102,8 +102,18 @@ export type StatsOuting = Pick<RouteListItem, 'sport_type' | 'distance_m' | 'ele
   moving_s: number | null
 }
 
+// Totals of the current year's outings, shown at the top of a profile.
+export type ProfileSummary = {
+  year: number
+  distance_m: number
+  outings: number
+  elevation_gain_m: number
+}
+
 export type PublicProfile = {
   profile: ProfileInfo
+  // Counts every outing of the member, private routes included: only the totals leave the server.
+  summary: ProfileSummary
   routes: RouteListItem[]
 }
 

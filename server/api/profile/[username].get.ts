@@ -18,18 +18,22 @@ export default defineEventHandler(async (event): Promise<PublicProfile> => {
   if (!profile) throw apiError(event, 404, 'api.profileNotFound')
 
   // Explicit is_public filter: RLS would also return the viewer's own private routes.
-  const { data: routes, error: routesError } = await supabase
-    .from('routes')
-    .select(ROUTE_LIST_COLUMNS)
-    .eq('owner_id', profile.id)
-    .eq('is_public', true)
-    .order('created_at', { ascending: false })
+  const [{ data: routes, error: routesError }, summary] = await Promise.all([
+    supabase
+      .from('routes')
+      .select(ROUTE_LIST_COLUMNS)
+      .eq('owner_id', profile.id)
+      .eq('is_public', true)
+      .order('created_at', { ascending: false }),
+    memberYearSummary(event, profile.id),
+  ])
 
-  if (routesError) {
-    console.error('[GET /api/profile/:username]', routesError)
+  // memberYearSummary logs its own error.
+  if (routesError || !summary) {
+    if (routesError) console.error('[GET /api/profile/:username]', routesError)
     throw apiError(event, 500, 'api.loadProfileFailed')
   }
 
   const { id: _id, ...info } = profile
-  return { profile: info, routes: routes.map(toRouteListItem) }
+  return { profile: info, summary, routes: routes.map(toRouteListItem) }
 })

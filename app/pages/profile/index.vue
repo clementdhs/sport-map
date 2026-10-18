@@ -18,6 +18,9 @@ if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
 
+// Same outings as the statistics tab: no extra request.
+const summary = computed(() => yearSummary(data.value?.outings ?? []))
+
 const { data: collections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
 
 const tabs = computed(() => [
@@ -31,13 +34,8 @@ const tabs = computed(() => [
 
 <template>
   <UContainer v-if="data" class="max-w-3xl space-y-6 py-8">
-    <div class="flex items-start justify-between gap-4">
-      <div class="space-y-1">
-        <h1 class="text-2xl font-semibold">{{ data.profile.display_name ?? data.profile.username }}</h1>
-        <p class="text-sm text-muted">@{{ data.profile.username }} · {{ t('profile.memberSince', { date: formatDate(data.profile.created_at) }) }}</p>
-        <p v-if="data.profile.bio" class="whitespace-pre-line pt-2">{{ data.profile.bio }}</p>
-      </div>
-      <div class="flex shrink-0 gap-2">
+    <ProfileHeader :profile="data.profile" :summary="summary">
+      <template #actions>
         <UButton
           :to="`/profile/${data.profile.username}`"
           icon="i-lucide-eye"
@@ -46,8 +44,8 @@ const tabs = computed(() => [
           :aria-label="t('profile.viewPublic')"
         />
         <UButton to="/settings" icon="i-lucide-settings" :label="t('header.settings')" :aria-label="t('header.settings')" color="neutral" variant="outline" :ui="{ label: 'hidden sm:inline' }" />
-      </div>
-    </div>
+      </template>
+    </ProfileHeader>
 
     <!-- Phones: icon and count on top, short label below, so the 5 tabs fit from 360 px.
          The full label stays the tab's accessible name. -->

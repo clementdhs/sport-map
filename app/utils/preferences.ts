@@ -1,5 +1,6 @@
 import type { MyPreferences } from '#shared/types/account'
 import { ACCOUNT_PREFERENCES, type AccountPreferenceKey } from '#shared/utils/preferences'
+import { parseSportPaces, type SportPaces } from '#shared/utils/pace'
 import type { SearchScope } from '#shared/utils/routes'
 import { parseBasemap, type Basemap } from '~/utils/basemaps'
 import { parseLiveDataPrefs, type LiveDataPrefs } from '~/utils/liveStats'
@@ -19,6 +20,7 @@ export interface Preferences {
   searchScope: SearchScope
   liveData: LiveDataPrefs
   voice: VoicePrefs
+  paces: SportPaces
 }
 
 interface PreferenceEntry<T> {
@@ -41,6 +43,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   searchScope: { storageKey: 'sport-map:search-scope', parse: parseSearchScope, ...AS_TEXT },
   liveData: { storageKey: 'sport-map:live-data', parse: parseLiveDataPrefs },
   voice: { storageKey: 'sport-map:voice', parse: parseVoicePrefs },
+  paces: { storageKey: 'sport-map:paces', parse: parseSportPaces },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

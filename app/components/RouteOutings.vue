@@ -31,7 +31,8 @@ const toast = useToast()
 const errorMessage = useErrorMessage()
 const { formatDate, formatDistance, formatSpeed } = useFormat()
 
-const estimateMin = computed(() => estimateDurationMin(props.sport, props.distanceM, props.elevationGainM))
+const estimateDuration = useDurationEstimate()
+const estimateMin = computed(() => estimateDuration(props.sport, props.distanceM, props.elevationGainM))
 
 function gap(outing: RouteOuting) {
   const minutes = estimateGapMin(outing.moving_s, estimateMin.value)

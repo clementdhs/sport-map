@@ -41,22 +41,53 @@ export const SPORT_KINDS: Record<SportType, SportKind> = {
   mountain_biking: 'ride',
 }
 
-// Estimated moving time. Elevation gain is ignored when unknown.
-// - running, trail: "km-effort" (100 m of gain = 1 km), at 6 min/km on the road and 8 min/km on trails
-// - hiking: Naismith's rule, 5 km/h plus 1 h per 600 m of gain
-// - cycling: 15 km/h plus 1 h per 500 m of gain; road cycling 25 km/h plus 1 h per 600 m; mountain biking
-//   12 km/h plus 1 h per 500 m
-export function estimateDurationMin(sport: SportType, distanceM: number, elevationGainM: number | null): number {
+// Pace on the flat (min/km) durations are estimated with, unless the member set their own (#146, pace.ts):
+// 6 min/km road running, 8 min/km trail, 5 km/h hiking, 15 km/h leisure cycling, 25 km/h road cycling, 12 km/h
+// mountain biking.
+export const DEFAULT_PACES: Record<SportType, number> = {
+  running: 6,
+  trail: 8,
+  hiking: 12,
+  cycling: 4,
+  road_cycling: 2.4,
+  mountain_biking: 5,
+}
+
+// Elevation gain that adds an hour whatever the pace; null for runners, who count it in km-effort.
+const GAIN_PER_HOUR_M: Record<SportType, number | null> = {
+  running: null,
+  trail: null,
+  hiking: 600,
+  cycling: 500,
+  road_cycling: 600,
+  mountain_biking: 500,
+}
+
+// Estimated moving time at a pace on the flat (min/km), the sport's default one unless given. Elevation gain is
+// ignored when unknown.
+// - running, trail: "km-effort", 100 m of gain counting as 1 km at the same pace
+// - hiking: Naismith's rule, plus 1 h per 600 m of gain
+// - cycling: plus 1 h per 500 m of gain; road cycling 1 h per 600 m; mountain biking 1 h per 500 m
+export function estimateDurationMin(
+  sport: SportType,
+  distanceM: number,
+  elevationGainM: number | null,
+  paceMinPerKm = DEFAULT_PACES[sport],
+): number {
   const km = distanceM / 1000
   const gain = elevationGainM ?? 0
-  switch (sport) {
-    case 'running': return (km + gain / 100) * 6
-    case 'trail': return (km + gain / 100) * 8
-    case 'hiking': return (km / 5) * 60 + (gain / 600) * 60
-    case 'cycling': return (km / 15) * 60 + (gain / 500) * 60
-    case 'road_cycling': return (km / 25) * 60 + (gain / 600) * 60
-    case 'mountain_biking': return (km / 12) * 60 + (gain / 500) * 60
-  }
+  const gainPerHour = GAIN_PER_HOUR_M[sport]
+  return gainPerHour === null ? (km + gain / 100) * paceMinPerKm : km * paceMinPerKm + (gain / gainPerHour) * 60
+}
+
+// The pace on the flat that estimateDurationMin turns into this moving time: null without a distance, or when
+// the climbing alone takes longer.
+export function flatPaceMinPerKm(sport: SportType, distanceM: number, elevationGainM: number | null, movingMin: number): number | null {
+  const km = distanceM / 1000
+  const gain = elevationGainM ?? 0
+  const gainPerHour = GAIN_PER_HOUR_M[sport]
+  const pace = gainPerHour === null ? movingMin / (km + gain / 100) : (movingMin - (gain / gainPerHour) * 60) / km
+  return km > 0 && Number.isFinite(pace) && pace > 0 ? pace : null
 }
 
 export const MAX_ROUTE_POINTS = 5000

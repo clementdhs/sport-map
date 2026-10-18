@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   elevationStats,
   estimateDurationMin,
+  flatPaceMinPerKm,
+  SPORT_TYPES,
   routeCreateSchema,
   routeSearchSchema,
   reviewSchema,
@@ -40,6 +42,30 @@ describe('estimateDurationMin', () => {
 
   it('makes climbing cost time', () => {
     expect(estimateDurationMin('road_cycling', 10_000, 600) - estimateDurationMin('road_cycling', 10_000, 0)).toBeCloseTo(60)
+  })
+
+  it('uses the pace on the flat of the member (#146)', () => {
+    // 10 km at 5:00/km, 200 m of gain counting as 2 km
+    expect(estimateDurationMin('running', 10_000, 200, 5)).toBeCloseTo(60)
+    // 12 km at 4 km/h (15 min/km), plus Naismith's hour per 600 m whatever the pace
+    expect(estimateDurationMin('hiking', 12_000, 600, 15)).toBeCloseTo(240)
+    // 30 km at 20 km/h, plus 1 h per 500 m
+    expect(estimateDurationMin('cycling', 30_000, 250, 3)).toBeCloseTo(120)
+  })
+})
+
+describe('flatPaceMinPerKm', () => {
+  it('finds back the pace an estimate was made with', () => {
+    for (const sport of SPORT_TYPES) {
+      const minutes = estimateDurationMin(sport, 21_000, 450, 7)
+      expect(flatPaceMinPerKm(sport, 21_000, 450, minutes)).toBeCloseTo(7)
+    }
+  })
+
+  it('gives nothing without a distance, or when the climbing alone takes longer', () => {
+    expect(flatPaceMinPerKm('running', 0, null, 30)).toBeNull()
+    // 1200 m of gain is 2 h hiking: 90 min can't make it
+    expect(flatPaceMinPerKm('hiking', 5000, 1200, 90)).toBeNull()
   })
 })
 

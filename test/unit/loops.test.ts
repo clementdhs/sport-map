@@ -66,6 +66,8 @@ describe('loopLengthForDuration', () => {
     expect(loopLengthForDuration('running', 60)).toBe(10_000)
     expect(loopLengthForDuration('hiking', 90)).toBe(7500)
     expect(loopLengthForDuration('road_cycling', 120)).toBe(50_000)
+    // At the member's pace (#146): 5:00/km for an hour
+    expect(loopLengthForDuration('running', 60, 5)).toBe(12_000)
   })
 })
 

@@ -38,7 +38,7 @@ async function prepare() {
   try {
     info.value = await prepareOfflineRoute(
       { id: props.routeId, name: props.name, coordinates: props.coordinates },
-      mapStyleUrl(maptilerKey),
+      mapStyleUrls(maptilerKey),
       (done, total) => (progress.value = { done, total }),
     )
     toast.add({ title: t('offline.ready'), color: 'success', icon: 'i-lucide-check' })

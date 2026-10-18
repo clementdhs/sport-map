@@ -129,12 +129,20 @@ async function runLimited(tasks: (() => Promise<void>)[], limit: number) {
   }))
 }
 
+// `styleUrls`: the light and dark styles (the map follows the theme, #109). They share their sources, so the
+// second one only adds its style and sprite files.
 export async function prepareOfflineRoute(
   route: { id: string, name: string, coordinates: LngLat[] },
-  styleUrl: string,
+  styleUrls: string[],
   onProgress: (done: number, total: number) => void,
 ): Promise<OfflineRouteInfo> {
-  const mapUrls = await mapResourceUrls(styleUrl, route.coordinates, async url => (await fetch(url)).json())
+  const json = new Map<string, Promise<Json>>()
+  const fetchJson: FetchJson = (url) => {
+    if (!json.has(url)) json.set(url, fetch(url).then(response => response.json()))
+    return json.get(url)!
+  }
+  const lists = await Promise.all(styleUrls.map(styleUrl => mapResourceUrls(styleUrl, route.coordinates, fetchJson)))
+  const mapUrls = [...new Set(lists.flat())]
   if (mapUrls.length > OFFLINE_MAX_FILES) {
     throw new LocalizedError('errors.offlineTooLong')
   }

@@ -1,4 +1,4 @@
-import { expect, mockReliefStyle, test, waitForHydration, waitForMap } from '../fixtures'
+import { EMPTY_MAP_STYLE, expect, mockReliefStyle, test, waitForHydration, waitForMap } from '../fixtures'
 
 test.use({ role: 'account' })
 
@@ -22,6 +22,30 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   await waitForHydration(page)
   await page.getByRole('button', { name: 'Calques' }).click()
   await expect(page.getByRole('radio', { name: 'Plan IGN' })).toBeChecked()
+})
+
+test('follows the dark mode with the dark style, keeping what the map shows', async ({ page }) => {
+  // A dark style that differs from the light one, or the diff would have nothing to apply.
+  await page.route('https://api.maptiler.com/maps/outdoor-v2-dark/**', route => route.fulfill({
+    json: { ...EMPTY_MAP_STYLE, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#2b3329' } }] },
+  }))
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/')
+  await waitForMap(page)
+  const map = page.locator('[data-map-loaded]')
+  await expect(map).toHaveAttribute('data-map-dark')
+  await waitForHydration(page)
+  await page.getByRole('button', { name: 'Calques' }).click()
+  await page.getByRole('radio', { name: 'Plan IGN' }).click()
+  const attribution = page.locator('.maplibregl-ctrl-attrib-inner')
+  await expect(attribution).toContainText('Plan IGN')
+
+  // Light mode while the map is open: the light style, applied as a diff that keeps Plan IGN.
+  await page.emulateMedia({ colorScheme: 'light' })
+  await expect(map).not.toHaveAttribute('data-map-dark')
+  // The attribution follows the style's sources on the next frame.
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  await expect(attribution).toContainText('Plan IGN')
 })
 
 test('keeps the map controls compact on a phone', async ({ page }) => {

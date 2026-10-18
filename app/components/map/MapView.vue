@@ -27,7 +27,16 @@ const { maptilerKey } = useRuntimeConfig().public
 const { t } = useI18n()
 const { padding } = useMapPadding()
 
-const styleUrl = mapStyleUrl(maptilerKey)
+// The map follows the app's light or dark mode (#109). Plan IGN, drawn over the style, stays light.
+const colorMode = useColorMode()
+const dark = computed(() => colorMode.value === 'dark')
+// The style last asked for, and the one on screen (set on each `style.load`, which MapLibre also fires after a diff;
+// a failed request leaves it, so the next theme or network change asks again). Exposed as data-map-dark for tests.
+let styleRequested = ''
+const styleShown = ref('')
+const darkStyleUrl = mapStyleUrl(maptilerKey, true)
+// Set once the first style is set up: a style diff needs a loaded style (otherwise MapLibre rebuilds it).
+let styleLoaded = false
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
@@ -75,9 +84,11 @@ onMounted(async () => {
     console.warn('[MapView] NUXT_PUBLIC_MAPTILER_KEY is not set, using MapLibre demo tiles.')
   }
 
+  styleRequested = await themedStyleUrl(maptilerKey, dark.value)
+  if (!container.value) return
   const instance = new Map({
     container: container.value,
-    style: styleUrl,
+    style: styleRequested,
     center: props.center,
     zoom: props.zoom,
     pitch: saved3d ? PITCH_3D : 0,
@@ -107,6 +118,9 @@ onMounted(async () => {
     },
   }, 'top-right')
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
+  instance.on('style.load', () => {
+    styleShown.value = styleRequested
+  })
   // Before the first tiles are requested, so that a basemap drawn over the style doesn't load the style's own.
   instance.once('style.load', () => {
     setBasemap = addBasemapLayers(instance)
@@ -116,6 +130,9 @@ onMounted(async () => {
     if (view3d.value) setMap3d(instance, reliefSource.value!, true, false)
     else if (saved3d) instance.setPitch(0)
     if (props.force3d && !view3d.value && reliefSource.value) setRelief(instance, reliefSource.value, true)
+    styleLoaded = true
+    // The theme changed while the first style loaded.
+    followTheme()
   })
   instance.once('load', () => {
     emit('load', instance)
@@ -143,6 +160,17 @@ onMounted(async () => {
   })
   map.value = instance
 })
+
+// Swaps the light and dark styles as a diff: they share their sources, so tiles stay, and keepAppLayers keeps what
+// the app drew. Costs the style and its sprite, not the tiles. Back online, a light fallback turns dark.
+async function followTheme() {
+  if (!map.value || !styleLoaded) return
+  const url = await themedStyleUrl(maptilerKey, dark.value)
+  if (!map.value || url === styleShown.value) return
+  styleRequested = url
+  map.value.setStyle(url, { transformStyle: keepAppLayers })
+}
+watch([dark, online], followTheme)
 
 function updateOnline() {
   online.value = navigator.onLine
@@ -212,11 +240,12 @@ onBeforeUnmount(() => {
     :data-map-bearing="bearing"
     :data-map-flat="flat || undefined"
     :data-map-3d="view3d || undefined"
+    :data-map-dark="(maptilerKey && styleShown === darkStyleUrl) || undefined"
   />
   <Teleport v-if="layersControl" :to="layersControl">
     <UPopover v-model:open="layersOpen" :content="layersContent">
       <button ref="layersButton" type="button" class="flex items-center justify-center" :title="t('map.layers')" :aria-label="t('map.layers')">
-        <UIcon name="i-lucide-layers" class="size-4 text-neutral-800" />
+        <UIcon name="i-lucide-layers" class="size-4 text-neutral-800 dark:text-neutral-100" />
       </button>
       <template #content>
         <div class="w-60 space-y-4 p-3">

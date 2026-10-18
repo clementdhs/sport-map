@@ -38,10 +38,52 @@
   --sport-soft: color-mix(in oklab, var(--sport-400) 15%, transparent);
 }
 
-/* Map popups stay light like the map itself, whatever the app theme. */
+/* Map popups and controls follow the theme, like the MapTiler style (#109). */
 .maplibregl-popup-content {
   color: #18181b;
   font-weight: 500;
+}
+.dark .maplibregl-popup-content {
+  background: var(--ui-bg-elevated);
+  color: var(--ui-text-highlighted);
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 1px 2px rgb(0 0 0 / 0.4);
+}
+.dark .maplibregl-popup-close-button:hover {
+  background-color: rgb(255 255 255 / 0.1);
+}
+.dark :is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip {
+  border-bottom-color: var(--ui-bg-elevated);
+}
+.dark :is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip {
+  border-top-color: var(--ui-bg-elevated);
+}
+.dark .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--ui-bg-elevated);
+}
+.dark .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--ui-bg-elevated);
+}
+.dark .maplibregl-ctrl-group {
+  background: var(--ui-bg-elevated);
+}
+.dark .maplibregl-ctrl-group button + button {
+  border-top-color: var(--ui-border);
+}
+/* MapLibre's icons are dark SVGs: inverting the lightness keeps the hue of the position states (blue, red). */
+.dark .maplibregl-ctrl-group .maplibregl-ctrl-icon {
+  filter: invert(1) hue-rotate(180deg);
+}
+.dark .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.dark .maplibregl-ctrl-scale {
+  background-color: rgb(24 24 27 / 0.6);
+  border-color: #d4d4d8;
+  color: #d4d4d8;
+}
+.dark .maplibregl-ctrl-attrib a {
+  color: rgb(255 255 255 / 0.75);
+}
+.dark .maplibregl-ctrl-attrib-button {
+  filter: invert(1);
 }
 
 /* Phones (#104): no zoom buttons (pinching zooms), and the compass only while the map is turned or tilted. */

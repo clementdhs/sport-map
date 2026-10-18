@@ -75,6 +75,30 @@ test.describe('as the test account', () => {
     })
   }
 
+  // A 56 px header (#154), spanning the whole width on the map pages; text pages keep the centred column.
+  test('keeps a low header, as wide as the map on the map pages', async ({ page }) => {
+    await page.setViewportSize({ width: 1600, height: 900 })
+    const logo = page.getByRole('banner').getByRole('link', { name: 'sport-map' })
+    const account = page.getByRole('banner').getByRole('button', { name: 'Mon compte' })
+
+    await page.goto('/')
+    await waitForMap(page)
+    expect((await page.getByRole('banner').boundingBox())!.height).toBe(56)
+    expect((await logo.boundingBox())!.x).toBeLessThan(40)
+    const accountBox = (await account.boundingBox())!
+    expect(1600 - accountBox.x - accountBox.width).toBeLessThan(40)
+    // Its 40 px touch zone reaches beyond the 32 px button.
+    for (const y of [accountBox.y - 3.5, accountBox.y + accountBox.height + 3.5]) {
+      expect(await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('button')?.getAttribute('aria-label'),
+        [accountBox.x + accountBox.width / 2, y])).toMatch(/^Mon compte/)
+    }
+
+    await page.goto('/profile')
+    await waitForHydration(page)
+    expect((await page.getByRole('banner').boundingBox())!.height).toBe(56)
+    expect((await logo.boundingBox())!.x).toBeGreaterThan(150)
+  })
+
   test('keeps the profile tabs, the route name and the follow bar readable on a small phone', async ({ page, accountRouteId }) => {
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto('/profile')

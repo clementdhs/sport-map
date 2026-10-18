@@ -2,6 +2,10 @@
 // App header (#101). From md up it is the same on every page but the full-screen ones (editor, follow, record,
 // a live share): logo, main navigation, record / create, account. Below md the tab bar holds the navigation and
 // the map pages show MapTopBar instead.
+// `wide` (map pages, #154): the content spans the whole width, like the map, instead of the centred column of
+// the text pages.
+defineProps<{ wide?: boolean }>()
+
 const user = useSupabaseUser()
 const route = useRoute()
 const { t } = useI18n()
@@ -10,7 +14,7 @@ const newItems = useNewItems()
 </script>
 
 <template>
-  <UHeader to="/" :toggle="false" :ui="{ root: 'border-b-0', center: 'hidden md:flex' }">
+  <UHeader to="/" :toggle="false" class="app-header" :ui="{ root: 'border-b-0', container: wide ? 'max-w-none lg:px-6' : undefined, center: 'hidden md:flex' }">
     <!-- Pages showing the logo in large (sign-in) set `headerLogo: false` in their meta: no second one up here. -->
     <template v-if="route.meta.headerLogo === false" #left>
       <span />
@@ -58,3 +62,21 @@ const newItems = useNewItems()
     </template>
   </UHeader>
 </template>
+
+<style>
+/* Touch zones of at least 40 px in the 56 px header (#154), for tablets, while the links and buttons keep their
+   look: a transparent layer stretched above and below the smaller ones. Not scoped: UHeader's slot content carries
+   no scope id. In a layer, so that utilities still win. */
+@layer components {
+  .app-header :is(a, button) {
+    position: relative;
+  }
+
+  .app-header :is(a, button)::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    inset-block: min(0px, calc(50% - 1.25rem));
+  }
+}
+</style>

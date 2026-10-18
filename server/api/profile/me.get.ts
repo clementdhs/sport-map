@@ -25,7 +25,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
     throw apiError(event, 500, 'api.loadOwnProfileFailed')
   }
 
-  // A saved route its owner has since made private comes back without its route: skip it.
+  // A route its owner has since made private comes back without its route: skip it.
   const activities = activity.data.filter(a => a.route)
   const completed = activities
     .filter(a => a.activity_type === 'completed')
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
   return {
     profile: profile.data,
     created: created.data.map(toRouteListItem),
-    saved: activities.filter(a => a.activity_type === 'saved').map(a => toRouteListItem(a.route!)),
+    todo_count: activities.filter(a => a.activity_type === 'saved').length,
     completed,
     outings: statsOutings(
       outings.data.filter(o => o.route).map(o => ({

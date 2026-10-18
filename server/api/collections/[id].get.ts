@@ -32,6 +32,7 @@ export default defineEventHandler(async (event): Promise<CollectionDetail> => {
   return {
     ...rest,
     is_mine: owner_id === user?.sub,
+    todo: false,
     routes: links.data
       .filter(link => link.route)
       .map(({ route }) => {

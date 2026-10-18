@@ -18,6 +18,7 @@ export default defineEventHandler(async (event) => {
     console.error('[PUT /api/routes/:id/activity/:type]', error)
     throw apiError(event, 500, 'api.saveActionFailed')
   }
+  if (type === 'completed') await removeFromTodo(supabase, userId, routeId, 'PUT /api/routes/:id/activity/:type')
   setResponseStatus(event, 204)
   return null
 })

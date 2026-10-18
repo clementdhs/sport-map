@@ -203,8 +203,9 @@
     "gain": "Dénivelé +",
     "loss": "Dénivelé −",
     "follow": "Suivre le parcours",
-    "save": "Sauvegarder",
-    "saved": "Sauvegardé",
+    "todo": "À faire",
+    "todoAdd": "Ajouter à ma liste « À faire »",
+    "todoRemove": "Retirer de ma liste « À faire »",
     "complete": "Je l'ai fait",
     "completeShort": "Fait",
     "moreShort": "Plus",
@@ -224,7 +225,7 @@
     },
     "pois": "Points d'intérêt",
     "deleteTitle": "Supprimer ce parcours ?",
-    "deleteDescription": "Il disparaîtra aussi des parcours sauvegardés et réalisés des autres utilisateurs. Cette action est définitive."
+    "deleteDescription": "Il disparaîtra aussi des listes « À faire » et des parcours réalisés des autres utilisateurs. Cette action est définitive."
   },
   "reviews": {
     "saveFailed": "Impossible d'enregistrer ton avis",
@@ -833,24 +834,15 @@
   "profile": {
     "tabs": {
       "created": "Mes parcours",
-      "saved": "Sauvegardés",
       "collections": "Collections",
       "completed": "Réalisés",
       "stats": "Statistiques"
-    },
-    "tabsShort": {
-      "created": "Créés",
-      "saved": "Sauvegardés",
-      "collections": "Collections",
-      "completed": "Faits",
-      "stats": "Stats"
     },
     "memberSince": "membre depuis le {date}",
     "viewPublic": "Voir mon profil tel que l'équipe le voit",
     "noCreated": "Aucun parcours créé",
     "noCreatedHint": "Trace ton premier parcours ou importe un fichier GPX.",
-    "noSaved": "Aucun parcours sauvegardé",
-    "noSavedHint": "Sauvegarde des parcours depuis leur page pour les retrouver ici.",
+    "todoHint": "les parcours que tu veux faire",
     "discover": "Découvrir des parcours",
     "privateCollection": "Privée",
     "noCollections": "Aucune collection",
@@ -904,6 +896,15 @@
     "empty": "Collection vide",
     "emptyMine": "Ajoute des parcours depuis leur page, avec « Ajouter à une collection ».",
     "emptyOther": "Aucun parcours visible dans cette collection."
+  },
+  "todo": {
+    "name": "À faire",
+    "badge": "Liste personnelle",
+    "description": "Les parcours que tu veux faire. Ils quittent la liste quand tu les marques comme faits ou que tu y enregistres une sortie.",
+    "routesLabel": "Parcours à faire",
+    "removeRoute": "Retirer {name} de « À faire »",
+    "empty": "Rien à faire pour l'instant",
+    "emptyHint": "Ajoute des parcours depuis leur page, avec le bouton « À faire »."
   },
   "stats": {
     "periods": {
@@ -1116,7 +1117,7 @@
       "gpx": "le tracé de chaque parcours, à ouvrir dans une application GPS",
       "photos": "les photos de tes parcours, un dossier par parcours",
       "reviews": "les avis que tu as laissés sur des parcours",
-      "activity": "les parcours que tu as sauvegardés ou réalisés, avec les temps de tes sorties enregistrées",
+      "activity": "ta liste « À faire » (type saved) et les parcours que tu as réalisés (type completed), avec les temps de tes sorties enregistrées",
       "outings": "tes sorties enregistrées au GPS sur des parcours (date, temps, distance, points GPS horodatés)",
       "collections": "tes collections de parcours",
       "reports": "les avis que tu as signalés",

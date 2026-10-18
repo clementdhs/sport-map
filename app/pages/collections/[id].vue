@@ -12,6 +12,7 @@ const { t } = useI18n()
 const collectionSchemaLocalized = useLocalizedSchema(collectionSchema)
 const errorMessage = useErrorMessage()
 
+// /collections/todo is the viewer's fixed "À faire" list: same page, without editing, sharing or deleting.
 const { data: collection, error } = await useFetch<CollectionDetail>(`/api/collections/${route.params.id}`)
 if (error.value || !collection.value) {
   throw createError({
@@ -22,11 +23,17 @@ if (error.value || !collection.value) {
 }
 
 // Own state for what the page changes: useFetch data is a shallow ref.
+const todo = collection.value.todo
+// Typed as a plain string: the literal would also match GET /api/collections/todo, which only allows GET.
+const collectionApi: string = `/api/collections/${collection.value.id}`
 const info = ref<CollectionInput>({
   name: collection.value.name,
   description: collection.value.description ?? '',
   is_public: collection.value.is_public,
 })
+// The "À faire" list has no name or description of its own: they follow the language.
+const name = computed(() => todo ? t('todo.name') : info.value.name)
+const description = computed(() => todo ? t('todo.description') : info.value.description)
 const routes = ref(collection.value.routes)
 const highlightedId = ref<string | null>(null)
 
@@ -43,7 +50,7 @@ watch(editOpen, (open) => {
 async function save() {
   saving.value = true
   try {
-    await $fetch(`/api/collections/${collection.value!.id}`, { method: 'PATCH', body: form.value })
+    await $fetch(collectionApi, { method: 'PATCH', body: form.value })
     info.value = { ...form.value }
     editOpen.value = false
     toast.add({ title: t('collection.updated'), color: 'success', icon: 'i-lucide-check' })
@@ -61,7 +68,7 @@ const removing = ref<string | null>(null)
 async function removeRoute(routeId: string) {
   removing.value = routeId
   try {
-    await $fetch(`/api/collections/${collection.value!.id}/routes/${routeId}`, { method: 'DELETE' })
+    await $fetch(todo ? `/api/routes/${routeId}/activity/saved` : `${collectionApi}/routes/${routeId}`, { method: 'DELETE' })
     routes.value = routes.value.filter(item => item.id !== routeId)
     if (highlightedId.value === routeId) highlightedId.value = null
   }
@@ -79,7 +86,7 @@ const deleting = ref(false)
 async function deleteCollection() {
   deleting.value = true
   try {
-    await $fetch(`/api/collections/${collection.value!.id}`, { method: 'DELETE' })
+    await $fetch(collectionApi, { method: 'DELETE' })
     toast.add({ title: t('collection.deleted'), color: 'success', icon: 'i-lucide-check' })
     await navigateTo('/profile')
   }
@@ -102,12 +109,12 @@ async function copyLink() {
 }
 
 const summary = computed(() => `${t('collection.summary', { count: routes.value.length, distance: formatDistance(totalDistance.value) }, routes.value.length)}`
-  + (info.value.description ? ` — ${info.value.description}` : ''))
+  + (description.value ? ` — ${description.value}` : ''))
 
 useSeoMeta({
-  title: () => `${info.value.name} — sport-map`,
+  title: () => `${name.value} — sport-map`,
   description: summary,
-  ogTitle: () => info.value.name,
+  ogTitle: name,
   ogDescription: summary,
 })
 </script>
@@ -121,19 +128,20 @@ useSeoMeta({
     </template>
 
     <template #title>
-      {{ info.name }}
+      {{ name }}
     </template>
 
     <div class="flex flex-wrap items-center gap-2">
-      <UBadge icon="i-lucide-folder" :label="t('collection.badge')" variant="subtle" />
+      <UBadge v-if="todo" icon="i-lucide-list-todo" :label="t('todo.badge')" variant="subtle" />
+      <UBadge v-else icon="i-lucide-folder" :label="t('collection.badge')" variant="subtle" />
       <UBadge v-if="info.is_public" icon="i-lucide-globe" :label="t('collection.public')" color="neutral" variant="subtle" />
       <UBadge v-else icon="i-lucide-lock" :label="t('profile.privateCollection')" color="neutral" variant="subtle" />
     </div>
 
     <!-- Phones: the sheet title already shows the name; the heading stays for screen readers. -->
-    <h1 class="text-2xl font-semibold max-md:sr-only">{{ info.name }}</h1>
+    <h1 class="text-2xl font-semibold max-md:sr-only">{{ name }}</h1>
 
-    <p class="text-sm text-muted">
+    <p v-if="!todo" class="text-sm text-muted">
       {{ t('route.by') }}
       <ULink v-if="collection.owner" :to="`/profile/${collection.owner.username}`" class="font-medium text-default hover:underline">
         {{ collection.owner.display_name ?? collection.owner.username }}
@@ -142,7 +150,7 @@ useSeoMeta({
       · {{ formatDate(collection.created_at) }}
     </p>
 
-    <p v-if="info.description" class="whitespace-pre-line">{{ info.description }}</p>
+    <p v-if="description" class="whitespace-pre-line">{{ description }}</p>
 
     <div class="grid grid-cols-3 gap-2">
       <div class="rounded-lg bg-elevated p-3">
@@ -159,7 +167,7 @@ useSeoMeta({
       </div>
     </div>
 
-    <div v-if="collection.is_mine || info.is_public" class="flex flex-wrap gap-2">
+    <div v-if="!todo && (collection.is_mine || info.is_public)" class="flex flex-wrap gap-2">
       <UButton
         v-if="info.is_public"
         icon="i-lucide-link"
@@ -204,7 +212,7 @@ useSeoMeta({
       </UModal>
     </div>
 
-    <ul v-if="routes.length" class="space-y-2" :aria-label="t('collection.routesLabel')">
+    <ul v-if="routes.length" class="space-y-2" :aria-label="t(todo ? 'todo.routesLabel' : 'collection.routesLabel')">
       <li
         v-for="item in routes"
         :key="item.id"
@@ -219,16 +227,16 @@ useSeoMeta({
           color="neutral"
           variant="ghost"
           :loading="removing === item.id"
-          :aria-label="t('collection.removeRoute', { name: item.name })"
+          :aria-label="t(todo ? 'todo.removeRoute' : 'collection.removeRoute', { name: item.name })"
           @click="removeRoute(item.id)"
         />
       </li>
     </ul>
     <UEmpty
       v-else
-      icon="i-lucide-folder-open"
-      :title="t('collection.empty')"
-      :description="collection.is_mine ? t('collection.emptyMine') : t('collection.emptyOther')"
+      :icon="todo ? 'i-lucide-list-todo' : 'i-lucide-folder-open'"
+      :title="t(todo ? 'todo.empty' : 'collection.empty')"
+      :description="todo ? t('todo.emptyHint') : collection.is_mine ? t('collection.emptyMine') : t('collection.emptyOther')"
       :actions="collection.is_mine ? [{ label: t('profile.discover'), icon: 'i-lucide-map', to: '/' }] : undefined"
     />
   </MapSheetLayout>

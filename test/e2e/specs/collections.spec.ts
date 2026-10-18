@@ -62,3 +62,45 @@ test('groups routes in a collection visible to the family, which only shows them
   expect((await member.get(collectionApi)).status()).toBe(404)
   expect((await member.get(`/api/routes/${process.env.E2E_ROUTE_ID}`)).ok()).toBe(true)
 })
+
+test('keeps routes to do in the fixed "À faire" list of the collections, which they leave once done', async ({ page }) => {
+  const name = `Parcours à faire e2e ${test.info().retry + 1}`
+  const { id } = await (await page.request.post('/api/routes', {
+    data: { name, sport_type: 'hiking', is_public: false, coordinates: [[6.3, 45.8], [6.35, 45.82]] },
+  })).json() as { id: string }
+  const add = page.getByRole('button', { name: 'Ajouter à ma liste « À faire »' })
+  const remove = page.getByRole('button', { name: 'Retirer de ma liste « À faire »' })
+
+  await page.goto(`/routes/${id}`)
+  await waitForMap(page)
+  await add.click()
+  await expect(remove).toBeVisible()
+
+  // First in the collections tab, before the member's own collections; it can't be edited, shared or deleted.
+  await page.goto('/profile')
+  await waitForHydration(page)
+  await page.getByRole('tab', { name: /Collections/ }).click()
+  await page.getByRole('link', { name: /^À faire/ }).click()
+  await expect(page).toHaveURL(/\/collections\/todo$/)
+  await waitForMap(page)
+  await expect(page.getByText('Liste personnelle', { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Supprimer la collection' })).toHaveCount(0)
+  const routes = page.getByRole('list', { name: 'Parcours à faire' })
+  await expect(routes.getByRole('listitem').filter({ hasText: name })).toHaveCount(1)
+  await page.getByRole('button', { name: `Retirer ${name} de « À faire »` }).click()
+  await expect(page.getByRole('listitem').filter({ hasText: name })).toHaveCount(0)
+
+  // Marking it as done takes it off the list.
+  await page.goto(`/routes/${id}`)
+  await waitForMap(page)
+  await add.click()
+  await expect(remove).toBeVisible()
+  await page.getByRole('button', { name: "Je l'ai fait" }).click()
+  await expect(page.getByRole('button', { name: /Fait le/ })).toBeVisible()
+  await expect(add).toBeVisible()
+  await page.reload()
+  await waitForMap(page)
+  await expect(add).toBeVisible()
+
+  expect((await page.request.delete(`/api/routes/${id}`)).ok()).toBe(true)
+})

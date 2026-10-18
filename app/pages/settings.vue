@@ -2,7 +2,8 @@
 import type { ProfileInfo } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
-// Account settings, reached from the account menu: profile, password, appearance, data (RGPD).
+// Account settings, reached from the account menu, in sections with their own anchor (#111): profile, account
+// (password, data), appearance and language, voice guidance.
 const { t } = useI18n()
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
 useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
@@ -48,58 +49,94 @@ async function saveProfile() {
 function onPasswordChanged() {
   toast.add({ title: t('auth.passwordChanged'), color: 'success', icon: 'i-lucide-check' })
 }
+
+// Ids in English whatever the language, since links to them are shared.
+const sections = computed(() => [
+  { id: 'profile', label: t('settings.sections.profile'), icon: 'i-lucide-user' },
+  { id: 'account', label: t('settings.sections.account'), icon: 'i-lucide-key-round' },
+  { id: 'appearance', label: t('settings.sections.appearance'), icon: 'i-lucide-palette' },
+  { id: 'voice', label: t('settings.sections.voice'), icon: 'i-lucide-volume-2' },
+])
+// Under the sticky header, plus the strip of sections on phones.
+const SECTION_CLASS = 'scroll-mt-[calc(var(--ui-header-height)+4rem)] space-y-3 md:scroll-mt-[calc(var(--ui-header-height)+2rem)]'
+const CARD_CLASS = 'space-y-3 rounded-lg border border-default p-4'
+
+const voice = useVoicePrefs()
 </script>
 
 <template>
-  <UContainer v-if="profile" class="max-w-2xl space-y-6 py-8">
+  <UContainer v-if="profile" class="max-w-4xl space-y-6 py-8">
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ t('header.settings') }}</h1>
       <UButton to="/profile" icon="i-lucide-user" :label="t('header.profile')" color="neutral" variant="outline" />
     </div>
 
-    <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-profile-title">
-      <h2 id="settings-profile-title" class="text-base font-semibold">{{ t('settings.profile') }}</h2>
-      <i18n-t keypath="settings.profileHint" tag="p" class="text-sm text-muted" scope="global">
-        <template #link>
-          <ULink :to="`/profile/${profile.username}`" class="text-primary">{{ t('settings.publicProfile') }}</ULink>
-        </template>
-        <template #username>@{{ profile.username }}</template>
-      </i18n-t>
-      <UForm :schema="profileUpdateSchemaLocalized" :state="form" class="space-y-4" @submit="saveProfile">
-        <UFormField :label="t('settings.username')" name="username" :hint="t('settings.usernameHint')">
-          <!-- Fixed ids: the generated ones differ between the server and the browser on this page (it awaits its
-               data), which left the labels pointing at nothing after a reload. -->
-          <UInput id="profile-username" v-model="form.username" autocomplete="username" autocapitalize="none" :spellcheck="false" class="w-full" />
-        </UFormField>
-        <UAlert
-          v-if="usernameChanged"
-          color="warning"
-          variant="subtle"
-          icon="i-lucide-triangle-alert"
-          :description="t('settings.usernameChangeWarning', { username: form.username.trim() })"
-        />
-        <UFormField :label="t('settings.displayName')" name="display_name" :hint="t('settings.displayNameHint', { username: profile.username })">
-          <UInput id="profile-display-name" v-model="form.display_name" class="w-full" />
-        </UFormField>
-        <UFormField :label="t('settings.bio')" name="bio">
-          <UTextarea id="profile-bio" v-model="form.bio" :rows="4" autoresize class="w-full" />
-        </UFormField>
-        <UButton type="submit" :label="t('settings.saveProfile')" :loading="saving" />
-      </UForm>
-    </section>
+    <div class="space-y-6 md:grid md:grid-cols-[11rem_minmax(0,1fr)] md:items-start md:gap-8 md:space-y-0">
+      <SettingsNav :sections="sections" />
 
-    <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-password-title">
-      <h2 id="settings-password-title" class="text-base font-semibold">{{ t('auth.password') }}</h2>
-      <NewPasswordForm :submit-label="t('settings.changePassword')" class="max-w-sm" @done="onPasswordChanged" />
-    </section>
+      <div class="space-y-8">
+        <section id="profile" :class="SECTION_CLASS" aria-labelledby="settings-profile-title">
+          <h2 id="settings-profile-title" class="text-base font-semibold">{{ t('settings.sections.profile') }}</h2>
+          <div :class="CARD_CLASS">
+            <i18n-t keypath="settings.profileHint" tag="p" class="text-sm text-muted" scope="global">
+              <template #link>
+                <ULink :to="`/profile/${profile.username}`" class="text-primary">{{ t('settings.publicProfile') }}</ULink>
+              </template>
+              <template #username>@{{ profile.username }}</template>
+            </i18n-t>
+            <UForm :schema="profileUpdateSchemaLocalized" :state="form" class="space-y-4" @submit="saveProfile">
+              <UFormField :label="t('settings.username')" name="username" :hint="t('settings.usernameHint')">
+                <!-- Fixed ids: the generated ones differ between the server and the browser on this page (it awaits its
+                     data), which left the labels pointing at nothing after a reload. -->
+                <UInput id="profile-username" v-model="form.username" autocomplete="username" autocapitalize="none" :spellcheck="false" class="w-full" />
+              </UFormField>
+              <UAlert
+                v-if="usernameChanged"
+                color="warning"
+                variant="subtle"
+                icon="i-lucide-triangle-alert"
+                :description="t('settings.usernameChangeWarning', { username: form.username.trim() })"
+              />
+              <UFormField :label="t('settings.displayName')" name="display_name" :hint="t('settings.displayNameHint', { username: profile.username })">
+                <UInput id="profile-display-name" v-model="form.display_name" class="w-full" />
+              </UFormField>
+              <UFormField :label="t('settings.bio')" name="bio">
+                <UTextarea id="profile-bio" v-model="form.bio" :rows="4" autoresize class="w-full" />
+              </UFormField>
+              <UButton type="submit" :label="t('settings.saveProfile')" :loading="saving" />
+            </UForm>
+          </div>
+        </section>
 
-    <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="settings-appearance-title">
-      <h2 id="settings-appearance-title" class="text-base font-semibold">{{ t('theme.label') }}</h2>
-      <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
-      <LanguageSelect />
-      <ThemeSettings />
-    </section>
+        <section id="account" :class="SECTION_CLASS" aria-labelledby="settings-account-title">
+          <h2 id="settings-account-title" class="text-base font-semibold">{{ t('settings.sections.account') }}</h2>
+          <div :class="CARD_CLASS">
+            <h3 class="text-sm font-semibold">{{ t('auth.password') }}</h3>
+            <NewPasswordForm :submit-label="t('settings.changePassword')" class="max-w-sm" @done="onPasswordChanged" />
+          </div>
+          <AccountData :username="profile.username" />
+        </section>
 
-    <AccountData :username="profile.username" />
+        <section id="appearance" :class="SECTION_CLASS" aria-labelledby="settings-appearance-title">
+          <h2 id="settings-appearance-title" class="text-base font-semibold">{{ t('settings.sections.appearance') }}</h2>
+          <div :class="CARD_CLASS">
+            <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
+            <LanguageSelect />
+            <ThemeSettings />
+          </div>
+        </section>
+
+        <section id="voice" :class="SECTION_CLASS" aria-labelledby="settings-voice-title">
+          <h2 id="settings-voice-title" class="text-base font-semibold">{{ t('settings.sections.voice') }}</h2>
+          <div :class="CARD_CLASS">
+            <p class="text-sm text-muted">{{ t('voice.description') }}</p>
+            <!-- Speech support and the saved choices are only known in the browser. -->
+            <ClientOnly>
+              <VoiceGuideForm :prefs="voice.prefs.value" :supported="voice.supported.value" :background="isNativeApp()" @update="voice.setPrefs" />
+            </ClientOnly>
+          </div>
+        </section>
+      </div>
+    </div>
   </UContainer>
 </template>

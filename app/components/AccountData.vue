@@ -53,8 +53,8 @@ async function deleteAccount() {
 </script>
 
 <template>
-  <section class="space-y-3 rounded-lg border border-default p-4" aria-labelledby="account-data-title">
-    <h2 id="account-data-title" class="text-base font-semibold">{{ t('accountData.title') }}</h2>
+  <div class="space-y-3 rounded-lg border border-default p-4">
+    <h3 class="text-sm font-semibold">{{ t('accountData.title') }}</h3>
     <p class="text-sm text-muted">
       {{ t('accountData.description') }}
     </p>
@@ -99,5 +99,5 @@ async function deleteAccount() {
         </template>
       </UModal>
     </div>
-  </section>
+  </div>
 </template>

@@ -1,36 +1,15 @@
 import type { SportType } from '#shared/utils/routes'
-import type { Announcement, VoicePrefs } from '~/utils/voiceGuide'
+import type { Announcement } from '~/utils/voiceGuide'
 
-const PREFS_KEY = 'sport-map:voice'
-
-// Voice guidance of follow mode: the choices kept on the device, and the announcements of voiceGuide.ts read
-// out in the interface's language. Runners and hikers hear the pace of each kilometre, cyclists the average
-// speed.
+// Voice guidance of follow mode: the choices kept on the device (useVoicePrefs), and the announcements of
+// voiceGuide.ts read out in the interface's language. Runners and hikers hear the pace of each kilometre,
+// cyclists the average speed.
 export function useVoiceGuide(sport: () => SportType) {
   const { t } = useI18n()
   const { locale, formatNumber } = useFormat()
 
-  const prefs = ref<VoicePrefs>(DEFAULT_VOICE_PREFS)
-  const supported = ref(false)
-  onMounted(() => {
-    supported.value = speechSupported()
-    try {
-      prefs.value = parseVoicePrefs(localStorage.getItem(PREFS_KEY))
-    }
-    catch { /* storage blocked: the defaults */ }
-  })
+  const { prefs, supported, setPrefs } = useVoicePrefs()
   onBeforeUnmount(stopSpeaking)
-
-  function setPrefs(next: VoicePrefs) {
-    const turnedOn = next.enabled && !prefs.value.enabled
-    prefs.value = next
-    try {
-      localStorage.setItem(PREFS_KEY, JSON.stringify(next))
-    }
-    catch { /* storage full or blocked: kept until the page closes */ }
-    // Also lets the browser speak later: it only allows it after a user action.
-    if (turnedOn) speak(t('voice.said.on'), locale())
-  }
 
   function duration(seconds: number) {
     const parts = durationParts(seconds)

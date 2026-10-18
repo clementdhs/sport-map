@@ -1,6 +1,5 @@
 import type { RouteSummary } from '#shared/types/routes'
 import type { LngLat, RouteSearchQuery, SearchScope, SearchSort, SportType } from '#shared/utils/routes'
-import { loadSearchScope, saveSearchScope } from '~/utils/searchScope'
 
 export type Bounds = [minLng: number, minLat: number, maxLng: number, maxLat: number]
 
@@ -21,14 +20,17 @@ export const DISTANCE_FILTER_MAX_KM = 100
 export const GAIN_FILTER_MAX_M = 2000
 
 export const useRouteSearchStore = defineStore('routeSearch', () => {
+  const preferences = usePreferencesStore()
   const sport = ref<SportType | 'all'>('all')
   const distanceKm = ref<[number, number]>([0, DISTANCE_FILTER_MAX_KM])
   const gainM = ref<[number, number]>([0, GAIN_FILTER_MAX_M])
   const loopsOnly = ref(false)
   const passingThrough = ref(false)
   const sort = ref<SearchSort>('nearest')
-  // Not a filter either: the member's own routes, or the team's too. Read from the device by restoreScope().
-  const scope = ref<SearchScope>('mine')
+  // Not a filter either: the member's own routes, or the team's too, a preference kept in their account. The
+  // default until restoreScope(), called once the page is mounted: hydration must find the server's value.
+  const scopeRestored = ref(false)
+  const scope = computed<SearchScope>(() => (scopeRestored.value ? preferences.values.searchScope : 'mine'))
   // Name or description; searched everywhere, not only in the map view.
   const text = ref('')
   const textQuery = computed(() => {
@@ -113,14 +115,13 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     debounceTimer = setTimeout(search, 250)
   })
 
-  // Called once the page is mounted: during hydration, Pinia would put back the server's value.
   function restoreScope() {
-    scope.value = loadSearchScope()
+    scopeRestored.value = true
   }
 
   function setScope(next: SearchScope) {
-    scope.value = next
-    saveSearchScope(next)
+    scopeRestored.value = true
+    preferences.set('searchScope', next)
   }
 
   function setView({ bounds: nextBounds, center, zoom }: MapViewState) {

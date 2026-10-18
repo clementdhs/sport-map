@@ -121,14 +121,7 @@ export interface VoicePrefs {
 export const DEFAULT_VOICE_PREFS: VoicePrefs = { enabled: false, announcements: [...VOICE_ANNOUNCEMENTS] }
 
 // Saved preferences, ignoring anything unknown (an older or damaged value).
-export function parseVoicePrefs(raw: string | null): VoicePrefs {
-  let value: unknown
-  try {
-    value = raw ? JSON.parse(raw) : null
-  }
-  catch {
-    return DEFAULT_VOICE_PREFS
-  }
+export function parseVoicePrefs(value: unknown): VoicePrefs {
   if (!value || typeof value !== 'object') return DEFAULT_VOICE_PREFS
   const saved = value as Record<string, unknown>
   return {

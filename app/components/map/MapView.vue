@@ -40,9 +40,10 @@ let styleLoaded = false
 
 const container = useTemplateRef('container')
 const map = shallowRef<Map>()
-// Basemap picked by the visitor, and the "Calques" button (a MapLibre control filled by a teleport) opening the
-// panel that picks it, with the 3D view, the page's own controls (route page: track colours) and the legend (#104).
-const basemap = ref<Basemap>(DEFAULT_BASEMAP)
+// Basemap picked by the member (kept in their account), and the "Calques" button (a MapLibre control filled by a
+// teleport) opening the panel that picks it, with the 3D view, the page's own controls (route page: track colours)
+// and the legend (#104).
+const basemap = usePreference('basemap')
 const online = ref(true)
 const layersControl = shallowRef<HTMLElement>()
 const layersButton = useTemplateRef('layersButton')
@@ -52,9 +53,10 @@ const legendOpen = ref(false)
 const legendUsed = ref(false)
 let setBasemap: ((basemap: Basemap) => void) | undefined
 // The style's elevation source when the 3D view is offered, and whether it is shown (data-map-3d, for end-to-end
-// tests: a map opening in 3D without a GPU is too busy to be clicked).
+// tests: a map opening in 3D without a GPU is too busy to be clicked). The member's choice is kept in their account.
 const reliefSource = ref<string>()
 const view3d = ref(false)
+const map3d = usePreference('map3d')
 // Exposed as data-map-loaded so end-to-end tests wait for the map before clicking on it.
 const loaded = ref(false)
 // Exposed as data-map-center ("lng,lat") and data-map-bearing (whole degrees clockwise from north, 0 to 359) so
@@ -73,10 +75,9 @@ onMounted(async () => {
   ])
   setWorkerUrl(workerUrl)
   if (!container.value) return
-  basemap.value = loadBasemap()
   online.value = navigator.onLine
   // Tilted from the start, so that initial bounds are framed as they will be seen.
-  const saved3d = props.relief && loadMap3d()
+  const saved3d = props.relief && map3d.value
   window.addEventListener('online', updateOnline)
   window.addEventListener('offline', updateOnline)
 
@@ -126,7 +127,8 @@ onMounted(async () => {
     setBasemap = addBasemapLayers(instance)
     setBasemap(shown.value)
     reliefSource.value = props.relief ? demSource(instance.getStyle()) : undefined
-    view3d.value = saved3d && !!reliefSource.value
+    // The account's choice may have arrived since the map was created.
+    view3d.value = !!props.relief && map3d.value && !!reliefSource.value
     if (view3d.value) setMap3d(instance, reliefSource.value!, true, false)
     else if (saved3d) instance.setPitch(0)
     if (props.force3d && !view3d.value && reliefSource.value) setRelief(instance, reliefSource.value, true)
@@ -184,7 +186,6 @@ const basemapItems = computed(() => BASEMAPS.map(id => ({ label: t(`map.basemaps
 
 function pickBasemap(id: Basemap) {
   basemap.value = id
-  saveBasemap(id)
 }
 
 // The panel stays open while the map is moved, to see what it changes. It gives way to the legend, which opens in
@@ -220,9 +221,16 @@ watch(() => props.force3d, (on) => {
 function toggle3d() {
   if (!map.value || !reliefSource.value || props.force3d) return
   view3d.value = !view3d.value
-  saveMap3d(view3d.value)
+  map3d.value = view3d.value
   setMap3d(map.value, reliefSource.value, view3d.value)
 }
+
+// Changed on another device, and arrived with the account once the map was shown.
+watch(map3d, (on) => {
+  if (!map.value || !reliefSource.value || props.force3d || on === view3d.value) return
+  view3d.value = on
+  setMap3d(map.value, reliefSource.value, on)
+})
 
 onBeforeUnmount(() => {
   window.removeEventListener('online', updateOnline)

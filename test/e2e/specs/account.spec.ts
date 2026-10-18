@@ -189,7 +189,7 @@ test('reaches each settings section from its table of contents, on a computer an
   await expect(link('Guidage vocal')).toHaveAttribute('aria-current', 'location')
   await expect(page.getByRole('heading', { name: 'Guidage vocal', level: 2 })).toBeInViewport()
 
-  // Voice guidance, set here as in follow mode and kept on the device.
+  // Voice guidance, set here as in follow mode, kept in the account and cached on the device.
   const voice = page.getByRole('switch', { name: 'Activer le guidage vocal' })
   await expect(page.getByRole('checkbox', { name: 'Arrivée' })).toBeDisabled()
   await voice.click()

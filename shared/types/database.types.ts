@@ -586,6 +586,32 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -662,6 +688,7 @@ export type Database = {
         Returns: boolean
       }
       track_thumbnail: { Args: { track: unknown }; Returns: Json }
+      update_my_preferences: { Args: { changes: Json }; Returns: undefined }
     }
     Enums: {
       activity_type: "saved" | "completed"

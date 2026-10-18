@@ -591,7 +591,7 @@
     "pace": "Allure",
     "customize": "Personnaliser",
     "customizeTitle": "Valeurs affichées",
-    "customizeDescription": "Gardées sur cet appareil.",
+    "customizeDescription": "Gardées dans ton compte, sur tous tes appareils.",
     "fieldsLegend": "Valeurs",
     "unitLegend": "Rythme",
     "speedUnit": "Vitesse (km/h)",
@@ -697,7 +697,7 @@
   },
   "voice": {
     "title": "Guidage vocal",
-    "description": "Annonces à voix haute pendant le suivi, réglées sur cet appareil.",
+    "description": "Annonces à voix haute pendant le suivi, retrouvées sur tous tes appareils.",
     "enabled": "Activer le guidage vocal",
     "legend": "Annonces",
     "announcements": {
@@ -865,11 +865,11 @@
     "deleted": "Compte supprimé",
     "deletedHint": "Toutes tes données ont été effacées.",
     "title": "Mes données",
-    "description": "Télécharge une archive de tout ce que tu as mis sur sport-map (profil, parcours en GPX, photos, avis, sorties, collections), ou supprime définitivement ton compte.",
+    "description": "Télécharge une archive de tout ce que tu as mis sur sport-map (profil, parcours en GPX, photos, avis, sorties, collections, réglages), ou supprime définitivement ton compte.",
     "export": "Télécharger mes données",
     "deleteTitle": "Supprimer mon compte ?",
     "delete": "Supprimer mon compte",
-    "deleteWarning": "Ton compte, tes parcours, leurs photos, tes avis, tes sorties et tes collections seront effacés {forever}. Les notes des parcours que tu as évalués seront recalculées sans les tiennes. Pense à télécharger tes données avant.",
+    "deleteWarning": "Ton compte, tes parcours, leurs photos, tes avis, tes sorties, tes collections et tes réglages seront effacés {forever}. Les notes des parcours que tu as évalués seront recalculées sans les tiennes. Pense à télécharger tes données avant.",
     "forever": "définitivement",
     "confirmLabel": "Pour confirmer, saisis ton pseudo : {username}",
     "deleteForever": "Supprimer définitivement"
@@ -1041,6 +1041,8 @@
     "routePrivate": "Ce parcours est privé",
     "unknownAction": "Action inconnue",
     "loadOwnProfileFailed": "Impossible de charger ton profil",
+    "loadPreferencesFailed": "Impossible de charger tes réglages",
+    "savePreferencesFailed": "Impossible d'enregistrer tes réglages",
     "loadProfileFailed": "Impossible de charger le profil",
     "loadRouteFailed": "Impossible de charger le parcours",
     "loadReviewsFailed": "Impossible de charger les avis",
@@ -1107,6 +1109,7 @@
       "reports": "signalements.json",
       "routing": "calculs.json",
       "live": "partage-position.json",
+      "preferences": "reglages.json",
       "gpxFolder": "parcours",
       "photosFolder": "photos"
     },
@@ -1123,6 +1126,7 @@
       "reports": "les avis que tu as signalés",
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",
       "live": "ta position partagée avec l'équipe pendant une sortie en cours (effacée à la fin de la sortie)",
+      "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
   }

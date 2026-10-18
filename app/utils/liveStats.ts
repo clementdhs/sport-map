@@ -44,7 +44,8 @@ export interface LiveStats {
   arrivalAt: number | null
 }
 
-// Choice of values saved on the device, one list per mode, plus pace (min/km) rather than speed (km/h).
+// Choice of values kept in the member's account (app/utils/preferences.ts), one list per mode, plus pace
+// (min/km) rather than speed (km/h).
 export interface LiveDataPrefs {
   follow?: LiveField[]
   record?: LiveField[]
@@ -52,15 +53,8 @@ export interface LiveDataPrefs {
 }
 
 // Saved preferences, ignoring anything unknown (an older or damaged value).
-export function parseLiveDataPrefs(raw: string | null): LiveDataPrefs {
-  let value: unknown
-  try {
-    value = raw ? JSON.parse(raw) : null
-  }
-  catch {
-    return {}
-  }
-  if (!value || typeof value !== 'object') return {}
+export function parseLiveDataPrefs(value: unknown): LiveDataPrefs {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
   const saved = value as Record<string, unknown>
   const prefs: LiveDataPrefs = {}
   for (const mode of ['follow', 'record'] as const) {

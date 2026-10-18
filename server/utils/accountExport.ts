@@ -31,6 +31,8 @@ export interface AccountData {
   reports: object[]
   routingUsage: object[]
   liveShares: object[]
+  // Settings kept in the account (#145), none until a device saved one
+  preferences: { preferences: unknown, updated_at: string } | null
 }
 
 export interface AccountArchive {
@@ -42,7 +44,7 @@ export interface AccountArchive {
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 const ARCHIVE_NAMES = [
-  'readme', 'profile', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'gpxFolder', 'photosFolder',
+  'readme', 'profile', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'gpxFolder', 'photosFolder',
 ] as const
 type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
 
@@ -64,6 +66,7 @@ function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames): 
     [names.reports, t('reports')],
     [names.routing, t('routing')],
     [names.live, t('live')],
+    [names.preferences, t('preferences')],
   ] as const
   const width = Math.max(...rows.map(([path]) => path.length)) + 2
   return `${t('intro', { username: data.profile.username, date: data.exportedAt })}
@@ -116,6 +119,7 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     { path: names.reports, content: json(data.reports) },
     { path: names.routing, content: json(data.routingUsage) },
     { path: names.live, content: json(data.liveShares) },
+    { path: names.preferences, content: json(data.preferences ?? { preferences: {} }) },
   )
   return { files, photos }
 }

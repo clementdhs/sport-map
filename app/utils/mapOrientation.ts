@@ -3,11 +3,10 @@ import type { HeadingState } from '~/utils/heading'
 
 // How the map of follow mode and outing recording is turned (#98): north up (the default) or turned with the
 // direction of travel, which then points up the screen. The direction is the GPS course while moving, the phone
-// compass otherwise. Pure functions; RouteFollow applies them. Thresholds chosen before the field test.
+// compass otherwise. Kept in the member's account (app/utils/preferences.ts). Pure functions; RouteFollow applies
+// them. Thresholds chosen before the field test.
 
 export type MapOrientation = 'north' | 'heading'
-
-const STORAGE_KEY = 'sport-map:map-orientation'
 
 // From this speed, the GPS course gives the direction rather than the compass (3.6 km/h).
 const COURSE_MIN_SPEED_MPS = 1
@@ -19,24 +18,8 @@ const MAP_SMOOTHING_S = 1
 // The map only turns once the direction is this far from its bearing, so that it doesn't shake.
 export const MIN_ROTATION_DEG = 5
 
-export function parseMapOrientation(value: string | null): MapOrientation {
+export function parseMapOrientation(value: unknown): MapOrientation {
   return value === 'heading' ? 'heading' : 'north'
-}
-
-export function loadMapOrientation(): MapOrientation {
-  try {
-    return parseMapOrientation(localStorage.getItem(STORAGE_KEY))
-  }
-  catch {
-    return 'north'
-  }
-}
-
-export function saveMapOrientation(orientation: MapOrientation) {
-  try {
-    localStorage.setItem(STORAGE_KEY, orientation)
-  }
-  catch { /* storage blocked: kept until the page closes */ }
 }
 
 // Direction shown by the GPS arrow and followed by a heading-up map (degrees clockwise from north): the GPS course

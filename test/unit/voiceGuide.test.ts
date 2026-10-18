@@ -109,14 +109,14 @@ describe('announcedClimbs', () => {
 
 describe('parseVoicePrefs', () => {
   it('reads saved choices and ignores unknown ones', () => {
-    expect(parseVoicePrefs(JSON.stringify({ enabled: true, announcements: ['climbs', 'track', 'other'] })))
+    expect(parseVoicePrefs({ enabled: true, announcements: ['climbs', 'track', 'other'] }))
       .toEqual({ enabled: true, announcements: ['track', 'climbs'] })
   })
 
   it('falls back to the defaults on missing or damaged values', () => {
     expect(parseVoicePrefs(null)).toEqual(DEFAULT_VOICE_PREFS)
-    expect(parseVoicePrefs('{')).toEqual(DEFAULT_VOICE_PREFS)
-    expect(parseVoicePrefs(JSON.stringify({ enabled: 'yes' }))).toEqual(DEFAULT_VOICE_PREFS)
+    expect(parseVoicePrefs('on')).toEqual(DEFAULT_VOICE_PREFS)
+    expect(parseVoicePrefs({ enabled: 'yes' })).toEqual(DEFAULT_VOICE_PREFS)
   })
 })
 

@@ -2,7 +2,7 @@
 import type { LiveDataPrefs, LiveField, LiveMode, LiveStats } from '~/utils/liveStats'
 
 // The "data" screen of follow mode and outing recording: the chosen values, as big as the screen allows, to
-// be read at arm's length while running or riding. The choice is kept on the device.
+// be read at arm's length while running or riding. The choice is kept in the member's account.
 const props = defineProps<{
   mode: LiveMode
   stats: LiveStats
@@ -13,20 +13,9 @@ const props = defineProps<{
 const { t } = useI18n()
 const { locale } = useFormat()
 
-const PREFS_KEY = 'sport-map:live-data'
-const prefs = ref<LiveDataPrefs>({})
-onMounted(() => {
-  try {
-    prefs.value = parseLiveDataPrefs(localStorage.getItem(PREFS_KEY))
-  }
-  catch { /* storage blocked: the defaults */ }
-})
+const prefs = usePreference('liveData')
 function savePrefs(next: LiveDataPrefs) {
   prefs.value = next
-  try {
-    localStorage.setItem(PREFS_KEY, JSON.stringify(next))
-  }
-  catch { /* storage full or blocked: kept until the page closes */ }
 }
 
 const fields = computed(() => prefs.value[props.mode] ?? DEFAULT_FIELDS[props.mode])

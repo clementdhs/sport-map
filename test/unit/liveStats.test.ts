@@ -86,13 +86,13 @@ describe('liveValue', () => {
 
 describe('parseLiveDataPrefs', () => {
   it('keeps the known fields of each mode', () => {
-    const raw = JSON.stringify({ follow: ['time', 'nope', 'remaining'], record: ['remaining', 'gain'], pace: true })
-    expect(parseLiveDataPrefs(raw)).toEqual({ follow: ['remaining', 'time'], record: ['gain'], pace: true })
+    const saved = { follow: ['time', 'nope', 'remaining'], record: ['remaining', 'gain'], pace: true }
+    expect(parseLiveDataPrefs(saved)).toEqual({ follow: ['remaining', 'time'], record: ['gain'], pace: true })
   })
 
   it('ignores a missing or damaged value', () => {
     expect(parseLiveDataPrefs(null)).toEqual({})
     expect(parseLiveDataPrefs('{oops')).toEqual({})
-    expect(parseLiveDataPrefs('[1]')).toEqual({})
+    expect(parseLiveDataPrefs([1])).toEqual({})
   })
 })

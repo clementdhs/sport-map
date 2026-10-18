@@ -1077,6 +1077,7 @@
     "routingTooFast": "Trop de calculs en peu de temps, réessaie dans une minute",
     "routingNotConfigured": "Le calcul d'itinéraire n'est pas configuré",
     "routingUnavailable": "Le service d'itinéraire ne répond pas",
+    "routingTimeout": "Le service d'itinéraire met trop de temps à répondre, réessayez dans un moment",
     "routingFailed": "Impossible de calculer l'itinéraire",
     "loopNotFound": "Aucun chemin praticable autour de ce départ",
     "loopOffTarget": "Pas de boucle de cette distance dans cette direction",

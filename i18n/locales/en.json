@@ -1077,6 +1077,7 @@
     "routingTooFast": "Too many calculations in a short time, try again in a minute",
     "routingNotConfigured": "Route calculation is not configured",
     "routingUnavailable": "The routing service is not responding",
+    "routingTimeout": "The routing service is taking too long to respond, try again in a moment",
     "routingFailed": "Couldn't calculate the route",
     "loopNotFound": "No usable path around this start",
     "loopOffTarget": "No loop of this distance in this direction",

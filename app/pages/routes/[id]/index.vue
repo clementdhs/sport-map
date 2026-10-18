@@ -146,9 +146,10 @@ async function toggleActivity(type: ActivityType) {
   pendingActivity.value = type
   try {
     await $fetch(`/api/routes/${parcours.value!.id}/activity/${type}`, { method: active ? 'DELETE' : 'PUT' })
+    // "saved" is the "À faire" list, which a route leaves once done (the server takes it off too).
     viewer.value = type === 'saved'
       ? { ...viewer.value, saved: !active }
-      : { ...viewer.value, completed_at: active ? null : new Date().toISOString(), duration_s: null, moving_s: null }
+      : { ...viewer.value, saved: viewer.value.saved && active, completed_at: active ? null : new Date().toISOString(), duration_s: null, moving_s: null }
   }
   catch (error) {
     toast.add({ title: t('route.actionFailed'), description: errorMessage(error), color: 'error' })
@@ -329,8 +330,9 @@ useSeoMeta({
       />
       <div class="grid grid-cols-4 gap-1">
         <UButton
-          :icon="viewer.saved ? 'i-lucide-bookmark-check' : 'i-lucide-bookmark'"
-          :label="viewer.saved ? t('route.saved') : t('route.save')"
+          :icon="viewer.saved ? 'i-lucide-list-todo' : 'i-lucide-list-plus'"
+          :label="t('route.todo')"
+          :aria-label="viewer.saved ? t('route.todoRemove') : t('route.todoAdd')"
           :color="viewer.saved ? 'primary' : 'neutral'"
           variant="ghost"
           :loading="pendingActivity === 'saved'"

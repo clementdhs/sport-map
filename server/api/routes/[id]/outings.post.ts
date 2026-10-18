@@ -1,7 +1,8 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 
 // Saves an outing recorded while following a route: listed on the route's page with the others, and the
-// route is marked as completed with its times. Its GPS points and their times are kept for its splits.
+// route is marked as completed with its times and leaves the "À faire" list. Its GPS points and their times
+// are kept for its splits.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
@@ -55,6 +56,7 @@ export default defineEventHandler(async (event) => {
     await supabase.from('route_outings').delete().eq('id', outing.id)
     throw apiError(event, 500, 'api.saveRecordingFailed')
   }
+  await removeFromTodo(supabase, user.sub, routeId, 'POST /api/routes/:id/outings')
 
   setResponseStatus(event, 201)
   return { id: outing.id }

@@ -79,12 +79,12 @@ test.describe('as the test account', () => {
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto('/profile')
     await waitForHydration(page)
-    // Short labels under the icons, none cut off; the full label stays the tab's name.
-    for (const [name, short] of [['Mes parcours', 'Créés'], ['Sauvegardés', 'Sauvegardés'], ['Collections', 'Collections'], ['Réalisés', 'Faits'], ['Statistiques', 'Stats']]) {
+    // Full labels under the icons, none cut off.
+    for (const name of ['Mes parcours', 'Collections', 'Réalisés', 'Statistiques']) {
       const tab = page.getByRole('tab', { name: new RegExp(name) })
-      await expect(tab.locator('[aria-hidden="true"]', { hasText: new RegExp(`^${short}$`) })).toBeVisible()
       // The count badge has a label slot too, after the tab's own.
       const label = tab.locator('[data-slot="label"]').first()
+      await expect(label).toHaveText(name)
       expect(await label.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
     }
 

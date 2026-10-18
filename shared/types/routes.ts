@@ -86,7 +86,8 @@ export type ProfileInfo = Pick<Tables<'profiles'>, 'username' | 'display_name' |
 export type MyProfile = {
   profile: ProfileInfo
   created: RouteListItem[]
-  saved: RouteListItem[]
+  // Routes on the "À faire" list (activity "saved") the viewer can still see
+  todo_count: number
   completed: (RouteListItem & OutingTimes & { completed_at: string })[]
   // What the statistics count
   outings: StatsOuting[]
@@ -182,6 +183,8 @@ export type CollectionDetail = {
   created_at: string
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   is_mine: boolean
+  // The viewer's fixed "À faire" list (GET /api/collections/todo), which has no name, date or description
+  todo: boolean
   // Only the routes the viewer may see, with a simplified track for the map
   routes: (RouteListItem & { preview: LineString })[]
 }

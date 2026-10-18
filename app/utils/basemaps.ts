@@ -1,12 +1,10 @@
 import type { Map } from 'maplibre-gl'
 
-// Basemaps a visitor can pick, remembered on the device. MapTiler Outdoor is the loaded style; the others
-// are raster layers drawn over it, below the app's own layers (track, markers…).
+// Basemaps a member can pick, kept in their account (app/utils/preferences.ts). MapTiler Outdoor is the loaded
+// style; the others are raster layers drawn over it, below the app's own layers (track, markers…).
 export const BASEMAPS = ['maptiler', 'ignPlan'] as const
 export type Basemap = typeof BASEMAPS[number]
 export const DEFAULT_BASEMAP: Basemap = 'maptiler'
-
-const STORAGE_KEY = 'sport-map:basemap'
 
 // Plan IGN through the Géoplateforme's open WMTS (no key, Licence Ouverte Etalab 2.0, no usage limit). SCAN 25
 // is left out: its free use doesn't cover a site open to the public.
@@ -19,24 +17,8 @@ const IGN_ATTRIBUTION = '<a href="https://www.ign.fr/" target="_blank" rel="noop
 // loaded only when the map legend shows it.
 export const IGN_PLAN_LEGEND_URL = 'https://data.geopf.fr/annexes/ressources/legendes/GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2-legend.png'
 
-export function parseBasemap(value: string | null | undefined): Basemap {
+export function parseBasemap(value: unknown): Basemap {
   return BASEMAPS.find(basemap => basemap === value) ?? DEFAULT_BASEMAP
-}
-
-export function loadBasemap(): Basemap {
-  try {
-    return parseBasemap(localStorage.getItem(STORAGE_KEY))
-  }
-  catch {
-    return DEFAULT_BASEMAP
-  }
-}
-
-export function saveBasemap(basemap: Basemap) {
-  try {
-    localStorage.setItem(STORAGE_KEY, basemap)
-  }
-  catch { /* storage blocked: kept until the page closes */ }
 }
 
 // Only MapTiler is prepared for offline use (app/utils/offlineRoute.ts): without network, the map falls back to it.

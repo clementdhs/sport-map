@@ -10,7 +10,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   if (!user) throw apiError(event, 401, 'api.signInRequired')
   const supabase = await serverSupabaseClient(event)
 
-  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares] = await Promise.all([
+  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences] = await Promise.all([
     supabase.from('profiles').select('username, display_name, bio, created_at').eq('id', user.sub).single(),
     supabase
       .from('routes')
@@ -44,8 +44,9 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .select('route_id, started_at, expires_at, points:live_positions(fixed_at, lng, lat, accuracy_m)')
       .eq('user_id', user.sub)
       .order('fixed_at', { referencedTable: 'live_positions' }),
+    supabase.from('user_preferences').select('preferences, updated_at').eq('user_id', user.sub).maybeSingle(),
   ])
-  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares].find(result => result.error)
+  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
     throw apiError(event, 500, 'api.exportFailed')
@@ -80,6 +81,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     reports: reports.data!,
     routingUsage: routingUsage.data!,
     liveShares: liveShares.data!,
+    preferences: preferences.data,
   }, getRequestLocale(event))
 
   // Signed with the caller's session: storage policies let owners read their route photos.

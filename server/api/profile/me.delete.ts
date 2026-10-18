@@ -2,7 +2,7 @@ import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } f
 import type { Database } from '#shared/types/database.types'
 
 // Deletes the caller's account (RGPD). Removing the auth user cascades to the profile, routes, photo rows,
-// reviews (ratings recomputed by triggers), reports, activity and collections; photo files are removed
+// reviews (ratings recomputed by triggers), reports, activity, collections and preferences; photo files are removed
 // first. Deleting an auth user takes the secret key.
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)

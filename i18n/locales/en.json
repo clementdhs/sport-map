@@ -597,7 +597,7 @@
     "pace": "Pace",
     "customize": "Customize",
     "customizeTitle": "Values shown",
-    "customizeDescription": "Kept on this device.",
+    "customizeDescription": "Kept in your account, on all your devices.",
     "fieldsLegend": "Values",
     "unitLegend": "Rate",
     "speedUnit": "Speed (km/h)",
@@ -703,7 +703,7 @@
   },
   "voice": {
     "title": "Voice guidance",
-    "description": "Spoken announcements while following, set on this device.",
+    "description": "Spoken announcements while following, found on all your devices.",
     "enabled": "Turn on voice guidance",
     "legend": "Announcements",
     "announcements": {
@@ -871,11 +871,11 @@
     "deleted": "Account deleted",
     "deletedHint": "All your data has been erased.",
     "title": "My data",
-    "description": "Download an archive of everything you've put on sport-map (profile, routes as GPX, photos, reviews, outings, collections), or delete your account for good.",
+    "description": "Download an archive of everything you've put on sport-map (profile, routes as GPX, photos, reviews, outings, collections, settings), or delete your account for good.",
     "export": "Download my data",
     "deleteTitle": "Delete my account?",
     "delete": "Delete my account",
-    "deleteWarning": "Your account, routes, their photos, your reviews, outings and collections will be erased {forever}. The ratings of routes you reviewed will be recomputed without yours. Remember to download your data first.",
+    "deleteWarning": "Your account, routes, their photos, your reviews, outings, collections and settings will be erased {forever}. The ratings of routes you reviewed will be recomputed without yours. Remember to download your data first.",
     "forever": "for good",
     "confirmLabel": "To confirm, type your username: {username}",
     "deleteForever": "Delete for good"
@@ -1047,6 +1047,8 @@
     "routePrivate": "This route is private",
     "unknownAction": "Unknown action",
     "loadOwnProfileFailed": "Couldn't load your profile",
+    "loadPreferencesFailed": "Couldn't load your settings",
+    "savePreferencesFailed": "Couldn't save your settings",
     "loadProfileFailed": "Couldn't load the profile",
     "loadRouteFailed": "Couldn't load the route",
     "loadReviewsFailed": "Couldn't load the reviews",
@@ -1114,6 +1116,7 @@
       "reports": "reports.json",
       "routing": "routing.json",
       "live": "location-sharing.json",
+      "preferences": "settings.json",
       "gpxFolder": "routes",
       "photosFolder": "photos"
     },
@@ -1130,6 +1133,7 @@
       "reports": "the reviews you reported",
       "routing": "your number of route calculations today (limited per person)",
       "live": "your location shared with the team during an outing in progress (deleted when the outing ends)",
+      "preferences": "your settings kept in your account (basemap, 3D view, map orientation, home filter, “Data” screen, voice guidance)",
       "json": "The .json files are structured text (JSON), readable by most software."
     }
   }

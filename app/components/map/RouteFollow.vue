@@ -26,8 +26,9 @@ let setGps: ((fix: GpsFix | null, headingDeg: number | null) => void) | undefine
 let course = NO_HEADING
 let shownDirection: number | null = null
 
-// North up or turned with the direction of travel (#98), with its button among the map's controls.
-const orientation = ref<MapOrientation>(loadMapOrientation())
+// North up or turned with the direction of travel (#98, kept in the member's account), with its button among the
+// map's controls.
+const orientation = usePreference('mapOrientation')
 const orientationControl = shallowRef<HTMLElement>()
 // Bearing a heading-up map aims at, smoothed; null until following (re)starts.
 let aimed: MapBearingState | null = null
@@ -143,7 +144,6 @@ watch([follow, orientation], ([on]) => {
 
 function setOrientation(next: MapOrientation) {
   orientation.value = next
-  saveMapOrientation(next)
 }
 
 // Picking an orientation also brings the map back to the position.

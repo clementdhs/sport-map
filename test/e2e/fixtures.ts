@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { type APIRequestContext, test as base, type Browser, expect, type Page } from '@playwright/test'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { type APIRequestContext, test as base, type Browser, type BrowserContext, expect, type Page } from '@playwright/test'
+import { supabaseAdmin } from './admin'
 
 // Every test user has an address on this domain: the global setup deletes them all before recreating them.
 export const TEST_EMAIL_DOMAIN = '@sport-map.test'
@@ -162,10 +163,18 @@ interface TestFixtures {
   searchScope: 'mine' | 'all' | null
   // A new API context signed in as one of the worker's users, or signed out (null). Disposed after the test.
   requestAs: (role: Role | null) => Promise<APIRequestContext>
+  // A page on another device of one of the worker's users (its own browser context, signed in, external services
+  // mocked), closed after the test. `localStorage` replaces what the device keeps, e.g. preferences from before #145.
+  newDevice: (role: Role, localStorage?: Record<string, string>) => Promise<Page>
+  // Each test starts with accounts without preferences (#145): a basemap, 3D view or home filter picked by a
+  // test would otherwise follow the account into the worker's next tests.
+  freshPreferences: void
 }
 
 interface WorkerFixtures {
   users: WorkerUsers
+  // Profile ids of the worker's users.
+  userIds: string[]
   // The id of the route owned by the worker's test account (ACCOUNT_ROUTE_NAME).
   accountRouteId: string
   // The saved sessions of the worker's users.
@@ -177,6 +186,10 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
   searchScope: [null, { option: true }],
   users: [async ({}, use, workerInfo) => {
     await use(workerUsers(workerInfo.parallelIndex))
+  }, { scope: 'worker' }],
+  userIds: [async ({ users }, use) => {
+    const rows = await supabaseAdmin<{ id: string }[]>(`/rest/v1/profiles?select=id&username=in.(${users.account.username},${users.family.username})`)
+    await use(rows.map(row => row.id))
   }, { scope: 'worker' }],
   accountRouteId: [async ({}, use, workerInfo) => {
     await use(process.env.E2E_ACCOUNT_ROUTE_IDS!.split(',')[workerInfo.parallelIndex]!)
@@ -204,6 +217,25 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     })
     for (const context of contexts) await context.dispose()
   },
+  newDevice: async ({ browser, authFiles, baseURL, locale, timezoneId, serviceWorkers }, use) => {
+    const contexts: BrowserContext[] = []
+    await use(async (role, localStorage) => {
+      const saved = JSON.parse(readFileSync(authFiles[role], 'utf8'))
+      const storageState = localStorage
+        ? { ...saved, origins: [{ origin: baseURL!, localStorage: Object.entries(localStorage).map(([name, value]) => ({ name, value })) }] }
+        : saved
+      const context = await browser.newContext({ baseURL, locale, timezoneId, serviceWorkers, storageState })
+      contexts.push(context)
+      const page = await context.newPage()
+      await mockExternalServices(page)
+      return page
+    })
+    for (const context of contexts) await context.close()
+  },
+  freshPreferences: [async ({ role, userIds }, use) => {
+    if (role) await supabaseAdmin(`/rest/v1/user_preferences?user_id=in.(${userIds.join(',')})`, { method: 'DELETE' })
+    await use()
+  }, { auto: true }],
   mockServices: [async ({ page, searchScope }, use) => {
     await mockExternalServices(page)
     // Only until a pick of the test itself, which a reload keeps.

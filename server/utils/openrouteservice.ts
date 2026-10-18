@@ -11,6 +11,10 @@ const ORS_URL = 'https://api.openrouteservice.org'
 const NO_ROUTE_CODES = new Set([2009, 2010])
 const LIMIT_EXCEEDED_CODE = 2004
 
+// Answers take a few seconds, round trips included. Without a limit, an ORS outage kept loop requests waiting
+// 2 minutes for its gateway's 504 (#155).
+const ORS_TIMEOUT_MS = 20_000
+
 export class NoRouteFoundError extends Error {}
 
 async function orsPost<T>(event: H3Event, path: string, body: Record<string, unknown>): Promise<T> {
@@ -25,10 +29,15 @@ async function orsPost<T>(event: H3Event, path: string, body: Record<string, unk
       // The geojson directions endpoint answers 406 to a plain `application/json` Accept header.
       headers: { Authorization: openrouteserviceKey, Accept: 'application/geo+json, application/json' },
       body,
+      timeout: ORS_TIMEOUT_MS,
     }) as T
   }
   catch (error) {
-    const { response, data } = error as FetchError<{ error?: { code?: number } }>
+    const { response, data, cause } = error as FetchError<{ error?: { code?: number } }>
+    if ((cause as Error | undefined)?.name === 'TimeoutError') {
+      console.error('[openrouteservice]', path, `no answer after ${ORS_TIMEOUT_MS} ms`)
+      throw apiError(event, 504, 'api.routingTimeout')
+    }
     const code = data?.error?.code
     if (code && NO_ROUTE_CODES.has(code)) throw new NoRouteFoundError()
     if (code === LIMIT_EXCEEDED_CODE) {

@@ -1,5 +1,6 @@
 import type { H3Event } from 'h3'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ofetch } from 'ofetch'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routeAlongPaths, roundTrip, trackFields } from '../../server/utils/openrouteservice'
 import type { LngLat, SportType } from '#shared/utils/routes'
 
@@ -69,6 +70,38 @@ describe('roundTrip', () => {
     expect(body.elevation).toBe(true)
     expect(points).toHaveLength(3)
     expect(lengthM).toBe(2950.4)
+  })
+})
+
+// The real ofetch over a fake fetch, so the timeout and the error shapes are ofetch's own.
+describe('OpenRouteService failures', () => {
+  beforeEach(() => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ openrouteserviceKey: 'test-key' }))
+    vi.stubGlobal('apiError', (_event: H3Event, statusCode: number, key: string) => Object.assign(new Error(key), { statusCode }))
+    vi.stubGlobal('$fetch', ofetch)
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('gives up after 20 s without an answer (#155)', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', (_url: string, { signal }: RequestInit) =>
+      new Promise((_resolve, reject) => signal!.addEventListener('abort', () => reject(signal!.reason))))
+
+    const loop = expect(roundTrip({} as H3Event, A, 10000, 'running', 1)).rejects.toMatchObject({ statusCode: 504, message: 'api.routingTimeout' })
+    await vi.advanceTimersByTimeAsync(20_000)
+    await loop
+  })
+
+  it('reports a gateway error of OpenRouteService as unavailable', async () => {
+    vi.stubGlobal('fetch', async () => new Response('<html>502 Bad Gateway</html>', { status: 502, headers: { 'content-type': 'text/html' } }))
+
+    await expect(routeAlongPaths({} as H3Event, A, B, 'running')).rejects.toMatchObject({ statusCode: 502, message: 'api.routingUnavailable' })
   })
 })
 

@@ -157,6 +157,9 @@ interface TestFixtures {
   mockServices: void
   // Who the page is signed in as, set per spec or describe with test.use({ role }); nobody by default.
   role: Role | null
+  // Routes the home search starts with, as if picked earlier on this device (null: the app's default, "Mes
+  // parcours"). Tests looking for the seeded routes as the family member need "all": they aren't theirs.
+  searchScope: 'mine' | 'all' | null
   // A new API context signed in as one of the worker's users, or signed out (null). Disposed after the test.
   requestAs: (role: Role | null) => Promise<APIRequestContext>
 }
@@ -171,6 +174,7 @@ interface WorkerFixtures {
 
 export const test = base.extend<TestFixtures, WorkerFixtures>({
   role: [null, { option: true }],
+  searchScope: [null, { option: true }],
   users: [async ({}, use, workerInfo) => {
     await use(workerUsers(workerInfo.parallelIndex))
   }, { scope: 'worker' }],
@@ -200,8 +204,14 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
     })
     for (const context of contexts) await context.dispose()
   },
-  mockServices: [async ({ page }, use) => {
+  mockServices: [async ({ page, searchScope }, use) => {
     await mockExternalServices(page)
+    // Only until a pick of the test itself, which a reload keeps.
+    if (searchScope) {
+      await page.addInitScript((scope) => {
+        if (localStorage.getItem('sport-map:search-scope') === null) localStorage.setItem('sport-map:search-scope', scope)
+      }, searchScope)
+    }
     await use()
   }, { auto: true }],
 })

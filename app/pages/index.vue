@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SearchSort } from '#shared/utils/routes'
+import type { SearchScope, SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
 
 // Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
@@ -15,21 +15,30 @@ const discover = useOsmDiscoverStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
 
+onMounted(search.restoreScope)
+
+const scope = computed({
+  get: () => search.scope,
+  set: (value: SearchScope) => search.setScope(value),
+})
+const scopeItems = computed(() => SEARCH_SCOPES.map(value => ({ value, label: t(`home.scope.${value satisfies SearchScope}`) })))
 const sortItems = computed(() => SEARCH_SORTS.map(value => ({ value, label: t(`sorts.${value}`) })))
 
 // The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort (home.limit.<sort>).
+// "Mes parcours" has its own wording (home.mine.*).
 const resultsLabel = computed(() => {
   if (!search.searched) return t('home.searching')
   const count = search.results.length
+  const keys = search.scope === 'mine' ? 'home.mine' : 'home'
   if (search.textQuery) {
     const query = search.textQuery
-    if (count === 0) return t('home.textNone', { query })
-    if (count >= MAX_SEARCH_RESULTS) return t('home.textFirst', { count, query })
-    return t('home.textCount', { query, count }, count)
+    if (count === 0) return t(`${keys}.textNone`, { query })
+    if (count >= MAX_SEARCH_RESULTS) return t(`${keys}.textFirst`, { count, query })
+    return t(`${keys}.textCount`, { query, count }, count)
   }
-  if (count === 0) return t('home.zoneNone')
-  if (count >= MAX_SEARCH_RESULTS) return t(`home.limit.${search.sort satisfies SearchSort}`, { count })
-  return t('home.zoneCount', count)
+  if (count === 0) return t(`${keys}.zoneNone`)
+  if (count >= MAX_SEARCH_RESULTS) return t(`${keys}.limit.${search.sort satisfies SearchSort}`, { count })
+  return t(`${keys}.zoneCount`, count)
 })
 
 const statusLabel = computed(() => search.failed ? t('home.failed') : resultsLabel.value)
@@ -81,6 +90,8 @@ watch(() => search.results, (results) => {
     <LiveSharesBanner />
     <SearchBox @place="focus = $event" />
 
+    <UTabs v-model="scope" :items="scopeItems" :content="false" size="sm" :aria-label="t('home.scope.label')" />
+
     <div class="flex gap-2">
       <SearchFilters />
       <USelect
@@ -121,6 +132,14 @@ watch(() => search.results, (results) => {
     </ul>
     <p v-else-if="!search.failed && search.textQuery" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
       {{ t('home.textEmptyHint') }}
+    </p>
+    <!-- Under "Mes parcours", the team's routes may be right there. -->
+    <p v-else-if="!search.failed && search.scope === 'mine'" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
+      <i18n-t keypath="home.mine.zoneEmptyHint" scope="global">
+        <template #link>
+          <ULink as="button" class="font-medium text-primary" @click="scope = 'all'">{{ t('home.mine.showAll') }}</ULink>
+        </template>
+      </i18n-t>
     </p>
     <p v-else-if="!search.failed" class="text-sm text-muted" :class="{ 'opacity-60': search.loading }">
       <i18n-t keypath="home.zoneEmptyHint" scope="global">

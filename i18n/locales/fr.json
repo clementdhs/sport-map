@@ -46,11 +46,11 @@
     "login": {
       "title": "Connexion",
       "submit": "Se connecter",
-      "familyOnly": "L'accès est réservé à la famille : demande un compte à l'administrateur.",
+      "familyOnly": "L'accès est réservé à l'équipe : demande un compte à l'administrateur.",
       "forgotLink": "Mot de passe oublié ?",
       "emailNotConfirmed": "Confirme ton adresse email avant de te connecter.",
       "invalidCredentials": "Pseudo, email ou mot de passe incorrect.",
-      "tagline": "Tes parcours de course, de rando et de vélo, à partager en famille.",
+      "tagline": "Tes parcours de course, de rando et de vélo, à partager en équipe.",
       "reliefCredit": "Image de fond : relief IGN RGE ALTI® (octobre 2026), Licence Ouverte"
     },
     "forgot": {
@@ -107,6 +107,27 @@
     "textEmptyHint": "Essaie d'autres mots ou élargis les filtres.",
     "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
     "createFirst": "crée le premier parcours",
+    "scope": {
+      "label": "Parcours affichés",
+      "mine": "Mes parcours",
+      "all": "Tous"
+    },
+    "mine": {
+      "textNone": "Aucun de tes parcours pour « {query} »",
+      "textFirst": "Tes {count} premiers parcours pour « {query} »",
+      "textCount": "{count} de tes parcours pour « {query} » | {count} de tes parcours pour « {query} »",
+      "zoneNone": "Aucun de tes parcours dans cette zone",
+      "zoneCount": "{count} de tes parcours dans cette zone | {count} de tes parcours dans cette zone",
+      "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
+      "showAll": "affiche aussi les parcours de l'équipe",
+      "limit": {
+        "nearest": "Tes {count} parcours les plus proches du centre de la carte",
+        "recent": "Tes {count} parcours les plus récents de la zone",
+        "shortest": "Tes {count} parcours les plus courts de la zone",
+        "longest": "Tes {count} parcours les plus longs de la zone",
+        "best_rated": "Tes {count} parcours les mieux notés de la zone"
+      }
+    },
     "cluster": "{count} parcours ici, zoomer pour les voir | {count} parcours ici, zoomer pour les voir",
     "discoverOsm": "Parcours balisés OpenStreetMap dans cette zone"
   },
@@ -311,8 +332,8 @@
     "name": "Nom",
     "namePlaceholder": "Week-end dans les Vosges",
     "description": "Description",
-    "public": "Visible par la famille",
-    "publicHint": "Visible par tous les membres de la famille. Tes parcours privés y restent cachés.",
+    "public": "Visible par l'équipe",
+    "publicHint": "Visible par tous les membres de l'équipe. Tes parcours privés y restent cachés.",
     "createAndAdd": "Créer et ajouter",
     "new": "Nouvelle collection"
   },
@@ -392,8 +413,8 @@
     "poiNote": "Note (facultatif)",
     "poiNoteLabel": "Note du point d'intérêt {n}",
     "namePlaceholder": "Tour du lac",
-    "public": "Visible par la famille",
-    "publicHint": "Visible par tous les membres de la famille et dans la recherche.",
+    "public": "Visible par l'équipe",
+    "publicHint": "Visible par tous les membres de l'équipe et dans la recherche.",
     "noPath": "Aucun chemin trouvé",
     "noPathHint": "Ce segment est tracé en ligne droite.",
     "dailyLimit": "Limite quotidienne atteinte",
@@ -611,7 +632,7 @@
   },
   "live": {
     "title": "Sorties en cours",
-    "intro": "Les membres de la famille qui partagent leur position pendant une sortie.",
+    "intro": "Les membres de l'équipe qui partagent leur position pendant une sortie.",
     "none": "Personne ne partage sa position en ce moment.",
     "outingOf": "Sortie de {name}",
     "myOuting": "Ta sortie",
@@ -628,19 +649,19 @@
     "banner": "{name} est en sortie",
     "bannerLink": "Voir sa position",
     "share": "Partager ma position",
-    "confirmTitle": "Partager ta position avec la famille ?",
-    "confirmDescription": "Toute la famille verra ta position en direct et ta trace sur une carte, jusqu'à la fin de la sortie ({hours} h au plus). Rien n'est conservé ensuite.",
+    "confirmTitle": "Partager ta position avec l'équipe ?",
+    "confirmDescription": "Toute l'équipe verra ta position en direct et ta trace sur une carte, jusqu'à la fin de la sortie ({hours} h au plus). Rien n'est conservé ensuite.",
     "confirm": "Partager",
-    "sharing": "Position partagée avec la famille",
+    "sharing": "Position partagée avec l'équipe",
     "stop": "Arrêter",
     "sentAgo": "Envoyée il y a {time}",
     "firstPoint": "En attente de la position GPS…",
     "waiting": "Pas de réseau : {count} position en attente | Pas de réseau : {count} positions en attente",
     "ended": "Partage de position terminé",
-    "endedHint": "La famille ne voit plus ta position.",
+    "endedHint": "L'équipe ne voit plus ta position.",
     "startFailed": "Impossible de partager ta position",
     "stopFailed": "Le partage n'a pas pu être arrêté",
-    "stopFailedHint": "Sans réseau, la famille voit encore ta dernière position, 12 h au plus."
+    "stopFailedHint": "Sans réseau, l'équipe voit encore ta dernière position, 12 h au plus."
   },
   "outings": {
     "replay3d": "Rejouer en 3D",
@@ -818,7 +839,7 @@
       "stats": "Statistiques"
     },
     "memberSince": "membre depuis le {date}",
-    "viewPublic": "Voir mon profil tel que la famille le voit",
+    "viewPublic": "Voir mon profil tel que l'équipe le voit",
     "noCreated": "Aucun parcours créé",
     "noCreatedHint": "Trace ton premier parcours ou importe un fichier GPX.",
     "todoHint": "les parcours que tu veux faire",
@@ -829,9 +850,9 @@
     "noCompleted": "Aucun parcours réalisé",
     "noCompletedHint": "Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties.",
     "notFound": "Profil introuvable",
-    "publicRoutes": "{count} parcours visible par la famille | {count} parcours visibles par la famille",
+    "publicRoutes": "{count} parcours visible par l'équipe | {count} parcours visibles par l'équipe",
     "seoDescription": "{routes} de {name} sur sport-map.",
-    "noPublic": "Aucun parcours visible par la famille pour l'instant",
+    "noPublic": "Aucun parcours visible par l'équipe pour l'instant",
     "summary": {
       "title": "En {year}",
       "distance": "Distance",
@@ -863,7 +884,7 @@
     "copyFailed": "Copie impossible",
     "summary": "Collection de {count} parcours · {distance} | Collection de {count} parcours · {distance}",
     "badge": "Collection",
-    "public": "Visible par la famille",
+    "public": "Visible par l'équipe",
     "routes": "Parcours",
     "copyLink": "Copier le lien",
     "editTitle": "Modifier la collection",
@@ -922,7 +943,7 @@
       "appearance": "Apparence et langue",
       "voice": "Guidage vocal"
     },
-    "profileHint": "Ce que la famille voit sur {link} ({username}).",
+    "profileHint": "Ce que l'équipe voit sur {link} ({username}).",
     "publicProfile": "ton profil",
     "displayName": "Nom affiché",
     "displayNameHint": "Sinon : {username}",
@@ -1101,7 +1122,7 @@
       "collections": "tes collections de parcours",
       "reports": "les avis que tu as signalés",
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",
-      "live": "ta position partagée avec la famille pendant une sortie en cours (effacée à la fin de la sortie)",
+      "live": "ta position partagée avec l'équipe pendant une sortie en cours (effacée à la fin de la sortie)",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
   }

@@ -128,7 +128,7 @@ describe('routeSearchSchema', () => {
 
   it('reads numbers from query strings and sorts by proximity by default', () => {
     const query = routeSearchSchema.parse({ ...bounds, sport: 'hiking', maxKm: '20', minGain: '300' })
-    expect(query).toEqual({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'hiking', maxKm: 20, minGain: 300, sort: 'nearest' })
+    expect(query).toEqual({ minLng: 5, minLat: 45, maxLng: 7, maxLat: 47, sport: 'hiking', maxKm: 20, minGain: 300, sort: 'nearest', scope: 'all' })
   })
 
   it('reads the loop filter as a real boolean', () => {

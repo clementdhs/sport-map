@@ -15,7 +15,7 @@ test('groups routes in a collection visible to the family, which only shows them
   const dialog = page.getByRole('dialog', { name: 'Ajouter à une collection' })
   await dialog.getByRole('button', { name: 'Nouvelle collection' }).click()
   await dialog.getByLabel('Nom').fill(name)
-  await dialog.getByRole('switch', { name: 'Visible par la famille' }).click()
+  await dialog.getByRole('switch', { name: "Visible par l'équipe" }).click()
   await dialog.getByRole('button', { name: 'Créer et ajouter' }).click()
   await expect(dialog.getByRole('checkbox', { name })).toBeChecked()
   await page.keyboard.press('Escape')
@@ -37,7 +37,7 @@ test('groups routes in a collection visible to the family, which only shows them
   await waitForMap(page)
   const routes = page.getByRole('list', { name: 'Parcours de la collection' })
   await expect(routes.getByRole('listitem')).toHaveCount(2)
-  await expect(page.getByText('Visible par la famille', { exact: true })).toBeVisible()
+  await expect(page.getByText("Visible par l'équipe", { exact: true })).toBeVisible()
   await expect(routes.getByRole('listitem').first()).toContainText(`${SEEDED_ROUTE_NAME}`)
   await expect(routes.getByRole('listitem').first()).toContainText(`par ${SEED_OWNER.displayName}`)
 

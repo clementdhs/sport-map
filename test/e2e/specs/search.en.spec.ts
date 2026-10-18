@@ -2,7 +2,7 @@ import { expect, SEED_OWNER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForM
 
 // The main flows of a family member again, in a browser set to British English (playwright.config.ts): the
 // language is detected from it, with English formats. User content (route names, reviews) stays as written.
-test.use({ role: 'family' })
+test.use({ role: 'family', searchScope: 'all' })
 
 test('finds a route on the home map and opens it, in English', async ({ page }) => {
   await page.goto('/')

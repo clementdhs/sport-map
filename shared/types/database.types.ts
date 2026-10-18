@@ -633,6 +633,7 @@ export type Database = {
           min_gain_m?: number
           min_lat: number
           min_lng: number
+          mine_only?: boolean
           passing_through?: boolean
           sort?: string
           sport?: Database["public"]["Enums"]["sport_type"]
@@ -644,6 +645,7 @@ export type Database = {
           elevation_gain_m: number
           id: string
           is_loop: boolean
+          is_public: boolean
           marker_lat: number
           marker_lng: number
           name: string

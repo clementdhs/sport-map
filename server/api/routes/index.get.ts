@@ -23,6 +23,7 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     sort: query.sort,
     max_results: MAX_SEARCH_RESULTS,
     text_query: query.q || undefined,
+    mine_only: query.scope === 'mine',
   })
 
   if (error) {
@@ -32,7 +33,6 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
   return (data as SearchRow[]).map(({ marker_lng, marker_lat, thumbnail, ...route }) => ({
     ...route,
     thumbnail: thumbnailPath(thumbnail),
-    is_public: true, // the search only returns public routes
     marker: [marker_lng, marker_lat],
   }))
 })

@@ -1,8 +1,62 @@
+import { insertRows, supabaseAdmin } from '../admin'
 import { expect, SEED_OWNER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from '../fixtures'
 
-// These tests count every route visible to the family in France, and every route matching their words, while
-// other spec files run: those put the routes they make visible to the family far away (FAR_AWAY in fixtures.ts).
-test.use({ role: 'family' })
+// These tests count every route visible to the team in France, and every route matching their words, while
+// other spec files run: those put the routes they make visible to the team far away (FAR_AWAY in fixtures.ts).
+// The seeded routes aren't the member's: they show under "Tous".
+test.use({ role: 'family', searchScope: 'all' })
+
+test.describe('my routes and the team\'s', () => {
+  test.use({ searchScope: null })
+
+  test('shows my routes by default, private ones included, never another member\'s private routes', async ({ page, requestAs }) => {
+    const [neighbor] = process.env.E2E_NEIGHBOR_IDS!.split(',')
+    // Near the seeded routes: a private route of the member, and one of another member.
+    const { id: mineId } = await (await page.request.post('/api/routes', {
+      data: { name: 'Raidillon privé e2e du membre', sport_type: 'hiking', is_public: false, coordinates: [[6.25, 45.88], [6.27, 45.89]] },
+    })).json() as { id: string }
+    const [other] = await insertRows<{ id: string }>('routes', [{
+      owner_id: neighbor, name: 'Raidillon privé e2e du voisin', sport_type: 'hiking', is_public: false,
+      geom: 'SRID=4326;LINESTRING(6.25 45.88,6.27 45.89)',
+    }])
+    try {
+      await page.goto('/')
+      await waitForMap(page)
+      const cards = page.getByTestId('route-results').locator('li a')
+      await expect(page.getByRole('tab', { name: 'Mes parcours' })).toHaveAttribute('aria-selected', 'true')
+      await expect(page.getByRole('paragraph').filter({ hasText: '1 de tes parcours dans cette zone' })).toBeVisible()
+      await expect(cards).toHaveCount(1)
+      await expect(cards.first()).toContainText('Raidillon privé e2e du membre')
+      await expect(cards.first().getByLabel('Privé', { exact: true })).toBeVisible()
+
+      // "Tous" adds the team's routes, kept after a reload.
+      await page.getByRole('tab', { name: 'Tous' }).click()
+      await expect(page.getByRole('paragraph').filter({ hasText: '3 parcours dans cette zone' })).toBeVisible()
+      await expect(cards).toHaveCount(3)
+      await page.reload()
+      await waitForMap(page)
+      await expect(page.getByRole('tab', { name: 'Tous' })).toHaveAttribute('aria-selected', 'true')
+      await expect(cards).toHaveCount(3)
+      await expect(cards.filter({ hasText: 'Raidillon privé e2e du voisin' })).toHaveCount(0)
+
+      // Neither in a map view nor by name, whatever the scope.
+      const view = 'minLng=6&minLat=45.7&maxLng=6.5&maxLat=46'
+      const names = async (query: string) => ((await (await page.request.get(`/api/routes?${query}`)).json()) as { name: string }[]).map(route => route.name)
+      expect(await names(`${view}&scope=all`)).not.toContain('Raidillon privé e2e du voisin')
+      expect(await names(`${view}&scope=mine`)).toEqual(['Raidillon privé e2e du membre'])
+      expect(await names(`${view}&scope=all&q=raidillon`)).toEqual(['Raidillon privé e2e du membre'])
+      expect(await names(`${view}&scope=mine&q=raidillon`)).toEqual(['Raidillon privé e2e du membre'])
+      // The test account doesn't see the member's private route either.
+      const account = await requestAs('account')
+      const accountNames = ((await (await account.get(`/api/routes?${view}&scope=all&q=raidillon`)).json()) as { name: string }[]).map(route => route.name)
+      expect(accountNames).toEqual([])
+    }
+    finally {
+      await page.request.delete(`/api/routes/${mineId}`)
+      await supabaseAdmin(`/rest/v1/routes?id=eq.${other!.id}`, { method: 'DELETE' })
+    }
+  })
+})
 
 test('finds a route of another member on the home map and opens it', async ({ page }) => {
   await page.goto('/')

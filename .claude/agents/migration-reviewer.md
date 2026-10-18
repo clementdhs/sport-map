@@ -26,7 +26,7 @@ Read `.claude/rules/migrations.md` and `.claude/rules/family-access.md` first, t
 
 Tables
 - `alter table … enable row level security` for every new table, with explicit policies for each operation the app needs (select / insert / update / delete). An operation with no policy is denied: check that this is intended.
-- Family-only access: read policies target `to authenticated`, never `anon` or `public`. "Public" routes or collections mean "visible to every signed-in member".
+- Team-only access: read policies target `to authenticated`, never `anon` or `public`. "Public" routes or collections mean "visible to every signed-in member".
 - Write policies check ownership with `auth.uid()` (ideally `(select auth.uid())`), both in `using` and `with check` for update.
 - Columns holding user data reference `profiles` or `routes` `on delete cascade`, and the table is added to the data export (`server/api/profile/me/export.get.ts`). Check that file.
 - Inside policy subqueries, the policy table's own columns are qualified (`collections.owner_id`), otherwise they resolve to the subquery's table.
@@ -37,7 +37,7 @@ Functions
 - PostgREST computed fields take one unnamed row parameter and are `stable`.
 
 Storage
-- Policies on `storage.objects` filter on `bucket_id` and on the owner path; reads follow the same family-only rule.
+- Policies on `storage.objects` filter on `bucket_id` and on the owner path; reads follow the same team-only rule.
 
 Other
 - Indexes for the foreign keys and the columns policies filter on.

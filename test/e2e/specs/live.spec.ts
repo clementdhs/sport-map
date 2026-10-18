@@ -81,8 +81,8 @@ test.describe('sharing the location during an outing', () => {
     expect(await shares()).toEqual([])
 
     await page.getByRole('button', { name: 'Partager ma position' }).click()
-    await page.getByRole('dialog', { name: 'Partager ta position avec la famille ?' }).getByRole('button', { name: 'Partager', exact: true }).click()
-    await expect(page.getByText('Position partagée avec la famille')).toBeVisible()
+    await page.getByRole('dialog', { name: "Partager ta position avec l'équipe ?" }).getByRole('button', { name: 'Partager', exact: true }).click()
+    await expect(page.getByText("Position partagée avec l'équipe")).toBeVisible()
     await expect(status).toHaveText('Envoyée il y a 0 s')
     const [share] = await shares()
     expect(share).toMatchObject({ user_name: users.account.displayName, route: { name: SEEDED_ROUTE_NAME } })
@@ -119,8 +119,8 @@ test.describe('sharing the location during an outing', () => {
     await expect(page.getByRole('button', { name: 'Partager ma position' })).toHaveCount(0)
     await page.getByRole('button', { name: 'Démarrer' }).click()
     await page.getByRole('button', { name: 'Partager ma position' }).click()
-    await page.getByRole('dialog', { name: 'Partager ta position avec la famille ?' }).getByRole('button', { name: 'Partager', exact: true }).click()
-    await expect(page.getByText('Position partagée avec la famille')).toBeVisible()
+    await page.getByRole('dialog', { name: "Partager ta position avec l'équipe ?" }).getByRole('button', { name: 'Partager', exact: true }).click()
+    await expect(page.getByText("Position partagée avec l'équipe")).toBeVisible()
     await expect.poll(shares).toEqual([expect.objectContaining({ route: null })])
 
     for (const meters of [100, 200]) {

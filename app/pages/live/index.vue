@@ -30,9 +30,10 @@ onBeforeUnmount(() => clearInterval(clock))
           :to="`/live/${share.id}`"
           class="flex items-center gap-3 rounded-lg border border-default p-4 transition-colors hover:bg-elevated"
         >
-          <UIcon name="i-lucide-radio" class="size-6 shrink-0 text-primary" />
+          <MemberAvatar :name="share.user_name" :path="share.user_avatar_path" size="lg" />
           <div class="min-w-0 flex-1 space-y-1">
-            <p class="font-medium">
+            <p class="flex items-center gap-1.5 font-medium">
+              <UIcon name="i-lucide-radio" class="size-4 shrink-0 text-primary" aria-hidden="true" />
               {{ share.is_mine ? t('live.myOuting') : t('live.outingOf', { name: share.user_name }) }}
             </p>
             <p class="truncate text-sm">{{ share.route?.name ?? (share.follows_route ? t('live.privateRoute') : t('live.freeOuting')) }}</p>

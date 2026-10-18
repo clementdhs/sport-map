@@ -55,7 +55,10 @@ const stats = computed(() => {
           <span class="font-medium">{{ formatRating(route.rating_avg ?? 0) }}</span>
           <span class="text-muted">({{ $t('routeCard.reviews', route.rating_count) }})</span>
         </span>
-        <span v-if="!hideOwner" class="min-w-0 truncate text-muted">{{ $t('routeCard.by', { name: route.owner_name }) }}</span>
+        <span v-if="!hideOwner" class="flex min-w-0 items-center gap-1.5 text-muted">
+          <MemberAvatar :name="route.owner_name" :path="route.owner_avatar_path" size="3xs" />
+          <span class="truncate">{{ $t('routeCard.by', { name: route.owner_name }) }}</span>
+        </span>
       </p>
       <p v-if="note" class="mt-1 text-sm text-muted">{{ note }}</p>
     </div>

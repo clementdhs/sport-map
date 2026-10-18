@@ -26,3 +26,11 @@ export function storedPhotoFiles(routeId: string): Promise<{ name: string }[]> {
     body: JSON.stringify({ prefix: `${routeId}/` }),
   })
 }
+
+// Files left in the local "avatars" bucket for a member: their profile photo (#150).
+export function storedAvatarFiles(userId: string): Promise<{ name: string, metadata: { size: number, mimetype: string } }[]> {
+  return supabaseAdmin('/storage/v1/object/list/avatars', {
+    method: 'POST',
+    body: JSON.stringify({ prefix: `${userId}/` }),
+  })
+}

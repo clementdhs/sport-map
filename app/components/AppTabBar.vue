@@ -6,6 +6,9 @@ const { t } = useI18n()
 const items = useMainNav()
 const newItems = useNewItems()
 const menuItems = computed(() => newItems.value.map(({ label, icon, to }) => ({ label, icon, to })))
+// The profile tab shows the member's photo in place of its icon (#150), once signed.
+const { data: me } = useMyProfile()
+const avatarSrc = useAvatarUrl(() => me.value?.avatar_path)
 </script>
 
 <template>
@@ -27,7 +30,17 @@ const menuItems = computed(() => newItems.value.map(({ label, icon, to }) => ({ 
             :class="item.ariaCurrent ? 'text-primary' : 'text-muted'"
             @click="item.onClick?.()"
           >
-            <UIcon :name="item.icon" class="size-6" aria-hidden="true" />
+            <UAvatar
+              v-if="item.to === '/profile' && avatarSrc"
+              :src="avatarSrc"
+              alt=""
+              icon="i-lucide-user"
+              size="xs"
+              aria-hidden="true"
+              :class="{ 'ring-2 ring-primary': item.ariaCurrent }"
+              data-testid="tab-avatar"
+            />
+            <UIcon v-else :name="item.icon" class="size-6" aria-hidden="true" />
             {{ item.label }}
           </ULink>
         </li>

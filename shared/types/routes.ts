@@ -70,6 +70,8 @@ export type RouteListItem = {
   rating_count: number
   // Display name of the owner, or their username when they chose none
   owner_name: string
+  // The owner's profile photo (profiles.avatar_path), null for their initials
+  owner_avatar_path: string | null
   created_at: string
   // Outline drawn by the route card (thumbnailPath), null when the track can't be drawn
   thumbnail: string | null
@@ -81,7 +83,13 @@ export type RouteSummary = RouteListItem & {
   marker: [lng: number, lat: number]
 }
 
-export type ProfileInfo = Pick<Tables<'profiles'>, 'username' | 'display_name' | 'bio' | 'created_at'>
+// avatar_path: the profile photo in the "avatars" bucket, null for the initials (#150)
+export type ProfileInfo = Pick<Tables<'profiles'>, 'username' | 'display_name' | 'bio' | 'created_at' | 'avatar_path'>
+
+// POST /api/profile/me/avatar
+export type AvatarSaved = {
+  avatar_path: string
+}
 
 export type MyProfile = {
   profile: ProfileInfo

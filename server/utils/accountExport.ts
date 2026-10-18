@@ -24,6 +24,8 @@ export interface AccountData {
     updated_at: string
   }[]
   photos: { route_id: string, storage_path: string, created_at: string }[]
+  // Storage path of the profile photo in the "avatars" bucket, null without one
+  avatar: string | null
   reviews: object[]
   activity: object[]
   outings: object[]
@@ -37,14 +39,17 @@ export interface AccountData {
 
 export interface AccountArchive {
   files: { path: string, content: string }[]
-  // Where each photo goes in the archive, and where it is stored.
+  // Where each photo of a route goes in the archive, and where it is stored.
   photos: { path: string, storage_path: string }[]
+  // Same for the profile photo, from the "avatars" bucket
+  avatar: { path: string, storage_path: string } | null
 }
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 const ARCHIVE_NAMES = [
-  'readme', 'profile', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'gpxFolder', 'photosFolder',
+  'readme', 'profile', 'avatar', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'gpxFolder',
+  'photosFolder',
 ] as const
 type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
 
@@ -52,10 +57,11 @@ type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
 const archiveNames = (locale: MessageLocale) =>
   Object.fromEntries(ARCHIVE_NAMES.map(key => [key, translate(locale, `archive.files.${key}`)])) as ArchiveNames
 
-function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames): string {
+function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames, avatar: AccountArchive['avatar']): string {
   const t = (key: string, params?: Record<string, string>) => translate(locale, `archive.readme.${key}`, params)
   const rows = [
     [names.profile, t('profile')],
+    ...avatar ? [[avatar.path, t('avatar')] as const] : [],
     [names.routes, t('routes')],
     [`${names.gpxFolder}/*.gpx`, t('gpx')],
     [`${names.photosFolder}/`, t('photos')],
@@ -108,9 +114,11 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     return { ...details, gpx, photos: routePhotos.map(photo => photo.path) }
   })
 
+  const avatar = data.avatar ? { path: `${names.avatar}.${data.avatar.split('.').at(-1)}`, storage_path: data.avatar } : null
+
   files.unshift(
-    { path: names.readme, content: readme(data, locale, names) },
-    { path: names.profile, content: json(data.profile) },
+    { path: names.readme, content: readme(data, locale, names, avatar) },
+    { path: names.profile, content: json({ ...data.profile, photo: avatar?.path ?? null }) },
     { path: names.routes, content: json(routes) },
     { path: names.reviews, content: json(data.reviews) },
     { path: names.activity, content: json(data.activity) },
@@ -121,5 +129,5 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     { path: names.live, content: json(data.liveShares) },
     { path: names.preferences, content: json(data.preferences ?? { preferences: {} }) },
   )
-  return { files, photos }
+  return { files, photos, avatar }
 }

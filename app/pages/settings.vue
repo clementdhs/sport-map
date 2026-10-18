@@ -15,7 +15,7 @@ if (error.value) {
   throw createError({ statusCode: error.value.statusCode ?? 500, statusMessage: error.value.statusMessage, fatal: true })
 }
 
-const { refresh: refreshMenuUsername } = useMyUsername()
+const { refresh: refreshMyProfile } = useMyProfile()
 
 const form = ref<ProfileUpdate>({
   username: profile.value?.username ?? '',
@@ -32,7 +32,7 @@ async function saveProfile() {
     await $fetch('/api/profile/me', { method: 'PATCH', body: form.value })
     toast.add({ title: t('settings.profileUpdated'), color: 'success', icon: 'i-lucide-check' })
     // The profile link, the account deletion and the account menu use the username.
-    if (usernameChanged.value) await Promise.all([refresh(), refreshMenuUsername()])
+    if (usernameChanged.value) await Promise.all([refresh(), refreshMyProfile()])
   }
   catch (err) {
     toast.add({
@@ -44,6 +44,11 @@ async function saveProfile() {
   finally {
     saving.value = false
   }
+}
+
+// The account menu and the tab bar show the photo too.
+async function onAvatarChanged() {
+  await Promise.all([refresh(), refreshMyProfile()])
 }
 
 function onPasswordChanged() {
@@ -84,6 +89,7 @@ const voice = useVoicePrefs()
               </template>
               <template #username>@{{ profile.username }}</template>
             </i18n-t>
+            <AvatarEditor :name="profile.display_name ?? profile.username" :path="profile.avatar_path" @changed="onAvatarChanged" />
             <UForm :schema="profileUpdateSchemaLocalized" :state="form" class="space-y-4" @submit="saveProfile">
               <UFormField :label="t('settings.username')" name="username" :hint="t('settings.usernameHint')">
                 <!-- Fixed ids: the generated ones differ between the server and the browser on this page (it awaits its

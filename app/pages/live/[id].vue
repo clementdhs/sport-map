@@ -75,8 +75,9 @@ const follow = ref(false)
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pr-14">
         <div class="pointer-events-auto flex items-center gap-2">
           <UButton to="/live" icon="i-lucide-arrow-left" :label="t('live.title')" color="neutral" variant="solid" class="shadow-md" />
-          <p v-if="share" class="truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">
-            {{ share.user_name }}
+          <p v-if="share" class="flex min-w-0 items-center gap-1.5 rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">
+            <MemberAvatar :name="share.user_name" :path="share.user_avatar_path" size="2xs" />
+            <span class="truncate">{{ share.user_name }}</span>
           </p>
         </div>
       </div>

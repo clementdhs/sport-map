@@ -11,7 +11,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   const supabase = await serverSupabaseClient(event)
 
   const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences] = await Promise.all([
-    supabase.from('profiles').select('username, display_name, bio, created_at').eq('id', user.sub).single(),
+    supabase.from('profiles').select('username, display_name, bio, created_at, avatar_path').eq('id', user.sub).single(),
     supabase
       .from('routes')
       .select('id, name, description, sport_type, is_public, source, distance_m, elevation_gain_m, elevation_loss_m, elevation_profile, pois, created_at, updated_at, geometry:route_geojson')
@@ -64,9 +64,10 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     throw apiError(event, 500, 'api.exportFailed')
   }
 
+  const { avatar_path, ...profileData } = profile.data
   const archive = accountArchive({
     exportedAt: new Date().toISOString(),
-    profile: { ...profile.data, email: user.email ?? null },
+    profile: { ...profileData, email: user.email ?? null },
     routes: routes.data.map(route => ({
       ...route,
       elevation_profile: route.elevation_profile as number[] | null,
@@ -74,6 +75,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       geometry: route.geometry as unknown as LineString,
     })),
     photos: photos.data,
+    avatar: avatar_path,
     reviews: reviews.data!,
     activity: activity.data!,
     outings: outings.data!,
@@ -84,14 +86,20 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     preferences: preferences.data,
   }, getRequestLocale(event))
 
-  // Signed with the caller's session: storage policies let owners read their route photos.
-  const signed = await signPhotos(supabase, archive.photos.map(photo => ({ id: photo.path, storage_path: photo.storage_path })))
-  if (signed.length !== archive.photos.length) {
+  // Signed with the caller's session: storage policies let owners read their route photos, and members the
+  // profile photos.
+  const toSign = (files: { path: string, storage_path: string }[]) => files.map(file => ({ id: file.path, storage_path: file.storage_path }))
+  const avatars = archive.avatar ? [archive.avatar] : []
+  const [signed, signedAvatars] = await Promise.all([
+    signPhotos(supabase, toSign(archive.photos)),
+    signPhotos(supabase, toSign(avatars), AVATARS_BUCKET),
+  ])
+  if (signed.length !== archive.photos.length || signedAvatars.length !== avatars.length) {
     throw apiError(event, 500, 'api.exportPhotosFailed')
   }
   return {
     username: profile.data.username,
     files: archive.files,
-    photos: signed.map(photo => ({ path: photo.id, url: photo.url })),
+    photos: [...signedAvatars, ...signed].map(photo => ({ path: photo.id, url: photo.url })),
   }
 })

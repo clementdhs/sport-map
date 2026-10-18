@@ -1,24 +1,45 @@
-// Accent colors the user can pick (the Nuxt UI "primary" color), on top of the light / dark mode.
-export const ACCENTS = ['indigo', 'violet', 'sky', 'green'] as const
+// Accent colors the user can pick (the Nuxt UI "primary" color, so Tailwind palette names), on top of the
+// light / dark mode, in hue order. No orange (the map tracks) nor red (errors, end marker). `yellow` is shown as
+// « Ambre »: Tailwind's amber, once dark enough for white text, is the orange of the tracks.
+export const ACCENTS = ['indigo', 'violet', 'fuchsia', 'pink', 'yellow', 'lime', 'green', 'teal', 'sky', 'slate'] as const
 export type Accent = typeof ACCENTS[number]
 
 // Indigo stands out from the map (forests, water) and from the orange tracks.
 export const DEFAULT_ACCENT: Accent = 'indigo'
 
-// The shade primary buttons use in light mode: the darkest needed for white text to pass WCAG AA
-// (sky and green 600 don't). Dark mode keeps Nuxt UI's 400 with dark text.
-export const ACCENT_LIGHT_SHADES: Record<Accent, 600 | 700> = { indigo: 600, violet: 600, sky: 700, green: 700 }
-
-// That shade as a hex value, for what CSS can't reach (theme-color meta, swatches).
-export const ACCENT_COLORS: Record<Accent, string> = {
-  indigo: '#4f46e5',
-  violet: '#7c3aed',
-  sky: '#0369a1',
-  green: '#15803d',
+// The shade primary uses in light mode: the lightest one where white text on buttons, links on the background and
+// text on a soft (10 %) primary background all pass WCAG AA (test/unit/accentContrast.test.ts). Dark mode keeps
+// Nuxt UI's 400 with dark text.
+export const ACCENT_LIGHT_SHADES: Record<Accent, 600 | 700 | 800> = {
+  indigo: 600,
+  violet: 600,
+  fuchsia: 700,
+  pink: 700,
+  yellow: 800,
+  lime: 800,
+  green: 800,
+  teal: 700,
+  sky: 700,
+  slate: 600,
 }
 
-// Icons, link previews and the manifest can't follow the user's choice: they use the default.
-export const BRAND_COLOR = ACCENT_COLORS[DEFAULT_ACCENT]
+// That shade as an sRGB hex value, for what CSS can't reach (theme-color meta, swatches).
+export const ACCENT_COLORS: Record<Accent, string> = {
+  indigo: '#4f39f6',
+  violet: '#7f22fe',
+  fuchsia: '#a800b7',
+  pink: '#c6005c',
+  yellow: '#894b00',
+  lime: '#3c6300',
+  green: '#016630',
+  teal: '#00786f',
+  sky: '#0069a8',
+  slate: '#45556c',
+}
+
+// Icons, link previews and the manifest can't follow the user's choice: they use the default accent, as it was
+// drawn in public/icon.svg (Tailwind 3's indigo 600).
+export const BRAND_COLOR = '#4f46e5'
 
 export function toAccent(value: unknown): Accent {
   return ACCENTS.includes(value as Accent) ? value as Accent : DEFAULT_ACCENT

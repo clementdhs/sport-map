@@ -131,6 +131,41 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
 })
 
+test('offers ten accent colors in the settings, rendered by the server in a shade readable in both modes', async ({ page, context, baseURL }) => {
+  // A color picked among the four offered before #144 still applies.
+  await context.addCookies([{ name: 'sport-map-accent', value: 'green', url: baseURL }])
+  await page.goto('/settings#appearance')
+  await waitForHydration(page)
+  const html = page.locator('html')
+  await expect(html).toHaveAttribute('data-accent', 'green')
+  await expect(page.getByRole('group', { name: 'Couleur' }).getByRole('button')).toHaveCount(10)
+  await expect(page.getByRole('button', { name: 'Vert', exact: true })).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'Clair' }).click()
+  await page.getByRole('button', { name: 'Sarcelle' }).click()
+  await expect(page.getByRole('button', { name: 'Sarcelle' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'teal')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#00786f')
+
+  // No flash: the server renders the accent and its light-mode shade (700 for teal, for white text on buttons).
+  const response = await page.reload()
+  const body = await response!.text()
+  expect(body).toContain('data-accent="teal"')
+  expect(body).toContain('data-accent-shade="700"')
+  const primary = () => page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement)
+    return ['--ui-primary', '--ui-color-primary-700', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
+  })
+  const [light, shade700] = await primary()
+  expect(light).toBe(shade700)
+
+  // Dark mode keeps the 400 shade, with dark text on buttons.
+  await page.getByRole('button', { name: 'Sombre' }).click()
+  await expect(html).toHaveClass(/dark/)
+  const [dark, , shade400] = await primary()
+  expect(dark).toBe(shade400)
+})
+
 test('counts a completed route in the profile summary and statistics', async ({ page, users }) => {
   const valueOf = (scope: Locator, label: string) => scope.locator('dt', { hasText: label }).locator('xpath=following-sibling::dd')
   const outings = valueOf(page.getByRole('tabpanel'), 'Sorties')

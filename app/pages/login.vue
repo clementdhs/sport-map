@@ -96,27 +96,67 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 </script>
 
 <template>
-  <UContainer class="flex justify-center py-12">
-    <UPageCard class="w-full max-w-md">
-      <UAuthForm
-        :title="t('auth.login.title')"
-        icon="i-lucide-log-in"
-        :fields="fields"
-        :validate="validate"
-        :loading="loading"
-        :submit="{ label: t('auth.login.submit'), block: true }"
-        @submit="onSubmit"
-      >
-        <template #description>
-          {{ t('auth.login.familyOnly') }}
-        </template>
-        <template #password-hint>
-          <ULink to="/forgot-password" class="text-primary font-medium">{{ t('auth.login.forgotLink') }}</ULink>
-        </template>
-        <template #validation>
-          <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
-        </template>
-      </UAuthForm>
-    </UPageCard>
-  </UContainer>
+  <div class="relative isolate flex min-h-[calc(100dvh-var(--ui-header-height))] flex-col overflow-hidden">
+    <!-- Relief and contour lines of the Écrins, tinted with the accent (scripts/login-background.py). -->
+    <div class="login-relief absolute inset-0 -z-10" aria-hidden="true" />
+    <UContainer class="flex flex-1 flex-col items-center gap-6 py-8 sm:py-14">
+      <div class="login-hero flex flex-col items-center gap-3 px-6 py-2 text-center">
+        <AppLogo class="size-16 sm:size-20" />
+        <h1 class="text-3xl font-semibold sm:text-4xl">sport-map</h1>
+        <p class="max-w-sm text-base text-default sm:text-lg">{{ t('auth.login.tagline') }}</p>
+      </div>
+      <UPageCard class="w-full max-w-md">
+        <UAuthForm
+          :title="t('auth.login.title')"
+          icon="i-lucide-log-in"
+          :fields="fields"
+          :validate="validate"
+          :loading="loading"
+          :submit="{ label: t('auth.login.submit'), block: true }"
+          @submit="onSubmit"
+        >
+          <template #description>
+            {{ t('auth.login.familyOnly') }}
+          </template>
+          <template #password-hint>
+            <ULink to="/forgot-password" class="text-primary font-medium">{{ t('auth.login.forgotLink') }}</ULink>
+          </template>
+          <template #validation>
+            <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
+          </template>
+        </UAuthForm>
+      </UPageCard>
+      <p class="mt-auto rounded-full bg-default/85 px-2.5 py-0.5 text-xs text-toned">{{ t('auth.login.reliefCredit') }}</p>
+    </UContainer>
+  </div>
 </template>
+
+<style scoped>
+/* Two masks of the same size: the hillshade is a luminance mask (white = shadow), the contour lines an SVG.
+   Browsers without luminance masks (Chromium before 120) would tint the whole page: they keep the plain background. */
+.login-relief {
+  display: none;
+}
+
+@supports (mask-mode: luminance) {
+  .login-relief {
+    display: block;
+    background-color: var(--ui-primary);
+    mask-image: url('/img/login-relief.webp'), url('/img/login-contours.svg');
+    mask-mode: luminance, alpha;
+    mask-position: center;
+    mask-size: cover;
+    opacity: 0.35;
+  }
+
+  /* The dark mode's lighter accent stands out more. */
+  .dark .login-relief {
+    opacity: 0.25;
+  }
+}
+
+/* A veil of the page color under the logo and tagline, which sit on the relief. */
+.login-hero {
+  background: radial-gradient(closest-side, var(--ui-bg) 40%, color-mix(in oklab, var(--ui-bg) 70%, transparent) 75%, transparent);
+}
+</style>

@@ -49,7 +49,9 @@
       "familyOnly": "L'accès est réservé à la famille : demande un compte à l'administrateur.",
       "forgotLink": "Mot de passe oublié ?",
       "emailNotConfirmed": "Confirme ton adresse email avant de te connecter.",
-      "invalidCredentials": "Pseudo, email ou mot de passe incorrect."
+      "invalidCredentials": "Pseudo, email ou mot de passe incorrect.",
+      "tagline": "Tes parcours de course, de rando et de vélo, à partager en famille.",
+      "reliefCredit": "Relief : IGN, RGE ALTI® (octobre 2026), Licence Ouverte"
     },
     "forgot": {
       "title": "Mot de passe oublié",

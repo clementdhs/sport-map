@@ -48,6 +48,41 @@ test('follows the dark mode with the dark style, keeping what the map shows', as
   await expect(attribution).toContainText('Plan IGN')
 })
 
+test('keeps the map light or dark whatever the theme, and follows it again', async ({ page }) => {
+  await page.route('https://api.maptiler.com/maps/outdoor-v2-dark/**', route => route.fulfill({
+    json: { ...EMPTY_MAP_STYLE, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#2b3329' } }] },
+  }))
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await page.goto('/')
+  await waitForMap(page)
+  const map = page.locator('[data-map-loaded]')
+  await expect(map).toHaveAttribute('data-map-dark')
+  await waitForHydration(page)
+
+  // Picked in the "Calques" panel, applied to the open map (#151).
+  await page.getByRole('button', { name: 'Calques' }).click()
+  await expect(page.getByRole('radio', { name: 'Suivre le thème' })).toBeChecked()
+  await page.getByRole('radio', { name: 'Toujours claire' }).click()
+  await expect(map).not.toHaveAttribute('data-map-dark')
+  const saved = page.waitForResponse(response => response.url().endsWith('/api/profile/me/preferences') && response.request().method() === 'PATCH' && response.ok())
+  await page.getByRole('radio', { name: 'Toujours sombre' }).click()
+  await expect(map).toHaveAttribute('data-map-dark')
+  await saved
+  expect(await (await page.request.get('/api/profile/me/preferences')).json()).toMatchObject({ mapStyle: 'dark' })
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))))
+  await expect(map).toHaveAttribute('data-map-dark')
+
+  // The settings show it, and following the theme again turns the next map light.
+  await page.goto('/settings#appearance')
+  await waitForHydration(page)
+  await expect(page.getByRole('radio', { name: 'Toujours sombre' })).toBeChecked()
+  await page.getByRole('radio', { name: 'Suivre le thème' }).click()
+  await page.goto('/')
+  await waitForMap(page)
+  await expect(map).not.toHaveAttribute('data-map-dark')
+})
+
 test('keeps the map controls compact on a phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')

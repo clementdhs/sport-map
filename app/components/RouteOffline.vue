@@ -16,6 +16,8 @@ const toast = useToast()
 const { t } = useI18n()
 const errorMessage = useErrorMessage()
 const { maptilerKey } = useRuntimeConfig().public
+// The styles the maps may show with the member's choice (#151): both when they follow the theme.
+const mapStyle = usePreference('mapStyle')
 
 // Browser-only (Cache Storage, service worker): decided after mounting.
 const supported = ref(false)
@@ -38,7 +40,7 @@ async function prepare() {
   try {
     info.value = await prepareOfflineRoute(
       { id: props.routeId, name: props.name, coordinates: props.coordinates },
-      mapStyleUrls(maptilerKey),
+      mapStyleUrls(maptilerKey, mapStyle.value),
       (done, total) => (progress.value = { done, total }),
     )
     toast.add({ title: t('offline.ready'), color: 'success', icon: 'i-lucide-check' })

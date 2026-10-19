@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl'
-import { keepAppLayers, mapStyleUrl, mapStyleUrls, themedStyleUrl } from '~/utils/mapStyle'
+import { keepAppLayers, mapStyleDark, mapStyleUrl, mapStyleUrls, availableStyleUrl } from '~/utils/mapStyle'
 
 describe('mapStyleUrl', () => {
   it('picks Outdoor or Outdoor Dark with a key', () => {
@@ -16,9 +16,24 @@ describe('mapStyleUrl', () => {
     expect(mapStyleUrls('k')).toEqual([mapStyleUrl('k'), mapStyleUrl('k', true)])
     expect(mapStyleUrls('')).toEqual([mapStyleUrl('')])
   })
+
+  it('prepares only the chosen style when it does not follow the theme', () => {
+    expect(mapStyleUrls('k', 'light')).toEqual([mapStyleUrl('k')])
+    expect(mapStyleUrls('k', 'dark')).toEqual([mapStyleUrl('k', true)])
+    expect(mapStyleUrls('', 'dark')).toEqual([mapStyleUrl('')])
+  })
 })
 
-describe('themedStyleUrl', () => {
+describe('mapStyleDark', () => {
+  it('follows the theme or keeps the chosen style', () => {
+    expect(mapStyleDark('theme', true)).toBe(true)
+    expect(mapStyleDark('theme', false)).toBe(false)
+    expect(mapStyleDark('light', true)).toBe(false)
+    expect(mapStyleDark('dark', false)).toBe(true)
+  })
+})
+
+describe('availableStyleUrl', () => {
   afterEach(() => vi.unstubAllGlobals())
 
   function offline(cached: string[]) {
@@ -30,17 +45,27 @@ describe('themedStyleUrl', () => {
 
   it('keeps the dark style online', async () => {
     vi.stubGlobal('navigator', { onLine: true })
-    expect(await themedStyleUrl('k', true)).toBe(mapStyleUrl('k', true))
+    expect(await availableStyleUrl('k', true)).toBe(mapStyleUrl('k', true))
   })
 
   it('keeps the dark style offline when it was prepared', async () => {
     offline([mapStyleUrl('k', true)])
-    expect(await themedStyleUrl('k', true)).toBe(mapStyleUrl('k', true))
+    expect(await availableStyleUrl('k', true)).toBe(mapStyleUrl('k', true))
   })
 
   it('falls back to the light style offline when only it was prepared', async () => {
     offline([mapStyleUrl('k')])
-    expect(await themedStyleUrl('k', true)).toBe(mapStyleUrl('k'))
+    expect(await availableStyleUrl('k', true)).toBe(mapStyleUrl('k'))
+  })
+
+  it('falls back to the dark style offline when only it was prepared', async () => {
+    offline([mapStyleUrl('k', true)])
+    expect(await availableStyleUrl('k', false)).toBe(mapStyleUrl('k', true))
+  })
+
+  it('keeps the asked style offline when neither was prepared', async () => {
+    offline([])
+    expect(await availableStyleUrl('k', true)).toBe(mapStyleUrl('k', true))
   })
 })
 

@@ -17,6 +17,7 @@ describe('PREFERENCES', () => {
       paces: {},
       startArea: null,
       defaultSport: null,
+      mapStyle: 'theme',
       outdoorReadability: false,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
@@ -24,6 +25,8 @@ describe('PREFERENCES', () => {
     expect(PREFERENCES.liveData.parse({ follow: ['time', 'nope'] })).toEqual({ follow: ['time'] })
     expect(PREFERENCES.paces.parse({ running: 5, swimming: 2, hiking: 'fast' })).toEqual({ running: 5 })
     expect(PREFERENCES.defaultSport.parse('swimming')).toBeNull()
+    expect(PREFERENCES.mapStyle.parse('sepia')).toBe('theme')
+    expect(PREFERENCES.mapStyle.parse('dark')).toBe('dark')
     expect(PREFERENCES.outdoorReadability.parse('true')).toBe(false)
     expect(PREFERENCES.outdoorReadability.decode!('1')).toBe(true)
   })

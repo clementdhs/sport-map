@@ -753,6 +753,12 @@
     "basemap": "Fond de carte",
     "layers": "Calques",
     "view3d": "Vue 3D (relief)",
+    "style": "Style de la carte",
+    "styles": {
+      "theme": "Suivre le thème",
+      "light": "Toujours claire",
+      "dark": "Toujours sombre"
+    },
     "basemaps": {
       "maptiler": "MapTiler Outdoor",
       "ignPlan": "Plan IGN"
@@ -974,7 +980,7 @@
     "bio": "Bio",
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
-    "appearanceHint": "Gardée sur cet appareil.",
+    "appearanceHint": "Langue, thème et couleur sont gardés sur cet appareil ; le style de carte suit ton compte.",
     "defaultSport": {
       "label": "Mon sport",
       "none": "Aucun",

@@ -6,6 +6,7 @@ import { parseBasemap, type Basemap } from '~/utils/basemaps'
 import { parseDefaultSport } from '~/utils/defaultSport'
 import { parseLiveDataPrefs, type LiveDataPrefs } from '~/utils/liveStats'
 import { parseMapOrientation, type MapOrientation } from '~/utils/mapOrientation'
+import { parseMapStyleChoice, type MapStyleChoice } from '~/utils/mapStyle'
 import { parseSearchScope } from '~/utils/searchScope'
 import { parseStartArea, type StartArea } from '~/utils/startArea'
 import { parseVoicePrefs, type VoicePrefs } from '~/utils/voiceGuide'
@@ -26,6 +27,8 @@ export interface Preferences {
   startArea: StartArea | null
   // Preselected wherever a sport is chosen (#148); null: none.
   defaultSport: SportType | null
+  // Light or dark MapTiler style, or the theme's (#151).
+  mapStyle: MapStyleChoice
   // Larger text and stronger contrast, to read in the sun (#149); a cookie mirrors it for the server render.
   outdoorReadability: boolean
 }
@@ -54,6 +57,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   paces: { storageKey: 'sport-map:paces', parse: parseSportPaces },
   startArea: { storageKey: 'sport-map:start-area', parse: parseStartArea },
   defaultSport: { storageKey: 'sport-map:default-sport', parse: parseDefaultSport },
+  mapStyle: { storageKey: 'sport-map:map-style', parse: parseMapStyleChoice, ...AS_TEXT },
   outdoorReadability: { storageKey: 'sport-map:outdoor-readability', ...BOOLEAN },
 }
 

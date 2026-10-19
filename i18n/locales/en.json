@@ -753,6 +753,12 @@
     "basemap": "Basemap",
     "layers": "Layers",
     "view3d": "3D view (terrain)",
+    "style": "Map style",
+    "styles": {
+      "theme": "Follow the theme",
+      "light": "Always light",
+      "dark": "Always dark"
+    },
     "basemaps": {
       "maptiler": "MapTiler Outdoor",
       "ignPlan": "Plan IGN (France)"
@@ -974,7 +980,7 @@
     "bio": "Bio",
     "saveProfile": "Save the profile",
     "changePassword": "Change the password",
-    "appearanceHint": "Kept on this device.",
+    "appearanceHint": "Language, theme and colour stay on this device; the map style follows your account.",
     "defaultSport": {
       "label": "My sport",
       "none": "None",

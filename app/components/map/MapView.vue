@@ -28,9 +28,11 @@ const { maptilerKey } = useRuntimeConfig().public
 const { t } = useI18n()
 const { padding } = useMapPadding()
 
-// The map follows the app's light or dark mode (#109). Plan IGN, drawn over the style, stays light.
+// The map follows the app's light or dark mode (#109), unless the member keeps it light or dark (#151, in the
+// "Calques" panel and the settings). Plan IGN, drawn over the style, stays light.
 const colorMode = useColorMode()
-const dark = computed(() => colorMode.value === 'dark')
+const mapStyle = usePreference('mapStyle')
+const dark = computed(() => mapStyleDark(mapStyle.value, colorMode.value === 'dark'))
 // The style last asked for, and the one on screen (set on each `style.load`, which MapLibre also fires after a diff;
 // a failed request leaves it, so the next theme or network change asks again). Exposed as data-map-dark for tests.
 let styleRequested = ''
@@ -88,7 +90,7 @@ onMounted(async () => {
     console.warn('[MapView] NUXT_PUBLIC_MAPTILER_KEY is not set, using MapLibre demo tiles.')
   }
 
-  styleRequested = await themedStyleUrl(maptilerKey, dark.value)
+  styleRequested = await availableStyleUrl(maptilerKey, dark.value)
   if (!container.value) return
   const instance = new Map({
     container: container.value,
@@ -171,12 +173,13 @@ onMounted(async () => {
   map.value = instance
 })
 
-// Swaps the light and dark styles as a diff: they share their sources, so tiles stay, and keepAppLayers keeps what
+// Swaps the light and dark styles (theme or member's choice changed) as a diff: they share their sources, so tiles stay, and keepAppLayers keeps what
 // the app drew. Costs the style and its sprite, not the tiles. Back online, a light fallback turns dark.
 async function followTheme() {
   if (!map.value || !styleLoaded) return
-  const url = await themedStyleUrl(maptilerKey, dark.value)
-  if (!map.value || url === styleShown.value) return
+  const url = await availableStyleUrl(maptilerKey, dark.value)
+  // Still asked while another style loads: a quick change back to the one on screen must be applied too.
+  if (!map.value || (url === styleShown.value && url === styleRequested)) return
   styleRequested = url
   map.value.setStyle(url, { transformStyle: keepAppLayers })
 }
@@ -277,6 +280,7 @@ onBeforeUnmount(() => {
             :ui="{ legend: 'text-sm font-medium mb-1.5' }"
             @update:model-value="pickBasemap($event as Basemap)"
           />
+          <MapStyleSetting v-if="maptilerKey && shown === 'maptiler'" size="sm" />
           <USwitch
             v-if="reliefSource"
             :model-value="view3d || force3d"

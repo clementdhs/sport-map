@@ -10,21 +10,39 @@ export function mapStyleUrl(maptilerKey: string, dark = false): string {
     : 'https://demotiles.maplibre.org/style.json'
 }
 
-// Every style a map may show, which the offline preparation stores: light and dark (one without a key).
-export function mapStyleUrls(maptilerKey: string): string[] {
-  return [...new Set([mapStyleUrl(maptilerKey), mapStyleUrl(maptilerKey, true)])]
+// Which MapTiler style the maps show (#151): the theme's (the default, #109), or always the light or the dark one.
+// Kept in the member's account (app/utils/preferences.ts).
+export type MapStyleChoice = 'theme' | 'light' | 'dark'
+
+export const MAP_STYLE_CHOICES: MapStyleChoice[] = ['theme', 'light', 'dark']
+
+export function parseMapStyleChoice(value: unknown): MapStyleChoice {
+  return value === 'light' || value === 'dark' ? value : 'theme'
 }
 
-// The style to show for the theme. Offline, the dark one only when it was prepared with the route (routes prepared
-// before #109 only have the light one): otherwise the map would stay empty.
-export async function themedStyleUrl(maptilerKey: string, dark: boolean): Promise<string> {
+// Whether the maps show the dark style, for this choice and the app's mode.
+export function mapStyleDark(choice: MapStyleChoice, themeDark: boolean): boolean {
+  return choice === 'theme' ? themeDark : choice === 'dark'
+}
+
+// Every style a map may show with this choice, which the offline preparation stores: light and dark when it follows
+// the theme (one without a key), only the chosen one otherwise (MapTiler quota). They share their sources.
+export function mapStyleUrls(maptilerKey: string, choice: MapStyleChoice = 'theme'): string[] {
+  const shown = choice === 'theme' ? [false, true] : [choice === 'dark']
+  return [...new Set(shown.map(dark => mapStyleUrl(maptilerKey, dark)))]
+}
+
+// The style to show. Offline, the other one when only it was prepared with the route (routes prepared before #109
+// only have the light one, routes prepared with a fixed choice only that one): otherwise the map would stay empty.
+export async function availableStyleUrl(maptilerKey: string, dark: boolean): Promise<string> {
   const url = mapStyleUrl(maptilerKey, dark)
-  if (!dark || navigator.onLine || !('caches' in window)) return url
+  const other = mapStyleUrl(maptilerKey, !dark)
+  if (url === other || navigator.onLine || !('caches' in window)) return url
   try {
-    return (await caches.match(url)) ? url : mapStyleUrl(maptilerKey)
+    return (await caches.match(url)) || !(await caches.match(other)) ? url : other
   }
   catch {
-    return mapStyleUrl(maptilerKey)
+    return url
   }
 }
 

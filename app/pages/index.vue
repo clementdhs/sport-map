@@ -24,6 +24,12 @@ const scope = computed({
   set: (value: SearchScope) => search.setScope(value),
 })
 const scopeItems = computed(() => SEARCH_SCOPES.map(value => ({ value, label: t(`home.scope.${value satisfies SearchScope}`) })))
+// The member's default sport (#148) as a quick filter, which they turn on or off: never applied by itself.
+const defaultSport = usePreference('defaultSport')
+const sportFilterOn = computed(() => !!defaultSport.value && search.sport === defaultSport.value)
+function toggleSportFilter() {
+  if (defaultSport.value) search.sport = sportFilterOn.value ? 'all' : defaultSport.value
+}
 const sortItems = computed(() => SEARCH_SORTS.map(value => ({ value, label: t(`sorts.${value}`) })))
 
 // The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort (home.limit.<sort>).
@@ -97,12 +103,23 @@ watch(() => search.results, (results) => {
 
     <div class="flex gap-2">
       <SearchFilters />
+      <UButton
+        v-if="defaultSport"
+        :icon="SPORT_ICONS[defaultSport]"
+        :label="t(`sports.${defaultSport}`)"
+        :color="sportFilterOn ? 'primary' : 'neutral'"
+        :variant="sportFilterOn ? 'soft' : 'outline'"
+        :aria-pressed="sportFilterOn"
+        :ui="{ leadingIcon: `sport-${defaultSport} text-(--sport)` }"
+        class="min-w-0 shrink"
+        @click="toggleSportFilter"
+      />
       <USelect
         v-model="search.sort"
         :items="sortItems"
         icon="i-lucide-arrow-down-wide-narrow"
         :aria-label="t('home.sortBy')"
-        class="min-w-0 flex-1"
+        class="min-w-32 flex-1"
       />
     </div>
 

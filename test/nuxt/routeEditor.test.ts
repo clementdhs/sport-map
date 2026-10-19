@@ -244,6 +244,48 @@ describe('changing the sport', () => {
   })
 })
 
+describe('default sport', () => {
+  it('starts a new route with the member\'s default sport, following the setting until they pick another', () => {
+    const editor = useRouteEditorStore()
+    editor.preselectSport(null)
+    expect(editor.details.sport_type).toBe('running')
+
+    editor.preselectSport('trail')
+    expect(editor.details.sport_type).toBe('trail')
+    // The account arrives with another setting.
+    editor.preselectSport('mountain_biking')
+    expect(editor.details.sport_type).toBe('mountain_biking')
+
+    editor.details.sport_type = 'hiking'
+    editor.preselectSport('trail')
+    expect(editor.details.sport_type).toBe('hiking')
+
+    // Set back to none, the editor's own default.
+    editor.reset()
+    editor.preselectSport('trail')
+    editor.preselectSport(null)
+    expect(editor.details.sport_type).toBe('running')
+
+    // A new draft starts again from the setting.
+    editor.reset()
+    editor.preselectSport('trail')
+    expect(editor.details.sport_type).toBe('trail')
+  })
+
+  it('leaves a draft already traced and a saved route as they are', async () => {
+    const editor = await drawABC()
+    editor.preselectSport('cycling')
+    expect(editor.details.sport_type).toBe('running')
+
+    editor.details.name = 'Boucle test'
+    await editor.save()
+    editor.loadRoute(routeDetail(createdBody!))
+    editor.clearPoints()
+    editor.preselectSport('cycling')
+    expect(editor.details.sport_type).toBe('running')
+  })
+})
+
 describe('daily routing quota', () => {
   it('counts down what is left, then draws straight lines without asking again, warning once', async () => {
     const { toasts } = useToast()

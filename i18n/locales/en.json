@@ -955,6 +955,7 @@
       "profile": "Profile",
       "account": "Account",
       "appearance": "Appearance and language",
+      "sport": "Default sport",
       "paces": "My paces",
       "startArea": "My start area",
       "voice": "Voice guidance"
@@ -970,6 +971,11 @@
     "saveProfile": "Save the profile",
     "changePassword": "Change the password",
     "appearanceHint": "Kept on this device.",
+    "defaultSport": {
+      "label": "My sport",
+      "none": "None",
+      "hint": "Preselected in the editor and when saving an outing, and offered as a quick filter on the home page. You can always pick another one."
+    },
     "paces": {
       "hint": "Estimated route durations follow your pace on the flat, with the climbing added. An empty field keeps the default.",
       "paceUnit": "min/km",

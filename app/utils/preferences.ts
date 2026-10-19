@@ -1,8 +1,9 @@
 import type { MyPreferences } from '#shared/types/account'
 import { ACCOUNT_PREFERENCES, type AccountPreferenceKey } from '#shared/utils/preferences'
 import { parseSportPaces, type SportPaces } from '#shared/utils/pace'
-import type { SearchScope } from '#shared/utils/routes'
+import type { SearchScope, SportType } from '#shared/utils/routes'
 import { parseBasemap, type Basemap } from '~/utils/basemaps'
+import { parseDefaultSport } from '~/utils/defaultSport'
 import { parseLiveDataPrefs, type LiveDataPrefs } from '~/utils/liveStats'
 import { parseMapOrientation, type MapOrientation } from '~/utils/mapOrientation'
 import { parseSearchScope } from '~/utils/searchScope'
@@ -23,6 +24,8 @@ export interface Preferences {
   voice: VoicePrefs
   paces: SportPaces
   startArea: StartArea | null
+  // Preselected wherever a sport is chosen (#148); null: none.
+  defaultSport: SportType | null
 }
 
 interface PreferenceEntry<T> {
@@ -47,6 +50,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   voice: { storageKey: 'sport-map:voice', parse: parseVoicePrefs },
   paces: { storageKey: 'sport-map:paces', parse: parseSportPaces },
   startArea: { storageKey: 'sport-map:start-area', parse: parseStartArea },
+  defaultSport: { storageKey: 'sport-map:default-sport', parse: parseDefaultSport },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

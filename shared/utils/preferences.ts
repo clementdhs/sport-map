@@ -4,7 +4,7 @@ import * as z from 'zod'
 // object, key → value as the app saves it. The server only checks the keys and the size: the app parses each
 // value (app/utils/preferences.ts), falling back to its default for anything it doesn't know, since the account
 // may hold a value saved by an older version. A new setting adds its key here and its entry there.
-export const ACCOUNT_PREFERENCES = ['basemap', 'map3d', 'mapOrientation', 'searchScope', 'liveData', 'voice', 'paces', 'startArea'] as const
+export const ACCOUNT_PREFERENCES = ['basemap', 'map3d', 'mapOrientation', 'searchScope', 'liveData', 'voice', 'paces', 'startArea', 'defaultSport'] as const
 export type AccountPreferenceKey = typeof ACCOUNT_PREFERENCES[number]
 
 // Largest set of changes saved at once, in JSON characters: a few short values. The table caps the whole object.

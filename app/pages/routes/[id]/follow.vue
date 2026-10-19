@@ -199,8 +199,8 @@ function discardOuting() {
           />
           <!-- No room for it on phones next to the buttons; the page title keeps it. -->
           <p class="hidden truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md sm:block">{{ parcours.name }}</p>
+          <OutdoorReadabilityToggle class="ml-auto" />
           <VoiceGuideSettings
-            class="ml-auto"
             :prefs="voice.prefs.value"
             :supported="voice.supported.value"
             :background="background"
@@ -209,6 +209,7 @@ function discardOuting() {
           <UButton
             :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
             :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            :ui="{ label: 'outdoor:max-sm:sr-only' }"
             color="neutral"
             variant="solid"
             class="shrink-0 shadow-md"

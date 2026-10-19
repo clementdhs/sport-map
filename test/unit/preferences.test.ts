@@ -17,12 +17,15 @@ describe('PREFERENCES', () => {
       paces: {},
       startArea: null,
       defaultSport: null,
+      outdoorReadability: false,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
     expect(PREFERENCES.map3d.parse('1')).toBe(false)
     expect(PREFERENCES.liveData.parse({ follow: ['time', 'nope'] })).toEqual({ follow: ['time'] })
     expect(PREFERENCES.paces.parse({ running: 5, swimming: 2, hiking: 'fast' })).toEqual({ running: 5 })
     expect(PREFERENCES.defaultSport.parse('swimming')).toBeNull()
+    expect(PREFERENCES.outdoorReadability.parse('true')).toBe(false)
+    expect(PREFERENCES.outdoorReadability.decode!('1')).toBe(true)
   })
 
   it('keeps the storage format of the devices from before #145', () => {

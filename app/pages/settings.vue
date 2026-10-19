@@ -133,6 +133,9 @@ const voice = useVoicePrefs()
             <LanguageSelect />
             <ThemeSettings />
           </div>
+          <div :class="CARD_CLASS">
+            <OutdoorReadabilitySetting />
+          </div>
         </section>
 
         <section id="sport" :class="SECTION_CLASS" aria-labelledby="settings-sport-title">

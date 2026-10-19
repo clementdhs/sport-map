@@ -26,6 +26,8 @@ export interface Preferences {
   startArea: StartArea | null
   // Preselected wherever a sport is chosen (#148); null: none.
   defaultSport: SportType | null
+  // Larger text and stronger contrast, to read in the sun (#149); a cookie mirrors it for the server render.
+  outdoorReadability: boolean
 }
 
 interface PreferenceEntry<T> {
@@ -40,10 +42,11 @@ interface PreferenceEntry<T> {
 }
 
 const AS_TEXT = { encode: (value: string) => value, decode: (raw: string) => raw }
+const BOOLEAN = { parse: (value: unknown) => value === true, encode: (on: boolean) => (on ? '1' : '0'), decode: (raw: string) => raw === '1' }
 
 export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Preferences[K]> } = {
   basemap: { storageKey: 'sport-map:basemap', parse: parseBasemap, ...AS_TEXT },
-  map3d: { storageKey: 'sport-map:map-3d', parse: value => value === true, encode: on => (on ? '1' : '0'), decode: raw => raw === '1' },
+  map3d: { storageKey: 'sport-map:map-3d', ...BOOLEAN },
   mapOrientation: { storageKey: 'sport-map:map-orientation', parse: parseMapOrientation, ...AS_TEXT },
   searchScope: { storageKey: 'sport-map:search-scope', parse: parseSearchScope, ...AS_TEXT },
   liveData: { storageKey: 'sport-map:live-data', parse: parseLiveDataPrefs },
@@ -51,6 +54,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   paces: { storageKey: 'sport-map:paces', parse: parseSportPaces },
   startArea: { storageKey: 'sport-map:start-area', parse: parseStartArea },
   defaultSport: { storageKey: 'sport-map:default-sport', parse: parseDefaultSport },
+  outdoorReadability: { storageKey: 'sport-map:outdoor-readability', ...BOOLEAN },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

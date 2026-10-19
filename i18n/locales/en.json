@@ -957,6 +957,7 @@
       "appearance": "Appearance and language",
       "sport": "Default sport",
       "paces": "My paces",
+      "startArea": "My start area",
       "voice": "Voice guidance"
     },
     "profileHint": "What the team sees on {link} ({username}).",
@@ -989,6 +990,19 @@
       "ignore": "Dismiss",
       "noSuggestion": "No GPS outing long enough to offer a pace.",
       "suggestFailed": "Couldn't work it out"
+    },
+    "startArea": {
+      "hint": "Home, the editor and “Discover” open on this area rather than the whole of France, until you move their map.",
+      "none": "No area: maps open on the whole of France.",
+      "current": "Start area: {name}",
+      "currentMapView": "Start area: a chosen map view",
+      "pickOnMap": "Choose on the map",
+      "mapHint": "Move the map to your area, then use its view.",
+      "useMapView": "Use the map's current view",
+      "closeMap": "Close the map",
+      "clear": "Remove the area",
+      "saved": "Start area saved",
+      "cleared": "Start area removed"
     },
     "avatar": {
       "title": "Profile photo",

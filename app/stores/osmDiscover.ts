@@ -20,6 +20,9 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   const kind = ref<OsmRouteKind>('foot')
   // Map view, restored when coming back; the pages opening this one set it to their own view.
   const view = ref<Omit<MapViewState, 'bounds'>>({ center: [2.35, 46.6], zoom: 5 })
+  // Whether that view was shown or given (another page, a link); until then the page opens on the member's start
+  // area (#147), if any.
+  const viewKnown = ref(false)
   const bounds = ref<Bbox | null>(null)
 
   const routes = ref<OsmRoute[]>([])
@@ -169,11 +172,13 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   function setView({ bounds: nextBounds, center, zoom }: MapViewState) {
     bounds.value = nextBounds
     view.value = { center, zoom }
+    viewKnown.value = true
   }
 
   // Opens on another page's view; the results of a previous visit stay until the next search.
   function startFrom(start: Omit<MapViewState, 'bounds'>) {
     view.value = { ...start }
+    viewKnown.value = true
     // Unknown until the map shows the new view.
     bounds.value = null
   }
@@ -235,7 +240,7 @@ export const useOsmDiscoverStore = defineStore('osmDiscover', () => {
   }
 
   return {
-    kind, view, bounds, routes, searched, loading, error, highlightedId, selectedId, filters, tooWide, viewSearched,
+    kind, view, viewKnown, bounds, routes, searched, loading, error, highlightedId, selectedId, filters, tooWide, viewSearched,
     shownRoutes, activeFilterCount, computingElevationId, elevationsLeft, search, setView, startFrom,
     searchIfNeeded, importIntoEditor, setKind, resetFilters, applyState, elevationState, startElevations,
     stopElevations,

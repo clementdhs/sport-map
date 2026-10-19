@@ -37,8 +37,10 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
     const trimmed = text.value.trim()
     return trimmed.length >= MIN_SEARCH_TEXT_LENGTH ? trimmed : undefined
   })
-  // Last map view, restored when coming back to the page.
+  // Last map view, restored when coming back to the page. Until the map has shown one, the page opens on the
+  // member's start area (#147), if any.
   const view = ref<Omit<MapViewState, 'bounds'>>({ center: [2.35, 46.6], zoom: 5 })
+  const viewKnown = ref(false)
   const bounds = ref<Bounds | null>(null)
 
   const results = ref<RouteSummary[]>([])
@@ -127,10 +129,11 @@ export const useRouteSearchStore = defineStore('routeSearch', () => {
   function setView({ bounds: nextBounds, center, zoom }: MapViewState) {
     bounds.value = nextBounds
     view.value = { center, zoom }
+    viewKnown.value = true
   }
 
   return {
     sport, distanceKm, gainM, loopsOnly, passingThrough, activeFilterCount, resetFilters,
-    sort, scope, restoreScope, setScope, text, textQuery, view, results, loading, failed, searched, setView,
+    sort, scope, restoreScope, setScope, text, textQuery, view, viewKnown, results, loading, failed, searched, setView,
   }
 })

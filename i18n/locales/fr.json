@@ -956,6 +956,7 @@
       "account": "Compte",
       "appearance": "Apparence et langue",
       "paces": "Mes allures",
+      "startArea": "Ma zone de départ",
       "voice": "Guidage vocal"
     },
     "profileHint": "Ce que l'équipe voit sur {link} ({username}).",
@@ -983,6 +984,19 @@
       "ignore": "Ignorer",
       "noSuggestion": "Aucune sortie GPS assez longue pour proposer une allure.",
       "suggestFailed": "Calcul impossible"
+    },
+    "startArea": {
+      "hint": "L'accueil, l'éditeur et « Découvrir » s'ouvrent sur cette zone plutôt que sur toute la France, tant que tu n'as pas déplacé leur carte.",
+      "none": "Aucune zone : les cartes s'ouvrent sur toute la France.",
+      "current": "Zone de départ : {name}",
+      "currentMapView": "Zone de départ : une vue de carte choisie",
+      "pickOnMap": "Choisir sur la carte",
+      "mapHint": "Déplace la carte sur ta zone, puis utilise sa vue.",
+      "useMapView": "Utiliser la vue actuelle de la carte",
+      "closeMap": "Fermer la carte",
+      "clear": "Retirer la zone",
+      "saved": "Zone de départ enregistrée",
+      "cleared": "Zone de départ retirée"
     },
     "avatar": {
       "title": "Photo de profil",

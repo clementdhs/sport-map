@@ -3,7 +3,7 @@ import type { FeatureCollection, Point } from 'geojson'
 import type { GeoJSONSource, Map, MapLayerMouseEvent, Marker, Popup } from 'maplibre-gl'
 import type { RouteSummary } from '#shared/types/routes'
 import type { LngLat } from '#shared/utils/routes'
-import type { MapFocus, MapViewState } from '~/stores/routeSearch'
+import type { Bounds, MapFocus, MapViewState } from '~/stores/routeSearch'
 
 const props = defineProps<{
   results: RouteSummary[]
@@ -12,6 +12,8 @@ const props = defineProps<{
   focus: MapFocus | null
   center: LngLat
   zoom: number
+  // First view, rather than center and zoom: the member's start area (#147).
+  bounds?: Bounds
 }>()
 
 const emit = defineEmits<{
@@ -182,5 +184,5 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <MapView relief :center="center" :zoom="zoom" @load="onLoad" />
+  <MapView relief :center="center" :zoom="zoom" :bounds="bounds" @load="onLoad" />
 </template>

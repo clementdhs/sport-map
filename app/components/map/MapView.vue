@@ -7,7 +7,8 @@ const props = withDefaults(defineProps<{
   center?: LngLatLike
   zoom?: number
   // Initial view framing these bounds, rather than center and zoom: the first tiles loaded are the right
-  // ones (which matters offline, where only the prepared ones exist).
+  // ones (which matters offline, where only the prepared ones exist). Bounds given later are framed until the map
+  // first moves (a start area, #147, arriving with the member's account).
   bounds?: LngLatBoundsLike
   // Offers the 3D view (relief and tilted map), when the style has an elevation source. Left out of the editor
   // (placing points on a tilted map is less precise) and of follow/record (battery, GPU).
@@ -65,6 +66,8 @@ const center = ref<string>()
 const bearing = ref<string>()
 // North up and seen from above: phones then hide the compass (data-map-flat, main.css).
 const flat = ref(true)
+// Whether the map left its initial view, moved by the visitor or the page.
+let moved = false
 
 onMounted(async () => {
   // maplibre-gl touches `window` at import time, so load it client-side only.
@@ -104,6 +107,9 @@ onMounted(async () => {
       'AttributionControl.ToggleAttribution': t('map.toggleAttribution'),
     },
     ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: padding(48) } } : {}),
+  })
+  instance.on('movestart', (event) => {
+    if (!('resizing' in event)) moved = true
   })
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
@@ -146,7 +152,7 @@ onMounted(async () => {
   instance.on('resize', () => {
     const next = { map: instance.getContainer().clientWidth, window: window.innerWidth }
     const shift = next.map - size.map
-    if (shift && next.window === size.window && !instance.isMoving()) instance.panBy([shift / 2, 0], { animate: false })
+    if (shift && next.window === size.window && !instance.isMoving()) instance.panBy([shift / 2, 0], { animate: false }, { resizing: true })
     size = next
   })
   const updateFlat = () => {
@@ -155,11 +161,13 @@ onMounted(async () => {
   updateFlat()
   instance.on('rotate', updateFlat)
   instance.on('pitch', updateFlat)
-  instance.on('moveend', () => {
+  const updateView = () => {
     const { lng, lat } = instance.getCenter()
     center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
     bearing.value = String((Math.round(instance.getBearing()) + 360) % 360)
-  })
+  }
+  updateView()
+  instance.on('moveend', updateView)
   map.value = instance
 })
 
@@ -173,6 +181,10 @@ async function followTheme() {
   map.value.setStyle(url, { transformStyle: keepAppLayers })
 }
 watch([dark, online], followTheme)
+
+watch(() => props.bounds, (bounds) => {
+  if (bounds && map.value && !moved) map.value.fitBounds(bounds, { padding: padding(48), duration: 0 })
+})
 
 function updateOnline() {
   online.value = navigator.onLine

@@ -21,6 +21,8 @@ const focus = ref<MapFocus | null>(null)
 const route = useRoute()
 const router = useRouter()
 if (Object.keys(route.query).length) discover.applyState(parseOsmDiscoverQuery(route.query))
+// A view of its own (link, other page, previous visit), else the member's start area (#147).
+const startBounds = useStartBounds(discover.viewKnown)
 const pageQuery = computed(() => JSON.stringify(osmDiscoverQuery({ kind: discover.kind, filters: discover.filters, view: discover.view })))
 // Written with history.replaceState, not router.replace: a navigation at each map move would run the route
 // middleware, and a navigateTo() called meanwhile ("Importer") would be dropped, Nuxt taking it for a middleware's
@@ -142,6 +144,7 @@ async function selectOnMap(id: number) {
           :focus="focus"
           :center="discover.view.center"
           :zoom="discover.view.zoom"
+          :bounds="startBounds"
           :label="label"
           :section="sectionLayer"
           @view-change="onViewChange"

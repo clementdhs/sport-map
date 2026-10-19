@@ -35,6 +35,10 @@
       "slate": "Ardoise"
     }
   },
+  "readability": {
+    "label": "Lisibilité en extérieur",
+    "hint": "Texte plus grand et contrastes renforcés, pour lire en plein soleil. Suit ton compte."
+  },
   "error": {
     "title": "Erreur"
   },

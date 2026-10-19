@@ -18,6 +18,7 @@ describe('PREFERENCES', () => {
       startArea: null,
       defaultSport: null,
       mapStyle: 'theme',
+      outdoorReadability: false,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
     expect(PREFERENCES.map3d.parse('1')).toBe(false)
@@ -26,6 +27,8 @@ describe('PREFERENCES', () => {
     expect(PREFERENCES.defaultSport.parse('swimming')).toBeNull()
     expect(PREFERENCES.mapStyle.parse('sepia')).toBe('theme')
     expect(PREFERENCES.mapStyle.parse('dark')).toBe('dark')
+    expect(PREFERENCES.outdoorReadability.parse('true')).toBe(false)
+    expect(PREFERENCES.outdoorReadability.decode!('1')).toBe(true)
   })
 
   it('keeps the storage format of the devices from before #145', () => {

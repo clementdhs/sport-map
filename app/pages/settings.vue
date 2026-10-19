@@ -136,6 +136,9 @@ const voice = useVoicePrefs()
             <!-- The demo style, used without a MapTiler key, has no dark version. -->
             <MapStyleSetting v-if="maptilerKey" />
           </div>
+          <div :class="CARD_CLASS">
+            <OutdoorReadabilitySetting />
+          </div>
         </section>
 
         <section id="sport" :class="SECTION_CLASS" aria-labelledby="settings-sport-title">

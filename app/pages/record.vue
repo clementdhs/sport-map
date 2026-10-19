@@ -133,15 +133,18 @@ function discard() {
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView && recording ? 'pr-3' : 'pr-14'">
         <div class="pointer-events-auto flex items-center gap-2">
           <UButton to="/" icon="i-lucide-x" :label="t('record.quit')" color="neutral" variant="solid" class="shadow-md" />
-          <UBadge v-if="recording && !paused" icon="i-lucide-circle-dot" :label="t('record.recording')" color="error" variant="solid" />
-          <UBadge v-else-if="paused" icon="i-lucide-pause" :label="t('record.paused')" color="neutral" variant="solid" />
+          <!-- Icon only on phones: with the label, the bar overflowed a 360 px screen. -->
+          <UBadge v-if="recording && !paused" icon="i-lucide-circle-dot" :label="t('record.recording')" color="error" variant="solid" :ui="{ label: 'max-sm:sr-only' }" />
+          <UBadge v-else-if="paused" icon="i-lucide-pause" :label="t('record.paused')" color="neutral" variant="solid" :ui="{ label: 'max-sm:sr-only' }" />
+          <OutdoorReadabilityToggle class="ml-auto" />
           <UButton
             v-if="recording"
             :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
             :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            :ui="{ label: 'outdoor:max-sm:sr-only' }"
             color="neutral"
             variant="solid"
-            class="ml-auto shrink-0 shadow-md"
+            class="shrink-0 shadow-md"
             @click="dataView = !dataView"
           />
         </div>

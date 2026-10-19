@@ -35,6 +35,10 @@
       "slate": "Slate"
     }
   },
+  "readability": {
+    "label": "Outdoor readability",
+    "hint": "Larger text and stronger contrast, to read in bright sunlight. Follows your account."
+  },
   "error": {
     "title": "Error"
   },

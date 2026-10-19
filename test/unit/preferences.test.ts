@@ -15,6 +15,7 @@ describe('PREFERENCES', () => {
       liveData: {},
       voice: DEFAULT_VOICE_PREFS,
       paces: {},
+      startArea: null,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
     expect(PREFERENCES.map3d.parse('1')).toBe(false)

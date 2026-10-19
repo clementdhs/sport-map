@@ -17,7 +17,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  place: [focus: MapFocus]
+  place: [focus: MapFocus, name: string]
 }>()
 
 const search = useRouteSearchStore()
@@ -88,7 +88,7 @@ watch(selected, (suggestion) => {
   else {
     // The field now shows a place: a name search left behind would no longer match it.
     if (!props.placesOnly) search.text = ''
-    emit('place', suggestion.focus)
+    emit('place', suggestion.focus, suggestion.label)
   }
 })
 

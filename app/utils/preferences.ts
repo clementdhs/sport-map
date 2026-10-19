@@ -6,6 +6,7 @@ import { parseBasemap, type Basemap } from '~/utils/basemaps'
 import { parseLiveDataPrefs, type LiveDataPrefs } from '~/utils/liveStats'
 import { parseMapOrientation, type MapOrientation } from '~/utils/mapOrientation'
 import { parseSearchScope } from '~/utils/searchScope'
+import { parseStartArea, type StartArea } from '~/utils/startArea'
 import { parseVoicePrefs, type VoicePrefs } from '~/utils/voiceGuide'
 
 // The preferences that follow the member's account (#145), with how the device keeps them: each one's
@@ -21,6 +22,7 @@ export interface Preferences {
   liveData: LiveDataPrefs
   voice: VoicePrefs
   paces: SportPaces
+  startArea: StartArea | null
 }
 
 interface PreferenceEntry<T> {
@@ -44,6 +46,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   liveData: { storageKey: 'sport-map:live-data', parse: parseLiveDataPrefs },
   voice: { storageKey: 'sport-map:voice', parse: parseVoicePrefs },
   paces: { storageKey: 'sport-map:paces', parse: parseSportPaces },
+  startArea: { storageKey: 'sport-map:start-area', parse: parseStartArea },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

@@ -61,6 +61,7 @@ const sections = computed(() => [
   { id: 'account', label: t('settings.sections.account'), icon: 'i-lucide-key-round' },
   { id: 'appearance', label: t('settings.sections.appearance'), icon: 'i-lucide-palette' },
   { id: 'paces', label: t('settings.sections.paces'), icon: 'i-lucide-timer' },
+  { id: 'start-area', label: t('settings.sections.startArea'), icon: 'i-lucide-map-pinned' },
   { id: 'voice', label: t('settings.sections.voice'), icon: 'i-lucide-volume-2' },
 ])
 // Under the sticky header, plus the strip of sections on phones.
@@ -138,6 +139,14 @@ const voice = useVoicePrefs()
           <div :class="CARD_CLASS">
             <p class="text-sm text-muted">{{ t('settings.paces.hint') }}</p>
             <PaceSettings />
+          </div>
+        </section>
+
+        <section id="start-area" :class="SECTION_CLASS" aria-labelledby="settings-start-area-title">
+          <h2 id="settings-start-area-title" class="text-base font-semibold">{{ t('settings.sections.startArea') }}</h2>
+          <div :class="CARD_CLASS">
+            <p class="text-sm text-muted">{{ t('settings.startArea.hint') }}</p>
+            <StartAreaSettings />
           </div>
         </section>
 

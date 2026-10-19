@@ -3,7 +3,7 @@ import type { Map, MapLayerMouseEvent, MapLayerTouchEvent, MapMouseEvent, MapTou
 import type { OsmRoute } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
 import type { SectionEnd } from '~/stores/osmSection'
-import type { MapFocus, MapViewState } from '~/stores/routeSearch'
+import type { Bounds, MapFocus, MapViewState } from '~/stores/routeSearch'
 import type { OsmSectionLayerData } from '~/utils/osmRouteLayers'
 
 // Marked routes of OpenStreetMap (#69): hovering one highlights it, clicking it selects it in the list. While a
@@ -16,6 +16,8 @@ const props = defineProps<{
   focus: MapFocus | null
   center: LngLat
   zoom: number
+  // First view, rather than center and zoom: the member's start area (#147).
+  bounds?: Bounds
   label: (route: OsmRoute) => string
   section: OsmSectionLayerData | null
 }>()
@@ -129,5 +131,5 @@ watch(() => props.focus, (focus) => {
 </script>
 
 <template>
-  <MapView relief :center="center" :zoom="zoom" @load="onLoad" />
+  <MapView relief :center="center" :zoom="zoom" :bounds="bounds" @load="onLoad" />
 </template>

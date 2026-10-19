@@ -14,6 +14,8 @@ const search = useRouteSearchStore()
 const discover = useOsmDiscoverStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
+// Coming back to the page finds the last view; the first visit opens on the member's start area (#147).
+const startBounds = useStartBounds(search.viewKnown)
 
 onMounted(search.restoreScope)
 
@@ -74,6 +76,7 @@ watch(() => search.results, (results) => {
           :focus="focus"
           :center="search.view.center"
           :zoom="search.view.zoom"
+          :bounds="startBounds"
           @view-change="search.setView"
           @hover="highlightedId = $event"
         />

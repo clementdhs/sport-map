@@ -20,6 +20,8 @@ const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 const map = shallowRef<Map>()
 const { padding, offset, focusOn } = useMapPadding()
+// An empty editor opens on the member's start area (#147); a track (draft, route being edited) is framed instead.
+const startBounds = useStartBounds(editor.track.coordinates.length >= 2)
 
 // Moves under this distance (px) count as a click, not a drag.
 const DRAG_THRESHOLD_PX = 4
@@ -241,6 +243,6 @@ watch(() => props.hoverPoint, (point) => {
 </script>
 
 <template>
-  <MapView @load="onLoad" />
+  <MapView :bounds="startBounds" @load="onLoad" />
   <MapPoiMarkers v-if="map" :map="map" :pois="editor.pois" />
 </template>

@@ -5,6 +5,7 @@ import type { ProfileUpdate } from '#shared/utils/routes'
 // Account settings, reached from the account menu, in sections with their own anchor (#111): profile, account
 // (password, data), appearance and language, default sport, paces per sport, voice guidance.
 const { t } = useI18n()
+const { maptilerKey } = useRuntimeConfig().public
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
 useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
 
@@ -132,6 +133,8 @@ const voice = useVoicePrefs()
             <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
             <LanguageSelect />
             <ThemeSettings />
+            <!-- The demo style, used without a MapTiler key, has no dark version. -->
+            <MapStyleSetting v-if="maptilerKey" />
           </div>
         </section>
 

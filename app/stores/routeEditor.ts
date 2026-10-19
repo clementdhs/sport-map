@@ -2,7 +2,7 @@ import { distance, length, lineString } from '@turf/turf'
 import type { FetchError } from 'ofetch'
 import type { TrackElevationsResponse } from '#shared/types/osm'
 import type { RouteDetail } from '#shared/types/routes'
-import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode, WayInfo } from '#shared/utils/routes'
+import type { EditorState, LngLat, Poi, PoiType, RouteDetails, RouteSource, RoutingMode, RoutingSegmentResponse, SegmentMode, SportType, WayInfo } from '#shared/utils/routes'
 import type { ImportedTrack } from '~/utils/gpx'
 
 // The track between two consecutive waypoints.
@@ -82,6 +82,9 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
   // Set when editing a saved route: saving then updates it instead of creating a new one.
   const editingId = ref<string | null>(null)
   const editingSource = ref<RouteSource>('drawn')
+  // The member's default sport (#148) last preselected on the new route: until they pick another one, it follows
+  // the setting (which arrives after the page, with the account).
+  const preselectedSport = ref<SportType | null>(null)
   let nextSegmentId = 0
   // Segments with a routing or elevation request in flight: lets undo restart the ones whose request already finished.
   const inFlight = new Set<number>()
@@ -422,6 +425,15 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     placingPoi.value = false
   }
 
+  // Preselects the member's default sport on a new route, still blank, whose sport they haven't picked themselves;
+  // none brings the editor's own default back.
+  function preselectSport(sport: SportType | null) {
+    if (editingId.value || waypoints.value.length) return
+    if (details.value.sport_type !== (preselectedSport.value ?? defaultDetails().sport_type)) return
+    details.value.sport_type = sport ?? defaultDetails().sport_type
+    preselectedSport.value = sport
+  }
+
   function reset() {
     waypoints.value = []
     segments.value = []
@@ -429,6 +441,7 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     placingPoi.value = false
     history.value = []
     details.value = defaultDetails()
+    preselectedSport.value = null
     editingId.value = null
     editingSource.value = 'drawn'
   }
@@ -497,6 +510,6 @@ export const useRouteEditorStore = defineStore('routeEditor', () => {
     editingId, isLoop, canFinish, routingQuotaReached, routingQuotaRemaining, outdatedSegmentCount,
     canEditWaypoint, canInsertInSegment, isRoutingQuotaError,
     addWaypoint, moveWaypoint, insertWaypoint, removeWaypoint, returnToStart, outAndBack, rerouteForSport,
-    addPoi, removePoi, importTrack, loadLoop, loadRoute, undo, clearPoints, reset, save,
+    addPoi, removePoi, importTrack, loadLoop, loadRoute, preselectSport, undo, clearPoints, reset, save,
   }
 })

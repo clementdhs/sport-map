@@ -955,6 +955,7 @@
       "profile": "Profil",
       "account": "Compte",
       "appearance": "Apparence et langue",
+      "sport": "Sport par défaut",
       "paces": "Mes allures",
       "voice": "Guidage vocal"
     },
@@ -969,6 +970,11 @@
     "saveProfile": "Enregistrer le profil",
     "changePassword": "Changer le mot de passe",
     "appearanceHint": "Gardée sur cet appareil.",
+    "defaultSport": {
+      "label": "Mon sport",
+      "none": "Aucun",
+      "hint": "Présélectionné dans l'éditeur et à l'enregistrement d'une sortie, et proposé comme filtre rapide de l'accueil. Tu peux toujours en choisir un autre."
+    },
     "paces": {
       "hint": "Les durées estimées des parcours suivent ton allure sur le plat, le dénivelé s'y ajoute. Un champ vide garde la valeur par défaut.",
       "paceUnit": "min/km",

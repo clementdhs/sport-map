@@ -32,6 +32,10 @@ const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
 const errorMessage = useErrorMessage()
 const saving = ref(false)
 
+// A new route starts with the member's default sport (#148), still theirs to change.
+const defaultSport = usePreference('defaultSport')
+watch(defaultSport, sport => editor.preselectSport(sport), { immediate: true })
+
 const sportLabel = computed(() => t(`sports.${editor.details.sport_type}`))
 const sportItems = useSportItems()
 const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.${value}`), icon: POI_ICONS[value] })))

@@ -325,7 +325,7 @@ test('reaches each settings section from its table of contents, on a computer an
   await waitForHydration(page)
   const sections = page.getByRole('navigation', { name: 'Sections des paramètres' })
   const link = (name: string) => sections.getByRole('link', { name })
-  await expect(sections.getByRole('link')).toHaveText(['Profil', 'Compte', 'Apparence et langue', 'Mes allures', 'Guidage vocal'])
+  await expect(sections.getByRole('link')).toHaveText(['Profil', 'Compte', 'Apparence et langue', 'Sport par défaut', 'Mes allures', 'Guidage vocal'])
   await expect(link('Profil')).toHaveAttribute('aria-current', 'location')
 
   // One click and the section is in sight, with its own URL.

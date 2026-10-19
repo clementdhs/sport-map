@@ -70,6 +70,11 @@ const form = reactive<{ name: string, sport_type: SportType, is_public: boolean 
   sport_type: 'hiking',
   is_public: false,
 })
+// The member's default sport (#148) is preselected, hiking without one, unless they already picked another.
+const defaultSport = usePreference('defaultSport')
+watch(defaultSport, (sport, before) => {
+  if (form.sport_type === (before ?? 'hiking')) form.sport_type = sport ?? 'hiking'
+})
 
 function openFinish() {
   if (!recording.value || recording.value.points.length < 2) {

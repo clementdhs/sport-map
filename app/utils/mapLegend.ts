@@ -1,6 +1,7 @@
 import { normalizePropertyExpression } from '@maplibre/maplibre-gl-style-spec'
 import type { LayerSpecification, StylePropertySpecification, StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
 import type { Map as MapLibreMap } from 'maplibre-gl'
+import { OSM_PLACE_TYPES, type OsmPlaceType } from '#shared/utils/osmPlaces'
 import { POI_TYPES, type PoiType } from '#shared/utils/routes'
 import { SLOPE_CLASSES } from '#shared/utils/slopes'
 import { DIFFICULTY_CLASSES, SURFACE_CLASSES } from '#shared/utils/wayInfo'
@@ -31,6 +32,7 @@ export type LegendSample =
   // The GPS arrow, as drawn by addGpsLayers
   | { kind: 'arrow' }
   | { kind: 'poi', type: PoiType }
+  | { kind: 'osmPlace', type: OsmPlaceType }
   | { kind: 'image', image: LegendImage }
 
 export interface LegendItem {
@@ -94,6 +96,10 @@ export const APP_LEGEND: LegendGroup[] = [
   {
     title: 'route.pois',
     items: POI_TYPES.map(type => ({ label: `pois.${type}`, samples: [{ kind: 'poi', type }] })),
+  },
+  {
+    title: 'mapLegend.app.osmPlaces',
+    items: OSM_PLACE_TYPES.map(type => ({ label: `osmPlaces.types.${type}`, samples: [{ kind: 'osmPlace', type }] })),
   },
   {
     title: 'mapLegend.app.gps',

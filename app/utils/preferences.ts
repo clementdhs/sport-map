@@ -31,6 +31,8 @@ export interface Preferences {
   mapStyle: MapStyleChoice
   // Larger text and stronger contrast, to read in the sun (#149); a cookie mirrors it for the server render.
   outdoorReadability: boolean
+  // Useful places from OpenStreetMap on the route and follow maps (#52), shown unless turned off.
+  osmPlaces: boolean
 }
 
 interface PreferenceEntry<T> {
@@ -59,6 +61,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   defaultSport: { storageKey: 'sport-map:default-sport', parse: parseDefaultSport },
   mapStyle: { storageKey: 'sport-map:map-style', parse: parseMapStyleChoice, ...AS_TEXT },
   outdoorReadability: { storageKey: 'sport-map:outdoor-readability', ...BOOLEAN },
+  osmPlaces: { storageKey: 'sport-map:osm-places', ...BOOLEAN, parse: (value: unknown) => value !== false },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

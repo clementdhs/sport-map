@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Map } from 'maplibre-gl'
+import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat } from '#shared/utils/routes'
 import type { GpsFix } from '~/composables/useWatchPosition'
 import type { MapBearingState, MapOrientation } from '~/utils/mapOrientation'
@@ -10,6 +11,8 @@ const props = defineProps<{
   coordinates: LngLat[]
   recording?: boolean
   fix: GpsFix | null
+  // Useful places from OpenStreetMap (#52), saved with the route
+  osmPlaces?: OsmPlace[]
 }>()
 
 // Keep the position centered (and, heading up, the map turned): a gesture on the map turns it off, the page's
@@ -29,6 +32,7 @@ let shownDirection: number | null = null
 // North up or turned with the direction of travel (#98, kept in the member's account), with its button among the
 // map's controls.
 const orientation = usePreference('mapOrientation')
+const showOsmPlaces = usePreference('osmPlaces')
 const orientationControl = shallowRef<HTMLElement>()
 // Bearing a heading-up map aims at, smoothed; null until following (re)starts.
 let aimed: MapBearingState | null = null
@@ -159,7 +163,12 @@ async function toggleOrientation() {
 </script>
 
 <template>
-  <MapView :bounds="coordinates.length >= 2 ? routeBounds(coordinates) : undefined" @load="onLoad" />
+  <MapView :bounds="coordinates.length >= 2 ? routeBounds(coordinates) : undefined" @load="onLoad">
+    <template v-if="osmPlaces?.length" #controls>
+      <USwitch v-model="showOsmPlaces" :label="t('osmPlaces.layer')" size="sm" />
+    </template>
+  </MapView>
+  <MapOsmPlaces v-if="map && showOsmPlaces && osmPlaces?.length" :map="map" :places="osmPlaces" />
   <Teleport v-if="orientationControl" :to="orientationControl">
     <button
       type="button"

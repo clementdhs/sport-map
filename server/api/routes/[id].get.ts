@@ -1,6 +1,7 @@
 import type { LineString } from 'geojson'
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { RouteDetail, ViewerActivity } from '#shared/types/routes'
+import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { EditorState, Poi, WayInfo } from '#shared/utils/routes'
 
 export default defineEventHandler(async (event): Promise<RouteDetail> => {
@@ -14,6 +15,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
       is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois, way_info,
       rating_avg, rating_count,
       geometry:route_geojson,
+      osm_places:route_osm_places(places, searched_at),
       owner:profiles(username, display_name),
       photos:route_photos(id, storage_path),
       outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, has_track, user:profiles(username, display_name))
@@ -46,7 +48,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     }
   }
 
-  const { photos, outings, ...route } = data
+  const { photos, outings, osm_places: osmPlaces, ...route } = data
   return {
     ...route,
     // Typed by hand: inferring it here is circular for TypeScript.
@@ -56,6 +58,7 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     editor_state: data.editor_state as EditorState | null,
     pois: data.pois as Poi[],
     way_info: data.way_info as WayInfo | null,
+    osm_places: osmPlaces ? { places: osmPlaces.places as OsmPlace[], searched_at: osmPlaces.searched_at } : null,
     photos: await signPhotos(supabase, photos),
     viewer,
   }

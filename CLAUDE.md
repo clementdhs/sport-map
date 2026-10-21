@@ -6,7 +6,7 @@ The backlog lives in GitHub issues (milestones and labels for theme and effort),
 
 Dependabot (`.github/dependabot.yml`) opens its own PRs, without an issue: one grouped PR for npm minor and patch updates on Mondays, one for GitHub Actions each month, plus security fixes. Before asking Clem for the go, read the release notes of the updated packages for breaking changes and check that the branch CI (e2e included) is green; merge with `gh pr merge <M> --squash`. Dependabot skips npm major versions: upgrading one is an issue of its own.
 
-Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes, 3D flyover, map legend, profile photos, pace per sport) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
+Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, useful OSM places, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes, 3D flyover, map legend, profile photos, pace per sport) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
 
 ## Stack
 - Nuxt 4 (`app/` directory), Vue 3 `<script setup lang="ts">` + Composition API

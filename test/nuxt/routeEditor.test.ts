@@ -106,6 +106,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     editor_state: body.editor_state ?? null,
     pois: body.pois ?? [],
     way_info: body.way_info ?? null,
+    osm_places: null,
     photos: [],
     outings: [],
     owner: { username: 'test', display_name: null },

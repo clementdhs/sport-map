@@ -394,6 +394,32 @@ export type Database = {
           },
         ]
       }
+      route_osm_places: {
+        Row: {
+          places: Json
+          route_id: string
+          searched_at: string
+        }
+        Insert: {
+          places: Json
+          route_id: string
+          searched_at?: string
+        }
+        Update: {
+          places?: Json
+          route_id?: string
+          searched_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_osm_places_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_photos: {
         Row: {
           created_at: string

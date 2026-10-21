@@ -1,4 +1,5 @@
 import type { LineString } from 'geojson'
+import type { OsmPlace } from '../utils/osmPlaces'
 import type { EditorState, OutingTrackPoint, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
 
@@ -30,12 +31,20 @@ export type RouteDetail = Pick<
   pois: Poi[]
   // Surface, way type and trail difficulty along the parts snapped to paths; null when none was
   way_info: WayInfo | null
+  // Useful places found in OpenStreetMap near the track (#52); null until someone searched them
+  osm_places: RouteOsmPlaces | null
   photos: RoutePhoto[]
   // Outings recorded with the GPS on this route, latest first
   outings: RouteOuting[]
   owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null
+}
+
+// What PUT /api/routes/:id/osm-places saved, as the route detail gives it.
+export type RouteOsmPlaces = {
+  places: OsmPlace[]
+  searched_at: string
 }
 
 // A photo of a route. The URL is signed and expires after an hour: the bucket is private.

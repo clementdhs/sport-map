@@ -46,6 +46,13 @@ function imageBox(sample: Extract<LegendSample, { kind: 'image' }>, width: numbe
                   <UIcon :name="POI_ICONS[sample.type]" class="size-4" />
                 </span>
               </span>
+              <span
+                v-else-if="sample.kind === 'osmPlace'"
+                class="flex shrink-0 items-center justify-center"
+                :style="{ width: `${sampleWidth(item.samples.length)}px`, height: `${HEIGHT}px` }"
+              >
+                <OsmPlaceIcon :type="sample.type" />
+              </span>
               <svg
                 v-else
                 :width="sampleWidth(item.samples.length)"

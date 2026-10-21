@@ -209,10 +209,10 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
 
 // Last: it uses up the test account's routing quota for the day (the other tests mock routing).
 test('caps routing requests per user and per day', async ({ page, requestAs }) => {
-  const segment = { from: [6.1, 45.9], to: [6.2, 45.95], mode: 'straight', sport_type: 'running' }
+  const segment = { from: [6.1, 45.9], to: [6.2, 45.95], mode: 'snap', sport_type: 'running' }
   const loop = { start: [6.1, 45.9], length_m: 10_000, sport_type: 'running', seed: 1 }
   // The e2e server allows 3 a day and has no OpenRouteService key: counted requests then answer 503. Automatic
-  // loops count too.
+  // loops count too; straight segments, which only ask the elevation services (#176), don't.
   for (let i = 0; i < 2; i++) {
     expect((await page.request.post('/api/routing/segment', { data: segment })).status()).toBe(503)
   }
@@ -224,6 +224,12 @@ test('caps routing requests per user and per day', async ({ page, requestAs }) =
     data: { reason: 'daily_quota' },
   })
   expect((await page.request.post('/api/routing/loop', { data: loop })).status()).toBe(429)
+  const straight = await page.request.post('/api/routing/segment', { data: { ...segment, mode: 'straight' } })
+  expect(straight.status()).toBe(200)
+  const line = await straight.json()
+  expect(line).toMatchObject({ snapped: false })
+  expect(line.elevations).toHaveLength(line.coordinates.length)
+  expect(line).not.toHaveProperty('quota_remaining')
 
   // Signed-out visitors can't use routing at all.
   const visitor = await requestAs(null)

@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   elevationSampleIndices, FALLBACK_POINTS_PER_CALL, FALLBACK_SPACING_M, fillElevations, MAX_FALLBACK_POINTS,
-  trackElevationsFrom, withoutZeroElevations,
+  measuredElevations, ROUTED_ELEVATIONS_TIMEOUT_MS, trackElevationsFrom, withoutZeroElevations,
 } from '#shared/utils/trackElevation'
-import type { LngLat } from '#shared/utils/routes'
+import { type LngLat, MAX_ROUTE_POINTS } from '#shared/utils/routes'
 
 // Distances along a track whose points are `step` meters apart.
 const evenly = (count: number, step: number) => Array.from({ length: count }, (_, i) => i * step)
@@ -136,5 +136,45 @@ describe('trackElevationsFrom', () => {
     expect(elevations[0]).toBe(0)
     expect(elevations.at(-1)).toBe(Math.round((points.at(-1)![0] - 7) * 1000))
     expect(elevations.every((elevation, i) => i === 0 || elevation >= elevations[i - 1]!)).toBe(true)
+  })
+})
+
+describe('measuredElevations', () => {
+  const track = (count: number): LngLat[] => Array.from({ length: count }, (_, i) => [6 + i * 0.013, 46])
+  const abroad = { precise: async (points: LngLat[]) => points.map(() => null) }
+
+  it('gives the measured elevations when the services answer in time', async () => {
+    const elevations = await measuredElevations(track(3), { precise: async points => points.map((_, i) => 700 + i), fallback: vi.fn() })
+    expect(elevations).toEqual([700, 701, 702])
+  })
+
+  it('gives null when the IGN fails, so the router keeps its own', async () => {
+    const elevations = await measuredElevations(track(3), { precise: () => Promise.reject(new Error('502')), fallback: vi.fn() })
+    expect(elevations).toBeNull()
+  })
+
+  it('gives null when Open-Meteo fails abroad', async () => {
+    const elevations = await measuredElevations(track(3), { ...abroad, fallback: () => Promise.reject(new Error('429')) })
+    expect(elevations).toBeNull()
+  })
+
+  it('gives null when the services take longer than the timeout, and drops their late answer', async () => {
+    vi.useFakeTimers()
+    try {
+      const slow = (points: LngLat[]) => new Promise<number[]>(resolve => setTimeout(resolve, ROUTED_ELEVATIONS_TIMEOUT_MS + 1000, points.map(() => 0)))
+      const result = measuredElevations(track(3), { precise: slow, fallback: vi.fn() })
+      await vi.advanceTimersByTimeAsync(ROUTED_ELEVATIONS_TIMEOUT_MS)
+      expect(await result).toBeNull()
+      await vi.advanceTimersByTimeAsync(1000)
+    }
+    finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('asks nothing for a track longer than one IGN request', async () => {
+    const precise = vi.fn()
+    expect(await measuredElevations(track(MAX_ROUTE_POINTS + 1), { precise, fallback: vi.fn() })).toBeNull()
+    expect(precise).not.toHaveBeenCalled()
   })
 })

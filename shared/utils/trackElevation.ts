@@ -91,6 +91,35 @@ export async function trackElevationsFrom(coordinates: LngLat[], sources: Elevat
   return fillElevations(along, known)
 }
 
+// Routed tracks (#176): OpenRouteService's elevations come from a 90 m model (SRTM) that overestimated the gain by 7
+// to 25 % around Grenoble (Alpe d'Huez: 1,187 m against 1,110 m on Komoot, 1,114 m with the IGN). The measured ones
+// replace them when they arrive in time: the IGN answers a segment in under a second and a 30 km loop in 1 to 1.6 s.
+export const ROUTED_ELEVATIONS_TIMEOUT_MS = 5000
+
+// A routed track's elevations from `sources`, or null to keep the router's: the services failed or took longer than
+// `timeoutMs` (routing never waits on them), or the track has more points than the IGN takes in one request.
+export async function measuredElevations(
+  coordinates: LngLat[],
+  sources: ElevationSources,
+  timeoutMs = ROUTED_ELEVATIONS_TIMEOUT_MS,
+): Promise<number[] | null> {
+  if (coordinates.length > MAX_ROUTE_POINTS) return null
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs, null)
+  })
+  try {
+    // A late answer is dropped: the race already handles its rejection.
+    return await Promise.race([trackElevationsFrom(coordinates, sources), late])
+  }
+  catch {
+    return null
+  }
+  finally {
+    clearTimeout(timer)
+  }
+}
+
 export const trackElevationsSchema = z.object({
   coordinates: z.array(coordinateSchema).min(2).max(MAX_ROUTE_POINTS),
 })

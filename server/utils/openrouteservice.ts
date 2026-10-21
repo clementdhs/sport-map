@@ -1,9 +1,7 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
-import { type LngLat, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
+import { type LngLat, type LngLatEle, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
 import { withoutZeroElevations } from '#shared/utils/trackElevation'
-
-type LngLatEle = [lng: number, lat: number, ele: number]
 
 const ORS_URL = 'https://api.openrouteservice.org'
 
@@ -115,13 +113,4 @@ export function trackFields(points: LngLatEle[]): TrackFields {
     coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),
     elevations: points.map(([, , ele]) => round1(ele)),
   }
-}
-
-export async function elevationAlong(event: H3Event, coordinates: LngLat[]): Promise<LngLatEle[]> {
-  const result = await orsPost<{ geometry: { coordinates: LngLatEle[] } }>(
-    event,
-    '/elevation/line',
-    { format_in: 'polyline', format_out: 'geojson', geometry: coordinates },
-  )
-  return result.geometry.coordinates
 }

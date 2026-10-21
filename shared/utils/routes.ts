@@ -3,6 +3,8 @@ import * as z from 'zod'
 import { USERNAME_PATTERN } from './auth'
 
 export type LngLat = [lng: number, lat: number]
+// A track point with its elevation, as routing answers it.
+export type LngLatEle = [lng: number, lat: number, ele: number]
 
 // 'running' is road running and 'cycling' leisure cycling: both kept their value from before the other sports
 // existed, so routes saved then didn't need migrating.

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   elevationSampleIndices, FALLBACK_POINTS_PER_CALL, FALLBACK_SPACING_M, fillElevations, MAX_FALLBACK_POINTS,
-  trackElevationsFrom,
+  trackElevationsFrom, withoutZeroElevations,
 } from '#shared/utils/trackElevation'
 import type { LngLat } from '#shared/utils/routes'
 
@@ -46,6 +46,32 @@ describe('elevationSampleIndices', () => {
   it('handles the shortest tracks', () => {
     expect(elevationSampleIndices([0, 5])).toEqual([0, 1])
     expect(elevationSampleIndices([0])).toEqual([0])
+  })
+})
+
+describe('withoutZeroElevations', () => {
+  // Points 0.001° of longitude apart on the equator: about 111 m between each.
+  const line = (count: number): LngLat[] => Array.from({ length: count }, (_, i) => [i / 1000, 0])
+
+  it('keeps a track without zeros as it is', () => {
+    const elevations = [212.34, 230, 251.6]
+    expect(withoutZeroElevations(line(3), elevations)).toBe(elevations)
+  })
+
+  it('fills isolated zeros linearly from their neighbours along the track', () => {
+    expect(withoutZeroElevations(line(7), [200, 0, 240, 260, 0, 0, 290])).toEqual([200, 220, 240, 260, 270, 280, 290])
+  })
+
+  it('takes the nearest known elevation for zeros at the start or the end', () => {
+    expect(withoutZeroElevations(line(5), [0, 0, 300, 320, 0])).toEqual([300, 300, 300, 320, 320])
+  })
+
+  it('keeps the zeros of a track that has no other elevation', () => {
+    expect(withoutZeroElevations(line(3), [0, 0, 0])).toEqual([0, 0, 0])
+  })
+
+  it('leaves negative elevations alone', () => {
+    expect(withoutZeroElevations(line(3), [-2, 0, -4])).toEqual([-2, -3, -4])
   })
 })
 

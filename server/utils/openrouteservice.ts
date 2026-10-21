@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
 import { type LngLat, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
+import { withoutZeroElevations } from '#shared/utils/trackElevation'
 
 type LngLatEle = [lng: number, lat: number, ele: number]
 
@@ -76,8 +77,13 @@ async function directions(event: H3Event, sport: SportType, body: Record<string,
     { ...body, elevation: true, instructions: false, extra_info: ['surface', 'waytype', 'traildifficulty'] },
   )
   const feature = result.features[0]!
+  const coordinates = feature.geometry.coordinates
+  const elevations = withoutZeroElevations(
+    coordinates.map(([lng, lat]): LngLat => [lng, lat]),
+    coordinates.map(([, , ele]) => ele),
+  )
   return {
-    points: feature.geometry.coordinates,
+    points: coordinates.map(([lng, lat], i): LngLatEle => [lng, lat, elevations[i]!]),
     wayInfo: toWayInfo(feature.properties?.extras, profile),
     lengthM: feature.properties?.summary?.distance ?? 0,
   }

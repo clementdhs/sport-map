@@ -65,6 +65,16 @@ export function fillElevations(along: number[], known: (number | null)[]): numbe
   return filled
 }
 
+// OpenRouteService directions give an elevation of exactly 0 m where its terrain model has no data (#172: 27 points
+// out of 1,157 on a mountain bike loop near Grenoble, 200 to 677 m high, whose D+ grew from a few hundred meters to
+// 2,119 m). Those count as unknown and are filled from their known neighbours along the track; a track with no other
+// elevation keeps its zeros.
+export function withoutZeroElevations(coordinates: LngLat[], elevations: number[]): number[] {
+  const known = elevations.map(elevation => elevation === 0 ? null : elevation)
+  if (known.every(elevation => elevation !== null) || known.every(elevation => elevation === null)) return elevations
+  return fillElevations(trackDistances(coordinates), known)
+}
+
 // Elevations of a track, one per point.
 export async function trackElevationsFrom(coordinates: LngLat[], sources: ElevationSources): Promise<number[]> {
   const known = await sources.precise(coordinates)

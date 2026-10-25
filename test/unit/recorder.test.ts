@@ -60,6 +60,29 @@ describe('addFix', () => {
     expect(r.movingMs).toBe(10 * 60_000)
   })
 
+  it('does not count a stop or a pause as a GPS interruption while fixes keep coming (#180)', () => {
+    let r = addFix(startRecording(T0), fix(0), T0)
+    // Standing still for 3 min, a fix every 10 s: no point added, the GPS noted alive twice a minute at most.
+    let saved = 0
+    for (let s = 10; s <= 180; s += 10) {
+      const next = addFix(r, fix(1), T0 + s * 1000)
+      if (next !== r) saved++
+      r = next
+    }
+    expect(r.points).toHaveLength(1)
+    expect(saved).toBeLessThanOrEqual(6)
+    r = addFix(r, fix(100), T0 + 200_000)
+    expect(r.gaps).toBe(0)
+
+    // Paused for 3 min with the GPS on.
+    r = pauseRecording(r, T0 + 210_000)
+    for (let s = 220; s <= 390; s += 10) r = addFix(r, fix(100), T0 + s * 1000)
+    r = resumeRecording(r)
+    r = addFix(r, fix(200), T0 + 400_000)
+    expect(r.gaps).toBe(0)
+    expect(r.distanceM).toBeCloseTo(200, 0)
+  })
+
   it('records nothing while paused, and no moving time across the pause', () => {
     let r = addFix(startRecording(T0), fix(0), T0)
     r = pauseRecording(r, T0 + 60_000)

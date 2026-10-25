@@ -87,6 +87,36 @@ test.describe('recording an outing', () => {
     await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
   })
 
+  test('warns about a GPS gap for a few seconds only (#180)', async ({ page, context }) => {
+    await page.clock.install({ time: new Date('2026-10-25T08:00:00Z') })
+    page.on('dialog', dialog => dialog.accept())
+    const moveTo = async (meters: number, afterMs: number) => {
+      await page.clock.fastForward(afterMs)
+      await context.setGeolocation({ ...START, latitude: START.latitude + meters / 111_194.93 })
+    }
+    const gapAlert = page.getByText('GPS interrompu 1 fois')
+
+    await page.goto('/record')
+    await waitForMap(page)
+    await page.getByRole('button', { name: 'Démarrer' }).click()
+    await moveTo(100, 30_000)
+    await expect(page.getByTestId('distance')).toHaveText('100 m')
+
+    // Two minutes without any fix: a gap.
+    await moveTo(300, 120_000)
+    await expect(page.getByTestId('distance')).toHaveText('300 m')
+    await expect(gapAlert).toBeVisible()
+    await page.clock.fastForward(7000)
+    await expect(gapAlert).toHaveCount(0)
+
+    // A resumed outing doesn't warn again about its past gaps.
+    await page.reload()
+    await waitForMap(page)
+    await page.getByRole('button', { name: 'Reprendre' }).click()
+    await expect(page.getByTestId('distance')).toHaveText('300 m')
+    await expect(gapAlert).toHaveCount(0)
+  })
+
   test('turns the map with the direction of travel, then with the phone compass when stopped', async ({ page, context }) => {
     // Fake clock: a GPS course gets old, and the compass takes over, with Date.now().
     await page.clock.install({ time: new Date('2026-10-17T08:00:00Z') })

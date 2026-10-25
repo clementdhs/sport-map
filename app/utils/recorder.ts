@@ -38,6 +38,9 @@ export interface Recording {
   pausedAt: number | null
   // Set on resume: the move spanning the pause adds distance but no moving time
   afterPause: boolean
+  // Last fix showing the GPS was alive, even one that added no point (standing still, paused), noted at most
+  // every GAP_MS / 2; missing from drafts recorded before it existed
+  lastFixAt?: number
 }
 
 export interface Fix {
@@ -52,13 +55,14 @@ export function startRecording(now: number): Recording {
 
 // The recording with the fix added, or unchanged when the fix is ignored.
 export function addFix(recording: Recording, fix: Fix, now: number): Recording {
-  if (recording.pausedAt !== null || fix.accuracyM > MAX_ACCURACY_M) return recording
+  if (fix.accuracyM > MAX_ACCURACY_M) return recording
+  if (recording.pausedAt !== null) return noteFix(recording, now)
   const point: RecordedPoint = { lng: fix.position[0], lat: fix.position[1], alt: fix.altitudeM, t: now, movingMs: recording.movingMs }
   const last = recording.points.at(-1)
-  if (!last) return { ...recording, points: [point] }
+  if (!last) return { ...recording, points: [point], lastFixAt: now }
 
   const stepM = distance([last.lng, last.lat], fix.position, { units: 'meters' })
-  if (stepM < Math.max(MIN_STEP_M, fix.accuracyM / 2)) return recording
+  if (stepM < Math.max(MIN_STEP_M, fix.accuracyM / 2)) return noteFix(recording, now)
   const dt = now - last.t
   if (dt > 0 && stepM / (dt / 1000) > MAX_SPEED_MS) return recording
 
@@ -69,9 +73,21 @@ export function addFix(recording: Recording, fix: Fix, now: number): Recording {
     points: [...recording.points, { ...point, movingMs }],
     distanceM: recording.distanceM + stepM,
     movingMs,
-    gaps: recording.gaps + (dt > GAP_MS ? 1 : 0),
+    // A stop or a pause isn't a gap: fixes kept coming, only the track had nothing to add.
+    gaps: recording.gaps + (now - lastFixTime(recording) > GAP_MS ? 1 : 0),
     afterPause: false,
+    lastFixAt: now,
   }
+}
+
+function lastFixTime(recording: Recording): number {
+  return recording.lastFixAt ?? recording.points.at(-1)?.t ?? recording.startedAt
+}
+
+// A fix that adds no point still shows the GPS is alive. Noted at most every GAP_MS / 2, which is enough to
+// tell a stop from a gap, so that standing still doesn't write the draft on the phone at every fix.
+function noteFix(recording: Recording, now: number): Recording {
+  return now - lastFixTime(recording) > GAP_MS / 2 ? { ...recording, lastFixAt: now } : recording
 }
 
 export function pauseRecording(recording: Recording, now: number): Recording {

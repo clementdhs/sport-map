@@ -108,11 +108,25 @@ onMounted(async () => {
       'GeolocateControl.LocationNotAvailable': t('map.locationNotAvailable'),
       'AttributionControl.ToggleAttribution': t('map.toggleAttribution'),
     },
+    // Behind its "i" button on every screen, not only below 640 px (#199).
+    attributionControl: { compact: true },
     ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: padding(48) } } : {}),
   })
   instance.on('movestart', (event) => {
     if (!('resizing' in event)) moved = true
   })
+  // MapLibre shows the compact attribution open until the map is first dragged: fold it as soon as the style or a
+  // source fills it in, then leave it to the "i" button.
+  const foldAttribution = () => {
+    const attribution = instance.getContainer().querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show')
+    if (!attribution) return
+    attribution.classList.remove('maplibregl-compact-show')
+    attribution.removeAttribute('open')
+    instance.off('styledata', foldAttribution)
+    instance.off('sourcedata', foldAttribution)
+  }
+  instance.on('styledata', foldAttribution)
+  instance.on('sourcedata', foldAttribution)
   instance.addControl(new NavigationControl(), 'top-right')
   instance.addControl(new GeolocateControl({ trackUserLocation: true }), 'top-right')
   instance.addControl({

@@ -173,10 +173,7 @@ function track(coordinates: LngLat[]): string {
 function logo(x: number, y: number, size: number): string {
   return `<g transform="translate(${x} ${y}) scale(${size / 512})">`
     + `<rect width="512" height="512" rx="112" fill="${COLORS.brand}"/>`
-    + '<path d="M112 384c48-8 72-56 112-88s96-8 128-56 16-96 48-120" fill="none" stroke="#fff" stroke-width="32" stroke-linecap="round" stroke-dasharray="1 56"/>'
-    + '<circle cx="112" cy="384" r="36" fill="#fff"/>'
-    + '<path d="M400 72c-35 0-64 28-64 63 0 47 64 113 64 113s64-66 64-113c0-35-29-63-64-63z" fill="#fff"/>'
-    + `<circle cx="400" cy="135" r="22" fill="${COLORS.brand}"/>`
+    + '<path d="M148 334V261a44 44 0 0 1 88 0v73m0 0V213a44 44 0 0 1 88 0v86a35 35 0 0 0 35 35h5" fill="none" stroke="#fff" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/>'
     + '</g>'
 }
 

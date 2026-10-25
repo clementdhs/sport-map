@@ -31,6 +31,7 @@
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.3",
     "@capacitor/local-notifications": "^8.3.1",
+    "@capacitor/splash-screen": "^8.0.2",
     "@iconify-json/lucide": "^1.2.142",
     "@maplibre/maplibre-gl-style-spec": "^26.4.4",
     "@nuxt/ui": "^4.11.3",

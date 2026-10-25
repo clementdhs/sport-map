@@ -142,6 +142,11 @@ test('shows the results without scrolling on a phone, filters in a drawer', asyn
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
   await waitForMap(page)
+  // The sheet opens collapsed (#197): its title alone gives the count; once opened at half height, the first card shows.
+  const sheet = page.locator('aside[data-sheet]')
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  await expect(sheet).toContainText('2 parcours dans cette zone')
+  await sheet.getByRole('button', { name: 'Agrandir le panneau' }).click()
   const cards = page.getByTestId('route-results').locator('li a')
   await expect(cards).toHaveCount(2)
   await expect(cards.first()).toBeInViewport()

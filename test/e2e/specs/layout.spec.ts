@@ -139,12 +139,9 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   const sheet = page.locator('aside[data-sheet]')
   const collapse = sheet.getByRole('button', { name: 'Réduire le panneau' })
   const expand = sheet.getByRole('button', { name: 'Agrandir le panneau' })
-  await expect(sheet).toHaveAttribute('data-sheet', 'half')
-  await expect(sheet).toContainText('2 parcours dans cette zone')
-
-  // Collapsed, only its title stays; the hidden content leaves the keyboard and screen reader order.
-  await collapse.click()
+  // It opens collapsed (#197): only its title stays; the hidden content leaves the keyboard and screen reader order.
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  await expect(sheet).toContainText('2 parcours dans cette zone')
   await expect(collapse).toBeDisabled()
   await expect(sheet.locator('[inert]')).toHaveCount(1)
 
@@ -186,7 +183,6 @@ test('keeps the tab bar uncovered under the collapsed sheet on a phone', async (
   await page.goto('/')
   await waitForMap(page)
   const sheet = page.locator('aside[data-sheet]')
-  await sheet.getByRole('button', { name: 'Réduire le panneau' }).click()
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
   await expect(async () => expect((await sheet.boundingBox())!.height).toBeCloseTo(64, 0)).toPass()
 

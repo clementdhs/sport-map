@@ -14,6 +14,10 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
   await expect(page.getByRole('radio', { name: 'MapTiler Outdoor' })).toBeChecked()
   await page.getByRole('radio', { name: 'Plan IGN' }).click()
   await expect(attribution).toContainText('Plan IGN')
+  // Folded behind MapLibre's "i" button, on a computer too (#199), which unfolds it.
+  await expect(attribution).toBeHidden()
+  await page.locator('.maplibregl-ctrl-attrib-button').click()
+  await expect(attribution).toBeVisible()
 
   // Remembered on the device: the map opens on it again.
   await page.reload()

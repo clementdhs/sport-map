@@ -17,5 +17,9 @@
     <!-- This page is served from the app (https://localhost): go back to the hosted site, see capacitor.config.ts. -->
     <a href="https://sport-map-psi.vercel.app/">Réessayer · Retry</a>
   </main>
+  <script>
+    // The launch screen waits for the site to hide it (capacitor.config.ts): this page shows instead.
+    window.Capacitor?.nativePromise?.('SplashScreen', 'hide', {}).catch(() => {})
+  </script>
 </body>
 </html>

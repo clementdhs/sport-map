@@ -78,7 +78,7 @@ test.describe('as the test account', () => {
   // A 56 px header (#154), spanning the whole width on the map pages; text pages keep the centred column.
   test('keeps a low header, as wide as the map on the map pages', async ({ page }) => {
     await page.setViewportSize({ width: 1600, height: 900 })
-    const logo = page.getByRole('banner').getByRole('link', { name: 'sport-map' })
+    const logo = page.getByRole('banner').getByRole('link', { name: 'sportmap' })
     const account = page.getByRole('banner').getByRole('button', { name: 'Mon compte' })
 
     await page.goto('/')

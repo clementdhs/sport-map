@@ -9,7 +9,7 @@ type LoginState = { identifier: string, password: string }
 definePageMeta({ headerLogo: false })
 
 const { t, locale } = useI18n()
-useSeoMeta({ title: () => `${t('auth.login.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('auth.login.title')} — sportmap` })
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
@@ -30,7 +30,7 @@ watch(user, (value) => {
 const sharedRouteId = /^\/routes\/([0-9a-f-]{36})(\/|$)/.exec(redirectTo.value)?.[1]
 if (sharedRouteId) {
   useSeoMeta({
-    ogTitle: 'sport-map',
+    ogTitle: 'sportmap',
     ogImage: `${useRequestURL().origin}/api/routes/${sharedRouteId}/og.png?lang=${locale.value}`,
     ogImageType: 'image/png',
     ogImageWidth: 1200,
@@ -118,7 +118,7 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
     <UContainer class="flex flex-1 flex-col items-center gap-6 py-8 sm:py-14">
       <div class="login-hero flex flex-col items-center gap-3 px-6 py-2 text-center">
         <AppLogo class="size-16 sm:size-20" />
-        <h1 class="text-3xl font-semibold sm:text-4xl">sport-map</h1>
+        <h1 class="text-3xl font-semibold sm:text-4xl">sportmap</h1>
         <p class="max-w-sm text-base text-default sm:text-lg">{{ t('auth.login.tagline') }}</p>
       </div>
       <UPageCard class="w-full max-w-md">

@@ -1,6 +1,6 @@
 # sport-map
 
-Web app (installable PWA) to create, share and discover running / hiking / cycling routes on a map, in the spirit of OpenRunner. UI text is in French.
+Web app (installable PWA) to create, share and discover running / hiking / cycling routes on a map, in the spirit of OpenRunner. UI text is in French. The displayed name is **sportmap** (lowercase, no hyphen, #192); technical identifiers keep `sport-map` (localStorage keys, cookies, cache names, npm package, repository, Vercel URL, Supabase project) so existing settings and links survive.
 
 The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Each issue gets its own branch and pull request (`Closes #N`), squash-merged once Clem approves it; file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes the whole cycle (branch, checks, code review, PR, merge) and parallel sessions in worktrees.
 

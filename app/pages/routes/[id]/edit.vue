@@ -20,7 +20,7 @@ if (parcours.value.owner_id !== user.value?.sub) {
   throw createError({ statusCode: 403, statusMessage: t('editor.notOwner'), fatal: true })
 }
 
-useSeoMeta({ title: () => `${t('editor.editTitle', { name: parcours.value?.name })} — sport-map` })
+useSeoMeta({ title: () => `${t('editor.editTitle', { name: parcours.value?.name })} — sportmap` })
 
 // Keep edits in progress when coming back to the page; load the route otherwise.
 const editor = useRouteEditorStore()

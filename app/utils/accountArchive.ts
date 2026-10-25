@@ -16,7 +16,7 @@ export async function downloadAccountArchive(data: AccountExport) {
   const url = URL.createObjectURL(new Blob([archive as Uint8Array<ArrayBuffer>], { type: 'application/zip' }))
   const link = document.createElement('a')
   link.href = url
-  link.download = `sport-map-${data.username}-${new Date().toISOString().slice(0, 10)}.zip`
+  link.download = `sportmap-${data.username}-${new Date().toISOString().slice(0, 10)}.zip`
   link.click()
   setTimeout(() => URL.revokeObjectURL(url), 60_000)
 }

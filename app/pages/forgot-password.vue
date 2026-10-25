@@ -4,7 +4,7 @@ import type { AuthFormField, FormError, FormSubmitEvent } from '@nuxt/ui'
 type ForgotState = { email: string }
 
 const { t } = useI18n()
-useSeoMeta({ title: () => `${t('auth.forgot.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('auth.forgot.title')} — sportmap` })
 
 const supabase = useSupabaseClient()
 

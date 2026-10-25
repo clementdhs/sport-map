@@ -7,7 +7,7 @@ const serverUrl = process.env.CAP_SERVER_URL ?? 'https://sport-map-psi.vercel.ap
 
 const config: CapacitorConfig = {
   appId: 'io.github.clementdhs.sportmap',
-  appName: 'sport-map',
+  appName: 'sportmap',
   // Only holds the page shown when the site can't be reached.
   webDir: 'capacitor/www',
   server: {

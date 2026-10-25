@@ -9,7 +9,7 @@ const { formatDistance, formatDate, formatSpeed } = useFormat()
 definePageMeta({ layout: false })
 const { t } = useI18n()
 const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
-useSeoMeta({ title: () => `${t('header.record')} — sport-map` })
+useSeoMeta({ title: () => `${t('header.record')} — sportmap` })
 
 const toast = useToast()
 const errorMessage = useErrorMessage()

@@ -112,7 +112,7 @@ const summary = computed(() => `${t('collection.summary', { count: routes.value.
   + (description.value ? ` — ${description.value}` : ''))
 
 useSeoMeta({
-  title: () => `${name.value} — sport-map`,
+  title: () => `${name.value} — sportmap`,
   description: summary,
   ogTitle: name,
   ogDescription: summary,

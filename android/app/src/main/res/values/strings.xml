@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">sport-map</string>
-    <string name="title_activity_main">sport-map</string>
+    <string name="app_name">sportmap</string>
+    <string name="title_activity_main">sportmap</string>
     <string name="package_name">io.github.clementdhs.sportmap</string>
     <string name="custom_url_scheme">io.github.clementdhs.sportmap</string>
     <!-- Notification channel of the background-geolocation plugin, shown in the system settings -->

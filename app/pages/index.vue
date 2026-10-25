@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SearchScope, SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
+import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 
 // Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
@@ -14,6 +15,8 @@ const search = useRouteSearchStore()
 const discover = useOsmDiscoverStore()
 const highlightedId = ref<string | null>(null)
 const focus = ref<MapFocus | null>(null)
+// On a phone the map comes first: the sheet opens collapsed, showing only its results line (#197).
+const sheetSnap = ref<SheetSnap>('collapsed')
 // Coming back to the page finds the last view; the first visit opens on the member's start area (#147).
 const startBounds = useStartBounds(search.viewKnown)
 
@@ -73,7 +76,7 @@ watch(() => search.results, (results) => {
 </script>
 
 <template>
-  <MapSheetLayout>
+  <MapSheetLayout v-model:snap="sheetSnap">
     <template #map>
       <ClientOnly>
         <MapRouteSearch

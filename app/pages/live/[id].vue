@@ -21,7 +21,7 @@ if (error.value && error.value.statusCode !== 404) {
 const ended = ref(!share.value)
 
 useSeoMeta({
-  title: () => `${share.value ? t('live.outingOf', { name: share.value.user_name }) : t('live.title')} — sport-map`,
+  title: () => `${share.value ? t('live.outingOf', { name: share.value.user_name }) : t('live.title')} — sportmap`,
 })
 
 // The track grows with each fetch (useFetch data is a shallow ref).

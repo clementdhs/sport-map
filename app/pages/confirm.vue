@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n()
-useSeoMeta({ title: () => `${t('auth.confirm.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('auth.confirm.title')} — sportmap` })
 
 const user = useSupabaseUser()
 const route = useRoute()

@@ -7,7 +7,7 @@ import type { ProfileUpdate } from '#shared/utils/routes'
 const { t } = useI18n()
 const { maptilerKey } = useRuntimeConfig().public
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
-useSeoMeta({ title: () => `${t('header.settings')} — sport-map` })
+useSeoMeta({ title: () => `${t('header.settings')} — sportmap` })
 
 const toast = useToast()
 const errorMessage = useErrorMessage()

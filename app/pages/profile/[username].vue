@@ -17,7 +17,7 @@ const displayName = computed(() => data.value!.profile.display_name ?? data.valu
 const routeCount = computed(() => t('profile.publicRoutes', data.value!.routes.length))
 
 useSeoMeta({
-  title: () => `${displayName.value} — sport-map`,
+  title: () => `${displayName.value} — sportmap`,
   description: () => data.value?.profile.bio ?? t('profile.seoDescription', { routes: routeCount.value, name: displayName.value }),
   ogTitle: displayName,
   ogType: 'profile',

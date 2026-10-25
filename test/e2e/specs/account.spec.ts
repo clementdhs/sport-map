@@ -91,7 +91,7 @@ test('exports the data of a throwaway account, then deletes it without leaving a
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Télécharger mes données' }).click(),
   ])
-  expect(download.suggestedFilename()).toMatch(new RegExp(`^sport-map-${account.username}-\\d{4}-\\d{2}-\\d{2}\\.zip$`))
+  expect(download.suggestedFilename()).toMatch(new RegExp(`^sportmap-${account.username}-\\d{4}-\\d{2}-\\d{2}\\.zip$`))
   const files = unzipSync(readFileSync((await download.path())!))
   const text = (path: string) => strFromU8(files[path]!)
   const base = `parcours-rgpd-e2e-${routeId.slice(0, 8)}`

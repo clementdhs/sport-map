@@ -3,7 +3,7 @@
 // supabase/templates/recovery.html), verified here: unlike the default PKCE link, it works in any browser,
 // e.g. asked for on a computer and opened on a phone. The verification signs the user in.
 const { t } = useI18n()
-useSeoMeta({ title: () => `${t('auth.reset.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('auth.reset.title')} — sportmap` })
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()

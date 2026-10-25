@@ -61,7 +61,7 @@ describe('accountArchive', () => {
       'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
     ])
     const readme = english.files[0]!.content
-    expect(readme).toContain('Data of clem on sport-map')
+    expect(readme).toContain('Data of clem on sportmap')
     expect(readme).toMatch(/^routes\/\*\.gpx +the track of each route/m)
     expect(english.photos[0]!.path).toBe('photos/tour-du-lac-bbbbbbbb/p1.webp')
   })

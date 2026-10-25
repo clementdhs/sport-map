@@ -24,7 +24,7 @@ const newItems = useNewItems()
     <template #title>
       <span class="flex items-center gap-2">
         <AppLogo class="size-7" />
-        <span class="hidden min-[400px]:max-md:inline lg:inline">sport-map</span>
+        <span class="hidden min-[400px]:max-md:inline lg:inline">sportmap</span>
       </span>
     </template>
 

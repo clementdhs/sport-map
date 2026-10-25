@@ -191,7 +191,7 @@ export function buildRouteOgSvg(route: OgRoute, locale: MessageLocale = DEFAULT_
     `<g clip-path="url(#map)"><rect x="${MAP_BOX.x}" y="${MAP_BOX.y}" width="${MAP_BOX.width}" height="${MAP_BOX.height}" fill="${COLORS.map}"/>${mapGrid()}</g>`,
     track(route.coordinates),
     logo(PANEL_X, 48, 48),
-    `<text x="${PANEL_X + 64}" y="83" font-size="30" font-weight="700" fill="${COLORS.brand}">sport-map</text>`,
+    `<text x="${PANEL_X + 64}" y="83" font-size="30" font-weight="700" fill="${COLORS.brand}">sportmap</text>`,
   ]
 
   const t = (key: string) => translate(locale, key)

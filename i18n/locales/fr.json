@@ -96,7 +96,7 @@
     }
   },
   "home": {
-    "seoTitle": "sport-map — parcours de course, rando et vélo",
+    "seoTitle": "sportmap — parcours de course, rando et vélo",
     "seoDescription": "Découvre, crée et partage des parcours de course à pied, randonnée et vélo près de chez toi.",
     "sortBy": "Trier par",
     "searching": "Recherche des parcours…",
@@ -567,7 +567,7 @@
   "gps": {
     "denied": "Autorise l'accès à ta position dans les réglages du navigateur.",
     "deniedApp": "Autorise l'accès à ta position dans les réglages de l'application.",
-    "notificationTitle": "sport-map suit ta position",
+    "notificationTitle": "sportmap suit ta position",
     "notificationMessage": "Le GPS reste actif écran éteint jusqu'à la fin de ta sortie.",
     "unavailable": "Position indisponible : vérifie que la localisation de ton téléphone est activée.",
     "unsupported": "Ce navigateur ne donne pas accès à la position."
@@ -875,7 +875,7 @@
     "noCompletedHint": "Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties.",
     "notFound": "Profil introuvable",
     "publicRoutes": "{count} parcours visible par l'équipe | {count} parcours visibles par l'équipe",
-    "seoDescription": "{routes} de {name} sur sport-map.",
+    "seoDescription": "{routes} de {name} sur sportmap.",
     "noPublic": "Aucun parcours visible par l'équipe pour l'instant",
     "summary": {
       "title": "En {year}",
@@ -889,7 +889,7 @@
     "deleted": "Compte supprimé",
     "deletedHint": "Toutes tes données ont été effacées.",
     "title": "Mes données",
-    "description": "Télécharge une archive de tout ce que tu as mis sur sport-map (profil et sa photo, parcours en GPX, photos, avis, sorties, collections, réglages), ou supprime définitivement ton compte.",
+    "description": "Télécharge une archive de tout ce que tu as mis sur sportmap (profil et sa photo, parcours en GPX, photos, avis, sorties, collections, réglages), ou supprime définitivement ton compte.",
     "export": "Télécharger mes données",
     "deleteTitle": "Supprimer mon compte ?",
     "delete": "Supprimer mon compte",
@@ -1197,7 +1197,7 @@
       "photosFolder": "photos"
     },
     "readme": {
-      "intro": "Données de {username} sur sport-map, exportées le {date}.",
+      "intro": "Données de {username} sur sportmap, exportées le {date}.",
       "profile": "ton profil (pseudo, nom affiché, bio, e-mail, date d'inscription)",
       "avatar": "ta photo de profil",
       "routes": "tes parcours : description, statistiques, points d'intérêt, visibilité",

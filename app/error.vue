@@ -6,7 +6,7 @@ const props = defineProps<{ error: NuxtError }>()
 
 const { t, locale } = useI18n()
 const uiLocales = { fr, en }
-useSeoMeta({ title: () => `${props.error.statusMessage ?? t('error.title')} — sport-map` })
+useSeoMeta({ title: () => `${props.error.statusMessage ?? t('error.title')} — sportmap` })
 </script>
 
 <template>

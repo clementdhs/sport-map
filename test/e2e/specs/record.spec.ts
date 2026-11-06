@@ -174,4 +174,28 @@ test.describe('recording an outing', () => {
     await expect(map).toHaveAttribute('data-map-bearing', '0')
     await expect(toggle).toHaveAttribute('aria-pressed', 'false')
   })
+
+  test('keeps the map still under the data screen, then brings it back to the position', async ({ page, context }) => {
+    // Fake clock: 300 m in a simulated minute is a plausible speed for the recorder.
+    await page.clock.install({ time: new Date('2026-11-06T08:00:00Z') })
+    page.on('dialog', dialog => dialog.accept()) // "leave the page?" prompt at the end
+    const map = page.locator('[data-map-loaded]')
+
+    await page.goto('/record')
+    await waitForMap(page)
+    await expect(map).toHaveAttribute('data-map-center', '6.1200,45.9000', { timeout: 10_000 })
+    await page.getByRole('button', { name: 'Démarrer' }).click()
+    await page.getByRole('button', { name: 'Données' }).click()
+
+    // The fix is recorded, but the map nobody sees doesn't move (#182).
+    await page.clock.fastForward(60_000)
+    await context.setGeolocation({ ...START, latitude: START.latitude + 300 / 111_194.93 })
+    await expect(page.locator('[data-field="distance"]')).toContainText('300')
+    await page.clock.fastForward(2000)
+    await expect(map).toHaveAttribute('data-map-center', '6.1200,45.9000')
+
+    // Back on the map: it catches up with the position.
+    await page.getByRole('button', { name: 'Carte', exact: true }).click()
+    await expect(map).toHaveAttribute('data-map-center', '6.1200,45.9027')
+  })
 })

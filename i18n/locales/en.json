@@ -895,6 +895,36 @@
       "distance": "Distance",
       "outings": "Outings",
       "gain": "Elevation gain"
+    },
+    "goal": {
+      "title": "{year} goal",
+      "private": "Only visible to you",
+      "set": "Set a goal for {year}",
+      "edit": "Edit the goal",
+      "dialogTitle": "Goal for the year",
+      "dialogDescription": "Only visible to you, found on all your devices. It carries on to the next years until you change it.",
+      "metric": "Measure",
+      "metrics": {
+        "distance": "Distance",
+        "gain": "Elevation gain",
+        "outings": "Outings"
+      },
+      "units": {
+        "distance": "km",
+        "gain": "m",
+        "outings": "outings"
+      },
+      "sport": "Sport",
+      "target": "Goal ({unit})",
+      "remove": "Remove the goal",
+      "outingCount": "{count} outing | {count} outings",
+      "progress": "{done} of {target}",
+      "paceMark": "Steady pace to reach it on 31 December",
+      "ahead": "{gap} ahead of pace",
+      "behind": "{gap} behind pace",
+      "onPace": "Right on pace",
+      "perWeek": "{value} a week to go",
+      "reached": "Goal reached, well done!"
     }
   },
   "accountData": {

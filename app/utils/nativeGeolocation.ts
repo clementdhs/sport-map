@@ -44,7 +44,8 @@ export async function watchNativePosition(
       backgroundTitle: notification.title,
       backgroundMessage: notification.message,
       requestPermissions: true,
-      // The recorder and the follower filter fixes themselves.
+      // The recorder and the follower filter fixes themselves. A distance filter would save little (the GPS stays
+      // on) and would stop fixes when standing still, which the recorder would count as a GPS gap (#180, #182).
       stale: false,
       distanceFilter: 0,
     },

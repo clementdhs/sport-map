@@ -13,6 +13,8 @@ const props = defineProps<{
   fix: GpsFix | null
   // Useful places from OpenStreetMap (#52), saved with the route
   osmPlaces?: OsmPlace[]
+  // The data screen covers the map: it then stays still, and catches up when shown again (#182).
+  covered?: boolean
 }>()
 
 // Keep the position centered (and, heading up, the map turned): a gesture on the map turns it off, the page's
@@ -36,6 +38,19 @@ const showOsmPlaces = usePreference('osmPlaces')
 const orientationControl = shallowRef<HTMLElement>()
 // Bearing a heading-up map aims at, smoothed; null until following (re)starts.
 let aimed: MapBearingState | null = null
+
+// Nothing is drawn while the map is out of sight, under the data screen or with the page hidden (the Android app
+// records with the screen off): every camera move or new layer data makes MapLibre work for a map nobody sees.
+const pageHidden = ref(false)
+function onVisibilityChange() {
+  pageHidden.value = document.hidden
+}
+onMounted(() => {
+  onVisibilityChange()
+  document.addEventListener('visibilitychange', onVisibilityChange)
+})
+onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisibilityChange))
+const visible = computed(() => !props.covered && !pageHidden.value)
 
 function layerData(coordinates: LngLat[]) {
   const [start] = coordinates
@@ -87,16 +102,19 @@ function bearingFor(instance: Map, now: number): number {
 }
 
 // The first centering zooms in to walking scale; the next ones, once it got there, only pan and turn (a move during
-// it would stop it half-way). `turning`: only when the bearing changes (compass between fixes). Under reduced motion,
-// MapLibre moves the camera at once.
+// it would stop it half-way). `turning`: only when the bearing changes (compass between fixes). A pan alone jumps:
+// a few metres at walking scale are a few pixels, and an easing redraws the map for half a second at every fix
+// (#182). Turning eases, as does a move during an easing, which a jump would stop half-turned. Under reduced
+// motion, MapLibre moves the camera at once.
 let zoomedIn = false
 let flying = false
 function center(fix: GpsFix, now: number, turning = false) {
   const instance = map.value
-  if (!instance || flying) return
+  if (!instance || flying || !visible.value) return
   const bearing = bearingFor(instance, now)
   if (zoomedIn) {
-    if (!turning || bearing !== instance.getBearing()) instance.easeTo({ center: fix.position, bearing, duration: 500 })
+    if (bearing !== instance.getBearing() || instance.isMoving()) instance.easeTo({ center: fix.position, bearing, duration: 500 })
+    else if (!turning) instance.jumpTo({ center: fix.position })
     return
   }
   if (turning) return
@@ -107,7 +125,7 @@ function center(fix: GpsFix, now: number, turning = false) {
 
 function showDirection(fix: GpsFix | null, now: number) {
   shownDirection = travelDirectionAt(now)
-  setGps?.(fix, shownDirection)
+  if (visible.value) setGps?.(fix, shownDirection)
 }
 
 function showFix(fix: GpsFix | null, now: number) {
@@ -129,15 +147,45 @@ watch(() => props.fix, (fix) => {
 // The compass turns the arrow, and a heading-up map, between fixes.
 function turnBetweenFixes() {
   const now = Date.now()
-  if (travelDirectionAt(now) === shownDirection) return
+  if (!visible.value || travelDirectionAt(now) === shownDirection) return
   showDirection(props.fix, now)
   if (props.fix && follow.value && orientation.value === 'heading') center(props.fix, now, true)
 }
 watch(compass.heading, turnBetweenFixes)
 onBeforeUnmount(() => clearTimeout(courseAging))
 
-watch(() => props.coordinates, (coordinates) => {
-  if (map.value) setRouteLayerData(map.value, layerData(coordinates))
+// A recorded track grows at every point: redrawn at most every TRACK_REDRAW_MS, since MapLibre cuts the whole
+// line into tiles again each time (20,000 points after 100 km). The GPS arrow shows the latest position meanwhile.
+const TRACK_REDRAW_MS = 3000
+let trackDrawnAt = 0
+let trackTimer: ReturnType<typeof setTimeout> | undefined
+// The track changed while out of sight: redrawn once the map shows again.
+let trackStale = false
+function drawTrack() {
+  clearTimeout(trackTimer)
+  trackTimer = undefined
+  if (!map.value) return
+  trackStale = !visible.value
+  if (trackStale) return
+  trackDrawnAt = Date.now()
+  setRouteLayerData(map.value, layerData(props.coordinates))
+}
+watch(() => props.coordinates, () => {
+  if (trackTimer) return
+  const wait = trackDrawnAt + TRACK_REDRAW_MS - Date.now()
+  if (wait <= 0) drawTrack()
+  else trackTimer = setTimeout(drawTrack, wait)
+})
+onBeforeUnmount(() => clearTimeout(trackTimer))
+
+// Back in sight: the track, the arrow and the camera catch up, straight to the right bearing.
+watch(visible, (on) => {
+  if (!on || !map.value) return
+  if (trackStale) drawTrack()
+  const now = Date.now()
+  showDirection(props.fix, now)
+  aimed = null
+  if (props.fix && follow.value) center(props.fix, now)
 })
 
 // Following (re)starts, or the orientation changes: straight to the right bearing.

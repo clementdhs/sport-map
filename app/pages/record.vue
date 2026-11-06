@@ -147,7 +147,7 @@ function discard() {
   <div class="flex h-dvh flex-col overflow-hidden">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteFollow v-model:follow="follow" recording :coordinates="track" :fix="fix" />
+        <MapRouteFollow v-model:follow="follow" recording :coordinates="track" :fix="fix" :covered="dataView && !!recording" />
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->

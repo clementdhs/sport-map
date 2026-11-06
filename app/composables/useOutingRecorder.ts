@@ -1,9 +1,14 @@
 import type { GpsFix } from './useWatchPosition'
 import type { Recording } from '~/utils/recorder'
 
+// How often an ongoing recording is written to the phone. Writing the whole outing after every point cost more
+// and more battery as it grew (about 1.5 MB of JSON per second after 100 km, #182).
+export const DRAFT_SAVE_MS = 15_000
+
 // An outing recorded with the GPS fixes it is given, for /record and follow mode. A web page only gets
-// positions while the screen is on: the recording is saved on the phone (under draftKey) after every point, so
-// that it can be resumed if the page closes, and leaving the page asks first.
+// positions while the screen is on: the recording is saved on the phone (under draftKey) at most every
+// DRAFT_SAVE_MS, at once on start and pause, and when the page is hidden or left, so that it can be resumed if the
+// page closes; leaving the page asks first.
 export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
   const { t } = useI18n()
 
@@ -35,10 +40,25 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
   const draft = shallowRef<Recording | null>(null)
   onMounted(() => (draft.value = loadDraft()))
 
-  function update(next: Recording) {
+  // Changes not written yet are written by a timer, at most DRAFT_SAVE_MS after the last write.
+  let savedAt = 0
+  let saveTimer: ReturnType<typeof setTimeout> | undefined
+  function persist() {
+    clearTimeout(saveTimer)
+    saveTimer = undefined
+    if (!recording.value) return
+    saveDraft(recording.value)
+    savedAt = Date.now()
+  }
+  function flush() {
+    if (saveTimer) persist()
+  }
+
+  function update(next: Recording, now = false) {
     if (next === recording.value) return
     recording.value = next
-    saveDraft(next)
+    if (now) persist()
+    else if (!saveTimer) saveTimer = setTimeout(persist, Math.max(0, savedAt + DRAFT_SAVE_MS - Date.now()))
   }
 
   function accept(current: GpsFix) {
@@ -50,7 +70,7 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
 
   function start() {
     recording.value = startRecording(Date.now())
-    saveDraft(recording.value)
+    persist()
     if (fix.value) accept(fix.value)
   }
 
@@ -67,11 +87,13 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
   const paused = computed(() => recording.value?.pausedAt != null)
   function togglePause() {
     if (!recording.value) return
-    update(paused.value ? resumeRecording(recording.value) : pauseRecording(recording.value, Date.now()))
+    update(paused.value ? resumeRecording(recording.value) : pauseRecording(recording.value, Date.now()), true)
   }
 
   // Once the outing is saved or discarded.
   function stop() {
+    clearTimeout(saveTimer)
+    saveTimer = undefined
     clearDraft()
     recording.value = null
   }
@@ -81,10 +103,24 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
     if (recording.value) return window.confirm(t('record.leaveConfirm'))
   })
   function onBeforeUnload(event: BeforeUnloadEvent) {
+    flush()
     if (recording.value) event.preventDefault()
   }
-  onMounted(() => window.addEventListener('beforeunload', onBeforeUnload))
-  onBeforeUnmount(() => window.removeEventListener('beforeunload', onBeforeUnload))
+  // The page may be closed or killed once hidden (screen off, another app): write what is not written yet.
+  function onVisibilityChange() {
+    if (document.hidden) flush()
+  }
+  onMounted(() => {
+    window.addEventListener('beforeunload', onBeforeUnload)
+    window.addEventListener('pagehide', flush)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+  })
+  onBeforeUnmount(() => {
+    flush()
+    window.removeEventListener('beforeunload', onBeforeUnload)
+    window.removeEventListener('pagehide', flush)
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+  })
 
   return { recording, draft, paused, start, resumeDraft, discardDraft, togglePause, stop }
 }

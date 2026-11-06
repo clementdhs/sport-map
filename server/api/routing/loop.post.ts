@@ -3,7 +3,8 @@ import type { RoutingLoopResponse } from '#shared/utils/routes'
 import type { LoopTry } from '#shared/utils/loops'
 
 // One proposal of automatic loop (#50): asked again with a corrected length until it is within the tolerance,
-// each OpenRouteService call counting in the user's routing quota.
+// each OpenRouteService call counting in the user's routing quota. Only the accepted loop gets measured elevations
+// (#176), which don't count in the quota.
 export default defineEventHandler(async (event): Promise<RoutingLoopResponse> => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
@@ -24,7 +25,7 @@ export default defineEventHandler(async (event): Promise<RoutingLoopResponse> =>
     }
     if (isOnTarget(loop.lengthM, length_m)) {
       return {
-        ...trackFields(loop.points),
+        ...trackFields(await withMeasuredElevations(event, loop.points)),
         ...(loop.wayInfo ? { way_info: loop.wayInfo } : {}),
         quota_remaining: remaining,
       }

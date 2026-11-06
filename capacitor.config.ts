@@ -7,7 +7,7 @@ const serverUrl = process.env.CAP_SERVER_URL ?? 'https://sport-map-psi.vercel.ap
 
 const config: CapacitorConfig = {
   appId: 'io.github.clementdhs.sportmap',
-  appName: 'sport-map',
+  appName: 'sportmap',
   // Only holds the page shown when the site can't be reached.
   webDir: 'capacitor/www',
   server: {
@@ -15,9 +15,20 @@ const config: CapacitorConfig = {
     cleartext: serverUrl.startsWith('http:'),
     errorPath: 'offline.html',
   },
+  // The WebView's colour until the page paints, black otherwise: the manifest's background_color (nuxt.config.ts).
+  backgroundColor: '#ffffff',
   android: {
     // Background location updates stop after 5 minutes otherwise (background-geolocation plugin README).
     useLegacyBridge: true,
+  },
+  plugins: {
+    // The launch screen stays up while the site loads, until the page hides it once hydrated
+    // (app/plugins/splash-screen.client.ts, capacitor/www/offline.html). This duration is only the safety net:
+    // a cold start of the hosted site's server alone takes about 5 s.
+    SplashScreen: {
+      launchShowDuration: 10000,
+      launchAutoHide: true,
+    },
   },
 }
 

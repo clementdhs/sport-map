@@ -9,7 +9,7 @@ definePageMeta({ layout: false })
 const { t } = useI18n()
 const { formatDistance, formatNumber } = useFormat()
 const errorMessage = useErrorMessage()
-useSeoMeta({ title: () => `${t('discover.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('discover.title')} — sportmap` })
 
 const discover = useOsmDiscoverStore()
 // A section of a marked route being chosen (#72): the panel and the map show only that route.

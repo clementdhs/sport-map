@@ -106,8 +106,8 @@ export default defineNuxtConfig({
     filename: 'sw.ts',
     registerType: 'autoUpdate',
     manifest: {
-      name: 'sport-map',
-      short_name: 'sport-map',
+      name: 'sportmap',
+      short_name: 'sportmap',
       description: 'Crée, partage et découvre des parcours de course, randonnée et vélo.',
       lang: 'fr',
       theme_color: '#4f46e5',

@@ -1,8 +1,7 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
-import { type LngLat, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
-
-type LngLatEle = [lng: number, lat: number, ele: number]
+import { type LngLat, type LngLatEle, ROUTING_PROFILES, type SportType, type WayInfo, type WayRange } from '#shared/utils/routes'
+import { withoutZeroElevations } from '#shared/utils/trackElevation'
 
 const ORS_URL = 'https://api.openrouteservice.org'
 
@@ -76,8 +75,13 @@ async function directions(event: H3Event, sport: SportType, body: Record<string,
     { ...body, elevation: true, instructions: false, extra_info: ['surface', 'waytype', 'traildifficulty'] },
   )
   const feature = result.features[0]!
+  const coordinates = feature.geometry.coordinates
+  const elevations = withoutZeroElevations(
+    coordinates.map(([lng, lat]): LngLat => [lng, lat]),
+    coordinates.map(([, , ele]) => ele),
+  )
   return {
-    points: feature.geometry.coordinates,
+    points: coordinates.map(([lng, lat], i): LngLatEle => [lng, lat, elevations[i]!]),
     wayInfo: toWayInfo(feature.properties?.extras, profile),
     lengthM: feature.properties?.summary?.distance ?? 0,
   }
@@ -109,13 +113,4 @@ export function trackFields(points: LngLatEle[]): TrackFields {
     coordinates: points.map(([lng, lat]) => [round6(lng), round6(lat)]),
     elevations: points.map(([, , ele]) => round1(ele)),
   }
-}
-
-export async function elevationAlong(event: H3Event, coordinates: LngLat[]): Promise<LngLatEle[]> {
-  const result = await orsPost<{ geometry: { coordinates: LngLatEle[] } }>(
-    event,
-    '/elevation/line',
-    { format_in: 'polyline', format_out: 'geojson', geometry: coordinates },
-  )
-  return result.geometry.coordinates
 }

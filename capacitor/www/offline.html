@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>sport-map</title>
+  <title>sportmap</title>
   <style>
     body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif; background: #fff; color: #111827; text-align: center; padding: 16px; box-sizing: border-box; }
     @media (prefers-color-scheme: dark) { body { background: #111827; color: #f9fafb; } }
@@ -13,9 +13,13 @@
 </head>
 <body>
   <main>
-    <p>sport-map n'est pas joignable : vérifie ta connexion.<br><span lang="en">sport-map can't be reached: check your connection.</span></p>
+    <p>sportmap n'est pas joignable : vérifie ta connexion.<br><span lang="en">sportmap can't be reached: check your connection.</span></p>
     <!-- This page is served from the app (https://localhost): go back to the hosted site, see capacitor.config.ts. -->
     <a href="https://sport-map-psi.vercel.app/">Réessayer · Retry</a>
   </main>
+  <script>
+    // The launch screen waits for the site to hide it (capacitor.config.ts): this page shows instead.
+    window.Capacitor?.nativePromise?.('SplashScreen', 'hide', {}).catch(() => {})
+  </script>
 </body>
 </html>

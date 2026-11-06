@@ -96,7 +96,7 @@
     }
   },
   "home": {
-    "seoTitle": "sport-map — running, hiking and cycling routes",
+    "seoTitle": "sportmap — running, hiking and cycling routes",
     "seoDescription": "Discover, create and share running, hiking and cycling routes near you.",
     "sortBy": "Sort by",
     "searching": "Looking for routes…",
@@ -567,7 +567,7 @@
   "gps": {
     "denied": "Allow access to your location in the browser settings.",
     "deniedApp": "Allow access to your location in the app settings.",
-    "notificationTitle": "sport-map is tracking your location",
+    "notificationTitle": "sportmap is tracking your location",
     "notificationMessage": "GPS stays on with the screen off until your outing ends.",
     "unavailable": "Location unavailable: check that your phone's location is turned on.",
     "unsupported": "This browser doesn't give access to your location."
@@ -876,7 +876,7 @@
     "noCompletedHint": "On a route's page, tap “I did it” to keep a history of your outings.",
     "notFound": "Profile not found",
     "publicRoutes": "{count} route visible to the team | {count} routes visible to the team",
-    "seoDescription": "{routes} by {name} on sport-map.",
+    "seoDescription": "{routes} by {name} on sportmap.",
     "noPublic": "No route visible to the team yet",
     "summary": {
       "title": "In {year}",
@@ -890,7 +890,7 @@
     "deleted": "Account deleted",
     "deletedHint": "All your data has been erased.",
     "title": "My data",
-    "description": "Download an archive of everything you've put on sport-map (profile and its photo, routes as GPX, photos, reviews, outings, collections, settings), or delete your account for good.",
+    "description": "Download an archive of everything you've put on sportmap (profile and its photo, routes as GPX, photos, reviews, outings, collections, settings), or delete your account for good.",
     "export": "Download my data",
     "deleteTitle": "Delete my account?",
     "delete": "Delete my account",
@@ -1223,7 +1223,7 @@
       "photosFolder": "photos"
     },
     "readme": {
-      "intro": "Data of {username} on sport-map, exported on {date}.",
+      "intro": "Data of {username} on sportmap, exported on {date}.",
       "profile": "your profile (username, display name, bio, email, sign-up date)",
       "avatar": "your profile photo",
       "routes": "your routes: description, statistics, points of interest, visibility",

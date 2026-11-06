@@ -4,7 +4,7 @@ import type { CollectionSummary, MyProfile } from '#shared/types/routes'
 const { formatDate, formatSpeed } = useFormat()
 
 const { t } = useI18n()
-useSeoMeta({ title: () => `${t('header.profile')} — sport-map` })
+useSeoMeta({ title: () => `${t('header.profile')} — sportmap` })
 
 // "Done on …", with the times of an outing recorded with the GPS.
 function completedNote(route: MyProfile['completed'][number]) {

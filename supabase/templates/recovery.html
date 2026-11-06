@@ -1,7 +1,7 @@
 {{ if eq (print .Data.locale) "en" }}
 <h2>Reset your password</h2>
 
-<p>You asked to change the password of your sport-map account.</p>
+<p>You asked to change the password of your sportmap account.</p>
 
 <p><a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery">Choose a new password</a></p>
 
@@ -9,7 +9,7 @@
 {{ else }}
 <h2>Réinitialiser ton mot de passe</h2>
 
-<p>Tu as demandé à changer le mot de passe de ton compte sport-map.</p>
+<p>Tu as demandé à changer le mot de passe de ton compte sportmap.</p>
 
 <p><a href="{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery">Choisir un nouveau mot de passe</a></p>
 

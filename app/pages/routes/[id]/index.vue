@@ -239,7 +239,7 @@ const ogImage = computed(() => parcours.value?.is_public
   : undefined)
 
 useSeoMeta({
-  title: () => `${parcours.value?.name} — sport-map`,
+  title: () => `${parcours.value?.name} — sportmap`,
   description: summary,
   ogTitle: () => parcours.value?.name,
   ogDescription: summary,

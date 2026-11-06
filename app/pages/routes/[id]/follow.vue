@@ -26,7 +26,7 @@ if (error.value || !parcours.value) {
   })
 }
 
-useSeoMeta({ title: () => `${t('follow.title', { name: parcours.value?.name })} — sport-map` })
+useSeoMeta({ title: () => `${t('follow.title', { name: parcours.value?.name })} — sportmap` })
 
 const coordinates = computed(() => parcours.value!.geometry.coordinates as LngLat[])
 const model = computed(() => {

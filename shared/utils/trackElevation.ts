@@ -65,6 +65,16 @@ export function fillElevations(along: number[], known: (number | null)[]): numbe
   return filled
 }
 
+// OpenRouteService directions give an elevation of exactly 0 m where its terrain model has no data (#172: 27 points
+// out of 1,157 on a mountain bike loop near Grenoble, 200 to 677 m high, whose D+ grew from a few hundred meters to
+// 2,119 m). Those count as unknown and are filled from their known neighbours along the track; a track with no other
+// elevation keeps its zeros.
+export function withoutZeroElevations(coordinates: LngLat[], elevations: number[]): number[] {
+  const known = elevations.map(elevation => elevation === 0 ? null : elevation)
+  if (known.every(elevation => elevation !== null) || known.every(elevation => elevation === null)) return elevations
+  return fillElevations(trackDistances(coordinates), known)
+}
+
 // Elevations of a track, one per point.
 export async function trackElevationsFrom(coordinates: LngLat[], sources: ElevationSources): Promise<number[]> {
   const known = await sources.precise(coordinates)
@@ -79,6 +89,35 @@ export async function trackElevationsFrom(coordinates: LngLat[], sources: Elevat
     }
   }
   return fillElevations(along, known)
+}
+
+// Routed tracks (#176): OpenRouteService's elevations come from a 90 m model (SRTM) that overestimated the gain by 7
+// to 25 % around Grenoble (Alpe d'Huez: 1,187 m against 1,110 m on Komoot, 1,114 m with the IGN). The measured ones
+// replace them when they arrive in time: the IGN answers a segment in under a second and a 30 km loop in 1 to 1.6 s.
+export const ROUTED_ELEVATIONS_TIMEOUT_MS = 5000
+
+// A routed track's elevations from `sources`, or null to keep the router's: the services failed or took longer than
+// `timeoutMs` (routing never waits on them), or the track has more points than the IGN takes in one request.
+export async function measuredElevations(
+  coordinates: LngLat[],
+  sources: ElevationSources,
+  timeoutMs = ROUTED_ELEVATIONS_TIMEOUT_MS,
+): Promise<number[] | null> {
+  if (coordinates.length > MAX_ROUTE_POINTS) return null
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(resolve, timeoutMs, null)
+  })
+  try {
+    // A late answer is dropped: the race already handles its rejection.
+    return await Promise.race([trackElevationsFrom(coordinates, sources), late])
+  }
+  catch {
+    return null
+  }
+  finally {
+    clearTimeout(timer)
+  }
 }
 
 export const trackElevationsSchema = z.object({

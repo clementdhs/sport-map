@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import type { FetchError } from 'ofetch'
-import type { LngLat } from '#shared/utils/routes'
+import type { LngLat, LngLatEle } from '#shared/utils/routes'
+import { type ElevationSources, measuredElevations, trackElevationsFrom } from '#shared/utils/trackElevation'
 
 // The IGN answers this outside its coverage (France).
 const IGN_NO_DATA = -9999
@@ -55,10 +56,43 @@ async function openMeteoElevations(event: H3Event, points: LngLat[]): Promise<nu
   }
 }
 
+
+// Pause before asking the IGN again after a 429, randomized so that parallel requests don't come back together.
+const IGN_RETRY_MS = 1000
+
+// The IGN takes 5 requests a second per IP address, shared with other sites on Vercel, and the editor routes every
+// segment at once when the sport changes (#176): a refused request is asked once more, so that neighbouring segments
+// don't end up measured on different models (a step at each junction).
+async function ignElevationsRetried(event: H3Event, points: LngLat[]): Promise<(number | null)[]> {
+  try {
+    return await ignElevations(event, points)
+  }
+  catch (error) {
+    if ((error as { statusCode?: number }).statusCode !== 429) throw error
+    await new Promise(resolve => setTimeout(resolve, IGN_RETRY_MS * (1 + Math.random())))
+    return ignElevations(event, points)
+  }
+}
+
+function elevationSources(event: H3Event): ElevationSources {
+  return {
+    precise: points => ignElevationsRetried(event, points),
+    fallback: points => openMeteoElevations(event, points),
+  }
+}
+
 // Elevations of a track that has none (#71), one per point: see shared/utils/trackElevation.ts.
 export function trackElevations(event: H3Event, coordinates: LngLat[]): Promise<number[]> {
-  return trackElevationsFrom(coordinates, {
-    precise: points => ignElevations(event, points),
-    fallback: points => openMeteoElevations(event, points),
-  })
+  return trackElevationsFrom(coordinates, elevationSources(event))
+}
+
+// A routed track (#176) with the IGN's elevations (Open-Meteo abroad) instead of OpenRouteService's, which it keeps
+// when those services fail or are slow: see `measuredElevations`. Not counted in the routing quota.
+export async function withMeasuredElevations(event: H3Event, points: LngLatEle[]): Promise<LngLatEle[]> {
+  const elevations = await measuredElevations(points.map(([lng, lat]): LngLat => [lng, lat]), elevationSources(event))
+  if (!elevations) {
+    console.warn('[elevation] routed track of', points.length, 'points keeps OpenRouteService elevations')
+    return points
+  }
+  return points.map(([lng, lat], i) => [lng, lat, elevations[i]!])
 }

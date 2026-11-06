@@ -3,7 +3,7 @@ import type { LiveShareSummary } from '#shared/types/live'
 
 // The family members sharing their position during an outing (#46), refreshed while the page is in view.
 const { t } = useI18n()
-useSeoMeta({ title: () => `${t('live.title')} — sport-map` })
+useSeoMeta({ title: () => `${t('live.title')} — sportmap` })
 
 const { data: shares, refresh } = await useFetch<LiveShareSummary[]>('/api/live', { default: () => [] })
 usePolling(refresh, LIVE_POLL_INTERVAL_S * 1000)

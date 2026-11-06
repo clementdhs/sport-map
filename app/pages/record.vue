@@ -9,7 +9,7 @@ const { formatDistance, formatDate, formatSpeed } = useFormat()
 definePageMeta({ layout: false })
 const { t } = useI18n()
 const routeDetailsSchemaLocalized = useLocalizedSchema(routeDetailsSchema)
-useSeoMeta({ title: () => `${t('header.record')} — sport-map` })
+useSeoMeta({ title: () => `${t('header.record')} — sportmap` })
 
 const toast = useToast()
 const errorMessage = useErrorMessage()
@@ -43,6 +43,30 @@ const gainM = computed(() => {
 })
 
 const follow = ref(true)
+
+// GPS gaps: the warning shows for a few seconds after each new gap, then leaves the map and the data screen
+// clear (#180). The gaps of a resumed draft show nothing. The seconds only count while the page is visible:
+// the Android app notices a gap with the screen off, and the rider should still see it when looking.
+const GAP_ALERT_MS = 6000
+const gapAlert = ref(false)
+let gapAlertTimer: ReturnType<typeof setTimeout> | undefined
+function hideGapAlertLater() {
+  clearTimeout(gapAlertTimer)
+  if (!document.hidden) gapAlertTimer = setTimeout(() => (gapAlert.value = false), GAP_ALERT_MS)
+}
+function onVisibilityChange() {
+  if (gapAlert.value) hideGapAlertLater()
+}
+watch(() => recording.value?.gaps, (gaps, before) => {
+  if (gaps == null || before == null || gaps <= before) return
+  gapAlert.value = true
+  hideGapAlertLater()
+})
+onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange))
+onBeforeUnmount(() => {
+  clearTimeout(gapAlertTimer)
+  document.removeEventListener('visibilitychange', onVisibilityChange)
+})
 
 // Data screen
 const dataView = ref(false)
@@ -150,7 +174,7 @@ function discard() {
         </div>
         <UAlert v-if="gpsError" class="pointer-events-auto" color="warning" icon="i-lucide-map-pin-off" :title="gpsError" />
         <UAlert
-          v-else-if="recording?.gaps"
+          v-else-if="gapAlert && recording"
           class="pointer-events-auto"
           color="warning"
           icon="i-lucide-satellite-dish"

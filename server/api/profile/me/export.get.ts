@@ -3,7 +3,7 @@ import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { AccountExport } from '#shared/types/account'
 import type { Poi } from '#shared/utils/routes'
 
-// Everything the caller put on sport-map, for the "download my data" archive (RGPD). Read with the
+// Everything the caller put on sportmap, for the "download my data" archive (RGPD). Read with the
 // caller's session: RLS already lets them read all their own rows.
 export default defineEventHandler(async (event): Promise<AccountExport> => {
   const user = await serverSupabaseUser(event)

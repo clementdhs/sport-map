@@ -615,16 +615,28 @@
     "speedUnit": "Speed (km/h)",
     "paceUnit": "Pace (min/km)",
     "empty": "No value chosen: customize the screen.",
+    "fieldsHint": "The arrows change the order: the first value shows at the top left.",
+    "moveUp": "Move “{field}” up",
+    "moveDown": "Move “{field}” down",
+    "lap": "Lap",
+    "lapStarted": "Lap {lap}",
     "fields": {
       "elapsed": "Time",
+      "movingTime": "Moving time",
       "distance": "Done",
       "remaining": "To go",
+      "lapTime": "Lap time",
+      "lapDistance": "Lap distance",
       "gain": "Climbed",
       "remainingGain": "Climb left",
+      "loss": "Descended",
+      "altitude": "Altitude",
       "speed": "{unit}",
       "averageSpeed": "Average {unit}",
+      "maxSpeed": "Max {unit}",
       "arrival": "Est. arrival",
-      "time": "Clock"
+      "time": "Clock",
+      "battery": "Battery"
     }
   },
   "follow": {

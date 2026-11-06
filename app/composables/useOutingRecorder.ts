@@ -90,6 +90,11 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
     update(paused.value ? resumeRecording(recording.value) : pauseRecording(recording.value, Date.now()), true)
   }
 
+  // "Tour" on the data screen: rare enough to be written at once.
+  function lap() {
+    if (recording.value) update(markLap(recording.value, Date.now()), true)
+  }
+
   // Once the outing is saved or discarded.
   function stop() {
     clearTimeout(saveTimer)
@@ -122,5 +127,5 @@ export function useOutingRecorder(draftKey: string, fix: Ref<GpsFix | null>) {
     document.removeEventListener('visibilitychange', onVisibilityChange)
   })
 
-  return { recording, draft, paused, start, resumeDraft, discardDraft, togglePause, stop }
+  return { recording, draft, paused, start, resumeDraft, discardDraft, togglePause, lap, stop }
 }

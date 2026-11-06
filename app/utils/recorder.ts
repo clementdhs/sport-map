@@ -41,6 +41,14 @@ export interface Recording {
   // Last fix showing the GPS was alive, even one that added no point (standing still, paused), noted at most
   // every GAP_MS / 2; missing from drafts recorded before it existed
   lastFixAt?: number
+  // Start of each lap after the first one ("Tour" button of the data screen); missing until the first press
+  laps?: LapStart[]
+}
+
+export interface LapStart {
+  // Time (ms since epoch) and distance (m) of the outing when the lap started
+  at: number
+  distanceM: number
 }
 
 export interface Fix {
@@ -96,6 +104,11 @@ export function pauseRecording(recording: Recording, now: number): Recording {
 
 export function resumeRecording(recording: Recording): Recording {
   return recording.pausedAt === null ? recording : { ...recording, pausedAt: null, afterPause: true }
+}
+
+// A new lap starting now, where the outing is.
+export function markLap(recording: Recording, now: number): Recording {
+  return { ...recording, laps: [...(recording.laps ?? []), { at: now, distanceM: recording.distanceM }] }
 }
 
 // Time since the start, pauses included, like a watch (ms).

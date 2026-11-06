@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RouteDetail } from '#shared/types/routes'
 import type { LngLat, OutingPayload } from '#shared/utils/routes'
-import type { LiveStats } from '~/utils/liveStats'
+import type { MeasuredStats } from '~/utils/liveStats'
 import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
 import type { GuideState } from '~/utils/voiceGuide'
@@ -54,7 +54,7 @@ const offTrack = ref(false)
 const walked = shallowRef<Recording | null>(null)
 
 // The outing recorded on request, kept on the phone like on /record (one draft per route).
-const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } =
+const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, lap: recordLap, stop } =
   useOutingRecorder(`sport-map:recording:${parcours.value.id}`, fix)
 
 // Position shared with the family on request, until the page is left.
@@ -104,25 +104,48 @@ let clock: ReturnType<typeof setInterval> | undefined
 onMounted(() => (clock = setInterval(() => (now.value = Date.now()), 1000)))
 onBeforeUnmount(() => clearInterval(clock))
 
-// Times and speeds come from the recording when there is one, so that they match what will be saved.
-const liveStats = computed<LiveStats>(() => {
-  const outing = recording.value ?? walked.value
+// Times, speeds and laps come from the recording when there is one, so that they match what will be saved.
+const liveOuting = computed(() => recording.value ?? walked.value)
+const maxSpeedOf = maxSpeedTracker()
+// Measured once per new point, not every second.
+const maxSpeedMs = computed(() => (liveOuting.value ? maxSpeedOf(liveOuting.value.points) : null))
+const liveStats = computed<MeasuredStats>(() => {
+  const current = liveOuting.value
   const remainingM = progress.value ? progress.value.remainingM : model.value.totalM
   const totalGainM = model.value.gainLeft?.[0] ?? null
   const remainingGainM = progress.value ? progress.value.remainingGainM : totalGainM
-  const average = outing ? averageSpeed(outing.distanceM, outing.movingMs) : null
+  const totalLossM = model.value.lossLeft?.[0] ?? null
+  const remainingLossM = progress.value ? progress.value.remainingLossM : totalLossM
+  const average = current ? averageSpeed(current.distanceM, current.movingMs) : null
+  const lap = current ? currentLap(current, now.value) : null
   return {
     now: now.value,
-    elapsedS: outing ? (now.value - outing.startedAt) / 1000 : null,
+    elapsedS: current ? (now.value - current.startedAt) / 1000 : null,
+    movingS: current ? current.movingMs / 1000 : null,
+    lapElapsedS: lap?.elapsedS ?? null,
+    lapDistanceM: lap?.distanceM ?? null,
     distanceM: progress.value?.doneM ?? null,
     remainingM,
     gainM: totalGainM !== null && remainingGainM !== null ? Math.max(0, totalGainM - remainingGainM) : null,
     remainingGainM,
-    speedMs: outing && !paused.value ? currentSpeed(outing.points, now.value) : null,
+    lossM: totalLossM !== null && remainingLossM !== null ? Math.max(0, totalLossM - remainingLossM) : null,
+    // The route's elevation where the walker is, steadier than the GPS one; off the track, the GPS one.
+    altitudeM: offTrack.value
+      ? (fix.value && fix.value.accuracyM <= MAX_ACCURACY_M ? fix.value.altitudeM : null)
+      : progress.value?.altitudeM ?? null,
+    speedMs: current && !paused.value ? currentSpeed(current.points, now.value) : null,
     averageSpeedMs: average,
+    maxSpeedMs: maxSpeedMs.value,
     arrivalAt: estimatedArrival(now.value, remainingM, average),
+    lapNumber: lap?.number ?? null,
   }
 })
+
+// "Tour" on the data screen: kept with the recording, else with the outing in memory.
+function startLap() {
+  if (recording.value) recordLap()
+  else if (walked.value) walked.value = markLap(walked.value, Date.now())
+}
 
 function discardDraft() {
   if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
@@ -184,6 +207,7 @@ function discardOuting() {
         mode="follow"
         :stats="liveStats"
         :default-pace="SPORT_KINDS[parcours.sport_type] === 'run'"
+        @lap="startLap"
       />
 
       <!-- Right padding: the map controls stay reachable. -->

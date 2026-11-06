@@ -14,10 +14,13 @@ export interface TrackModel {
   // Distance from the start (m) at each point
   along: number[]
   totalM: number
-  // Climb (m) counted when reaching each point, and gain left from each point to the end, when
-  // elevations are known
+  // Climb and descent (m) counted when reaching each point, and gain and loss left from each point to the end,
+  // when elevations are known
   climbs: number[] | null
   gainLeft: number[] | null
+  descents: number[] | null
+  lossLeft: number[] | null
+  elevations: number[] | null
 }
 
 export interface TrackProgress {
@@ -26,6 +29,9 @@ export interface TrackProgress {
   doneM: number
   remainingM: number
   remainingGainM: number | null
+  remainingLossM: number | null
+  // Elevation of the route at the closest point
+  altitudeM: number | null
   // Distance between the position and the track
   offTrackM: number
 }
@@ -36,14 +42,21 @@ export function buildTrackModel(coordinates: LngLat[], elevations: number[] | nu
     along.push(along[i - 1]! + distance(coordinates[i - 1]!, coordinates[i]!, { units: 'meters' }))
   }
 
-  let climbs: number[] | null = null
-  let gainLeft: number[] | null = null
-  if (elevations?.length === coordinates.length) {
-    climbs = elevationSteps(coordinates, elevations).map(step => Math.max(0, step))
-    gainLeft = Array.from<number>({ length: climbs.length }).fill(0)
-    for (let i = climbs.length - 2; i >= 0; i--) gainLeft[i] = gainLeft[i + 1]! + climbs[i + 1]!
+  const totalM = along.at(-1) ?? 0
+  if (elevations?.length !== coordinates.length) {
+    return { coordinates, along, totalM, climbs: null, gainLeft: null, descents: null, lossLeft: null, elevations: null }
   }
-  return { coordinates, along, totalM: along.at(-1) ?? 0, climbs, gainLeft }
+  const steps = elevationSteps(coordinates, elevations)
+  const climbs = steps.map(step => Math.max(0, step))
+  const descents = steps.map(step => Math.max(0, -step))
+  return { coordinates, along, totalM, climbs, gainLeft: leftFrom(climbs), descents, lossLeft: leftFrom(descents), elevations }
+}
+
+// What is counted after each point, to the end.
+function leftFrom(steps: number[]): number[] {
+  const left = Array.from<number>({ length: steps.length }).fill(0)
+  for (let i = steps.length - 2; i >= 0; i--) left[i] = left[i + 1]! + steps[i + 1]!
+  return left
 }
 
 // Projection of `position` on each segment, in a local flat frame (meters): precise enough at the scale of
@@ -84,6 +97,8 @@ export function locateOnTrack(model: TrackModel, position: LngLat, previousDoneM
       doneM: 0,
       remainingM: 0,
       remainingGainM: null,
+      remainingLossM: null,
+      altitudeM: model.elevations?.[0] ?? null,
       offTrackM: distance(start, position, { units: 'meters' }),
     }
   }
@@ -106,13 +121,18 @@ export function locateOnTrack(model: TrackModel, position: LngLat, previousDoneM
   const score = (p: Projection) => (previousDoneM === null ? p.alongM : Math.abs(p.alongM - previousDoneM))
   const chosen = passages.reduce((a, b) => (score(b) < score(a) ? b : a))
 
+  // What is left of the current segment's climb or descent, plus everything after it.
+  const left = (totals: number[] | null, steps: number[] | null) =>
+    totals && steps ? totals[chosen.index + 1]! + steps[chosen.index + 1]! * (1 - chosen.t) : null
+  const elevations = model.elevations
   return {
     snapped: chosen.snapped,
     doneM: chosen.alongM,
     remainingM: Math.max(0, model.totalM - chosen.alongM),
-    // What is left of the current segment's climb, plus everything after it.
-    remainingGainM: model.gainLeft && model.climbs
-      ? model.gainLeft[chosen.index + 1]! + model.climbs[chosen.index + 1]! * (1 - chosen.t)
+    remainingGainM: left(model.gainLeft, model.climbs),
+    remainingLossM: left(model.lossLeft, model.descents),
+    altitudeM: elevations
+      ? elevations[chosen.index]! + (elevations[chosen.index + 1]! - elevations[chosen.index]!) * chosen.t
       : null,
     offTrackM: chosen.offTrackM,
   }

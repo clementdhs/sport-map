@@ -28,8 +28,16 @@ test.describe('follow mode', () => {
     await page.getByRole('button', { name: 'Personnaliser' }).click()
     await page.getByRole('checkbox', { name: 'Heure' }).click()
     await page.getByRole('radio', { name: 'Allure (min/km)' }).click()
+    // A value checked comes last; the arrows move it.
+    await page.getByRole('checkbox', { name: 'Durée du tour' }).click()
+    await page.getByRole('button', { name: 'Monter « Durée du tour »' }).click()
     await page.keyboard.press('Escape')
     await expect(data.locator('[data-field="time"]')).toHaveCount(0)
+    const order = ['distance', 'remaining', 'speed', 'remainingGain', 'lapTime', 'arrival']
+    await expect.poll(() => data.locator('[data-field]').evaluateAll(tiles => tiles.map(tile => tile.getAttribute('data-field')))).toEqual(order)
+    // With a lap value on screen, "Tour" starts a new lap.
+    await page.getByRole('button', { name: 'Tour', exact: true }).click()
+    await expect(page.getByText('Tour 2')).toBeVisible()
     // The speed needs 5 s of fixes: a dash without unit until then, so a fast machine gets here too early.
     await expect(data.locator('[data-field="speed"]')).toContainText('/km', { timeout: 10_000 })
     await page.reload()
@@ -37,6 +45,7 @@ test.describe('follow mode', () => {
     await page.getByRole('button', { name: 'Données' }).click()
     await expect(data.locator('[data-field="remaining"]')).toBeVisible()
     await expect(data.locator('[data-field="time"]')).toHaveCount(0)
+    await expect.poll(() => data.locator('[data-field]').evaluateAll(tiles => tiles.map(tile => tile.getAttribute('data-field')))).toEqual(order)
     await page.getByRole('button', { name: 'Carte', exact: true }).click()
     await expect(done).toHaveText('3,34 km')
 

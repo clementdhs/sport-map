@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { LngLat, RecordingPayload, SportType } from '#shared/utils/routes'
-import type { LiveStats } from '~/utils/liveStats'
+import type { MeasuredStats } from '~/utils/liveStats'
 
 const { formatDistance, formatDate, formatSpeed } = useFormat()
 
@@ -16,7 +16,7 @@ const errorMessage = useErrorMessage()
 const { fix, error: gpsError, background } = useWatchPosition()
 const { active: screenKeptOn, supported: wakeLockSupported } = useScreenWakeLock()
 
-const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, stop } = useOutingRecorder('sport-map:recording', fix)
+const { recording, draft, paused, start, resumeDraft, discardDraft: dropDraft, togglePause, lap, stop } = useOutingRecorder('sport-map:recording', fix)
 
 // Position shared with the family on request, until the outing is saved or discarded.
 const live = useLiveShare(null, fix)
@@ -36,11 +36,12 @@ onBeforeUnmount(() => clearInterval(clock))
 
 const elapsedS = computed(() => (recording.value ? elapsedMs(recording.value, now.value) / 1000 : 0))
 const track = computed(() => recording.value?.points.map(p => [p.lng, p.lat] as LngLat) ?? [])
-const gainM = computed(() => {
+const climb = computed(() => {
   const points = recording.value?.points ?? []
   if (points.length < 2 || points.some(p => p.alt === null)) return null
-  return elevationStats(track.value, points.map(p => p.alt!)).gain
+  return elevationStats(track.value, points.map(p => p.alt!))
 })
+const gainM = computed(() => climb.value?.gain ?? null)
 
 const follow = ref(true)
 
@@ -70,18 +71,32 @@ onBeforeUnmount(() => {
 
 // Data screen
 const dataView = ref(false)
-const liveStats = computed<LiveStats>(() => {
+const maxSpeedOf = maxSpeedTracker()
+// Measured once per new point, not every second.
+const maxSpeedMs = computed(() => (recording.value ? maxSpeedOf(recording.value.points) : null))
+const liveStats = computed<MeasuredStats>(() => {
   const current = recording.value
+  const lap = current ? currentLap(current, now.value) : null
   return {
     now: now.value,
     elapsedS: current ? elapsedS.value : null,
+    movingS: current ? current.movingMs / 1000 : null,
+    lapElapsedS: lap?.elapsedS ?? null,
+    lapDistanceM: lap?.distanceM ?? null,
     distanceM: current?.distanceM ?? null,
     remainingM: null,
     gainM: gainM.value,
     remainingGainM: null,
+    lossM: climb.value?.loss ?? null,
+    // The latest GPS altitude, even standing still (no point is recorded then), from a fix precise enough
+    // to be recorded.
+    altitudeM: (fix.value && fix.value.accuracyM <= MAX_ACCURACY_M ? fix.value.altitudeM : null)
+      ?? current?.points.at(-1)?.alt ?? null,
     speedMs: current && !paused.value ? currentSpeed(current.points, now.value) : null,
     averageSpeedMs: current ? averageSpeed(current.distanceM, current.movingMs) : null,
+    maxSpeedMs: maxSpeedMs.value,
     arrivalAt: null,
+    lapNumber: lap?.number ?? null,
   }
 })
 
@@ -151,7 +166,7 @@ function discard() {
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->
-      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-16" mode="record" :stats="liveStats" :default-pace="false" />
+      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-16" mode="record" :stats="liveStats" :default-pace="false" @lap="lap" />
 
       <!-- Right padding: the map controls stay reachable. -->
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView && recording ? 'pr-3' : 'pr-14'">

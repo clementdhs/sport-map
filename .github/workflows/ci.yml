@@ -3,16 +3,20 @@ name: CI
 # Every branch: a pushed feature branch gets its result before being merged into main.
 # A push that only touches documentation or Claude's files runs nothing. If CI ever becomes a required
 # check for merging, a workflow skipped this way leaves the pull request waiting: filter in the jobs instead.
+# The weekly run and the manual one test main in full, end-to-end tests included (see the e2e job).
 on:
   push:
     paths-ignore:
       - '**/*.md'
       - '.claude/**'
+  schedule:
+    - cron: '0 5 * * 0'
   workflow_dispatch:
 
-# A newer push on the same branch makes the running check pointless.
+# A newer push on the same branch makes the running check pointless. The event is part of the group so
+# that a push to main doesn't cancel the weekly run, the only one testing main end to end.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -40,8 +44,12 @@ jobs:
       - name: Tests unitaires et du store
         run: npm test
 
+  # Not on a push to main: the squashed pull request already passed them on its branch, and running them
+  # twice used most of the Actions minutes. Two pull requests merged one after the other without being
+  # tested together are caught by the weekly run, or sooner by a manual run.
   e2e:
     name: Tests de bout en bout
+    if: github.event_name != 'push' || github.ref != 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

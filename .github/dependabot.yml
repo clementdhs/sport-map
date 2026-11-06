@@ -1,5 +1,5 @@
-# Dependency updates. Security fixes are enabled in the repository settings; the cooldown, grouping and
-# pull request limit below only apply to version updates.
+# Dependency updates. Security fixes are enabled in the repository settings; the cooldown and pull request
+# limit below only apply to version updates, and each group says which kind of update it gathers.
 # The Android project (android/) is left out: Capacitor pins its Gradle versions and its upgrades go
 # through `npx cap migrate`.
 version: 2
@@ -19,6 +19,10 @@ updates:
       npm-minor-patch:
         patterns: ['*']
         update-types: [minor, patch]
+      # Security fixes come as one pull request too, instead of one per package (each one a full CI run).
+      npm-security:
+        applies-to: security-updates
+        patterns: ['*']
     # Major versions (Nuxt, Nuxt UI, MapLibre, Supabase…) change their APIs: each one gets its own issue,
     # upgraded by hand.
     ignore:

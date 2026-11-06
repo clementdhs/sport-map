@@ -33,7 +33,7 @@ One issue, one branch, one pull request. Claude pushes the branch and opens the 
 
 ## 3. After Clem's go ("merge")
 
-1. **Conflicts.** If `gh pr view <M> --json mergeable` reports `CONFLICTING` (main moved, e.g. a parallel session merged), bring the branch up to date as described in [worktrees.md](worktrees.md), rerun the checks, push and wait for a green CI. Without conflicts, merge directly: main's CI checks the combination.
+1. **Conflicts.** If `gh pr view <M> --json mergeable` reports `CONFLICTING` (main moved, e.g. a parallel session merged), bring the branch up to date as described in [worktrees.md](worktrees.md), rerun the checks, push and wait for a green CI. Without conflicts, merge directly: main's CI checks the types and unit tests of the combination. If another PR touching a user-facing flow was merged since this branch's CI ran, also start the full run after the merge (`gh workflow run ci.yml --ref main`), since main's push CI skips the e2e tests.
 2. **Schema changes first.** If the branch adds files to `supabase/migrations/`, ask Clem to run `npm run db:push` from this checkout (the auto mode classifier blocks it for Claude: it deploys to production) and wait for the confirmation. From then on the migration is frozen: a fix goes in a new file. Then regenerate the types from the hosted project, without the BOM PowerShell adds:
    ```powershell
    $out = npx supabase gen types typescript --linked 2>$null | Out-String
@@ -41,7 +41,7 @@ One issue, one branch, one pull request. Claude pushes the branch and opens the 
    ```
    If `git diff --stat shared/types/database.types.ts` shows a change, rerun `npm run typecheck`, commit and push it to the branch.
 3. **Merge.** In the main folder: `gh pr merge <M> --squash --delete-branch`, then `git pull --ff-only` on main. In a worktree, drop `--delete-branch` (gh would check out main, which the main folder already has) and delete the remote branch with `git push origin --delete <branch>` unless the repository already deletes merged branches.
-4. **Main CI.** `gh run list --branch main --limit 1` (its commit must be the squashed one), `gh run watch <id> --exit-status`, conclusion exactly `success` (no run for a documentation-only merge). Check that the issue is closed with `gh issue view N --json state`.
+4. **Main CI.** `gh run list --branch main --limit 1` (its commit must be the squashed one), `gh run watch <id> --exit-status`, conclusion exactly `success` (no run for a documentation-only merge). On main a push runs only the types and unit tests; the e2e tests run on main every Sunday and on a manual run. Check that the issue is closed with `gh issue view N --json state`.
 5. **Memory.** Add the issue, its PR and the squashed commit to the sport-map project memory, with anything Clem still has to do by hand (dashboard settings, field tests).
 6. **Wrap up in French.** Give the PR, the CI result and the remaining open issues. Suggest starting a new session (or `/clear`) before the next issue: everything needed is in `CLAUDE.md`, `.claude/rules/`, the issues and memory.
 7. **Notify.** `PushNotification`: "PR #M mergée, CI verte" (or "CI en échec : <job>" when it failed).

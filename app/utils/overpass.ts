@@ -1,5 +1,7 @@
 import type { FetchError } from 'ofetch'
 import { type Bbox, OSM_ROUTE_TAGS, type OsmRoute, type OsmRouteKind, type OverpassRelation, toOsmRoute } from '#shared/utils/osmRoutes'
+import { type OsmPlace, osmPlacesFrom, osmPlacesQuery, type OverpassElement } from '#shared/utils/osmPlaces'
+import type { LngLat } from '#shared/utils/routes'
 import { LocalizedError } from '~/utils/localizedError'
 
 // The Overpass API (#69), queried from the browser: it allows 2 queries at a time per IP address, and the server
@@ -26,8 +28,8 @@ export function clearOverpassCache() {
   cache.clear()
 }
 
-interface OverpassResponse {
-  elements?: OverpassRelation[]
+interface OverpassResponse<T> {
+  elements?: T[]
   // Set when the query was stopped by the server's limits: the elements are then incomplete.
   remark?: string
 }
@@ -38,7 +40,7 @@ export function overpassQuery([minLng, minLat, maxLng, maxLat]: Bbox, kind: OsmR
   return `[out:json][timeout:${QUERY_TIMEOUT_S}];relation["type"="route"]["route"~"^(${routes})$"](${minLat},${minLng},${maxLat},${maxLng});out meta geom;`
 }
 
-async function queryOverpass(query: string, signal?: AbortSignal): Promise<OverpassRelation[]> {
+async function queryOverpass<T>(query: string, signal?: AbortSignal): Promise<T[]> {
   const attempts = Array.from({ length: ROUNDS }, () => OVERPASS_URLS).flat()
   const deadline = Date.now() + SEARCH_BUDGET_MS
   for (const url of attempts) {
@@ -46,7 +48,7 @@ async function queryOverpass(query: string, signal?: AbortSignal): Promise<Overp
     if (timeLeft < MIN_ATTEMPT_MS) break
     try {
       // A form body keeps it a simple CORS request, without a preflight.
-      const data = await $fetch<OverpassResponse>(url, {
+      const data = await $fetch<OverpassResponse<T>>(url, {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: new URLSearchParams({ data: query }),
@@ -76,7 +78,7 @@ export async function searchOsmRoutes(bbox: Bbox, kind: OsmRouteKind, signal?: A
   const cached = cache.get(key)
   if (cached && cached.expires > Date.now()) return cached.routes
 
-  const routes = (await queryOverpass(overpassQuery(bbox, kind), signal))
+  const routes = (await queryOverpass<OverpassRelation>(overpassQuery(bbox, kind), signal))
     .filter(element => element.type === 'relation')
     .map(toOsmRoute)
     .filter(route => route !== null)
@@ -86,4 +88,9 @@ export async function searchOsmRoutes(bbox: Bbox, kind: OsmRouteKind, signal?: A
   // A Map keeps insertion order: the first key is the oldest search.
   if (cache.size > CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value!)
   return routes
+}
+
+// The useful places near a route's track (#52). Not cached: the route page saves them with the route.
+export async function searchOsmPlaces(track: LngLat[], signal?: AbortSignal): Promise<OsmPlace[]> {
+  return osmPlacesFrom(await queryOverpass<OverpassElement>(osmPlacesQuery(track, QUERY_TIMEOUT_S), signal), track)
 }

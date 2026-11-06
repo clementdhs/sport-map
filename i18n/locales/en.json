@@ -786,6 +786,7 @@
       "osmRoutes": "Marked routes (Discover)",
       "osmRoute": "OpenStreetMap marked route",
       "osmIncomplete": "Incomplete marked route",
+      "osmPlaces": "Useful places (OpenStreetMap)",
       "slopes": "Track coloured by slope",
       "surface": "Track coloured by surface",
       "sac": "Track coloured by difficulty (hiking)",
@@ -1046,6 +1047,30 @@
     "parking": "Parking",
     "danger": "Tricky section"
   },
+  "osmPlaces": {
+    "title": "Useful places nearby",
+    "types": {
+      "water": "Drinking water",
+      "hut": "Hut",
+      "shelter": "Shelter",
+      "parking": "Parking",
+      "toilets": "Toilets",
+      "peak": "Peak"
+    },
+    "intro": "Water, huts, shelters, parkings, toilets and peaks within {radius} m of the track.",
+    "search": "Find useful places",
+    "refresh": "Update",
+    "searching": "Searching OpenStreetMap…",
+    "none": "No useful place within {radius} m of the track.",
+    "searchedOn": "Updated on {date}",
+    "offTrack": "{distance} off the track",
+    "onTrack": "on the track",
+    "showAll": "Show the {count} places",
+    "showLess": "Shorten the list",
+    "searchFailed": "Search failed",
+    "attribution": "Data {link}, under the ODbL licence.",
+    "layer": "Useful places (OpenStreetMap)"
+  },
   "sorts": {
     "nearest": "Nearest",
     "recent": "Most recent",
@@ -1163,6 +1188,7 @@
     "usernameMismatch": "The username entered doesn't match",
     "saveRecordingFailed": "Couldn't save the outing",
     "saveRouteFailed": "Couldn't save the route",
+    "saveOsmPlacesFailed": "Couldn't save the useful places",
     "saveChangesFailed": "Couldn't save the changes",
     "undoActionFailed": "Couldn't undo the action",
     "saveActionFailed": "Couldn't save the action",

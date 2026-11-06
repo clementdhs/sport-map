@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { Map } from 'maplibre-gl'
+import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, Poi } from '#shared/utils/routes'
 import type { Flyover } from '~/composables/useFlyover'
 
 const props = defineProps<{
   coordinates: LngLat[]
   pois?: Poi[]
+  // Useful places from OpenStreetMap (#52), shown unless the member turned them off in the "Calques" panel
+  osmPlaces?: OsmPlace[]
   // line-gradient colouring the track (slopes, surface or difficulty), null for the plain route colour
   lineGradient?: unknown[] | null
   // Position hovered on the elevation profile
@@ -16,6 +19,8 @@ const props = defineProps<{
 
 const map = shallowRef<Map>()
 const { padding } = useMapPadding()
+const { t } = useI18n()
+const showOsmPlaces = usePreference('osmPlaces')
 
 function onLoad(instance: Map) {
   addRouteLayers(instance, {
@@ -40,9 +45,11 @@ watch(() => props.hoverPoint, (point) => {
 
 <template>
   <MapView relief :force3d="!!flyover?.subject" @load="onLoad">
-    <template v-if="$slots.controls" #controls>
+    <template v-if="$slots.controls || osmPlaces?.length" #controls>
+      <USwitch v-if="osmPlaces?.length" v-model="showOsmPlaces" :label="t('osmPlaces.layer')" size="sm" />
       <slot name="controls" />
     </template>
   </MapView>
+  <MapOsmPlaces v-if="map && showOsmPlaces && osmPlaces?.length" :map="map" :places="osmPlaces" />
   <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
 </template>

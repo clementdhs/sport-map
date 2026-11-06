@@ -786,6 +786,7 @@
       "osmRoutes": "Parcours balisés (Découvrir)",
       "osmRoute": "Parcours balisé OpenStreetMap",
       "osmIncomplete": "Parcours balisé incomplet",
+      "osmPlaces": "Points utiles (OpenStreetMap)",
       "slopes": "Tracé coloré par la pente",
       "surface": "Tracé coloré par la surface",
       "sac": "Tracé coloré par la difficulté (randonnée)",
@@ -1046,6 +1047,30 @@
     "parking": "Parking",
     "danger": "Passage difficile"
   },
+  "osmPlaces": {
+    "title": "Points utiles à proximité",
+    "types": {
+      "water": "Eau potable",
+      "hut": "Refuge",
+      "shelter": "Abri",
+      "parking": "Parking",
+      "toilets": "Toilettes",
+      "peak": "Sommet"
+    },
+    "intro": "Eau, refuges, abris, parkings, toilettes et sommets à moins de {radius} m du tracé.",
+    "search": "Chercher les points utiles",
+    "refresh": "Mettre à jour",
+    "searching": "Recherche dans OpenStreetMap…",
+    "none": "Aucun point utile à moins de {radius} m du tracé.",
+    "searchedOn": "Mis à jour le {date}",
+    "offTrack": "à {distance} du tracé",
+    "onTrack": "sur le tracé",
+    "showAll": "Voir les {count} points",
+    "showLess": "Réduire la liste",
+    "searchFailed": "Recherche impossible",
+    "attribution": "Données {link}, sous licence ODbL.",
+    "layer": "Points utiles (OpenStreetMap)"
+  },
   "sorts": {
     "nearest": "Plus proches",
     "recent": "Plus récents",
@@ -1163,6 +1188,7 @@
     "usernameMismatch": "Le pseudo saisi ne correspond pas",
     "saveRecordingFailed": "Impossible d'enregistrer la sortie",
     "saveRouteFailed": "Impossible d'enregistrer le parcours",
+    "saveOsmPlacesFailed": "Impossible d'enregistrer les points utiles",
     "saveChangesFailed": "Impossible d'enregistrer les modifications",
     "undoActionFailed": "Impossible d'annuler l'action",
     "saveActionFailed": "Impossible d'enregistrer l'action",

@@ -129,6 +129,9 @@ const pois = computed(() => {
     .map(poi => ({ ...poi, distanceM: snapToTrack(coordinates.value, poi.coordinates).distanceM }))
     .sort((a, b) => a.distanceM - b.distanceM)
 })
+// Useful places from OpenStreetMap (#52): searched the first time the page shows them, then saved with the route.
+const osm = useRouteOsmPlaces(parcours.value.id, coordinates, parcours.value.osm_places)
+const osmPlaces = computed(() => placesAlongTrack(coordinates.value, osm.places.value))
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
 const summary = computed(() => {
   const p = parcours.value!
@@ -257,6 +260,7 @@ useSeoMeta({
         <MapRouteDisplay
           :coordinates="coordinates"
           :pois="parcours.pois"
+          :osm-places="osm.places.value"
           :line-gradient="trackGradient"
           :hover-point="hoverPoint"
           :flyover="flyover"
@@ -444,6 +448,15 @@ useSeoMeta({
               </li>
             </ul>
           </section>
+
+          <RouteOsmPlaces
+            :places="osmPlaces"
+            :searched-at="osm.searchedAt.value"
+            :searching="osm.searching.value"
+            :failure="osm.failure.value"
+            @search="osm.search"
+            @hover="hoverPoint = $event"
+          />
         </div>
       </template>
 

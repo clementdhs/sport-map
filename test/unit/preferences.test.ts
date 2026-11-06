@@ -19,6 +19,7 @@ describe('PREFERENCES', () => {
       defaultSport: null,
       mapStyle: 'theme',
       outdoorReadability: false,
+      osmPlaces: true,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
     expect(PREFERENCES.map3d.parse('1')).toBe(false)
@@ -29,6 +30,10 @@ describe('PREFERENCES', () => {
     expect(PREFERENCES.mapStyle.parse('dark')).toBe('dark')
     expect(PREFERENCES.outdoorReadability.parse('true')).toBe(false)
     expect(PREFERENCES.outdoorReadability.decode!('1')).toBe(true)
+    // Shown unless turned off.
+    expect(PREFERENCES.osmPlaces.parse('0')).toBe(true)
+    expect(PREFERENCES.osmPlaces.parse(false)).toBe(false)
+    expect(PREFERENCES.osmPlaces.decode!('0')).toBe(false)
   })
 
   it('keeps the storage format of the devices from before #145', () => {

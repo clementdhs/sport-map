@@ -16,7 +16,7 @@ const HIGHLIGHT_LAYERS = ['osm-routes-highlight-casing', 'osm-routes-highlight']
 export const OSM_ROUTES_HIT_LAYER = 'osm-routes-hit'
 
 // Required by the ODbL wherever its data is shown, whatever the basemap.
-const ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+export const OSM_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
 
 function routesData(routes: OsmRoute[], label: (route: OsmRoute) => string): FeatureCollection<MultiLineString> {
   return {
@@ -32,7 +32,7 @@ function routesData(routes: OsmRoute[], label: (route: OsmRoute) => string): Fea
 const highlightFilter = (id: number | null): FilterSpecification => ['==', ['get', 'id'], id ?? -1]
 
 export function addOsmRouteLayers(map: Map) {
-  map.addSource(SOURCE, { type: 'geojson', data: routesData([], () => ''), attribution: ATTRIBUTION })
+  map.addSource(SOURCE, { type: 'geojson', data: routesData([], () => ''), attribution: OSM_ATTRIBUTION })
 
   const line = { 'line-color': OSM_ROUTE_LINE.color, 'line-width': OSM_ROUTE_LINE.width, 'line-opacity': OSM_ROUTE_LINE.opacity }
   map.addLayer({

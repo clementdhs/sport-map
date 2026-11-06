@@ -195,6 +195,17 @@ async function download(
   return info
 }
 
+// The route's data changed after it was prepared (its useful places, #52): its pages are downloaded again, the
+// map files stay. Nothing to do for a route that isn't prepared, or while it is.
+export async function refreshOfflineRoutePages(routeId: string) {
+  if (!offlineSupported() || preparing.has(routeId) || !listOfflineRoutes()[routeId]) return
+  const cache = await caches.open(offlineCacheName(routeId))
+  await Promise.all(offlinePagePaths(routeId).map(async (url) => {
+    const response = await fetch(url)
+    if (response.ok) await cache.put(url, response)
+  }))
+}
+
 export async function removeOfflineRoute(routeId: string) {
   await caches.delete(offlineCacheName(routeId))
   const { [routeId]: _removed, ...rest } = listOfflineRoutes()

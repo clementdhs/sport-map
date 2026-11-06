@@ -615,16 +615,28 @@
     "speedUnit": "Vitesse (km/h)",
     "paceUnit": "Allure (min/km)",
     "empty": "Aucune valeur choisie : personnalise l'écran.",
+    "fieldsHint": "Les flèches changent l'ordre : la première valeur s'affiche en haut à gauche.",
+    "moveUp": "Monter « {field} »",
+    "moveDown": "Descendre « {field} »",
+    "lap": "Tour",
+    "lapStarted": "Tour {lap}",
     "fields": {
       "elapsed": "Durée",
+      "movingTime": "Temps en mouvement",
       "distance": "Parcouru",
       "remaining": "Restant",
+      "lapTime": "Durée du tour",
+      "lapDistance": "Distance du tour",
       "gain": "D+ fait",
       "remainingGain": "D+ restant",
+      "loss": "D− fait",
+      "altitude": "Altitude",
       "speed": "{unit}",
       "averageSpeed": "{unit} moyenne",
+      "maxSpeed": "{unit} max",
       "arrival": "Arrivée estimée",
-      "time": "Heure"
+      "time": "Heure",
+      "battery": "Batterie"
     }
   },
   "follow": {

@@ -44,6 +44,16 @@ describe('locateOnTrack', () => {
     expect(locateOnTrack(sparse, northOf(1500)).remainingGainM).toBe(0)
   })
 
+  it('counts the descent left and gives the route elevation at the position', () => {
+    // A 100 m climb, then an 80 m descent. Halfway down, 40 m are left, at 560 m.
+    const upDown = buildTrackModel([northOf(0), northOf(1000), northOf(2000)], [500, 600, 520])
+    const halfway = locateOnTrack(upDown, northOf(1500))
+    expect(halfway.remainingLossM).toBeCloseTo(40, 0)
+    expect(halfway.altitudeM).toBeCloseTo(560, 0)
+    expect(upDown.lossLeft![0]).toBeCloseTo(80, 0)
+    expect(locateOnTrack(buildTrackModel([northOf(0), northOf(1000)], null), northOf(500)).altitudeM).toBeNull()
+  })
+
   it('follows the right leg of an out-and-back', () => {
     const outAndBack = [...line, ...line.slice(0, -1).reverse()] // 2 km
     const twice = buildTrackModel(outAndBack, null)

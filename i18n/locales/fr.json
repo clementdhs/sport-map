@@ -363,6 +363,13 @@
       "mountain_biking": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 500 m de dénivelé positif."
     }
   },
+  "signage": {
+    "duration": "Durée estimée : {duration}",
+    "done": "Fait",
+    "doneTimes": "Fait une fois | Fait {count} fois",
+    "here": "Vous êtes ici",
+    "altitude": "alt. {altitude} m"
+  },
   "elevationProfile": {
     "title": "Profil altimétrique",
     "summary": "Profil altimétrique : altitude de {min} à {max} sur {distance}",

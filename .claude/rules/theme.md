@@ -12,6 +12,14 @@ paths:
   - "app/assets/css/main.css"
   - "app/components/SportBadge.vue"
   - "app/components/RouteCard.vue"
+  - "app/components/SportMark.vue"
+  - "app/components/DurationSign.vue"
+  - "app/components/KeyFigures.vue"
+  - "app/components/DoneStamp.vue"
+  - "app/components/HerePlate.vue"
+  - "app/components/ContourTexture.vue"
+  - "app/utils/keyFigures.ts"
+  - "test/nuxt/signage.test.ts"
   - "app/composables/useSportItems.ts"
   - "app/app.config.ts"
   - "public/icon.svg"
@@ -31,6 +39,17 @@ The visual direction is "Topo + balisage" (mockups on the Claude Design canvas l
 - **Shadows**: Tailwind's scale redefined in `@theme`, tinted with the ink (`rgb(29 37 32 / 0.08)`), lighter than the default black.
 - Map popups follow the surface (`--popup-bg`: `bg-default` in light mode, `bg-elevated` in dark mode), MapLibre's control groups the surface with an accented border (#230, map block of `main.css`; the topo basemap itself is in `maps.md`). The manifest's `background_color` is the light paper.
 
+# Trail signage components (#229)
+
+The signs of the direction, shared by every screen (looks from the canvas's "Final" Carte / Découvrir / Fiche boards). Their colors are the signage tokens of `main.css` (`:root` and `.dark`, checked by `themeContrast.test.ts`): `--sign` yellow (`#f4c430`, dark `#e3b53c`) with `--sign-text` ink in both modes and an ink `--sign-edge` (invisible on the dark paper, where the yellow itself stands out), `--mark-top` / `--mark-edge` (white ringed with ink; cream in dark mode), `--stamp` rust (`#b8461f`, dark `#e8875c`), `--contour`. The yellow is never the only information: each one also writes its text, and `test/nuxt/signage.test.ts` covers the empty cases.
+
+- `SportMark`: the sport as a two-bar blaze (white ringed with ink, then `--sport`), `aria-hidden`, always next to the sport's name. `SportBadge` leads with it instead of the sport's icon (route cards, route page); the sport selects keep their icons until their screens are redone.
+- `DurationSign`: `minutes` (nothing when `null`) on a yellow arrow (`clip-path`, an outer ink shape 1.5px larger for the outline), `size` `sm` (cards) or `md`; screen readers hear "Durée estimée : 2 h 35" (`signage.duration`). No `~`: the label says it is an estimate. Route cards show it in place of their clock badge.
+- `KeyFigures`: the cartouche, a `<dl>` with one ruled column per `KeyFigure` (`app/utils/keyFigures.ts`: label, value, unit set apart with `splitUnit`, `highlight` on the yellow, `hint` in an info tooltip). Labels wrap and units go under the figure rather than truncating (4 columns at 360 px with outdoor readability). The route page's distance / duration / D+ / D− row uses it, the duration highlighted with the pace tooltip (`useDurationMethod`, shared with `DurationEstimate`).
+- `DoneStamp`: "Fait ×N" tilted rust stamp from `count`, nothing at 0, "Fait 3 fois" / "Fait une fois" for screen readers. The parent places it (`absolute`); its inner ring is cut out of `--stamp-bg` (default the surface `--ui-bg`; set it to the paper when it lies on the page). On the route page, N is the member's outings there (`is_mine`), a route only marked as done counting once. Cards wait for a count in `RouteListItem` (Découvrir screen).
+- `HerePlate`: "Vous êtes ici · place · alt. 22 m" under a yellow band, altitude left out when unknown. Not used yet (Découvrir screen).
+- `ContourTexture`: faint contour lines (`--contour`) at the top of a `relative` header, `aria-hidden`, the header's content `relative` above it. Not used yet.
+
 # Theme: mode and accent color
 
 - Visitors pick the light / dark / system mode (Nuxt UI color mode, localStorage) and an accent among the 5 terrain `ACCENTS` (#228: forest green by default, ochre, lake blue, heather, slate) in `ThemeSettings`, shown in the header's `ThemePicker` popover to visitors only and on `/settings` (Apparence) to signed-in users. The accent lives in the `sport-map-accent` cookie (per device, not an account preference nor in the export) so the server renders `<html data-accent>`, Nuxt UI's primary color (set on app config by `plugins/accent.ts`) and the theme-color meta without a flash. The ten Tailwind accents offered before #228 stay readable: `toAccent` maps them through `LEGACY_ACCENTS` to the nearest terrain accent (OKLab distance between light shades, checked by `test/unit/theme.test.ts`); anything else falls back to forest green. Keep an accent's name once offered (add it to `LEGACY_ACCENTS` when removing it).
@@ -41,6 +60,6 @@ The visual direction is "Topo + balisage" (mockups on the Claude Design canvas l
 
 # Sport colors, figures and headings (#108)
 
-- Each sport has a fixed color (not the accent): a `sport-<sport type>` class (`main.css`) sets `--sport` (icons, route thumbnails), `--sport-text` and `--sport-soft` (badge text and background), 800 on 100 in light mode, 300 on a 15 % veil of 400 in dark mode (`themeContrast.test.ts`). Palette by family: road running orange, trail rose, hiking emerald, leisure cycling cyan, road cycling blue, mountain biking violet. `SportBadge`, `RouteCard` and the sport selects (`useSportItems`, icons through `ui.itemLeadingIcon`) use it; a new sport needs its class (`test/unit/sportColors.test.ts`).
+- Each sport has a fixed color (not the accent): a `sport-<sport type>` class (`main.css`) sets `--sport` (icons, route thumbnails), `--sport-text` and `--sport-soft` (badge text and background), 800 on 100 in light mode, 300 on a 15 % veil of 400 in dark mode (`themeContrast.test.ts`). Palette by family: road running orange, trail rose, hiking emerald, leisure cycling cyan, road cycling blue, mountain biking violet. `SportBadge` (with its `SportMark`), `RouteCard` and the sport selects (`useSportItems`, icons through `ui.itemLeadingIcon`) use it; a new sport needs its class (`test/unit/sportColors.test.ts`).
 - Key figures (distances, durations, D+, totals, live data) use `font-numbers tabular-nums`: Barlow Semi Condensed 500/600, latin, normal style only, downloaded at build time by `@nuxt/fonts` (`fonts` in `nuxt.config.ts`) into `/_fonts/`, precached by the service worker through the `woff2` glob. It runs narrower than the text font: figures go one size up (`text-lg` instead of `text-base`).
 - Heading scale in pages and panels: page title `h1` `text-2xl font-semibold`; section `h2` `text-base font-semibold`; block captions (charts, breakdowns, legends) `text-sm font-medium`; small labels above figures `text-xs font-medium text-muted`.

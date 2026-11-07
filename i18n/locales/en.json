@@ -363,6 +363,13 @@
       "mountain_biking": "Your speed of {value} km/h (Settings), plus 1 h per 500 m of elevation gain."
     }
   },
+  "signage": {
+    "duration": "Estimated time: {duration}",
+    "done": "Done",
+    "doneTimes": "Done once | Done {count} times",
+    "here": "You are here",
+    "altitude": "alt. {altitude} m"
+  },
   "elevationProfile": {
     "title": "Elevation profile",
     "summary": "Elevation profile: from {min} to {max} over {distance}",

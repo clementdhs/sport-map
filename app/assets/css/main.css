@@ -185,6 +185,28 @@ body {
   --sport-soft: color-mix(in oklab, var(--sport-400) 15%, transparent);
 }
 
+/* Trail signage (#229): the yellow sign of durations and highlighted key figures (--sign, --sign-text, its outline
+   --sign-edge), the two-bar sport mark (--mark-top, ringed with --mark-edge, which also frames the key figures and
+   the "you are here" plate), the "done" stamp (--stamp, rust) and the contour lines of headers (--contour).
+   Contrast in test/unit/themeContrast.test.ts. */
+:root {
+  --sign: #f4c430;
+  --sign-text: var(--ui-color-neutral-900);
+  --sign-edge: var(--ui-color-neutral-900);
+  --mark-top: #fff;
+  --mark-edge: var(--ui-text-highlighted);
+  --stamp: #b8461f;
+  --contour: #d3c3a2;
+}
+.dark {
+  --sign: #e3b53c;
+  --sign-edge: var(--ui-color-neutral-950);
+  --mark-top: var(--ui-text-highlighted);
+  --mark-edge: var(--ui-text-highlighted);
+  --stamp: #e8875c;
+  --contour: #2f3831;
+}
+
 /* The tracks' rust outside the map canvas (elevation profile, flyover), as on the maps (APP_MAP_COLORS, #230). */
 :root {
   --map-track: #b8461f;

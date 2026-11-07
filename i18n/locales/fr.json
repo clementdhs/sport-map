@@ -427,6 +427,7 @@
     "returnToStart": "Revenir au départ",
     "outAndBack": "Aller-retour",
     "isLoop": "Le parcours revient à son point de départ.",
+    "help": "Comment modifier le tracé ?",
     "hintMove": "Glisse un point pour le déplacer.",
     "hintInsert": "Glisse la ligne pour ajouter un point.",
     "hintDelete": "Clic droit (appui long sur mobile) sur un point pour le supprimer.",

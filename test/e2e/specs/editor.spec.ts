@@ -287,3 +287,19 @@ test('caps routing requests per user and per day', async ({ page, requestAs }) =
   expect((await visitor.post('/api/routing/segment', { data: segment })).status()).toBe(401)
   expect((await visitor.post('/api/routing/loop', { data: loop })).status()).toBe(401)
 })
+
+test('keeps the editing hints behind a help button', async ({ page }) => {
+  await page.goto('/routes/create?mode=manual')
+  await waitForMap(page)
+  const hint = page.getByText('Glisse la ligne pour ajouter un point.')
+  await expect(hint).toHaveCount(0)
+
+  // Opened on click, so it works on phones too.
+  const help = page.getByRole('button', { name: 'Comment modifier le tracé ?' })
+  await help.click()
+  await expect(hint).toBeVisible()
+  await expect(page.getByText('Clic droit (appui long sur mobile) sur un point pour le supprimer.')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(hint).toBeHidden()
+  await expect(help).toBeFocused()
+})

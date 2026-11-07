@@ -37,7 +37,8 @@ test.describe('follow mode', () => {
     await expect.poll(() => data.locator('[data-field]').evaluateAll(tiles => tiles.map(tile => tile.getAttribute('data-field')))).toEqual(order)
     // With a lap value on screen, "Tour" starts a new lap.
     await page.getByRole('button', { name: 'Tour', exact: true }).click()
-    await expect(page.getByText('Tour 2')).toBeVisible()
+    // Exact: the toast's live region also reads "Notification Tour 2…".
+    await expect(page.getByText('Tour 2', { exact: true })).toBeVisible()
     // The speed needs 5 s of fixes: a dash without unit until then, so a fast machine gets here too early.
     await expect(data.locator('[data-field="speed"]')).toContainText('/km', { timeout: 10_000 })
     await page.reload()

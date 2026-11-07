@@ -264,10 +264,10 @@ test('offers ten accent colors in the settings, rendered by the server in a shad
   await waitForHydration(page)
   const primary = () => page.evaluate(() => {
     const style = getComputedStyle(document.documentElement)
-    return ['--ui-primary', '--ui-color-primary-700', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
+    return ['--ui-primary', '--ui-color-primary-800', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
   })
-  const [light, shade700] = await primary()
-  expect(light).toBe(shade700)
+  const [light, shade800] = await primary()
+  expect(light).toBe(shade800)
 
   // Dark mode keeps the 400 shade, with dark text on buttons.
   await page.getByRole('button', { name: 'Sombre' }).click()

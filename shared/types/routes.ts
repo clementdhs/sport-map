@@ -107,6 +107,8 @@ export type MyProfile = {
   created: RouteListItem[]
   // Routes on the "À faire" list (activity "saved") the viewer can still see
   todo_count: number
+  // Outlines of its last routes, like CollectionSummary.thumbnails
+  todo_thumbnails: string[]
   completed: (RouteListItem & OutingTimes & { completed_at: string })[]
   // What the statistics and the records count
   outings: RecordOuting[]
@@ -206,6 +208,8 @@ export type CollectionSummary = {
   is_public: boolean
   // Routes the viewer can see in it
   route_count: number
+  // Outlines of the last routes added (up to COLLECTION_COVERS, see trackThumbnail), for the profile's mosaic
+  thumbnails: string[]
   // Whether it holds the route the list was asked for (GET /api/collections?route=)
   contains: boolean
 }

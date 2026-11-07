@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { StatsOuting } from '#shared/types/routes'
-import { goalProgress, parseYearGoal, type YearGoal } from '~/utils/yearGoal'
+import { GOAL_TRAIL_END, goalProgress, goalTrailPath, goalTrailX, goalTrailY, parseYearGoal, type YearGoal } from '~/utils/yearGoal'
 
 const outing = (completed_at: string, distance_m: number, sport_type: StatsOuting['sport_type'] = 'running', elevation_gain_m: number | null = 100): StatsOuting =>
   ({ route_id: completed_at, completed_at, distance_m, elevation_gain_m, moving_s: null, sport_type }) as StatsOuting
@@ -64,5 +64,30 @@ describe('goalProgress', () => {
   it('needs nothing more once reached', () => {
     const progress = goalProgress({ metric: 'outings', target: 1, sport: null }, [outing('2026-01-02T08:00:00Z', 1000)], new Date('2026-01-03T12:00:00Z'))
     expect(progress).toMatchObject({ reached: true, perWeek: 0 })
+  })
+})
+
+describe('goal trail', () => {
+  const points = (path: string) => [...path.matchAll(/[ML]([\d.]+) ([\d.]+)/g)].map(m => [Number(m[1]), Number(m[2])])
+
+  it('splits the trail at the progress, both parts meeting at the dot', () => {
+    const done = points(goalTrailPath(0, 0.4))
+    const rest = points(goalTrailPath(0.4, 1))
+    expect(done[0]![0]).toBe(goalTrailX(0))
+    expect(done.at(-1)).toEqual(rest[0])
+    expect(rest.at(-1)![0]).toBe(GOAL_TRAIL_END)
+    expect(done.at(-1)![1]).toBeCloseTo(goalTrailY(goalTrailX(0.4)), 0)
+    // Left to right, inside the box
+    for (const [x, y] of [...done, ...rest]) {
+      expect(x).toBeGreaterThanOrEqual(0)
+      expect(y).toBeGreaterThan(20)
+      expect(y).toBeLessThan(60)
+    }
+  })
+
+  it('draws nothing for an empty part and clamps beyond the goal', () => {
+    expect(goalTrailPath(0, 0)).toBe('')
+    expect(goalTrailPath(1, 1.5)).toBe('')
+    expect(goalTrailX(2)).toBe(GOAL_TRAIL_END)
   })
 })

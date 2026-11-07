@@ -1,4 +1,4 @@
-import { expect, moveEditorFarAway, routeAction, test, waitForMap } from '../fixtures'
+import { expect, moveEditorFarAway, openProfileRoutes, routeAction, test, waitForMap } from '../fixtures'
 
 test.use({ role: 'account' })
 
@@ -81,6 +81,7 @@ test('draws, saves, then edits a route', async ({ page }) => {
 
   // The private route stays listed on its owner's profile.
   await page.goto('/profile')
+  await openProfileRoutes(page)
   await expect(page.getByRole('link', { name: /Parcours e2e/ })).toBeVisible()
 })
 

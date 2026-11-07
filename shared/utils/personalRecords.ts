@@ -109,3 +109,12 @@ export function recordBreakers(outings: RecordOuting[]): Record<string, RecordKi
   }
   return breakers
 }
+
+// Days during which a record wears the yellow "Record !" badge on the profile (#236).
+export const RECENT_RECORD_DAYS = 30
+
+// Whether a record was set less than RECENT_RECORD_DAYS ago.
+export function isRecentRecord(completedAt: string, now: Date): boolean {
+  const age = now.getTime() - new Date(completedAt).getTime()
+  return age >= 0 && age < RECENT_RECORD_DAYS * 86_400_000
+}

@@ -263,6 +263,12 @@ export async function waitForHydration(page: Page) {
   await expect(page.locator('html[data-hydrated]')).toBeAttached({ timeout: 15_000 })
 }
 
+// The member's own routes on their profile, which opens on its statistics (#236): the Parcours tab, on "Mes parcours".
+export async function openProfileRoutes(page: Page) {
+  await waitForHydration(page)
+  await page.getByRole('tab', { name: 'Parcours', exact: true }).click()
+}
+
 // Moves the editor's map to FAR_AWAY, before drawing a route that will be visible to the family.
 export async function moveEditorFarAway(page: Page) {
   await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({ json: { features: [FAR_AWAY] } }))

@@ -180,7 +180,8 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "save": "Save",
-    "close": "Close"
+    "close": "Close",
+    "edit": "Edit"
   },
   "route": {
     "notFound": "Route not found",
@@ -340,7 +341,10 @@
     "public": "Visible to the team",
     "publicHint": "Visible to every team member. Your private routes stay hidden in it.",
     "createAndAdd": "Create and add",
-    "new": "New collection"
+    "new": "New collection",
+    "newHint": "Group routes together: a weekend, a trip, your favourite loops.",
+    "create": "Create",
+    "createdHint": "Add routes to it with “Add to a collection” on their page."
   },
   "duration": {
     "short": "Time",
@@ -882,16 +886,23 @@
       "created": "My routes",
       "collections": "Collections",
       "completed": "Done",
-      "stats": "Statistics"
+      "stats": "Statistics",
+      "routes": "Routes"
     },
     "memberSince": "member since {date}",
     "viewPublic": "View my profile as the team sees it",
     "noCreated": "No route created",
     "noCreatedHint": "Draw your first route or import a GPX file.",
-    "todoHint": "the routes you want to do",
+    "myList": "My list",
+    "routeWord": "route | routes",
+    "sharedCollection": "Shared by link",
+    "latest": {
+      "title": "Latest outings",
+      "date": "Date",
+      "route": "Route"
+    },
     "discover": "Discover routes",
     "privateCollection": "Private",
-    "noCollections": "No collection",
     "noCollectionsHint": "Group routes (a trip, your favourite loops) with “Add to a collection” on their page.",
     "noCompleted": "No route done",
     "noCompletedHint": "On a route's page, tap “I did it” to keep a history of your outings.",

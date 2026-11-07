@@ -215,6 +215,21 @@ body {
   --map-track: #e07a4f;
 }
 
+/* Profile statistics (#236): bars in the tracks' rust, the current period in ink (cream in dark mode), checked with
+   the dataviz validator against the paper and the surface in both modes (the ink is a neutral highlight, labelled). */
+:root {
+  --chart-bar: var(--map-track);
+  --chart-current: var(--ui-text-highlighted);
+}
+
+/* The profile's panels on a computer (#236): the surface with its border, around each block of the statistics. */
+@utility profile-panel {
+  border: 1px solid var(--ui-border);
+  border-radius: calc(var(--ui-radius) * 2);
+  background: var(--ui-bg);
+  padding: 1.25rem;
+}
+
 /* HTML markers of the home map (RouteSearch), in the colours of the map's style (data-map-dark), which may differ
    from the app's mode (#151): groups as ink squares like the numbered waypoints, the hovered route framed in rust. */
 .map-cluster {

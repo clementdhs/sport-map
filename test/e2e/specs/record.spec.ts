@@ -83,6 +83,7 @@ test.describe('recording an outing', () => {
     // Listed among the completed routes of the profile, with its times.
     await page.goto('/profile')
     await waitForHydration(page)
+    await page.getByRole('tab', { name: 'Parcours', exact: true }).click()
     await page.getByRole('tab', { name: /Réalisés/ }).click()
     await expect(page.getByText(/Fait le 28 septembre 2026 · \d+ min · [\d,]+ km\/h/)).toBeVisible()
   })

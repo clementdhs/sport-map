@@ -7,12 +7,15 @@ paths:
   - "app/components/map/RouteCollection.vue"
   - "app/pages/collections/**"
   - "app/pages/profile/index.vue"
+  - "app/components/ProfileCollections.vue"
   - "server/utils/activity.ts"
 ---
 
 # Collections
 
 `collections` and `collection_routes`: named groups of routes, private or public (shared by link, `/collections/:id`). RLS checks both sides: a link is only visible when the collection and the route both are, so a public collection never reveals a private route, and one can only add routes one can see. Deleting a route cascades to its links. The collection map draws simplified tracks from the `route_preview` computed field (`ST_Simplify`), not the full geometries.
+
+Profile tab (#236, `ProfileCollections`): each collection shows a mosaic of the outlines of its last `COLLECTION_COVERS` (4) routes added (`thumbnails` of `GET /api/collections`, an embedded `covers` link list limited and ordered by `added_at`; "À faire" gets `todo_thumbnails` from `/api/profile/me`), its route count and its visibility ("Privée", or "Partagée par lien" for a public one), and "Nouvelle collection" creates one without a route.
 
 ## "À faire" list (#129)
 

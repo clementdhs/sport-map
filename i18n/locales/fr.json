@@ -180,7 +180,8 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "save": "Enregistrer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "edit": "Modifier"
   },
   "route": {
     "notFound": "Parcours introuvable",
@@ -340,7 +341,10 @@
     "public": "Visible par l'équipe",
     "publicHint": "Visible par tous les membres de l'équipe. Tes parcours privés y restent cachés.",
     "createAndAdd": "Créer et ajouter",
-    "new": "Nouvelle collection"
+    "new": "Nouvelle collection",
+    "newHint": "Regroupe des parcours : un week-end, un séjour, tes boucles favorites.",
+    "create": "Créer",
+    "createdHint": "Ajoute-lui des parcours avec « Ajouter à une collection » sur leur page."
   },
   "duration": {
     "short": "Durée",
@@ -882,16 +886,23 @@
       "created": "Mes parcours",
       "collections": "Collections",
       "completed": "Réalisés",
-      "stats": "Statistiques"
+      "stats": "Statistiques",
+      "routes": "Parcours"
     },
     "memberSince": "membre depuis le {date}",
     "viewPublic": "Voir mon profil tel que l'équipe le voit",
     "noCreated": "Aucun parcours créé",
     "noCreatedHint": "Trace ton premier parcours ou importe un fichier GPX.",
-    "todoHint": "les parcours que tu veux faire",
+    "myList": "Ma liste",
+    "routeWord": "parcours | parcours",
+    "sharedCollection": "Partagée par lien",
+    "latest": {
+      "title": "Dernières sorties",
+      "date": "Date",
+      "route": "Parcours"
+    },
     "discover": "Découvrir des parcours",
     "privateCollection": "Privée",
-    "noCollections": "Aucune collection",
     "noCollectionsHint": "Regroupe des parcours (un séjour, tes boucles favorites) avec « Ajouter à une collection » sur leur page.",
     "noCompleted": "Aucun parcours réalisé",
     "noCompletedHint": "Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties.",

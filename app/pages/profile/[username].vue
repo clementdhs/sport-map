@@ -25,11 +25,11 @@ useSeoMeta({
 </script>
 
 <template>
-  <UContainer v-if="data" class="max-w-3xl space-y-6 py-8">
+  <UContainer v-if="data" class="max-w-3xl space-y-6 py-8 lg:max-w-6xl">
     <ProfileHeader :profile="data.profile" :summary="data.summary" :detail="routeCount" />
 
-    <ul v-if="data.routes.length" class="space-y-2">
-      <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" hide-owner /></li>
+    <ul v-if="data.routes.length" class="grid gap-2 lg:grid-cols-2">
+      <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" hide-owner class="h-full" /></li>
     </ul>
     <UEmpty v-else icon="i-lucide-route" :title="t('profile.noPublic')" />
   </UContainer>

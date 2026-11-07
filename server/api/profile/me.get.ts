@@ -24,6 +24,7 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
 
   // A route its owner has since made private comes back without its route: skip it.
   const activities = activity.data.filter(a => a.route)
+  const todo = activities.filter(a => a.activity_type === 'saved')
   const completed = activities
     .filter(a => a.activity_type === 'completed')
     .map(a => ({ ...toRouteListItem(a.route!), completed_at: a.completed_at!, duration_s: a.duration_s, moving_s: a.moving_s }))
@@ -31,7 +32,9 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
   return {
     profile: profile.data,
     created: created.data.map(toRouteListItem),
-    todo_count: activities.filter(a => a.activity_type === 'saved').length,
+    todo_count: todo.length,
+    // Latest first, like the list itself
+    todo_thumbnails: todo.map(a => thumbnailPath(a.route!.thumbnail)).filter(path => path !== null).slice(0, COLLECTION_COVERS),
     completed,
     outings: statsOutings(
       outings,

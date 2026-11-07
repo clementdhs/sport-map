@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, storedAvatarFiles, storedPhotoFiles, supabaseAdmin } from '../admin'
 import type { Locator, Page } from '@playwright/test'
-import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration } from '../fixtures'
+import { ACCOUNT_ROUTE_NAME, expect, openProfileRoutes, test, waitForHydration } from '../fixtures'
 
 test.use({ role: 'account' })
 
@@ -165,6 +165,7 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('heading', { name: users.account.displayName, level: 1 })).toBeVisible()
   await expect(page.getByText('Bio mise à jour depuis les paramètres')).toBeVisible()
   // Its own routes, drawn, without "by" on its own profile.
+  await openProfileRoutes(page)
   const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
   await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
   await expect(card).not.toContainText(`par ${users.account.displayName}`)
@@ -279,7 +280,7 @@ test('offers five terrain accents in the settings, rendered by the server in a l
 
 test('counts a completed route in the profile summary and statistics', async ({ page, users }) => {
   const valueOf = (scope: Locator, label: string) => scope.locator('dt', { hasText: label }).locator('xpath=following-sibling::dd')
-  const outings = valueOf(page.getByRole('tabpanel'), 'Sorties')
+  const outings = valueOf(page.getByTestId('stats-totals'), 'Sorties')
   // The current year's totals at the top of the profile, the member's own and the one the family sees.
   const summaryOutings = valueOf(page.getByTestId('profile-summary'), 'Sorties')
   const emptyStats = page.getByText('Marque des parcours comme faits')

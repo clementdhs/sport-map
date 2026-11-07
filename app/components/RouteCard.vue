@@ -16,12 +16,12 @@ const props = defineProps<{
 const estimateDuration = useDurationEstimate()
 const start = computed(() => props.route.thumbnail ? thumbnailStart(props.route.thumbnail) : null)
 
+const minutes = computed(() => estimateDuration(props.route.sport_type, props.route.distance_m, props.route.elevation_gain_m))
 const stats = computed(() => {
-  const { sport_type, distance_m, elevation_gain_m, is_loop } = props.route
+  const { distance_m, elevation_gain_m, is_loop } = props.route
   return [
     { icon: 'i-lucide-move-horizontal', label: formatDistance(distance_m) },
     ...elevation_gain_m != null ? [{ icon: 'i-lucide-trending-up', label: t('routeCard.gain', { gain: Math.round(elevation_gain_m) }) }] : [],
-    { icon: 'i-lucide-clock', label: `~${formatDuration(estimateDuration(sport_type, distance_m, elevation_gain_m))}` },
     ...is_loop ? [{ icon: 'i-lucide-refresh-cw', label: t('routeCard.loop') }] : [],
   ]
 })
@@ -46,9 +46,10 @@ const stats = computed(() => {
         {{ route.name }}
         <UIcon v-if="!route.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" :aria-label="$t('routeCard.private')" />
       </p>
-      <div class="mt-1.5 flex flex-wrap gap-1">
+      <div class="mt-1.5 flex flex-wrap items-center gap-1">
         <SportBadge :sport="route.sport_type" />
         <UBadge v-for="stat in stats" :key="stat.icon" :icon="stat.icon" :label="stat.label" color="neutral" variant="outline" size="md" class="font-numbers text-sm whitespace-nowrap tabular-nums" />
+        <DurationSign :minutes="minutes" size="sm" />
       </div>
       <p v-if="route.rating_count || !hideOwner" class="mt-1.5 flex flex-wrap items-center gap-x-3 text-sm">
         <span v-if="route.rating_count" class="flex items-center gap-1.5">

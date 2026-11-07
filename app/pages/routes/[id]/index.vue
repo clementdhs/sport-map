@@ -4,6 +4,7 @@ import type { FetchError } from 'ofetch'
 import type { RouteDetail, RouteOuting, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat, OutingTrackPoint } from '#shared/utils/routes'
 import type { SheetSnap } from '~/components/MapSheetLayout.vue'
+import type { KeyFigure } from '~/utils/keyFigures'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
 
@@ -133,6 +134,27 @@ const pois = computed(() => {
 const osm = useRouteOsmPlaces(parcours.value.id, coordinates, parcours.value.osm_places)
 const osmPlaces = computed(() => placesAlongTrack(coordinates.value, osm.places.value))
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
+// "Fait ×N" (#229): the member's outings on the route, a route only marked as done counting once.
+const doneCount = computed(() => Math.max(outings.value.filter(outing => outing.is_mine).length, viewer.value.completed_at ? 1 : 0))
+
+const estimateDuration = useDurationEstimate()
+const durationMethod = useDurationMethod(() => parcours.value!.sport_type, () => parcours.value!.elevation_gain_m)
+const figures = computed((): KeyFigure[] => {
+  const p = parcours.value!
+  const [distance, distanceUnit] = splitUnit(formatDistance(p.distance_m))
+  const metres = (value: number | null) => value != null ? { value: String(Math.round(value)), unit: 'm' } : { value: '—' }
+  return [
+    { label: t('route.distance'), value: distance, unit: distanceUnit },
+    {
+      label: t('duration.short'),
+      value: formatDuration(estimateDuration(p.sport_type, p.distance_m, p.elevation_gain_m)),
+      highlight: true,
+      hint: durationMethod.value,
+    },
+    { label: t('route.gain'), ...metres(p.elevation_gain_m) },
+    { label: t('route.loss'), ...metres(p.elevation_loss_m) },
+  ]
+})
 const summary = computed(() => {
   const p = parcours.value!
   return `${t(`sports.${p.sport_type}`)} · ${formatDistance(p.distance_m)}${p.description ? ` — ${p.description}` : ''}`
@@ -280,7 +302,8 @@ useSeoMeta({
       {{ parcours.name }}
     </template>
 
-    <div class="space-y-1">
+    <div class="relative space-y-1" :class="{ 'pe-16': doneCount }">
+      <DoneStamp :count="doneCount" class="absolute end-0 -top-1" />
       <div class="flex flex-wrap items-center gap-2">
         <SportBadge :sport="parcours.sport_type" />
         <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
@@ -301,27 +324,7 @@ useSeoMeta({
       </p>
     </div>
 
-    <div class="grid grid-cols-4 divide-x divide-default rounded-lg bg-elevated py-2 text-center">
-      <div class="px-1">
-        <p class="text-xs text-muted">{{ t('route.distance') }}</p>
-        <p class="font-numbers text-lg font-semibold tabular-nums">{{ formatDistance(parcours.distance_m) }}</p>
-      </div>
-      <DurationEstimate
-        class="px-1"
-        compact
-        :sport="parcours.sport_type"
-        :distance-m="parcours.distance_m"
-        :elevation-gain-m="parcours.elevation_gain_m"
-      />
-      <div class="px-1">
-        <p class="text-xs text-muted">{{ t('route.gain') }}</p>
-        <p class="font-numbers text-lg font-semibold tabular-nums">{{ parcours.elevation_gain_m != null ? `${Math.round(parcours.elevation_gain_m)} m` : '—' }}</p>
-      </div>
-      <div class="px-1">
-        <p class="text-xs text-muted">{{ t('route.loss') }}</p>
-        <p class="font-numbers text-lg font-semibold tabular-nums">{{ parcours.elevation_loss_m != null ? `${Math.round(parcours.elevation_loss_m)} m` : '—' }}</p>
-      </div>
-    </div>
+    <KeyFigures :figures="figures" />
 
     <!-- One main action (#103), then the others as a row of icons with short labels. -->
     <div class="space-y-2">

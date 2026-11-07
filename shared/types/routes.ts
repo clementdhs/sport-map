@@ -1,4 +1,6 @@
 import type { LineString } from 'geojson'
+import type { BestEfforts } from '../utils/bestEfforts'
+import type { RecordKind } from '../utils/personalRecords'
 import type { OsmPlace } from '../utils/osmPlaces'
 import type { EditorState, OutingTrackPoint, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
@@ -106,8 +108,8 @@ export type MyProfile = {
   // Routes on the "À faire" list (activity "saved") the viewer can still see
   todo_count: number
   completed: (RouteListItem & OutingTimes & { completed_at: string })[]
-  // What the statistics count
-  outings: StatsOuting[]
+  // What the statistics and the records count
+  outings: RecordOuting[]
 }
 
 // One outing of the profile statistics: an outing recorded with the GPS, or a route only marked as done.
@@ -119,6 +121,22 @@ export type StatsOuting = Pick<RouteListItem, 'sport_type' | 'distance_m' | 'ele
   // Only for outings recorded with the GPS
   moving_s: number | null
 }
+
+// An outing of the member's own statistics, with what their records need (#140).
+export type RecordOuting = StatsOuting & {
+  route_name: string
+  // The outing recorded with the GPS, null for a route only marked as done
+  outing_id: string | null
+  // Distance the outing covered according to the GPS (m), null for a route only marked as done: the longest
+  // outing is the one that went furthest, not the one on the longest route.
+  covered_m: number | null
+  // Null without GPS points (marked as done, or recorded before #57)
+  best_efforts: BestEfforts | null
+}
+
+// GET /api/profile/me/record-breakers: the member's outings that beat one of their records when they were
+// recorded, by outing id.
+export type RecordBreakers = Record<string, RecordKind[]>
 
 // Totals of the current year's outings, shown at the top of a profile.
 export type ProfileSummary = {

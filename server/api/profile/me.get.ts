@@ -14,14 +14,11 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
       .select(`activity_type, completed_at, duration_s, moving_s, route:routes(${ROUTE_LIST_COLUMNS})`)
       .eq('user_id', user.sub)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('route_outings')
-      .select('route_id, started_at, duration_s, moving_s, route:routes(sport_type, distance_m, elevation_gain_m)')
-      .eq('user_id', user.sub),
+    ownRecordedOutings(supabase, user.sub),
   ])
 
-  if (!profile.data || !created.data || !activity.data || !outings.data) {
-    console.error('[GET /api/profile/me]', profile.error ?? created.error ?? activity.error ?? outings.error)
+  if (!profile.data || !created.data || !activity.data || !outings) {
+    console.error('[GET /api/profile/me]', profile.error ?? created.error ?? activity.error)
     throw apiError(event, 500, 'api.loadOwnProfileFailed')
   }
 
@@ -37,19 +34,14 @@ export default defineEventHandler(async (event): Promise<MyProfile> => {
     todo_count: activities.filter(a => a.activity_type === 'saved').length,
     completed,
     outings: statsOutings(
-      outings.data.filter(o => o.route).map(o => ({
-        ...o.route!,
-        route_id: o.route_id,
-        completed_at: outingEnd(o.started_at, o.duration_s),
-        moving_s: o.moving_s,
-      })),
-      completed.map(route => ({
+      outings,
+      completed.map(route => doneRecordOuting({
         route_id: route.id,
+        route_name: route.name,
         sport_type: route.sport_type,
         distance_m: route.distance_m,
         elevation_gain_m: route.elevation_gain_m,
         completed_at: route.completed_at,
-        moving_s: null,
       })),
     ),
   }

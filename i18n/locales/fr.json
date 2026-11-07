@@ -1007,6 +1007,32 @@
     "caption": "Statistiques {range}",
     "weekOf": "Semaine du {date}"
   },
+  "records": {
+    "title": "Records",
+    "year": "Période des records",
+    "allTime": "Depuis toujours",
+    "empty": "Aucune sortie sur cette période.",
+    "timesHint": "Meilleurs temps en mouvement, mesurés sur les points GPS des sorties enregistrées avec sportmap.",
+    "bestTimes": "Meilleurs temps · {sport}",
+    "metrics": {
+      "distance": "Plus longue sortie",
+      "gain": "Plus gros D+",
+      "moving": "Plus longue durée",
+      "hour": "Meilleure heure"
+    },
+    "efforts": {
+      "1k": "1 km",
+      "5k": "5 km",
+      "10k": "10 km",
+      "20k": "20 km",
+      "40k": "40 km",
+      "half": "Semi-marathon",
+      "marathon": "Marathon"
+    },
+    "pace": "{pace} /km",
+    "inHour": "en 1 h",
+    "badge": "Record !"
+  },
   "settings": {
     "profileUpdated": "Profil mis à jour",
     "sectionsLabel": "Sections des paramètres",

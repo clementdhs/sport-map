@@ -1,4 +1,5 @@
 import type { StyleSpecification } from 'maplibre-gl'
+import { switchAppColors, topoStyle } from '~/utils/topoStyle'
 
 // Map style loaded by every map, and prefetched by the offline preparation: both must use the same URL.
 // Without a MapTiler key the app still runs, on MapLibre's low-detail demo tiles (no dark variant).
@@ -46,10 +47,19 @@ export async function availableStyleUrl(maptilerKey: string, dark: boolean): Pro
   }
 }
 
-// `transformStyle` for `map.setStyle(url, { diff: true })` when the theme changes: the next style keeps what the
-// app added to the previous one (sources, layers above the style, Plan IGN, 3D terrain) and the visibility of the
-// style's layers (hidden under Plan IGN, app/utils/basemaps.ts), so MapLibre only applies the colour changes.
-export function keepAppLayers(previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification {
+// `transformStyle` for every `map.setStyle(url)` of MapView: MapTiler's style in the topo colours (#230,
+// app/utils/topoStyle.ts), keeping what the app drew on the previous one (keepAppLayers) in the new mode's colours.
+// Without a key, the demo style is left as it is.
+export function mapStyleTransform(maptilerKey: string, dark: boolean) {
+  return (previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification =>
+    keepAppLayers(previous, maptilerKey ? topoStyle(next, dark) : next, dark)
+}
+
+// When the theme changes (`map.setStyle(url)` diffs by default): the next style keeps what the app added to the
+// previous one (sources, layers above the style, Plan IGN, 3D terrain) and the visibility of the style's layers
+// (hidden under Plan IGN, app/utils/basemaps.ts), so MapLibre only applies the colour changes. With `dark`, the
+// app's layers switch to that mode's colours (switchAppColors).
+export function keepAppLayers(previous: StyleSpecification | undefined, next: StyleSpecification, dark?: boolean): StyleSpecification {
   if (!previous) return next
   const styleIds = new Set(next.layers.map(layer => layer.id))
   const visibility = new Map(previous.layers.map(layer => [layer.id, layer.layout?.visibility]))
@@ -63,7 +73,9 @@ export function keepAppLayers(previous: StyleSpecification | undefined, next: St
           ? { ...layer, layout: { ...layer.layout, visibility: shown } } as typeof layer
           : layer
       }),
-      ...previous.layers.filter(layer => !styleIds.has(layer.id)),
+      ...previous.layers
+        .filter(layer => !styleIds.has(layer.id))
+        .map(layer => (dark === undefined ? layer : switchAppColors(layer, dark))),
     ],
     ...(previous.terrain ? { terrain: previous.terrain } : {}),
   }

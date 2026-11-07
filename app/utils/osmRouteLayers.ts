@@ -2,10 +2,11 @@ import type { FeatureCollection, LineString, MultiLineString, Point } from 'geoj
 import type { FilterSpecification, GeoJSONSource, Map } from 'maplibre-gl'
 import type { OsmRoute } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
-import { END_COLOR, ROUTE_COLOR, START_COLOR } from '~/utils/routeLayers'
+import { markerPrefix } from '~/utils/mapMarkers'
+import { mapColor } from '~/utils/topoStyle'
 
 // Marked routes of OpenStreetMap (#69): dozens of lines that often share paths, all in one colour; the highlighted one
-// is drawn again on top, in the colour of the app's routes.
+// is drawn again on top, in the colour of the app's routes (rust, #230).
 
 // Categorical slot 1 of the dataviz palette, as the first loop proposal. Shared with the map legend.
 export const OSM_ROUTE_LINE = { color: '#2a78d6', width: 3, opacity: 0.8 }
@@ -57,7 +58,7 @@ export function addOsmRouteLayers(map: Map) {
     source: SOURCE,
     filter: highlightFilter(null),
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 8 },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': 8 },
   })
   map.addLayer({
     id: HIGHLIGHT_LAYERS[1]!,
@@ -65,7 +66,7 @@ export function addOsmRouteLayers(map: Map) {
     source: SOURCE,
     filter: highlightFilter(null),
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ROUTE_COLOR, 'line-width': 5 },
+    paint: { 'line-color': mapColor(map, 'track'), 'line-width': 5 },
   })
   map.addLayer({
     id: OSM_ROUTES_HIT_LAYER,
@@ -84,7 +85,7 @@ export function setOsmRouteHighlight(map: Map, id: number | null) {
 }
 
 // A section of the route (#72), drawn over it like the app's routes, with its departure and arrival (the editor's
-// green and red points), which are dragged along the route.
+// start and end squares), which are dragged along the route.
 const SECTION_SOURCE = 'osm-section'
 const SECTION_ENDS_SOURCE = 'osm-section-ends'
 export const OSM_SECTION_ENDS_HIT_LAYER = 'osm-section-ends-hit'
@@ -123,24 +124,24 @@ export function addOsmSectionLayers(map: Map) {
     type: 'line',
     source: SECTION_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 9 },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': 9 },
   })
   map.addLayer({
     id: 'osm-section',
     type: 'line',
     source: SECTION_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ROUTE_COLOR, 'line-width': 5 },
+    paint: { 'line-color': mapColor(map, 'track'), 'line-width': 5 },
   })
+  const prefix = markerPrefix(map)
   map.addLayer({
     id: 'osm-section-ends',
-    type: 'circle',
+    type: 'symbol',
     source: SECTION_ENDS_SOURCE,
-    paint: {
-      'circle-radius': 8,
-      'circle-color': ['match', ['get', 'end'], 'from', START_COLOR, END_COLOR],
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-width': 2,
+    layout: {
+      'icon-image': ['match', ['get', 'end'], 'from', `${prefix}start`, `${prefix}end`],
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
     },
   })
   map.addLayer({

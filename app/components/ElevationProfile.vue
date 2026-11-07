@@ -187,7 +187,7 @@ const summary = computed(() =>
             stroke-width="1"
             vector-effect="non-scaling-stroke"
           />
-          <path :d="areaPath" :fill="ROUTE_COLOR" fill-opacity="0.1" />
+          <path :d="areaPath" :fill="TRACK_CSS_COLOR" fill-opacity="0.1" />
           <path
             v-for="(piece, i) in slopePaths"
             :key="i"
@@ -203,7 +203,7 @@ const summary = computed(() =>
             v-if="!slopePaths.length"
             :d="linePath"
             fill="none"
-            :stroke="ROUTE_COLOR"
+            :stroke="TRACK_CSS_COLOR"
             stroke-width="2"
             stroke-linejoin="round"
             stroke-linecap="round"
@@ -215,7 +215,7 @@ const summary = computed(() =>
           <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${flyoverMarker.left}%` }" />
           <div
             class="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-(--ui-bg)"
-            :style="{ left: `${flyoverMarker.left}%`, top: `${flyoverMarker.top}%`, backgroundColor: ROUTE_COLOR }"
+            :style="{ left: `${flyoverMarker.left}%`, top: `${flyoverMarker.top}%`, backgroundColor: TRACK_CSS_COLOR }"
             data-testid="profile-flyover-marker"
           />
         </template>
@@ -224,7 +224,7 @@ const summary = computed(() =>
           <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${active.left}%` }" />
           <div
             class="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-(--ui-bg)"
-            :style="{ left: `${active.left}%`, top: `${active.top}%`, backgroundColor: ROUTE_COLOR }"
+            :style="{ left: `${active.left}%`, top: `${active.top}%`, backgroundColor: TRACK_CSS_COLOR }"
           />
           <div
             class="pointer-events-none absolute top-0 z-10 rounded-md border border-default bg-default px-2 py-1 text-xs whitespace-nowrap shadow-sm"

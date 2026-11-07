@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
 import fr from '../../i18n/locales/fr.json'
 import { SLOPE_CLASSES } from '#shared/utils/slopes'
+import { CASING_COLOR } from '~/utils/routeLayers'
 import { APP_LEGEND, MAPTILER_LEGEND, maptilerLegend, paintSdf, svgDashes } from '~/utils/mapLegend'
 import type { IconPaint, LegendGroup, LegendImage } from '~/utils/mapLegend'
 
@@ -127,7 +128,7 @@ describe('legends', () => {
   it('draws the track colourings with the route page\'s classes', () => {
     const slopes = APP_LEGEND.find(group => group.title === 'mapLegend.app.slopes')!
     expect(slopes.items.map(({ samples }) => samples[0])).toEqual(SLOPE_CLASSES.map(({ color }) => expect.objectContaining({
-      parts: [expect.objectContaining({ color: '#ffffff' }), expect.objectContaining({ color })],
+      parts: [expect.objectContaining({ color: CASING_COLOR }), expect.objectContaining({ color })],
     })))
   })
 

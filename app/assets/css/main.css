@@ -185,10 +185,61 @@ body {
   --sport-soft: color-mix(in oklab, var(--sport-400) 15%, transparent);
 }
 
-/* Map popups and controls follow the theme, like the MapTiler style (#109). */
+/* The tracks' rust outside the map canvas (elevation profile, flyover), as on the maps (APP_MAP_COLORS, #230). */
+:root {
+  --map-track: #b8461f;
+}
+.dark {
+  --map-track: #e07a4f;
+}
+
+/* HTML markers of the home map (RouteSearch), in the colours of the map's style (data-map-dark), which may differ
+   from the app's mode (#151): groups as ink squares like the numbered waypoints, the hovered route framed in rust. */
+.map-cluster {
+  background: #1d2520;
+  color: #fbf8f1;
+}
+[data-map-dark] .map-cluster {
+  background: #ece6d6;
+  color: #141815;
+}
+.map-highlight {
+  border: 3px solid #b8461f;
+  box-shadow: 0 0 0 2px #fffdf8, 0 2px 6px rgb(29 37 32 / 0.25);
+}
+[data-map-dark] .map-highlight {
+  border-color: #e07a4f;
+  box-shadow: 0 0 0 2px #141815, 0 2px 6px rgb(0 0 0 / 0.5);
+}
+
+/* Map popups and controls follow the theme, like the MapTiler style (#109): surfaces with a sand edge (#230). */
 /* `.maplibregl-popup` in front of MapLibre's own selectors: maplibre-gl.css loads later (MapView's chunk). */
 .maplibregl-popup {
   --popup-bg: var(--ui-bg);
+}
+.maplibregl-popup .maplibregl-popup-content {
+  border-radius: calc(var(--ui-radius) * 1.5);
+  padding: 8px 12px;
+}
+.maplibregl-map .maplibregl-ctrl-group {
+  background: var(--ui-bg);
+  border-radius: calc(var(--ui-radius) * 1.25);
+}
+/* `:not(:empty)` as maplibre-gl.css's own shadow, which loads later. */
+.maplibregl-map .maplibregl-ctrl-group:not(:empty) {
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 2px 6px rgb(29 37 32 / 0.12);
+}
+.maplibregl-map .maplibregl-ctrl-group button + button {
+  border-top-color: var(--ui-border);
+}
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib,
+.maplibregl-map .maplibregl-ctrl-scale {
+  background-color: color-mix(in srgb, var(--ui-bg) 80%, transparent);
+}
+.maplibregl-map .maplibregl-ctrl-scale {
+  border-color: var(--ui-text-highlighted);
+  color: var(--ui-text-highlighted);
+  font-weight: 600;
 }
 .dark .maplibregl-popup {
   --popup-bg: var(--ui-bg-elevated);

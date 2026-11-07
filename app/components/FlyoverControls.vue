@@ -16,7 +16,7 @@ const HEIGHT = 100
 
 const track = computed(() => props.flyover.subject!.track)
 const outing = computed(() => props.flyover.subject?.kind === 'outing')
-const color = computed(() => (outing.value ? GPS_COLOR : ROUTE_COLOR))
+const color = computed(() => (outing.value ? GPS_COLOR : TRACK_CSS_COLOR))
 const length = computed(() => track.value.line.length)
 const along = computed(() => props.flyover.along ?? 0)
 const ended = computed(() => props.flyover.progress >= 1)

@@ -2,7 +2,7 @@ import type { FeatureCollection, LineString, MultiLineString, Point } from 'geoj
 import type { FilterSpecification, GeoJSONSource, Map } from 'maplibre-gl'
 import type { OsmRoute } from '#shared/utils/osmRoutes'
 import type { LngLat } from '#shared/utils/routes'
-import { markerPrefix } from '~/utils/mapMarkers'
+import { addMarkerImages } from '~/utils/mapMarkers'
 import { mapColor } from '~/utils/topoStyle'
 
 // Marked routes of OpenStreetMap (#69): dozens of lines that often share paths, all in one colour; the highlighted one
@@ -133,13 +133,13 @@ export function addOsmSectionLayers(map: Map) {
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': mapColor(map, 'track'), 'line-width': 5 },
   })
-  const prefix = markerPrefix(map)
+  addMarkerImages(map, ['sm-start', 'sm-end'])
   map.addLayer({
     id: 'osm-section-ends',
     type: 'symbol',
     source: SECTION_ENDS_SOURCE,
     layout: {
-      'icon-image': ['match', ['get', 'end'], 'from', `${prefix}start`, `${prefix}end`],
+      'icon-image': ['match', ['get', 'end'], 'from', 'sm-start', 'sm-end'],
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
     },

@@ -1,11 +1,13 @@
 import type { ExpressionSpecification, Map } from 'maplibre-gl'
 import { SPORT_TYPES, type SportType } from '#shared/utils/routes'
-import { isMapDark, MARKER_PREFIX } from '~/utils/topoStyle'
+import { isMapDark } from '~/utils/topoStyle'
 
 // The app's markers in the "balisage" look (#230): the start as a yellow square, waypoints as numbered ink squares,
 // the end as a red square, a route's start on the home map as its sport's two-bar waymark. Drawn as images (no
-// glyphs needed, as the e2e style has none), named after the mode first ("sm-light-via-3"): MapView draws each one
-// the first time a layer asks for it (`styleimagemissing`), and a theme change swaps the prefix (switchAppColors).
+// glyphs needed, as the e2e style has none) named "sm-start", "sm-via-3", "sm-sport-trail": MapView draws each one
+// the first time a layer asks for it (`styleimagemissing`), in the colours of the map's style, and redraws them in
+// place when that style turns light or dark (`redrawMarkerImages`, same size in both modes). Swapping image names
+// instead made MapLibre drop the symbols whose new image arrived during the style diff.
 
 export type MarkerMode = 'light' | 'dark'
 
@@ -83,11 +85,11 @@ export function sportMarker(mode: MarkerMode, sport: SportType): MarkerDrawing {
   }
 }
 
-// The drawing an image name stands for ("sm-dark-start", "sm-light-via-12", "sm-light-sport-trail"), if any.
-export function markerDrawing(id: string): MarkerDrawing | undefined {
-  const match = /^sm-(light|dark)-(start|end|via|sport)(?:-(.+))?$/.exec(id)
+// The drawing an image name stands for ("sm-start", "sm-via-12", "sm-sport-trail") in this mode, if any.
+export function markerDrawing(id: string, mode: MarkerMode): MarkerDrawing | undefined {
+  const match = /^sm-(start|end|via|sport)(?:-(.+))?$/.exec(id)
   if (!match) return undefined
-  const [, mode, kind, arg] = match as unknown as [string, MarkerMode, string, string | undefined]
+  const [, kind, arg] = match as unknown as [string, string, string | undefined]
   if (kind === 'start') return startMarker(mode)
   if (kind === 'end') return endMarker(mode)
   if (kind === 'via') return arg && /^\d+$/.test(arg) ? viaMarker(mode, Number(arg)) : undefined
@@ -95,16 +97,8 @@ export function markerDrawing(id: string): MarkerDrawing | undefined {
   return sport && sportMarker(mode, sport)
 }
 
-// Prefix of this map's marker images ("sm-light-" or "sm-dark-").
-export function markerPrefix(map: Map): string {
-  return MARKER_PREFIX[isMapDark(map) ? 'dark' : 'light']
-}
-
 // `icon-image` of a route's points: start, end, or the waypoint numbered by its `index` property.
-export function routePointImage(map: Map): ExpressionSpecification {
-  const prefix = markerPrefix(map)
-  return ['match', ['get', 'role'], 'start', `${prefix}start`, 'end', `${prefix}end`, ['concat', `${prefix}via-`, ['to-string', ['get', 'index']]]]
-}
+export const ROUTE_POINT_IMAGE: ExpressionSpecification = ['match', ['get', 'role'], 'start', 'sm-start', 'end', 'sm-end', ['concat', 'sm-via-', ['to-string', ['get', 'index']]]]
 
 const PIXEL_RATIO = 2
 
@@ -136,9 +130,33 @@ function drawMarker({ width, height, shapes, label }: MarkerDrawing): ImageData 
   return context.getImageData(0, 0, canvas.width, canvas.height)
 }
 
-// For MapView's `styleimagemissing`: draws the app's marker images, ignores any other name.
+const mode = (map: Map): MarkerMode => (isMapDark(map) ? 'dark' : 'light')
+
+// Draws one of the app's marker images, unless the map has it; ignores any other name. MapView also calls it on
+// `styleimagemissing`, as a fallback.
 export function addMarkerImage(map: Map, id: string) {
   if (map.hasImage(id)) return
-  const drawing = markerDrawing(id)
+  const drawing = markerDrawing(id, mode(map))
   if (drawing) map.addImage(id, drawMarker(drawing), { pixelRatio: PIXEL_RATIO })
+}
+
+// The images a layer will use, added before it or its data: MapLibre doesn't draw the symbols of a first layout
+// whose images only arrive through `styleimagemissing`.
+export function addMarkerImages(map: Map, ids: string[]) {
+  for (const id of ids) addMarkerImage(map, id)
+}
+
+// Images of a route's points (ROUTE_POINT_IMAGE): start, end and the waypoints numbered 1 to count - 2.
+export function routePointImages(count: number): string[] {
+  return ['sm-start', 'sm-end', ...Array.from({ length: Math.max(count - 2, 0) }, (_, i) => `sm-via-${i + 1}`)]
+}
+
+export const SPORT_MARK_IMAGES = SPORT_TYPES.map(sport => `sm-sport-${sport}`)
+
+// After the style turned light or dark: the marker images already drawn, in its colours.
+export function redrawMarkerImages(map: Map) {
+  for (const id of map.listImages()) {
+    const drawing = markerDrawing(id, mode(map))
+    if (drawing) map.updateImage(id, drawMarker(drawing))
+  }
 }

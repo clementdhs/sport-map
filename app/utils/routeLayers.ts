@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
 import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
-import { routePointImage } from '~/utils/mapMarkers'
+import { addMarkerImages, ROUTE_POINT_IMAGE, routePointImages } from '~/utils/mapMarkers'
 import { APP_MAP_COLORS, mapColor } from '~/utils/topoStyle'
 
 // The app's tracks in rust (#230), light mode's; maps in the dark style use APP_MAP_COLORS.track.dark
@@ -53,6 +53,7 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
 export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { editable = false } = {}) {
   // lineMetrics: needed by line-gradient, to colour the track by slope, surface or difficulty.
   map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line), lineMetrics: true })
+  addMarkerImages(map, routePointImages(points.length))
   map.addSource(POINTS_SOURCE, { type: 'geojson', data: pointsData(points) })
 
   map.addLayer({
@@ -75,7 +76,7 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
     type: 'symbol',
     source: POINTS_SOURCE,
     layout: {
-      'icon-image': routePointImage(map),
+      'icon-image': ROUTE_POINT_IMAGE,
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
       'symbol-sort-key': ['match', ['get', 'role'], 'start', 2, 'end', 1, 0],
@@ -113,6 +114,7 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
 
 export function setRouteLayerData(map: Map, { line, points }: RouteLayerData) {
   map.getSource<GeoJSONSource>(LINE_SOURCE)?.setData(lineData(line))
+  addMarkerImages(map, routePointImages(points.length))
   map.getSource<GeoJSONSource>(POINTS_SOURCE)?.setData(pointsData(points))
 }
 

@@ -120,6 +120,7 @@ async function onLoad(instance: Map) {
   popup = new maplibre.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
 
   instance.addSource(SOURCE, { type: 'geojson', data: resultsData(props.results), cluster: true, clusterRadius: 40 })
+  addMarkerImages(instance, SPORT_MARK_IMAGES)
   // Starts outside any group, as their sport's waymark (#230); the groups themselves are HTML markers
   // (syncClusters).
   instance.addLayer({
@@ -128,7 +129,7 @@ async function onLoad(instance: Map) {
     source: SOURCE,
     filter: ['!', ['has', 'point_count']],
     layout: {
-      'icon-image': ['concat', `${markerPrefix(instance)}sport-`, ['get', 'sport']],
+      'icon-image': ['concat', 'sm-sport-', ['get', 'sport']],
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
     },

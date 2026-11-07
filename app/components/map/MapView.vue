@@ -146,6 +146,8 @@ onMounted(async () => {
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
   instance.on('style.load', () => {
     styleShown.value = styleRequested
+    // Light or dark now: the marker images in its colours.
+    redrawMarkerImages(instance)
   })
   // Before the first tiles are requested, so that a basemap drawn over the style doesn't load the style's own.
   instance.once('style.load', () => {
@@ -202,11 +204,18 @@ async function followTheme() {
 }
 
 // The style in the topo colours (#230), dark or light as the URL says (offline, it may be the other one than
-// asked for), and the app's layers with it.
+// asked for), and the app's layers with it. The map's mode changes only once the style arrives, just before
+// MapLibre applies it: layers added meanwhile take the colours on screen, which the transform then switches, and a
+// failed request changes nothing.
 function requestStyle(instance: Map, url: string) {
   const styleDark = !!maptilerKey && url === darkStyleUrl
-  setMapDark(instance, styleDark)
-  instance.setStyle(url, { transformStyle: mapStyleTransform(maptilerKey, styleDark) })
+  const transform = mapStyleTransform(maptilerKey, styleDark)
+  instance.setStyle(url, {
+    transformStyle: (previous, next) => {
+      setMapDark(instance, styleDark)
+      return transform(previous, next)
+    },
+  })
 }
 watch([dark, online], followTheme)
 

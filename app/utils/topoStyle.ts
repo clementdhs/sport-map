@@ -245,7 +245,7 @@ export function topoStyle(style: StyleSpecification, dark: boolean): StyleSpecif
     const next = (change
       ? {
           ...layer,
-          ...(change.paint && 'paint' in layer ? { paint: { ...layer.paint, ...change.paint } } : {}),
+          ...(change.paint ? { paint: { ...('paint' in layer ? layer.paint : {}), ...change.paint } } : {}),
           ...(change.layout ? { layout: { ...layer.layout, ...change.layout } } : {}),
         }
       : layer) as LayerSpecification
@@ -283,10 +283,6 @@ export function mapColor(map: Map, name: MapColorName): string {
   return APP_MAP_COLORS[name][isMapDark(map) ? 'dark' : 'light']
 }
 
-// Names of the app's marker images start with their mode (app/utils/mapMarkers.ts), so swapping the prefix swaps
-// the image.
-export const MARKER_PREFIX = { light: 'sm-light-', dark: 'sm-dark-' } as const
-
 function swapValue(value: unknown, swap: (text: string) => string): unknown {
   if (typeof value === 'string') return swap(value)
   if (Array.isArray(value)) return value.map(item => swapValue(item, swap))
@@ -296,14 +292,13 @@ function swapValue(value: unknown, swap: (text: string) => string): unknown {
   return value
 }
 
-// One of the app's layers in the other mode's colours: every literal of APP_MAP_COLORS and every marker image name
-// of the other mode becomes this mode's, in its paint and layout (expressions included).
+// One of the app's layers in the other mode's colours: every literal of APP_MAP_COLORS becomes this mode's, in its
+// paint and layout (expressions included). Marker images keep their names and are redrawn (app/utils/mapMarkers.ts).
 export function switchAppColors<T extends LayerSpecification>(layer: T, dark: boolean): T {
   const from = dark ? 'light' : 'dark'
   const to = dark ? 'dark' : 'light'
   const colors = new globalThis.Map<string, string>(Object.values(APP_MAP_COLORS).map(pair => [pair[from], pair[to]]))
-  const swap = (text: string) => colors.get(text.toLowerCase())
-    ?? (text.startsWith(MARKER_PREFIX[from]) ? MARKER_PREFIX[to] + text.slice(MARKER_PREFIX[from].length) : text)
+  const swap = (text: string) => colors.get(text.toLowerCase()) ?? text
   const next = { ...layer }
   if ('paint' in layer && layer.paint) Object.assign(next, { paint: swapValue(layer.paint, swap) })
   if (layer.layout) Object.assign(next, { layout: swapValue(layer.layout, swap) })

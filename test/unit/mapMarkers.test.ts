@@ -3,16 +3,23 @@ import { SPORT_TYPES } from '#shared/utils/routes'
 import { endMarker, markerDrawing, SPORT_MARK_COLORS, sportMarker, startMarker, viaMarker } from '~/utils/mapMarkers'
 
 describe('markerDrawing', () => {
-  it('reads the mode, the kind and its argument from the image name', () => {
-    expect(markerDrawing('sm-light-start')).toEqual(startMarker('light'))
-    expect(markerDrawing('sm-dark-end')).toEqual(endMarker('dark'))
-    expect(markerDrawing('sm-dark-via-12')).toEqual(viaMarker('dark', 12))
-    expect(markerDrawing('sm-light-sport-trail')).toEqual(sportMarker('light', 'trail'))
+  it('reads the kind and its argument from the image name', () => {
+    expect(markerDrawing('sm-start', 'light')).toEqual(startMarker('light'))
+    expect(markerDrawing('sm-end', 'dark')).toEqual(endMarker('dark'))
+    expect(markerDrawing('sm-via-12', 'dark')).toEqual(viaMarker('dark', 12))
+    expect(markerDrawing('sm-sport-trail', 'light')).toEqual(sportMarker('light', 'trail'))
+  })
+
+  it('keeps the size of each image in both modes, so it can be redrawn in place', () => {
+    for (const id of ['sm-start', 'sm-end', 'sm-via-7', 'sm-via-42', 'sm-sport-hiking']) {
+      const { width, height } = markerDrawing(id, 'light')!
+      expect(markerDrawing(id, 'dark')).toMatchObject({ width, height })
+    }
   })
 
   it('ignores other images and unknown arguments', () => {
-    for (const id of ['triangle', 'gps-arrow', 'sm-sepia-start', 'sm-light-via-', 'sm-light-via-x', 'sm-light-sport-golf', 'sm-light-sport']) {
-      expect(markerDrawing(id)).toBeUndefined()
+    for (const id of ['triangle', 'gps-arrow', 'sm-flag', 'sm-via-', 'sm-via-x', 'sm-sport-golf', 'sm-sport']) {
+      expect(markerDrawing(id, 'light')).toBeUndefined()
     }
   })
 })

@@ -64,6 +64,11 @@ describe('topoStyle', () => {
     expect(dark.layers.filter(item => item.id === ROAD_CASING_LAYER)).toHaveLength(1)
   })
 
+  it('paints a layer MapTiler left in its default colours', () => {
+    const bare = { ...OUTDOOR, layers: [{ id: 'Background', type: 'background' }] } as StyleSpecification
+    expect(layer(topoStyle(bare, false), 'Background').paint).toEqual({ 'background-color': TOPO_PALETTES.light.background })
+  })
+
   it('leaves a style without Outdoor\'s layers alone', () => {
     const demo = { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#fff' } }] } as StyleSpecification
     expect(topoStyle(demo, true).layers).toEqual(demo.layers)
@@ -77,20 +82,10 @@ describe('switchAppColors', () => {
     source: 'route-line',
     paint: { 'line-color': APP_MAP_COLORS.track.light, 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
   }
-  const points: LayerSpecification = {
-    id: 'route-points',
-    type: 'symbol',
-    source: 'route-points',
-    layout: { 'icon-image': ['match', ['get', 'role'], 'start', 'sm-light-start', ['concat', 'sm-light-via-', ['to-string', ['get', 'index']]]] },
-  }
-
-  it('turns the light colours and marker images dark, and back', () => {
+  it('turns the light colours dark, and back', () => {
     const dark = switchAppColors(track, true)
     expect(dark.paint).toEqual({ 'line-color': APP_MAP_COLORS.track.dark, 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] })
     expect(switchAppColors(dark, false)).toEqual(track)
-    expect(switchAppColors(points, true).layout).toEqual({
-      'icon-image': ['match', ['get', 'role'], 'start', 'sm-dark-start', ['concat', 'sm-dark-via-', ['to-string', ['get', 'index']]]],
-    })
   })
 
   it('changes nothing already in that mode, nor other colours', () => {

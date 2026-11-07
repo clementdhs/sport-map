@@ -1,7 +1,7 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
 import type { GeoJSONSource, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
-import { markerPrefix } from '~/utils/mapMarkers'
+import { addMarkerImages } from '~/utils/mapMarkers'
 import { mapColor } from '~/utils/topoStyle'
 
 // Automatic loop proposals (#50), over the editor's layers (its track is hidden meanwhile).
@@ -66,11 +66,12 @@ export function addLoopLayers(map: Map) {
     paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 16 },
   })
   // Same look as a route's start.
+  addMarkerImages(map, ['sm-start'])
   map.addLayer({
     id: 'loop-start',
     type: 'symbol',
     source: START_SOURCE,
-    layout: { 'icon-image': `${markerPrefix(map)}start`, 'icon-allow-overlap': true, 'icon-ignore-placement': true },
+    layout: { 'icon-image': 'sm-start', 'icon-allow-overlap': true, 'icon-ignore-placement': true },
   })
 }
 

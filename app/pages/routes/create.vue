@@ -10,5 +10,5 @@ if (editor.editingId) editor.reset()
 </script>
 
 <template>
-  <RouteEditorWorkspace :submit-label="t('editor.submitCreate')" back="/" />
+  <RouteEditorWorkspace :submit-label="t('editor.submitCreate')" back="/" remember-mode />
 </template>

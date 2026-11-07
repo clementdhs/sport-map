@@ -411,7 +411,14 @@
     "undo": "Annuler la dernière action",
     "clear": "Effacer le tracé",
     "routing": "Calcul en cours",
-    "start": "Clique sur la carte pour placer les points de ton parcours, ou importe un fichier GPX.",
+    "next": "Clique sur la carte pour placer le point suivant.",
+    "startHere": "Partir de ma position",
+    "locateFailed": "Position introuvable",
+    "haveTrack": "Déjà un tracé ?",
+    "modes": {
+      "loop": "Boucle",
+      "manual": "À la main"
+    },
     "quotaReached": "Limite de calculs atteinte pour aujourd'hui",
     "quotaReachedHint": "Pour préserver le service gratuit de calcul d'itinéraire, chacun a un nombre limité de calculs par jour. D'ici demain, les nouveaux segments sont tracés en ligne droite, sans dénivelé.",
     "quotaLeft": "Plus que {count} calcul d'itinéraire aujourd'hui. | Plus que {count} calculs d'itinéraire aujourd'hui.",
@@ -453,15 +460,13 @@
     "reroute": "Recalculer pour {sport}"
   },
   "loop": {
-    "open": "Générer une boucle",
     "title": "Boucle automatique",
-    "close": "Fermer la boucle automatique",
     "start": "Départ",
+    "noStart": "Pas encore de départ.",
     "placeStart": "Clique sur la carte pour placer le départ.",
     "startPlaced": "Départ placé (point vert sur la carte).",
     "myPosition": "Ma position",
     "pickOnMap": "Choisir sur la carte",
-    "locateFailed": "Position introuvable",
     "target": "Boucle selon",
     "distance": "Distance",
     "duration": "Durée",

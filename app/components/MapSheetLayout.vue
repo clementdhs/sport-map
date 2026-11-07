@@ -196,6 +196,13 @@ provide(MAP_INSET_KEY, () => {
 })
 
 const sheetHeight = computed(() => dragHeight.value === null ? SNAP_HEIGHTS[snap.value] : `${dragHeight.value}px`)
+// Height of the sheet above the map's bottom edge, for the overlay. The map stops above the collapsed sheet, so the
+// half sheet's 50 % of the layout is 50 % of the map plus half the peek: as a share of the map it is
+// 50 % − peek / 2 (it hid the overlay's lower half under the half sheet).
+const sheetAboveMap = computed(() => {
+  if (dragHeight.value !== null) return `calc(${dragHeight.value}px - var(--sheet-peek))`
+  return snap.value === 'half' ? 'calc(50% - var(--sheet-peek) / 2)' : '0px'
+})
 // The overlay leaves when the sheet covers the map, and while it is dragged above half height.
 const overlayHidden = computed(() => dragHeight.value === null
   ? snap.value === 'full'
@@ -215,8 +222,9 @@ const overlayHidden = computed(() => dragHeight.value === null
         <!-- Above the sheet's edge on phones, clear of the scale and attribution. -->
         <div
           v-if="$slots.overlay"
-          class="pointer-events-none absolute inset-x-3 bottom-[max(calc(var(--sheet-height)-var(--sheet-peek)+0.75rem),2.5rem)] z-10 flex justify-center *:pointer-events-auto md:bottom-10"
+          class="pointer-events-none absolute inset-x-3 bottom-[max(calc(var(--sheet-above-map)+0.75rem),2.5rem)] z-10 flex justify-center *:pointer-events-auto md:bottom-10"
           :class="{ 'max-md:hidden': overlayHidden, 'transition-[bottom] duration-200 ease-out motion-reduce:transition-none': dragHeight === null }"
+          :style="{ '--sheet-above-map': sheetAboveMap }"
         >
           <slot name="overlay" />
         </div>

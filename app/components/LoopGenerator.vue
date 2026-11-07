@@ -7,7 +7,6 @@ const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 const { t } = useI18n()
 const { formatDistance } = useFormat()
-const toast = useToast()
 
 const sportItems = useSportItems()
 const estimateDuration = useDurationEstimate()
@@ -32,27 +31,7 @@ watch(() => loop.proposals.length, async (count, before) => {
   list.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 })
 
-const locating = ref(false)
-
-function locate() {
-  if (!('geolocation' in navigator)) {
-    toast.add({ title: t('loop.locateFailed'), description: t('gps.unsupported'), color: 'error' })
-    return
-  }
-  locating.value = true
-  navigator.geolocation.getCurrentPosition(
-    ({ coords }) => {
-      locating.value = false
-      loop.setStart([coords.longitude, coords.latitude])
-    },
-    ({ code, PERMISSION_DENIED }) => {
-      locating.value = false
-      const denied = isNativeApp() ? t('gps.deniedApp') : t('gps.denied')
-      toast.add({ title: t('loop.locateFailed'), description: code === PERMISSION_DENIED ? denied : t('gps.unavailable'), color: 'error' })
-    },
-    { maximumAge: 60_000, timeout: 20_000 },
-  )
-}
+const { locating, locate } = useCurrentPosition()
 
 function choose(index: number) {
   if (editor.waypoints.length && !window.confirm(t('loop.replaceConfirm'))) return
@@ -66,18 +45,14 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
 </script>
 
 <template>
+  <!-- The editor's mode bar names the panel and leaves it; the instruction to place the start floats on the map. -->
   <section class="space-y-4" aria-labelledby="loop-title">
-    <div class="flex items-center justify-between gap-2">
-      <h2 id="loop-title" class="text-base font-semibold">{{ t('loop.title') }}</h2>
-      <UButton icon="i-lucide-x" color="neutral" variant="ghost" :aria-label="t('loop.close')" @click="loop.hide()" />
-    </div>
+    <h2 id="loop-title" class="sr-only">{{ t('loop.title') }}</h2>
 
     <UFormField :label="t('loop.start')">
-      <p class="mb-2 text-sm" :class="loop.placingStart ? 'text-primary' : 'text-muted'">
-        <UIcon
-          :name="loop.placingStart ? 'i-lucide-mouse-pointer-click' : 'i-lucide-circle-check'"
-          class="mr-1 align-text-bottom"
-        />{{ loop.placingStart ? t('loop.placeStart') : t('loop.startPlaced') }}
+      <p class="mb-2 text-sm text-muted">
+        <UIcon :name="loop.start ? 'i-lucide-circle-check' : 'i-lucide-circle-dashed'" class="mr-1 align-text-bottom" />
+        {{ loop.start ? t('loop.startPlaced') : t('loop.noStart') }}
       </p>
       <div class="flex flex-wrap gap-2">
         <UButton
@@ -87,7 +62,7 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
           variant="outline"
           size="sm"
           :loading="locating"
-          @click="locate"
+          @click="locate(loop.setStart)"
         />
         <UButton
           v-if="!loop.placingStart"

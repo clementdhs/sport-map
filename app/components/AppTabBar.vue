@@ -6,7 +6,8 @@ const { t } = useI18n()
 const items = useMainNav()
 const newItems = useNewItems()
 const menuItems = computed(() => newItems.value.map(({ label, icon, to }) => ({ label, icon, to })))
-// The profile tab shows the member's photo in place of its icon (#150), once signed.
+// The profile tab shows the member's photo in place of its icon (#150), once signed. Not their initials: on the
+// accent colour they would read as the current tab.
 const { data: me } = useMyProfile()
 const avatarSrc = useAvatarUrl(() => me.value?.avatar_path)
 </script>
@@ -18,7 +19,14 @@ const avatarSrc = useAvatarUrl(() => me.value?.avatar_path)
         <!-- Central button, two sections on each side. -->
         <li v-if="index === 2" class="flex items-center justify-center">
           <UDropdownMenu :items="menuItems" size="lg" :content="{ side: 'top', sideOffset: 8 }" :ui="{ item: 'py-3' }">
-            <UButton icon="i-lucide-plus" size="xl" square class="rounded-full shadow-md" :aria-label="t('nav.new')" />
+            <!-- A rounded square in the accent (#231), raised above the bar. -->
+            <UButton
+              icon="i-lucide-plus"
+              square
+              class="size-13 justify-center rounded-[1.125rem] shadow-[0_6px_16px_rgb(0_0_0/0.25)]"
+              :ui="{ leadingIcon: 'size-6.5' }"
+              :aria-label="t('nav.new')"
+            />
           </UDropdownMenu>
         </li>
         <li>
@@ -26,8 +34,8 @@ const avatarSrc = useAvatarUrl(() => me.value?.avatar_path)
             :to="item.to"
             raw
             :aria-current="item.ariaCurrent"
-            class="flex h-full flex-col items-center justify-center gap-1 text-xs font-medium"
-            :class="item.ariaCurrent ? 'text-primary' : 'text-muted'"
+            class="flex h-full flex-col items-center justify-center gap-1 text-xs"
+            :class="item.ariaCurrent ? 'font-bold text-primary' : 'font-medium text-muted'"
             @click="item.onClick?.()"
           >
             <UAvatar

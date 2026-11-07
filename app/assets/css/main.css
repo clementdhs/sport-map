@@ -254,6 +254,30 @@ body {
 .maplibregl-map .maplibregl-ctrl-group button + button {
   border-top-color: var(--ui-border);
 }
+/* Floating map buttons of the topo mockups (#231): 40 px squares, 12 px from the edges and 8 px apart; MapLibre's
+   icons are SVG backgrounds that scale with them. Not 44 px on phones as in the mockup: the top bars of follow
+   mode, recording and live shares keep 56 px (`pr-14`) for them. */
+.maplibregl-map .maplibregl-ctrl-group button {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+/* The padding makes up the first margin: on phones the zoom group is hidden (display: none), and a
+   `:first-child` margin would go with it. */
+.maplibregl-map .maplibregl-ctrl-top-right {
+  padding-top: 0.25rem;
+}
+.maplibregl-map .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: 0.5rem 0.75rem 0 0;
+}
+/* The app's own floating bars on the map (MapTopBar, the collapsed panel's title): like MapLibre's control groups. */
+.map-float {
+  background: var(--ui-bg);
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 2px 8px rgb(29 37 32 / 0.15);
+}
+.dark .map-float {
+  background: var(--ui-bg-elevated);
+  box-shadow: 0 0 0 1px var(--ui-border-accented), 0 2px 8px rgb(0 0 0 / 0.5);
+}
 .maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib,
 .maplibregl-map .maplibregl-ctrl-scale {
   background-color: color-mix(in srgb, var(--ui-bg) 80%, transparent);

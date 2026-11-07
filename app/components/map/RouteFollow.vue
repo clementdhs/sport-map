@@ -227,7 +227,7 @@ async function toggleOrientation() {
       :aria-pressed="orientation === 'heading'"
       @click="toggleOrientation"
     >
-      <UIcon name="i-lucide-navigation" class="size-4" />
+      <UIcon name="i-lucide-navigation" class="size-5" />
     </button>
   </Teleport>
 </template>

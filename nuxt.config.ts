@@ -15,10 +15,15 @@ export default defineNuxtConfig({
 
   css: ['~/assets/css/main.css'],
 
-  // The font of key figures (--font-numbers in main.css), served from /_fonts/ and precached by the service worker
-  // (woff2 in globPatterns below). Only the weights and the subset in use, to keep the precache small.
+  // The fonts of text, headings and key figures (--font-sans, --font-display and --font-numbers in main.css), served
+  // from /_fonts/ and precached by the service worker (woff2 in globPatterns below). Only the weights and the subset
+  // in use, normal style only (italics are synthesized), to keep the precache small.
   fonts: {
-    families: [{ name: 'Barlow Semi Condensed', provider: 'google', weights: [500, 600], styles: ['normal'], subsets: ['latin'] }],
+    families: [
+      { name: 'Barlow', provider: 'google', weights: [400, 500, 600, 700], styles: ['normal'], subsets: ['latin'] },
+      { name: 'Barlow Condensed', provider: 'google', weights: [600, 700], styles: ['normal'], subsets: ['latin'] },
+      { name: 'Barlow Semi Condensed', provider: 'google', weights: [500, 600], styles: ['normal'], subsets: ['latin'] },
+    ],
   },
 
   app: {
@@ -111,7 +116,8 @@ export default defineNuxtConfig({
       description: 'Crée, partage et découvre des parcours de course, randonnée et vélo.',
       lang: 'fr',
       theme_color: '#4f46e5',
-      background_color: '#ffffff',
+      // The light paper (--color-topo-100 in main.css), behind the splash screen.
+      background_color: '#f3eee3',
       display: 'standalone',
       // Generated from public/icon.svg by `npm run pwa:assets`.
       icons: [

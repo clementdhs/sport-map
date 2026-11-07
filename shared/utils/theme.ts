@@ -18,7 +18,7 @@ export const ACCENT_LIGHT_SHADES: Record<Accent, 600 | 700 | 800> = {
   yellow: 800,
   lime: 800,
   green: 800,
-  teal: 700,
+  teal: 800,
   sky: 700,
   slate: 600,
 }
@@ -32,7 +32,7 @@ export const ACCENT_COLORS: Record<Accent, string> = {
   yellow: '#894b00',
   lime: '#3c6300',
   green: '#016630',
-  teal: '#00786f',
+  teal: '#005f5a',
   sky: '#0069a8',
   slate: '#45556c',
 }

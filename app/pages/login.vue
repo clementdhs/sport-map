@@ -174,8 +174,8 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 /* No seam with the header, a calm area around the form, and a plain background under the source credit. */
 .login-fade {
   background:
-    linear-gradient(var(--ui-bg), transparent 18%, transparent 88%, var(--ui-bg)),
-    radial-gradient(ellipse min(34rem, 70vw) 30rem at 50% 45%, var(--ui-bg) 35%, transparent 100%);
+    linear-gradient(var(--ui-bg-paper), transparent 18%, transparent 88%, var(--ui-bg-paper)),
+    radial-gradient(ellipse min(34rem, 70vw) 30rem at 50% 45%, var(--ui-bg-paper) 35%, transparent 100%);
 }
 
 .login-trail path {
@@ -198,6 +198,6 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
 
 /* A veil of the page color under the logo and tagline. */
 .login-hero {
-  background: radial-gradient(closest-side, var(--ui-bg) 40%, color-mix(in oklab, var(--ui-bg) 70%, transparent) 75%, transparent);
+  background: radial-gradient(closest-side, var(--ui-bg-paper) 40%, color-mix(in oklab, var(--ui-bg-paper) 70%, transparent) 75%, transparent);
 }
 </style>

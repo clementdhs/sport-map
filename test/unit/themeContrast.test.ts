@@ -63,3 +63,32 @@ describe('sport colors contrast', () => {
     }
   })
 })
+
+// Trail signage (#229). The yellow sign carries text (durations, the highlighted key figure): 4.5:1. Its shape
+// stands out from every background by its ink outline (light mode) or its own yellow (dark mode): 3:1. The
+// stamp's text on its own background (4.5:1), and the ink edges of the sport mark, the cartouche and the "you are here" plate (3:1).
+describe('signage contrast', () => {
+  it.each(modes)('passes in %s mode', (mode) => {
+    const color = theme(mode)
+    expect(contrast(color('--sign-text'), color('--sign')), 'sign text').toBeGreaterThanOrEqual(4.5)
+    for (const background of backgrounds) {
+      const surface = color(background)
+      const sign = Math.max(contrast(color('--sign-edge'), surface), contrast(color('--sign'), surface))
+      expect(sign, `sign on ${background}`).toBeGreaterThanOrEqual(3)
+      expect(contrast(color('--mark-edge'), surface), `mark edge on ${background}`).toBeGreaterThanOrEqual(3)
+    }
+    // The stamp paints its own background, the paper or the surface it lies on.
+    for (const background of ['--ui-bg-paper', '--ui-bg']) {
+      expect(contrast(color('--stamp'), color(background)), `stamp on ${background}`).toBeGreaterThanOrEqual(4.5)
+    }
+    // The mark's top bar shows by its ring in light mode (white ringed with ink), by itself in dark mode (cream).
+    if (mode.endsWith('dark')) {
+      for (const background of backgrounds) {
+        expect(contrast(color('--mark-top'), color(background)), `mark top on ${background}`).toBeGreaterThanOrEqual(3)
+      }
+    }
+    else {
+      expect(contrast(color('--mark-edge'), color('--mark-top')), 'mark ring').toBeGreaterThanOrEqual(3)
+    }
+  })
+})

@@ -52,10 +52,10 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     highlighted.value = null
   }
 
-  // Starts from the track's start when there is one.
+  // The start is shared with the hand-drawn mode (#215): the track's start when there is one.
   function show() {
     open.value = true
-    start.value ??= editor.waypoints[0] ?? null
+    start.value = editor.waypoints[0] ?? start.value
     placingStart.value = !start.value
   }
 
@@ -63,6 +63,18 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     clearProposals()
     open.value = false
     placingStart.value = false
+  }
+
+  // Leaving the editor: a draft keeps its start in its track, and a saved route mustn't lend its own to the next one.
+  function leave() {
+    hide()
+    start.value = null
+  }
+
+  // Back to drawing by hand: an empty track starts from the loop's start (undo removes it).
+  function switchToManual() {
+    hide()
+    if (start.value && !editor.waypoints.length) editor.addWaypoint(start.value)
   }
 
   function setStart([lng, lat]: LngLat) {
@@ -128,6 +140,6 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   return {
     open, start, placingStart, target, distanceKm, durationMin, proposals, highlighted, settledCount,
     targetM, targetInRange, generating, canGenerate,
-    show, hide, setStart, generate, choose,
+    show, hide, leave, switchToManual, setStart, generate, choose,
   }
 })

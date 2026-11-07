@@ -1,20 +1,68 @@
 <script setup lang="ts">
 import type { LngLat } from '#shared/utils/routes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
+import type { CreateMode } from '~/utils/createMode'
+import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 
 const { formatDistance } = useFormat()
 
 // Map + side panel of the route editor, shared by the create and edit pages.
-defineProps<{
+const props = defineProps<{
   submitLabel: string
   // Fallback of the top bar's back button.
   back: string
+  // Create page: opens in the mode of the link (`?mode=loop`) or the last one picked, and keeps it in the URL.
+  rememberMode?: boolean
 }>()
 
 const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 // The store outlives the page: leaving the editor closes the loop proposals.
-onBeforeUnmount(() => loop.hide())
+onBeforeUnmount(() => loop.leave())
+
+// One panel, two modes (#215): an automatic loop, or a track drawn point by point. They share the start.
+const route = useRoute()
+const router = useRouter()
+const mode = computed<CreateMode>(() => loop.open ? 'loop' : 'manual')
+const modeItems = computed(() => [
+  { label: t('editor.modes.loop'), value: 'loop', icon: 'i-lucide-wand-sparkles' },
+  { label: t('editor.modes.manual'), value: 'manual', icon: 'i-lucide-pencil' },
+])
+
+function setMode(value: string | number) {
+  const next = parseCreateMode(value)
+  if (!next || next === mode.value) return
+  if (next === 'loop') loop.show()
+  else loop.switchToManual()
+  if (props.rememberMode) saveCreateMode(next)
+}
+
+const askedMode = props.rememberMode ? parseCreateMode(route.query.mode) : null
+if (askedMode === 'loop') loop.show()
+// The remembered mode is only on the device, and never hides a draft (a track imported from the marked routes).
+onMounted(() => {
+  if (props.rememberMode && !askedMode && !editor.waypoints.length && loadCreateMode() === 'loop') loop.show()
+})
+watch(mode, (value) => {
+  // Never while leaving: the router already points at the next page.
+  if (!props.rememberMode || router.currentRoute.value.path !== route.path || route.query.mode === value) return
+  router.replace({ query: { ...route.query, mode: value } })
+})
+
+// The next click on the map places the start: said once, over the map, which a full sheet would hide on a phone.
+const placingStart = computed(() => loop.open ? loop.placingStart : !editor.waypoints.length)
+const snap = ref<SheetSnap>('half')
+watch(placingStart, (placing) => {
+  if (placing && snap.value === 'full') snap.value = 'half'
+})
+const { locating, locate } = useCurrentPosition()
+
+// The position may be off screen, like a loop's start (RouteEditor.vue).
+function startHere(point: LngLat) {
+  if (editor.waypoints.length) return
+  editor.addWaypoint(point)
+  focus.value = { center: point }
+}
 const hasLockedTrack = computed(() => editor.segments.some(segment => segment.mode === 'locked'))
 const hoverPoint = ref<LngLat | null>(null)
 // Where the editor's map is looking: the marked routes page opens there.
@@ -86,6 +134,8 @@ async function importGpx(file: File) {
   try {
     const track = await readGpxFile(file)
     editor.importTrack(track)
+    // The imported track is edited by hand.
+    loop.hide()
     toast.add({
       title: t('editor.imported'),
       description: track.elevations
@@ -125,7 +175,7 @@ async function onSubmit() {
 </script>
 
 <template>
-  <MapSheetLayout :back="back" fullscreen>
+  <MapSheetLayout v-model:snap="snap" :back="back" fullscreen>
     <template #map>
       <div
         class="relative size-full"
@@ -153,9 +203,35 @@ async function onSubmit() {
       <SearchBox places-only @place="focus = $event" />
     </template>
 
+    <!-- The live region stays in the page, so screen readers announce the instruction when it appears. -->
+    <template #overlay>
+      <div role="status">
+        <div v-if="placingStart" class="flex items-center gap-2 rounded-md bg-default py-1.5 ps-3 pe-1.5 text-sm shadow-lg ring ring-default">
+          <UIcon name="i-lucide-mouse-pointer-click" class="size-4 shrink-0 text-primary" />
+          <span :class="{ 'py-1 pe-1.5': !(loop.open && loop.start) }">{{ t('loop.placeStart') }}</span>
+          <UButton
+            v-if="loop.open && loop.start"
+            :label="t('common.cancel')"
+            size="sm"
+            color="neutral"
+            variant="ghost"
+            @click="loop.placingStart = false"
+          />
+        </div>
+      </div>
+    </template>
+
     <template #title>
       {{ loop.open ? t('loop.title') : editor.waypoints.length >= 2 ? formatDistance(editor.distanceM) : editor.details.name.trim() || t('editor.newRoute') }}
     </template>
+
+    <UTabs
+      :model-value="mode"
+      :items="modeItems"
+      :content="false"
+      class="w-full"
+      @update:model-value="setMode"
+    />
 
     <LoopGenerator v-if="loop.open" />
 
@@ -171,27 +247,6 @@ async function onSubmit() {
           class="min-w-0 flex-1"
         />
         <div class="flex gap-2">
-          <!-- Without a track, the panel shows the same action as a full-width button. -->
-          <UTooltip v-if="editor.waypoints.length >= 2" :text="t('loop.open')">
-            <UButton
-              icon="i-lucide-wand-sparkles"
-              color="neutral"
-              variant="outline"
-              :aria-label="t('loop.open')"
-              @click="loop.show()"
-            />
-          </UTooltip>
-          <UTooltip :text="t('editor.importGpx')">
-            <UButton
-              icon="i-lucide-upload"
-              color="neutral"
-              variant="outline"
-              :aria-label="t('editor.importGpx')"
-              :loading="importing"
-              @click="gpxInput?.click()"
-            />
-          </UTooltip>
-          <input ref="gpxInput" type="file" accept=".gpx,application/gpx+xml" class="hidden" @change="onGpxSelected">
           <UTooltip :text="t('editor.undo')">
             <UButton
               icon="i-lucide-undo-2"
@@ -269,17 +324,19 @@ async function onSubmit() {
       />
 
       <template v-if="editor.waypoints.length < 2">
-        <p class="text-sm text-muted">
+        <p v-if="editor.waypoints.length" class="text-sm text-muted">
           <UIcon name="i-lucide-mouse-pointer-click" class="mr-1 align-text-bottom" />
-          {{ t('editor.start') }}
+          {{ t('editor.next') }}
         </p>
         <UButton
-          icon="i-lucide-wand-sparkles"
-          :label="t('loop.open')"
+          v-else
+          icon="i-lucide-locate-fixed"
+          :label="t('editor.startHere')"
           color="neutral"
           variant="outline"
           block
-          @click="loop.show()"
+          :loading="locating"
+          @click="locate(startHere)"
         />
         <UButton
           icon="i-lucide-signpost"
@@ -425,5 +482,21 @@ async function onSubmit() {
         />
       </UForm>
     </template>
+
+    <!-- Whatever the mode, a track can come from a file. -->
+    <USeparator />
+    <p class="flex flex-wrap items-center justify-center gap-x-2 text-sm text-muted">
+      {{ t('editor.haveTrack') }}
+      <UButton
+        icon="i-lucide-upload"
+        :label="t('editor.importGpx')"
+        size="sm"
+        color="neutral"
+        variant="outline"
+        :loading="importing"
+        @click="gpxInput?.click()"
+      />
+    </p>
+    <input ref="gpxInput" type="file" accept=".gpx,application/gpx+xml" class="hidden" @change="onGpxSelected">
   </MapSheetLayout>
 </template>

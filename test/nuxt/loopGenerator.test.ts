@@ -167,6 +167,36 @@ describe('proposals', () => {
     expect(loop.proposals).toEqual([])
   })
 
+  it('shares the start with the hand-drawn mode', () => {
+    const editor = useRouteEditorStore()
+    editor.snapToPaths = false
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.setStart(START)
+
+    // An empty track starts from the loop's start, which undo removes.
+    loop.switchToManual()
+    expect(loop.open).toBe(false)
+    expect(editor.waypoints).toEqual([START])
+    editor.undo()
+    expect(editor.waypoints).toEqual([])
+
+    // A drawn track's start wins over the loop's.
+    const drawn: [number, number] = [6.2, 45.95]
+    editor.addWaypoint(drawn)
+    loop.show()
+    expect(loop.start).toEqual(drawn)
+    loop.switchToManual()
+    expect(editor.waypoints).toEqual([drawn])
+
+    // Leaving the editor forgets it.
+    loop.leave()
+    editor.clearPoints()
+    loop.show()
+    expect(loop.start).toBeNull()
+    expect(loop.placingStart).toBe(true)
+  })
+
   it('ignores answers for proposals cleared meanwhile', async () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)

@@ -158,15 +158,28 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     // Without a track, the sheet's title (shown on phones) names the page rather than a distance of 0 m.
     if (device.name === 'phone') await expect(page.getByText('Nouveau parcours', { exact: true })).toBeVisible()
 
-    await page.getByRole('button', { name: 'Générer une boucle' }).click()
+    // One panel, one mode bar (#215); the instruction to place the start floats over the map.
+    const placeStart = page.getByRole('status').filter({ hasText: 'Clique sur la carte pour placer le départ.' })
+    await expect(placeStart).toBeVisible()
+    await page.getByRole('tab', { name: 'Boucle' }).click()
+    await expect(page).toHaveURL('/routes/create?mode=loop')
     const panel = page.getByRole('region', { name: 'Boucle automatique' })
-    await expect(panel.getByText('Clique sur la carte pour placer le départ.')).toBeVisible()
+    await expect(panel.getByText('Pas encore de départ.')).toBeVisible()
+    await expect(placeStart).toBeVisible()
     await expect(panel.getByRole('button', { name: 'Proposer des boucles' })).toBeDisabled()
 
     // The start, in the part of the map above the bottom sheet on a phone.
     const map = page.locator('.maplibregl-canvas')
     const box = (await map.boundingBox())!
     await map.click({ position: { x: box.width * 0.6, y: box.height * 0.3 } })
+    await expect(panel.getByText('Départ placé')).toBeVisible()
+    await expect(placeStart).toHaveCount(0)
+
+    // Picking it again can be cancelled from the map.
+    await panel.getByRole('button', { name: 'Choisir sur la carte' }).click()
+    await expect(placeStart).toBeVisible()
+    await placeStart.getByRole('button', { name: 'Annuler' }).click()
+    await expect(placeStart).toHaveCount(0)
     await expect(panel.getByText('Départ placé')).toBeVisible()
 
     await panel.getByRole('combobox', { name: 'Sport' }).click()
@@ -201,11 +214,49 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await expect(page.getByText('Profil altimétrique')).toBeVisible()
     await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Trail')
 
+    await expect(page).toHaveURL('/routes/create?mode=manual')
+    await expect(page.getByRole('tab', { name: 'À la main' })).toHaveAttribute('aria-selected', 'true')
+
     // Undo brings back the empty editor.
     await page.getByRole('button', { name: 'Annuler la dernière action' }).click()
     await expect(page.locator('p.text-3xl')).toHaveText('0 m')
   })
 }
+
+test('shares the start between the modes and remembers the last one', async ({ page }) => {
+  await page.goto('/routes/create')
+  await waitForMap(page)
+  const loopTab = page.getByRole('tab', { name: 'Boucle' })
+  const manualTab = page.getByRole('tab', { name: 'À la main' })
+  const importGpx = page.getByRole('button', { name: 'Importer un fichier GPX' })
+  await expect(manualTab).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByText('Déjà un tracé ?')).toBeVisible()
+  await expect(importGpx).toBeVisible()
+
+  await loopTab.click()
+  await expect(importGpx).toBeVisible()
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width * 0.5, y: box.height * 0.5 } })
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+
+  // Drawing by hand goes on from the loop's start, and back again.
+  await manualTab.click()
+  await expect(page.getByText('Clique sur la carte pour placer le point suivant.')).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'placer le départ' })).toHaveCount(0)
+  await loopTab.click()
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+
+  // The mode picked last opens the next blank route, and a link can ask for one.
+  await page.goto('/routes/create')
+  await waitForMap(page)
+  await expect(loopTab).toHaveAttribute('aria-selected', 'true')
+  await expect(page).toHaveURL('/routes/create?mode=loop')
+  await page.goto('/routes/create?mode=manual')
+  await waitForMap(page)
+  await expect(manualTab).toHaveAttribute('aria-selected', 'true')
+})
 
 // Last: it uses up the test account's routing quota for the day (the other tests mock routing).
 test('caps routing requests per user and per day', async ({ page, requestAs }) => {

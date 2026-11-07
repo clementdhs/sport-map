@@ -6,6 +6,11 @@ test.use({ role: 'account' })
 test('draws, saves and deletes a route, in English', async ({ page }) => {
   await page.goto('/routes/create')
   await waitForMap(page)
+  // The create panel's modes (#215), drawing by hand first.
+  await expect(page.getByRole('tab', { name: 'By hand' })).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByRole('tab', { name: 'Loop' })).toBeVisible()
+  await expect(page.getByRole('status').filter({ hasText: 'Click on the map to place the start.' })).toBeVisible()
+  await expect(page.getByText('Already have a track?')).toBeVisible()
 
   const map = page.locator('.maplibregl-canvas')
   const box = (await map.boundingBox())!

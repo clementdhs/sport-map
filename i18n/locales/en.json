@@ -411,7 +411,14 @@
     "undo": "Undo the last action",
     "clear": "Clear the track",
     "routing": "Computing",
-    "start": "Click on the map to place your route's points, or import a GPX file.",
+    "next": "Click on the map to place the next point.",
+    "startHere": "Start from my location",
+    "locateFailed": "Location not found",
+    "haveTrack": "Already have a track?",
+    "modes": {
+      "loop": "Loop",
+      "manual": "By hand"
+    },
     "quotaReached": "Routing limit reached for today",
     "quotaReachedHint": "To keep the free routing service available, everyone gets a limited number of routings a day. Until tomorrow, new segments are drawn as straight lines, without elevation.",
     "quotaLeft": "Only {count} routing left today. | Only {count} routings left today.",
@@ -453,15 +460,13 @@
     "reroute": "Recompute for {sport}"
   },
   "loop": {
-    "open": "Generate a loop",
     "title": "Automatic loop",
-    "close": "Close the automatic loop",
     "start": "Start",
+    "noStart": "No start yet.",
     "placeStart": "Click on the map to place the start.",
     "startPlaced": "Start placed (green dot on the map).",
     "myPosition": "My location",
     "pickOnMap": "Pick on the map",
-    "locateFailed": "Location not found",
     "target": "Loop by",
     "distance": "Distance",
     "duration": "Duration",

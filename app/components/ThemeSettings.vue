@@ -41,9 +41,9 @@ const modes = [
           :title="t(`theme.accents.${value}`)"
           :aria-label="t(`theme.accents.${value}`)"
           :aria-pressed="accent === value"
-          class="flex size-8 items-center justify-center rounded-full text-white ring-offset-2 ring-offset-(--ui-bg) focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--ui-primary)"
+          class="flex size-8 items-center justify-center rounded-full bg-(--swatch-light) text-inverted ring-offset-2 ring-offset-(--ui-bg) focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-(--ui-primary) dark:bg-(--swatch-dark)"
           :class="{ 'ring-2 ring-(--ui-text-highlighted)': accent === value }"
-          :style="{ backgroundColor: ACCENT_COLORS[value] }"
+          :style="{ '--swatch-light': ACCENT_COLORS[value].light, '--swatch-dark': ACCENT_COLORS[value].dark }"
           @click="setAccent(value)"
         >
           <UIcon v-if="accent === value" name="i-lucide-check" class="size-4" />

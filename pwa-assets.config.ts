@@ -1,6 +1,6 @@
 import { defineConfig, minimal2023Preset } from '@vite-pwa/assets-generator/config'
 
-// The default accent (BRAND_COLOR in shared/utils/theme.ts), the background of public/icon.svg.
+// The brand color (BRAND_COLOR in shared/utils/theme.ts), the background of public/icon.svg.
 const BRAND_COLOR = '#4f46e5'
 
 // Generates the PWA icons next to public/icon.svg: `npm run pwa:assets`.

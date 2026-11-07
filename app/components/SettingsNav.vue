@@ -73,7 +73,7 @@ watch(active, (id) => {
 <template>
   <nav
     :aria-label="t('settings.sectionsLabel')"
-    class="sticky top-(--ui-header-height) z-10 -mx-4 border-b border-default bg-default/95 backdrop-blur sm:-mx-6 md:top-[calc(var(--ui-header-height)+2rem)] md:mx-0 md:self-start md:border-0 md:bg-transparent md:backdrop-blur-none"
+    class="sticky top-(--ui-header-height) z-10 -mx-4 border-b border-default bg-paper/95 backdrop-blur sm:-mx-6 md:top-[calc(var(--ui-header-height)+2rem)] md:mx-0 md:self-start md:border-0 md:bg-transparent md:backdrop-blur-none"
   >
     <ul ref="list" class="relative flex gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:px-6 md:flex-col md:gap-1 md:overflow-visible md:p-0">
       <li v-for="section in sections" :key="section.id" class="shrink-0">

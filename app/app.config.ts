@@ -3,7 +3,8 @@ export default defineAppConfig({
     colors: {
       // Default accent; the visitor's choice replaces it (plugins/accent.ts).
       primary: 'indigo',
-      neutral: 'zinc',
+      // Warm "topo" neutrals defined in main.css (#227).
+      neutral: 'topo',
     },
   },
 })

@@ -253,13 +253,13 @@ test('offers ten accent colors in the settings, rendered by the server in a shad
   await page.getByRole('button', { name: 'Sarcelle' }).click()
   await expect(page.getByRole('button', { name: 'Sarcelle' })).toHaveAttribute('aria-pressed', 'true')
   await expect(html).toHaveAttribute('data-accent', 'teal')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#00786f')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#005f5a')
 
-  // No flash: the server renders the accent and its light-mode shade (700 for teal, for white text on buttons).
+  // No flash: the server renders the accent and its light-mode shade (800 for teal, for white text on buttons and links on the cream surfaces).
   const response = await page.reload()
   const body = await response!.text()
   expect(body).toContain('data-accent="teal"')
-  expect(body).toContain('data-accent-shade="700"')
+  expect(body).toContain('data-accent-shade="800"')
   // A click before hydration is lost and the mode never changes.
   await waitForHydration(page)
   const primary = () => page.evaluate(() => {

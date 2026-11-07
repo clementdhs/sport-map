@@ -13,20 +13,104 @@
   --ui-primary: var(--ui-color-primary-800);
 }
 
-/* A lower header than Nuxt UI's 4rem (#154): every pixel of it is map lost on the map pages. */
+/* A lower header than Nuxt UI's 4rem (#154): every pixel of it is map lost on the map pages. Radii (#227): cards
+   `rounded-lg` 16px, buttons, inputs and thumbnails `rounded-md` 12px, small marks `rounded-sm` 8px. */
 :root {
   --ui-header-height: 3.5rem;
+  --ui-radius: 0.5rem;
 }
 
-/* Key figures (distances, durations, elevation): Barlow Semi Condensed, downloaded at build time by @nuxt/fonts
-   and precached by the service worker. Use with `tabular-nums` so that digits line up (#108). */
+/* "Topo" warm neutrals (#227), Nuxt UI's neutral palette (app.config.ts): cream paper to green-black night. 50 is
+   the light surface, 100 the light paper, 200 the sand border, 600 the light secondary text, 900 the ink, 950 the
+   dark paper. `static`: Nuxt UI reads them at runtime (--ui-color-neutral-*). Contrast
+   pairs are checked by test/unit/themeContrast.test.ts. */
+@theme static {
+  --color-topo-50: #fbf8f1;
+  --color-topo-100: #f3eee3;
+  --color-topo-200: #e3d9c6;
+  --color-topo-300: #c5c0ae;
+  --color-topo-400: #a8a797;
+  --color-topo-500: #7b7e72;
+  --color-topo-600: #5b6158;
+  --color-topo-700: #3a423b;
+  --color-topo-800: #2c332d;
+  --color-topo-900: #1d2520;
+  --color-topo-950: #141815;
+}
+
+/* Fonts, downloaded at build time by @nuxt/fonts (`fonts` in nuxt.config.ts) and precached by the service worker:
+   Barlow for text, Barlow Condensed for headings (h1 to h3), Barlow Semi Condensed for key figures (distances,
+   durations, elevation), to use with `tabular-nums` so that digits line up (#108). Shadows tinted with the ink. */
 @theme {
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
   --font-numbers: "Barlow Semi Condensed", ui-sans-serif, system-ui, sans-serif;
+  --shadow-2xs: 0 1px rgb(29 37 32 / 0.04);
+  --shadow-xs: 0 1px 2px 0 rgb(29 37 32 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(29 37 32 / 0.08), 0 1px 2px -1px rgb(29 37 32 / 0.08);
+  --shadow-md: 0 4px 6px -1px rgb(29 37 32 / 0.08), 0 2px 4px -2px rgb(29 37 32 / 0.08);
+  --shadow-lg: 0 10px 15px -3px rgb(29 37 32 / 0.08), 0 4px 6px -4px rgb(29 37 32 / 0.08);
+  --shadow-xl: 0 20px 25px -5px rgb(29 37 32 / 0.08), 0 8px 10px -6px rgb(29 37 32 / 0.08);
+  --shadow-2xl: 0 25px 50px -12px rgb(29 37 32 / 0.2);
+}
+
+/* `bg-paper`: the page under the surfaces (cards, sheets, bars, menus and inputs are `bg-default`). */
+@theme inline {
+  --background-color-paper: var(--ui-bg-paper);
+}
+
+@layer base {
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+/* Nuxt UI's text, background and border variables on the topo palette, light then dark ("nuit topo"). The few
+   tones between two steps are written as is; the dark surface is a hair darker than 900 so that the dark accents
+   (400) pass AA on their soft variants. Unlayered, so they win over Nuxt UI's (@layer theme). */
+:root {
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-600);
+  --ui-text-toned: var(--ui-color-neutral-700);
+  --ui-text: var(--ui-color-neutral-800);
+  --ui-text-highlighted: var(--ui-color-neutral-900);
+  --ui-text-inverted: #fff;
+  --ui-bg-paper: var(--ui-color-neutral-100);
+  --ui-bg: var(--ui-color-neutral-50);
+  --ui-bg-muted: #efe9dc;
+  --ui-bg-elevated: #ebe4d3;
+  --ui-bg-accented: var(--ui-color-neutral-200);
+  --ui-bg-inverted: var(--ui-color-neutral-900);
+  --ui-border: var(--ui-color-neutral-200);
+  --ui-border-muted: #ede4d1;
+  --ui-border-accented: #d9cdb6;
+  --ui-border-inverted: var(--ui-color-neutral-900);
+}
+.dark {
+  --ui-text-dimmed: var(--ui-color-neutral-500);
+  --ui-text-muted: var(--ui-color-neutral-400);
+  --ui-text-toned: var(--ui-color-neutral-300);
+  --ui-text: var(--ui-color-neutral-200);
+  --ui-text-highlighted: var(--ui-color-neutral-100);
+  --ui-text-inverted: var(--ui-color-neutral-900);
+  --ui-bg-paper: var(--ui-color-neutral-950);
+  --ui-bg: #1b201c;
+  --ui-bg-muted: #232923;
+  --ui-bg-elevated: #262c27;
+  --ui-bg-accented: var(--ui-color-neutral-700);
+  --ui-bg-inverted: var(--ui-color-neutral-100);
+  --ui-border: var(--ui-color-neutral-800);
+  --ui-border-muted: #252b26;
+  --ui-border-accented: var(--ui-color-neutral-700);
+  --ui-border-inverted: var(--ui-color-neutral-100);
+}
+body {
+  background-color: var(--ui-bg-paper);
 }
 
 /* One color per sport (#108), set by a `sport-<sport type>` class: --sport for icons and route thumbnails,
-   --sport-text on --sport-soft for badges. Contrast: 6.4:1 at least for the text, 4.9:1 for the icons. Map
-   colors (tracks, markers) don't follow the sport. */
+   --sport-text on --sport-soft for badges. Contrast (test/unit/themeContrast.test.ts): 4.5:1 for the text, 3:1
+   for the icons on every surface. Map colors (tracks, markers) don't follow the sport. */
 .sport-running { --sport-100: var(--color-orange-100); --sport-300: var(--color-orange-300); --sport-400: var(--color-orange-400); --sport-700: var(--color-orange-700); --sport-800: var(--color-orange-800); }
 .sport-trail { --sport-100: var(--color-rose-100); --sport-300: var(--color-rose-300); --sport-400: var(--color-rose-400); --sport-700: var(--color-rose-700); --sport-800: var(--color-rose-800); }
 .sport-hiking { --sport-100: var(--color-emerald-100); --sport-300: var(--color-emerald-300); --sport-400: var(--color-emerald-400); --sport-700: var(--color-emerald-700); --sport-800: var(--color-emerald-800); }
@@ -46,29 +130,36 @@
 }
 
 /* Map popups and controls follow the theme, like the MapTiler style (#109). */
-.maplibregl-popup-content {
-  color: #18181b;
+/* `.maplibregl-popup` in front of MapLibre's own selectors: maplibre-gl.css loads later (MapView's chunk). */
+.maplibregl-popup {
+  --popup-bg: var(--ui-bg);
+}
+.dark .maplibregl-popup {
+  --popup-bg: var(--ui-bg-elevated);
+}
+.maplibregl-popup .maplibregl-popup-content {
+  background: var(--popup-bg);
+  color: var(--ui-text-highlighted);
   font-weight: 500;
+  box-shadow: 0 1px 3px rgb(29 37 32 / 0.15);
 }
 .dark .maplibregl-popup-content {
-  background: var(--ui-bg-elevated);
-  color: var(--ui-text-highlighted);
   box-shadow: 0 0 0 1px var(--ui-border-accented), 0 1px 2px rgb(0 0 0 / 0.4);
 }
 .dark .maplibregl-popup-close-button:hover {
   background-color: rgb(255 255 255 / 0.1);
 }
-.dark :is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip {
-  border-bottom-color: var(--ui-bg-elevated);
+.maplibregl-popup:is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip {
+  border-bottom-color: var(--popup-bg);
 }
-.dark :is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip {
-  border-top-color: var(--ui-bg-elevated);
+.maplibregl-popup:is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip {
+  border-top-color: var(--popup-bg);
 }
-.dark .maplibregl-popup-anchor-left .maplibregl-popup-tip {
-  border-right-color: var(--ui-bg-elevated);
+.maplibregl-popup.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--popup-bg);
 }
-.dark .maplibregl-popup-anchor-right .maplibregl-popup-tip {
-  border-left-color: var(--ui-bg-elevated);
+.maplibregl-popup.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--popup-bg);
 }
 .dark .maplibregl-ctrl-group {
   background: var(--ui-bg-elevated);
@@ -82,9 +173,9 @@
 }
 .dark .maplibregl-ctrl.maplibregl-ctrl-attrib,
 .dark .maplibregl-ctrl-scale {
-  background-color: rgb(24 24 27 / 0.6);
-  border-color: #d4d4d8;
-  color: #d4d4d8;
+  background-color: color-mix(in srgb, var(--ui-color-neutral-900) 60%, transparent);
+  border-color: var(--ui-color-neutral-200);
+  color: var(--ui-color-neutral-200);
 }
 .dark .maplibregl-ctrl-attrib a {
   color: rgb(255 255 255 / 0.75);

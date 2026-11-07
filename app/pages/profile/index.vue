@@ -57,7 +57,7 @@ const tabs = computed(() => [
       variant="link"
       class="w-full"
       :ui="{
-        trigger: 'max-md:w-auto max-md:flex-auto max-md:flex-wrap max-md:gap-x-1 max-md:gap-y-0.5 max-md:px-1',
+        trigger: 'max-md:w-auto max-md:flex-auto max-md:flex-wrap max-md:gap-x-1 max-md:gap-y-0.5 max-md:px-0.5',
         label: 'max-md:order-last max-md:basis-full max-md:text-center max-md:text-xs',
       }"
     >

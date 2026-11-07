@@ -1,7 +1,8 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
 import type { GeoJSONSource, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
-import { START_COLOR } from '~/utils/routeLayers'
+import { addMarkerImages } from '~/utils/mapMarkers'
+import { mapColor } from '~/utils/topoStyle'
 
 // Automatic loop proposals (#50), over the editor's layers (its track is hidden meanwhile).
 
@@ -49,7 +50,7 @@ export function addLoopLayers(map: Map) {
     type: 'line',
     source: LOOPS_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': ['case', ['get', 'highlighted'], 9, 7], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': ['case', ['get', 'highlighted'], 9, 7], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
   })
   map.addLayer({
     id: 'loop-proposals',
@@ -65,11 +66,12 @@ export function addLoopLayers(map: Map) {
     paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 16 },
   })
   // Same look as a route's start.
+  addMarkerImages(map, ['sm-start'])
   map.addLayer({
     id: 'loop-start',
-    type: 'circle',
+    type: 'symbol',
     source: START_SOURCE,
-    paint: { 'circle-radius': 7, 'circle-color': START_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    layout: { 'icon-image': 'sm-start', 'icon-allow-overlap': true, 'icon-ignore-placement': true },
   })
 }
 

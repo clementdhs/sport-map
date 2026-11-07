@@ -1,4 +1,4 @@
-import { EMPTY_MAP_STYLE, expect, mockReliefStyle, test, waitForHydration, waitForMap } from '../fixtures'
+import { expect, mockReliefStyle, test, waitForHydration, waitForMap } from '../fixtures'
 
 test.use({ role: 'account' })
 
@@ -29,10 +29,7 @@ test('switches the basemap to Plan IGN and keeps it on the device', async ({ pag
 })
 
 test('follows the dark mode with the dark style, keeping what the map shows', async ({ page }) => {
-  // A dark style that differs from the light one, or the diff would have nothing to apply.
-  await page.route('https://api.maptiler.com/maps/outdoor-v2-dark/**', route => route.fulfill({
-    json: { ...EMPTY_MAP_STYLE, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#2b3329' } }] },
-  }))
+  // The fixtures' style, painted "nuit topo" by the app: the diff has a colour to apply.
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/')
   await waitForMap(page)
@@ -53,9 +50,6 @@ test('follows the dark mode with the dark style, keeping what the map shows', as
 })
 
 test('keeps the map light or dark whatever the theme, and follows it again', async ({ page }) => {
-  await page.route('https://api.maptiler.com/maps/outdoor-v2-dark/**', route => route.fulfill({
-    json: { ...EMPTY_MAP_STYLE, layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#2b3329' } }] },
-  }))
   await page.emulateMedia({ colorScheme: 'dark' })
   await page.goto('/')
   await waitForMap(page)

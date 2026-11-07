@@ -1,11 +1,15 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson'
 import type { ExpressionSpecification, GeoJSONSource, LngLatBoundsLike, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
+import { addMarkerImages, ROUTE_POINT_IMAGE, routePointImages } from '~/utils/mapMarkers'
+import { APP_MAP_COLORS, mapColor } from '~/utils/topoStyle'
 
-export const ROUTE_COLOR = '#ea580c'
-// Start and end markers, on every map that shows them.
-export const START_COLOR = '#16a34a'
-export const END_COLOR = '#dc2626'
+// The app's tracks in rust (#230), light mode's; maps in the dark style use APP_MAP_COLORS.track.dark
+// (`mapColor`). Start, waypoints and end are images (app/utils/mapMarkers.ts).
+export const ROUTE_COLOR = APP_MAP_COLORS.track.light
+export const CASING_COLOR = APP_MAP_COLORS.casing.light
+// The same rust outside the map (elevation profile, flyover), following the app's mode (`--map-track`, main.css).
+export const TRACK_CSS_COLOR = 'var(--map-track)'
 
 const LINE_SOURCE = 'route-line'
 const POINTS_SOURCE = 'route-points'
@@ -49,6 +53,7 @@ function pointsData(coordinates: LngLat[]): FeatureCollection<Point> {
 export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { editable = false } = {}) {
   // lineMetrics: needed by line-gradient, to colour the track by slope, surface or difficulty.
   map.addSource(LINE_SOURCE, { type: 'geojson', data: lineData(line), lineMetrics: true })
+  addMarkerImages(map, routePointImages(points.length))
   map.addSource(POINTS_SOURCE, { type: 'geojson', data: pointsData(points) })
 
   map.addLayer({
@@ -56,24 +61,25 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
     type: 'line',
     source: LINE_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 7 },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': 8 },
   })
   map.addLayer({
     id: 'route-line',
     type: 'line',
     source: LINE_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ROUTE_COLOR, 'line-width': 4 },
+    paint: { 'line-color': mapColor(map, 'track'), 'line-width': 4.5 },
   })
+  // Start as a yellow square, numbered waypoints, end as a red square; the start on top where a loop ends.
   map.addLayer({
     id: 'route-points',
-    type: 'circle',
+    type: 'symbol',
     source: POINTS_SOURCE,
-    paint: {
-      'circle-radius': ['match', ['get', 'role'], 'via', 4, 7],
-      'circle-color': ['match', ['get', 'role'], 'start', START_COLOR, 'end', END_COLOR, '#ffffff'],
-      'circle-stroke-color': ['match', ['get', 'role'], 'via', ROUTE_COLOR, '#ffffff'],
-      'circle-stroke-width': 2,
+    layout: {
+      'icon-image': ROUTE_POINT_IMAGE,
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+      'symbol-sort-key': ['match', ['get', 'role'], 'start', 2, 'end', 1, 0],
     },
   })
 
@@ -85,8 +91,8 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
     source: HOVER_SOURCE,
     paint: {
       'circle-radius': 7,
-      'circle-color': '#ffffff',
-      'circle-stroke-color': ROUTE_COLOR,
+      'circle-color': mapColor(map, 'casing'),
+      'circle-stroke-color': mapColor(map, 'track'),
       'circle-stroke-width': 3,
     },
   })
@@ -108,6 +114,7 @@ export function addRouteLayers(map: Map, { line, points }: RouteLayerData, { edi
 
 export function setRouteLayerData(map: Map, { line, points }: RouteLayerData) {
   map.getSource<GeoJSONSource>(LINE_SOURCE)?.setData(lineData(line))
+  addMarkerImages(map, routePointImages(points.length))
   map.getSource<GeoJSONSource>(POINTS_SOURCE)?.setData(pointsData(points))
 }
 
@@ -138,7 +145,7 @@ export function addLiveTrackLayers(map: Map): (coordinates: LngLat[]) => void {
     type: 'line',
     source: LIVE_TRACK_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': 7 },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': 7 },
   })
   map.addLayer({
     id: 'live-track',
@@ -255,7 +262,7 @@ export interface FlyoverLayers {
 }
 
 export function addFlyoverLayers(map: Map, gpsTrack: LngLat[] | null): FlyoverLayers {
-  const color = gpsTrack ? GPS_COLOR : ROUTE_COLOR
+  const color = gpsTrack ? GPS_COLOR : mapColor(map, 'track')
   const layers: string[] = []
   if (gpsTrack) {
     map.addSource(FLYOVER_TRACK_SOURCE, { type: 'geojson', data: lineData(gpsTrack) })
@@ -264,7 +271,7 @@ export function addFlyoverLayers(map: Map, gpsTrack: LngLat[] | null): FlyoverLa
       type: 'line',
       source: FLYOVER_TRACK_SOURCE,
       layout: { 'line-cap': 'round', 'line-join': 'round' },
-      paint: { 'line-color': '#ffffff', 'line-width': 7 },
+      paint: { 'line-color': mapColor(map, 'casing'), 'line-width': 7 },
     })
     map.addLayer({
       id: 'flyover-track',

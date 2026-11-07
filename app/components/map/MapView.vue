@@ -92,9 +92,9 @@ onMounted(async () => {
 
   styleRequested = await availableStyleUrl(maptilerKey, dark.value)
   if (!container.value) return
+  // No style in the constructor, which can't transform it: it is set just below, in the topo colours.
   const instance = new Map({
     container: container.value,
-    style: styleRequested,
     center: props.center,
     zoom: props.zoom,
     pitch: saved3d ? PITCH_3D : 0,
@@ -112,6 +112,9 @@ onMounted(async () => {
     attributionControl: { compact: true },
     ...(props.bounds ? { bounds: props.bounds, fitBoundsOptions: { padding: padding(48) } } : {}),
   })
+  requestStyle(instance, styleRequested)
+  // The app's marker images (start, numbered waypoints, sport marks), drawn when a layer first asks for one.
+  instance.on('styleimagemissing', event => addMarkerImage(instance, event.id))
   instance.on('movestart', (event) => {
     if (!('resizing' in event)) moved = true
   })
@@ -143,6 +146,8 @@ onMounted(async () => {
   instance.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left')
   instance.on('style.load', () => {
     styleShown.value = styleRequested
+    // Light or dark now: the marker images in its colours.
+    redrawMarkerImages(instance)
   })
   // Before the first tiles are requested, so that a basemap drawn over the style doesn't load the style's own.
   instance.once('style.load', () => {
@@ -195,7 +200,22 @@ async function followTheme() {
   // Still asked while another style loads: a quick change back to the one on screen must be applied too.
   if (!map.value || (url === styleShown.value && url === styleRequested)) return
   styleRequested = url
-  map.value.setStyle(url, { transformStyle: keepAppLayers })
+  requestStyle(map.value, url)
+}
+
+// The style in the topo colours (#230), dark or light as the URL says (offline, it may be the other one than
+// asked for), and the app's layers with it. The map's mode changes only once the style arrives, just before
+// MapLibre applies it: layers added meanwhile take the colours on screen, which the transform then switches, and a
+// failed request changes nothing.
+function requestStyle(instance: Map, url: string) {
+  const styleDark = !!maptilerKey && url === darkStyleUrl
+  const transform = mapStyleTransform(maptilerKey, styleDark)
+  instance.setStyle(url, {
+    transformStyle: (previous, next) => {
+      setMapDark(instance, styleDark)
+      return transform(previous, next)
+    },
+  })
 }
 watch([dark, online], followTheme)
 

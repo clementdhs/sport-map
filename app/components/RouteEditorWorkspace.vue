@@ -267,6 +267,27 @@ async function onSubmit() {
               @click="editor.clearPoints()"
             />
           </UTooltip>
+          <!-- Opened on click, not hover: phones have no hover, and the long press hint matters most there. -->
+          <UPopover :content="{ align: 'end' }">
+            <UTooltip :text="t('editor.help')">
+              <UButton
+                icon="i-lucide-circle-help"
+                color="neutral"
+                variant="outline"
+                :aria-label="t('editor.help')"
+              />
+            </UTooltip>
+            <template #content>
+              <div class="max-w-72 space-y-2 p-3 text-sm">
+                <p class="font-semibold">{{ t('editor.help') }}</p>
+                <ul class="space-y-1 text-muted">
+                  <li><UIcon name="i-lucide-move" class="mr-1 align-text-bottom" />{{ t('editor.hintMove') }}</li>
+                  <li><UIcon name="i-lucide-git-commit-horizontal" class="mr-1 align-text-bottom" />{{ t('editor.hintInsert') }}</li>
+                  <li><UIcon name="i-lucide-x" class="mr-1 align-text-bottom" />{{ t('editor.hintDelete') }}</li>
+                </ul>
+              </div>
+            </template>
+          </UPopover>
         </div>
       </div>
       <USwitch
@@ -393,12 +414,6 @@ async function onSubmit() {
       <p v-if="editor.isLoop" class="-mt-3 text-sm text-muted">
         <UIcon name="i-lucide-circle-check" class="mr-1 align-text-bottom" />{{ t('editor.isLoop') }}
       </p>
-      <ul v-if="editor.waypoints.length >= 2" class="space-y-1 text-sm text-muted">
-        <li><UIcon name="i-lucide-move" class="mr-1 align-text-bottom" />{{ t('editor.hintMove') }}</li>
-        <li><UIcon name="i-lucide-git-commit-horizontal" class="mr-1 align-text-bottom" />{{ t('editor.hintInsert') }}</li>
-        <li><UIcon name="i-lucide-x" class="mr-1 align-text-bottom" />{{ t('editor.hintDelete') }}</li>
-      </ul>
-
       <section v-if="editor.track.coordinates.length >= 2" class="space-y-3" aria-labelledby="pois-title">
         <div class="flex items-center justify-between gap-2">
           <h2 id="pois-title" class="text-base font-semibold">{{ t('route.pois') }}</h2>

@@ -427,6 +427,7 @@
     "returnToStart": "Back to start",
     "outAndBack": "Out and back",
     "isLoop": "The route returns to its starting point.",
+    "help": "How to edit the track",
     "hintMove": "Drag a point to move it.",
     "hintInsert": "Drag the line to add a point.",
     "hintDelete": "Right-click (long press on mobile) a point to delete it.",

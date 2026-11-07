@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StatsOuting } from '#shared/types/routes'
+import type { RecordOuting } from '#shared/types/routes'
 import type { SportType } from '#shared/utils/routes'
 import type { StatsBucket, StatsMetric, StatsPeriod } from '~/utils/activityStats'
 
@@ -7,9 +7,9 @@ const { formatDistance, formatNumber, locale } = useFormat()
 
 // Statistics of the outings: totals and a chart by week, month or year. Computed in the browser from the
 // profile's outings (each one recorded with the GPS, and the routes only marked as done), so switching period,
-// sport or measure is instant.
+// sport or measure is instant. The records below follow the same sport.
 const props = defineProps<{
-  outings: StatsOuting[]
+  outings: RecordOuting[]
 }>()
 
 const { t } = useI18n()
@@ -173,6 +173,8 @@ const everyOther = computed(() => buckets.value.length > 6)
           </tr>
         </tbody>
       </table>
+
+      <ProfileRecords :outings="outings" :sport="sport" class="border-t border-default pt-4" />
     </template>
   </div>
 </template>

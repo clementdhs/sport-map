@@ -1006,6 +1006,32 @@
     "caption": "Statistics {range}",
     "weekOf": "Week of {date}"
   },
+  "records": {
+    "title": "Records",
+    "year": "Records period",
+    "allTime": "All time",
+    "empty": "No outing in this period.",
+    "timesHint": "Best moving times, measured on the GPS points of the outings recorded with sportmap.",
+    "bestTimes": "Best times · {sport}",
+    "metrics": {
+      "distance": "Longest outing",
+      "gain": "Biggest climb",
+      "moving": "Longest duration",
+      "hour": "Best hour"
+    },
+    "efforts": {
+      "1k": "1 km",
+      "5k": "5 km",
+      "10k": "10 km",
+      "20k": "20 km",
+      "40k": "40 km",
+      "half": "Half marathon",
+      "marathon": "Marathon"
+    },
+    "pace": "{pace} /km",
+    "inHour": "in 1 h",
+    "badge": "Record!"
+  },
   "settings": {
     "profileUpdated": "Profile updated",
     "sectionsLabel": "Settings sections",

@@ -368,6 +368,7 @@ export type Database = {
       }
       route_outings: {
         Row: {
+          best_efforts: Json | null
           created_at: string
           distance_m: number
           duration_s: number
@@ -380,6 +381,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          best_efforts?: Json | null
           created_at?: string
           distance_m: number
           duration_s: number
@@ -392,6 +394,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          best_efforts?: Json | null
           created_at?: string
           distance_m?: number
           duration_s?: number

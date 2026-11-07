@@ -1,16 +1,72 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* Light mode: a darker primary than Nuxt UI's 500, so white text on buttons passes WCAG AA. The accent plugin
-   sets the shade (ACCENT_LIGHT_SHADES in shared/utils/theme.ts) on <html>. */
+/* Light mode: the terrain accents (below) carry their light shade at 600 rather than Nuxt UI's 500; dark mode keeps
+   Nuxt UI's 400. */
 :root:not(.dark) {
   --ui-primary: var(--ui-color-primary-600);
 }
-:root:not(.dark)[data-accent-shade="700"] {
-  --ui-primary: var(--ui-color-primary-700);
-}
-:root:not(.dark)[data-accent-shade="800"] {
-  --ui-primary: var(--ui-color-primary-800);
+
+/* "Terrain" accent palettes (#228), Nuxt UI's primary color (ACCENTS in shared/utils/theme.ts, set by the accent
+   plugin): forest green, ochre, lake blue, heather, slate. 600 is the light-mode accent (white text on it), 400
+   the dark-mode one (ink text on it); the other shades follow their hue in OKLCH. `static`: Nuxt UI reads them at
+   runtime. `slate` replaces Tailwind's own, which nothing else uses. Contrast: test/unit/accentContrast.test.ts. */
+@theme static {
+  --color-forest-50: #eefaf4;
+  --color-forest-100: #ddf5e8;
+  --color-forest-200: #bdead3;
+  --color-forest-300: #8fd6b3;
+  --color-forest-400: #6bbf95;
+  --color-forest-500: #4a9372;
+  --color-forest-600: #2d6a4f;
+  --color-forest-700: #1b553d;
+  --color-forest-800: #10442f;
+  --color-forest-900: #0a3322;
+  --color-forest-950: #032013;
+  --color-ochre-50: #fff5eb;
+  --color-ochre-100: #feebd6;
+  --color-ochre-200: #fad8b1;
+  --color-ochre-300: #efbb7e;
+  --color-ochre-400: #d6a452;
+  --color-ochre-500: #b27c36;
+  --color-ochre-600: #8a5a14;
+  --color-ochre-700: #724700;
+  --color-ochre-800: #5d3900;
+  --color-ochre-900: #482b00;
+  --color-ochre-950: #321c00;
+  --color-lake-50: #f0f8fd;
+  --color-lake-100: #e1f1fb;
+  --color-lake-200: #c5e3f5;
+  --color-lake-300: #9ecde9;
+  --color-lake-400: #7fb6d6;
+  --color-lake-500: #558eae;
+  --color-lake-600: #2a6888;
+  --color-lake-700: #175471;
+  --color-lake-800: #0d435c;
+  --color-lake-900: #083246;
+  --color-lake-950: #03202f;
+  --color-heather-50: #fdf4fa;
+  --color-heather-100: #fbe8f5;
+  --color-heather-200: #f4d2ea;
+  --color-heather-300: #e6b4d8;
+  --color-heather-400: #d39ac4;
+  --color-heather-500: #af6c9e;
+  --color-heather-600: #8b3f7a;
+  --color-heather-700: #732d64;
+  --color-heather-800: #5e2151;
+  --color-heather-900: #47183d;
+  --color-heather-950: #300c28;
+  --color-slate-50: #f5f7f9;
+  --color-slate-100: #ebeff3;
+  --color-slate-200: #d8dfe6;
+  --color-slate-300: #bcc6d2;
+  --color-slate-400: #a2aebb;
+  --color-slate-500: #75828f;
+  --color-slate-600: #4b5866;
+  --color-slate-700: #394552;
+  --color-slate-800: #2b3540;
+  --color-slate-900: #1e262f;
+  --color-slate-950: #10151c;
 }
 
 /* A lower header than Nuxt UI's 4rem (#154): every pixel of it is map lost on the map pages. Radii (#227): cards

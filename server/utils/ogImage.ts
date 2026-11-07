@@ -21,7 +21,7 @@ const COLORS = {
   background: '#f5f7f2',
   map: '#e8efe6',
   grid: '#d9e4d5',
-  // The default accent (BRAND_COLOR): a shared image can't follow each visitor's choice.
+  // The brand color (BRAND_COLOR): a shared image can't follow each visitor's choice.
   brand: '#4f46e5',
   brandSoft: '#e0e7ff',
   brandText: '#3730a3',

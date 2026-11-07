@@ -91,21 +91,21 @@ test('keeps the app out of search engines', async ({ page, request }) => {
 test('lets visitors pick the light or dark mode and an accent color, kept after a reload', async ({ page }) => {
   await page.goto('/login')
   const html = page.locator('html')
-  await expect(html).toHaveAttribute('data-accent', 'indigo')
+  await expect(html).toHaveAttribute('data-accent', 'forest')
 
   await page.getByRole('button', { name: 'Apparence' }).click()
   await page.getByRole('button', { name: 'Sombre' }).click()
   await expect(html).toHaveClass(/dark/)
   await page.getByRole('button', { name: 'Clair' }).click()
   await expect(html).toHaveClass(/light/)
-  await page.getByRole('button', { name: 'Violet' }).click()
-  await expect(page.getByRole('button', { name: 'Violet' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(html).toHaveAttribute('data-accent', 'violet')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7f22fe')
+  await page.getByRole('button', { name: 'Bruyère' }).click()
+  await expect(page.getByRole('button', { name: 'Bruyère' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'heather')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#8b3f7a')
 
   // Rendered by the server with the chosen accent (cookie), the mode restored from localStorage.
   const response = await page.reload()
-  expect(await response!.text()).toContain('data-accent="violet"')
+  expect(await response!.text()).toContain('data-accent="heather"')
   await expect(html).toHaveClass(/light/)
   // Light mode uses the 600 shade, for readable white text on buttons.
   const [primary, shade600] = await page.evaluate(() => {

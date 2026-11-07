@@ -239,41 +239,42 @@ test('sets a profile photo framed and compressed in the settings, shown to the t
   expect(await storedAvatarFiles(userId)).toEqual([])
 })
 
-test('offers ten accent colors in the settings, rendered by the server in a shade readable in both modes', async ({ page, context, baseURL }) => {
-  // A color picked among the four offered before #144 still applies.
-  await context.addCookies([{ name: 'sport-map-accent', value: 'green', url: baseURL }])
+test('offers five terrain accents in the settings, rendered by the server in a light and a dark shade', async ({ page, context, baseURL }) => {
+  // A color picked among the ten offered before #228 becomes the nearest terrain accent (teal: forest green).
+  await context.addCookies([{ name: 'sport-map-accent', value: 'teal', url: baseURL }])
   await page.goto('/settings#appearance')
   await waitForHydration(page)
   const html = page.locator('html')
-  await expect(html).toHaveAttribute('data-accent', 'green')
-  await expect(page.getByRole('group', { name: 'Couleur' }).getByRole('button')).toHaveCount(10)
-  await expect(page.getByRole('button', { name: 'Vert', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'forest')
+  await expect(page.getByRole('group', { name: 'Couleur' }).getByRole('button')).toHaveCount(5)
+  await expect(page.getByRole('button', { name: 'Vert forêt' })).toHaveAttribute('aria-pressed', 'true')
 
   await page.getByRole('button', { name: 'Clair' }).click()
-  await page.getByRole('button', { name: 'Sarcelle' }).click()
-  await expect(page.getByRole('button', { name: 'Sarcelle' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(html).toHaveAttribute('data-accent', 'teal')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#005f5a')
+  await page.getByRole('button', { name: 'Bleu lac' }).click()
+  await expect(page.getByRole('button', { name: 'Bleu lac' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'lake')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#2a6888')
 
-  // No flash: the server renders the accent and its light-mode shade (800 for teal, for white text on buttons and links on the cream surfaces).
+  // No flash: the server renders the accent.
   const response = await page.reload()
-  const body = await response!.text()
-  expect(body).toContain('data-accent="teal"')
-  expect(body).toContain('data-accent-shade="800"')
+  expect(await response!.text()).toContain('data-accent="lake"')
   // A click before hydration is lost and the mode never changes.
   await waitForHydration(page)
   const primary = () => page.evaluate(() => {
     const style = getComputedStyle(document.documentElement)
-    return ['--ui-primary', '--ui-color-primary-800', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
+    return ['--ui-primary', '--ui-color-primary-600', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
   })
-  const [light, shade800] = await primary()
-  expect(light).toBe(shade800)
+  const [light, shade600] = await primary()
+  expect(light).toBe(shade600)
+  expect(shade600).toBe('#2a6888')
 
-  // Dark mode keeps the 400 shade, with dark text on buttons.
+  // Dark mode uses the 400 shade, with ink text on buttons, and so does the browser's theme color.
   await page.getByRole('button', { name: 'Sombre' }).click()
   await expect(html).toHaveClass(/dark/)
   const [dark, , shade400] = await primary()
   expect(dark).toBe(shade400)
+  expect(shade400).toBe('#7fb6d6')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7fb6d6')
 })
 
 test('counts a completed route in the profile summary and statistics', async ({ page, users }) => {

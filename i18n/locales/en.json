@@ -23,15 +23,10 @@
     },
     "accent": "Colour",
     "accents": {
-      "indigo": "Indigo",
-      "violet": "Violet",
-      "fuchsia": "Fuchsia",
-      "pink": "Pink",
-      "yellow": "Amber",
-      "lime": "Lime",
-      "green": "Green",
-      "teal": "Teal",
-      "sky": "Sky blue",
+      "forest": "Forest green",
+      "ochre": "Ochre",
+      "lake": "Lake blue",
+      "heather": "Heather",
       "slate": "Slate"
     }
   },

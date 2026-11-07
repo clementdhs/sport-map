@@ -104,3 +104,27 @@ test('keeps routes to do in the fixed "À faire" list of the collections, which 
 
   expect((await page.request.delete(`/api/routes/${id}`)).ok()).toBe(true)
 })
+
+test('creates a collection from the profile, listed after "À faire" with its visibility (#236)', async ({ page }) => {
+  const name = `Collection du profil e2e ${test.info().retry + 1}`
+  await page.goto('/profile')
+  await waitForHydration(page)
+  await page.getByRole('tab', { name: 'Collections' }).click()
+  const panel = page.getByRole('tabpanel')
+  // The fixed list comes first, labelled as the member's own.
+  await expect(panel.getByRole('link').first()).toContainText('Ma liste')
+  await expect(panel.getByRole('link').first()).toHaveAccessibleName(/^À faire/)
+
+  await panel.getByRole('button', { name: 'Nouvelle collection' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Nouvelle collection' })
+  await dialog.getByLabel('Nom').fill(name)
+  await dialog.getByRole('switch', { name: "Visible par l'équipe" }).click()
+  await dialog.getByRole('button', { name: 'Créer', exact: true }).click()
+  await expect(dialog).toHaveCount(0)
+  const created = panel.getByRole('link', { name: new RegExp(name) })
+  await expect(created).toContainText('0 parcours')
+  await expect(created).toContainText('Partagée par lien')
+
+  const id = (await created.getAttribute('href'))!.split('/').pop()
+  expect((await page.request.delete(`/api/collections/${id}`)).ok()).toBe(true)
+})

@@ -1,31 +1,37 @@
 <script setup lang="ts">
 import type { ProfileInfo, ProfileSummary } from '#shared/types/routes'
 
-// Top of a profile, the member's own or another one's: avatar (photo or initials), name, and the current year's totals.
+// Top of a profile, the member's own or another one's (#236): contour lines behind the ringed avatar (photo or
+// initials), the name and the "@username · member since" line. Another member's profile also shows the current
+// year's totals here; the member's own shows them in its statistics tab.
 const props = defineProps<{
   profile: ProfileInfo
-  summary: ProfileSummary
+  summary?: ProfileSummary
   // Appended to the "@username · member since" line
   detail?: string
 }>()
 
 const { t } = useI18n()
-const { formatDate, formatDistance, formatNumber } = useFormat()
+const { formatDate } = useFormat()
 
 const name = computed(() => props.profile.display_name ?? props.profile.username)
-const summaryTitleId = useId()
 </script>
 
 <template>
-  <div class="space-y-4">
-    <div class="flex items-center gap-4">
-      <!-- The name is the heading next to it. -->
-      <span class="flex shrink-0" aria-hidden="true" data-testid="profile-avatar">
-        <MemberAvatar :name="name" :path="profile.avatar_path" size="3xl" />
+  <div class="relative space-y-4 overflow-y-clip pt-2 pb-1">
+    <ContourTexture />
+    <div class="relative flex items-center gap-4">
+      <!-- The name is the heading next to it. A ring of the surface, then of the accented border, like a map pin. -->
+      <span
+        class="flex shrink-0 rounded-full shadow-[0_0_0_3px_var(--ui-bg),0_0_0_4.5px_var(--ui-border-accented)]"
+        aria-hidden="true"
+        data-testid="profile-avatar"
+      >
+        <MemberAvatar :name="name" :path="profile.avatar_path" size="3xl" class="size-17 font-display text-3xl font-bold lg:size-21 lg:text-4xl" />
       </span>
-      <div class="min-w-0 flex-1 space-y-1">
-        <h1 class="text-2xl font-semibold break-words">{{ name }}</h1>
-        <p class="text-sm text-muted">
+      <div class="min-w-0 flex-1">
+        <h1 class="font-display text-3xl leading-none font-bold break-words lg:text-5xl">{{ name }}</h1>
+        <p class="mt-1 text-sm text-muted lg:text-base">
           @{{ profile.username }} · {{ t('profile.memberSince', { date: formatDate(profile.created_at) }) }}<template v-if="detail"> · {{ detail }}</template>
         </p>
       </div>
@@ -34,24 +40,8 @@ const summaryTitleId = useId()
       </div>
     </div>
 
-    <section :aria-labelledby="summaryTitleId" data-testid="profile-summary">
-      <h2 :id="summaryTitleId" class="mb-1 text-xs font-medium text-muted">{{ t('profile.summary.title', { year: summary.year }) }}</h2>
-      <dl class="grid grid-cols-3 gap-2">
-        <div class="rounded-lg bg-elevated p-3">
-          <dt class="text-xs text-muted">{{ t('profile.summary.distance') }}</dt>
-          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatDistance(summary.distance_m) }}</dd>
-        </div>
-        <div class="rounded-lg bg-elevated p-3">
-          <dt class="text-xs text-muted">{{ t('profile.summary.outings') }}</dt>
-          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ summary.outings }}</dd>
-        </div>
-        <div class="rounded-lg bg-elevated p-3">
-          <dt class="text-xs text-muted">{{ t('profile.summary.gain') }}</dt>
-          <dd class="font-numbers text-xl font-semibold tabular-nums">{{ formatNumber(Math.round(summary.elevation_gain_m)) }} m</dd>
-        </div>
-      </dl>
-    </section>
+    <ProfileYearSummary v-if="summary" :summary="summary" class="relative" />
 
-    <p v-if="profile.bio" class="whitespace-pre-line">{{ profile.bio }}</p>
+    <p v-if="profile.bio" class="relative whitespace-pre-line">{{ profile.bio }}</p>
   </div>
 </template>

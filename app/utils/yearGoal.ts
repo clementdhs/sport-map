@@ -83,3 +83,33 @@ export function goalProgress(goal: YearGoal, outings: StatsOuting[], now = new D
     perWeek: remaining && (remaining * 7) / Math.max(left, 1),
   }
 }
+
+// The year goal drawn as a trail (#236), in a GOAL_TRAIL_WIDTH × GOAL_TRAIL_HEIGHT box: a gentle wave from the
+// 1st of January on the left to the finish signpost on the right, solid as far as the member went, dashed beyond.
+export const GOAL_TRAIL_WIDTH = 340
+export const GOAL_TRAIL_HEIGHT = 72
+export const GOAL_TRAIL_END = 300
+const TRAIL_START = 8
+const TRAIL_STEP = 4
+
+export function goalTrailY(x: number): number {
+  const t = (x - TRAIL_START) / (GOAL_TRAIL_END - TRAIL_START)
+  return 44 + 7 * Math.sin(t * 2.6 * Math.PI) - 6 * t
+}
+
+export function goalTrailX(fraction: number): number {
+  return TRAIL_START + Math.min(Math.max(fraction, 0), 1) * (GOAL_TRAIL_END - TRAIL_START)
+}
+
+const round = (value: number) => Math.round(value * 10) / 10
+
+// SVG path of the trail between two fractions of it (0 the start, 1 the finish).
+export function goalTrailPath(from: number, to: number): string {
+  const start = goalTrailX(from)
+  const end = goalTrailX(to)
+  if (end <= start) return ''
+  const xs = [start]
+  for (let x = Math.ceil(start / TRAIL_STEP) * TRAIL_STEP; x < end; x += TRAIL_STEP) if (x > start) xs.push(x)
+  xs.push(end)
+  return xs.map((x, i) => `${i ? 'L' : 'M'}${round(x)} ${round(goalTrailY(x))}`).join('')
+}

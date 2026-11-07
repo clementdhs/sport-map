@@ -1,4 +1,4 @@
-import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration, waitForMap } from '../fixtures'
+import { ACCOUNT_ROUTE_NAME, expect, openProfileRoutes, test, waitForHydration, waitForMap } from '../fixtures'
 
 // A family member moves the bottom sheet and the side panel; the test account goes through the map pages.
 test.use({ role: 'family', searchScope: 'all' })
@@ -61,12 +61,14 @@ test.describe('as the test account', () => {
       await expect(page).toHaveURL(/\/profile$/)
       await expect(nav.getByRole('link', { name: 'Profil' })).toHaveAttribute('aria-current', 'page')
       await expect(page.getByRole('banner')).toBeVisible()
+      await openProfileRoutes(page)
       await page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) }).click()
       await expect(page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Carte' })).toHaveAttribute('aria-current', 'true')
       const routeUrl = page.url()
       await page.getByRole('button', { name: 'Retour' }).click()
-      await expect(page).toHaveURL(/\/profile$/)
+      await expect(page).toHaveURL(/\/profile\?tab=routes$/)
+      await expect(page.getByRole('tab', { name: 'Parcours', exact: true })).toHaveAttribute('aria-selected', 'true')
 
       await page.goto(routeUrl)
       await waitForHydration(page)
@@ -109,9 +111,10 @@ test.describe('as the test account', () => {
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto('/profile')
     await waitForHydration(page)
-    // Full labels under the icons, none cut off.
-    for (const name of ['Mes parcours', 'Collections', 'Réalisés', 'Statistiques']) {
-      const tab = page.getByRole('tab', { name: new RegExp(name) })
+    // Full labels, none cut off: the three sections, then created and done routes in the Parcours section.
+    for (const name of ['Statistiques', 'Parcours', 'Collections', 'Mes parcours', 'Réalisés']) {
+      if (name === 'Mes parcours') await page.getByRole('tab', { name: 'Parcours', exact: true }).click()
+      const tab = page.getByRole('tab', { name: name === 'Parcours' ? /^Parcours$/ : new RegExp(name) })
       // The count badge has a label slot too, after the tab's own.
       const label = tab.locator('[data-slot="label"]').first()
       await expect(label).toHaveText(name)

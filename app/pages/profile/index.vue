@@ -46,6 +46,11 @@ const tabs = computed(() => [
       </template>
     </ProfileHeader>
 
+    <!-- The goal is a preference of the device and the account, only known in the browser (#141). -->
+    <ClientOnly>
+      <ProfileGoal :outings="data.outings" />
+    </ClientOnly>
+
     <!-- Below md: icon and count on top, label below, so the 4 full labels fit from 360 px. -->
     <UTabs
       :items="tabs"

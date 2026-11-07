@@ -895,6 +895,36 @@
       "distance": "Distance",
       "outings": "Sorties",
       "gain": "D+"
+    },
+    "goal": {
+      "title": "Objectif {year}",
+      "private": "Visible par toi seul",
+      "set": "Fixer un objectif pour {year}",
+      "edit": "Modifier l'objectif",
+      "dialogTitle": "Objectif de l'année",
+      "dialogDescription": "Visible par toi seul, retrouvé sur tous tes appareils. Il vaut aussi les années suivantes tant que tu ne le changes pas.",
+      "metric": "Mesure",
+      "metrics": {
+        "distance": "Distance",
+        "gain": "D+",
+        "outings": "Sorties"
+      },
+      "units": {
+        "distance": "km",
+        "gain": "m",
+        "outings": "sorties"
+      },
+      "sport": "Sport",
+      "target": "Objectif ({unit})",
+      "remove": "Supprimer l'objectif",
+      "outingCount": "{count} sortie | {count} sorties",
+      "progress": "{done} sur {target}",
+      "paceMark": "Rythme régulier pour l'atteindre le 31 décembre",
+      "ahead": "{gap} d'avance sur le rythme",
+      "behind": "{gap} de retard sur le rythme",
+      "onPace": "Pile dans le rythme",
+      "perWeek": "encore {value} par semaine",
+      "reached": "Objectif atteint, bravo !"
     }
   },
   "accountData": {

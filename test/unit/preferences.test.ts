@@ -20,6 +20,7 @@ describe('PREFERENCES', () => {
       mapStyle: 'theme',
       outdoorReadability: false,
       osmPlaces: true,
+      yearGoal: null,
     })
     expect(PREFERENCES.basemap.parse('scan25')).toBe('maptiler')
     expect(PREFERENCES.map3d.parse('1')).toBe(false)

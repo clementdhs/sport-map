@@ -10,6 +10,7 @@ import { parseMapStyleChoice, type MapStyleChoice } from '~/utils/mapStyle'
 import { parseSearchScope } from '~/utils/searchScope'
 import { parseStartArea, type StartArea } from '~/utils/startArea'
 import { parseVoicePrefs, type VoicePrefs } from '~/utils/voiceGuide'
+import { parseYearGoal, type YearGoal } from '~/utils/yearGoal'
 
 // The preferences that follow the member's account (#145), with how the device keeps them: each one's
 // localStorage key holds the last value known, used offline and until the account is loaded. The store
@@ -33,6 +34,8 @@ export interface Preferences {
   outdoorReadability: boolean
   // Useful places from OpenStreetMap on the route and follow maps (#52), shown unless turned off.
   osmPlaces: boolean
+  // The member's goal for the year, shown on their own profile only (#141); null: none.
+  yearGoal: YearGoal | null
 }
 
 interface PreferenceEntry<T> {
@@ -62,6 +65,7 @@ export const PREFERENCES: { [K in AccountPreferenceKey]: PreferenceEntry<Prefere
   mapStyle: { storageKey: 'sport-map:map-style', parse: parseMapStyleChoice, ...AS_TEXT },
   outdoorReadability: { storageKey: 'sport-map:outdoor-readability', ...BOOLEAN },
   osmPlaces: { storageKey: 'sport-map:osm-places', ...BOOLEAN, parse: (value: unknown) => value !== false },
+  yearGoal: { storageKey: 'sport-map:year-goal', parse: parseYearGoal },
 }
 
 export const PREFERENCE_DEFAULTS = Object.fromEntries(

@@ -302,7 +302,7 @@ onBeforeUnmount(() => {
   <Teleport v-if="layersControl" :to="layersControl">
     <UPopover v-model:open="layersOpen" :content="layersContent">
       <button ref="layersButton" type="button" class="flex items-center justify-center" :title="t('map.layers')" :aria-label="t('map.layers')">
-        <UIcon name="i-lucide-layers" class="size-4 text-neutral-800 dark:text-neutral-100" />
+        <UIcon name="i-lucide-layers" class="size-5 text-neutral-800 dark:text-neutral-100" />
       </button>
       <template #content>
         <div class="w-60 space-y-4 p-3">

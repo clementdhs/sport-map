@@ -87,10 +87,16 @@ test.describe('as the test account', () => {
     expect((await logo.boundingBox())!.x).toBeLessThan(40)
     const accountBox = (await account.boundingBox())!
     expect(1600 - accountBox.x - accountBox.width).toBeLessThan(40)
-    // Its 40 px touch zone reaches beyond the 32 px button.
-    for (const y of [accountBox.y - 3.5, accountBox.y + accountBox.height + 3.5]) {
+    // Its touch zone is at least 40 px high (the avatar button is 40 px; smaller header buttons reach it with ::after).
+    for (const y of [accountBox.y + accountBox.height / 2 - 19.5, accountBox.y + accountBox.height / 2 + 19.5]) {
       expect(await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('button')?.getAttribute('aria-label'),
         [accountBox.x + accountBox.width / 2, y])).toMatch(/^Mon compte/)
+    }
+    const recordBox = (await page.getByRole('banner').getByRole('link', { name: 'Enregistrer une sortie' }).boundingBox())!
+    expect(recordBox.height).toBeLessThan(40)
+    for (const y of [recordBox.y + recordBox.height / 2 - 19.5, recordBox.y + recordBox.height / 2 + 19.5]) {
+      expect(await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('a')?.getAttribute('href'),
+        [recordBox.x + recordBox.width / 2, y])).toBe('/record')
     }
 
     await page.goto('/profile')

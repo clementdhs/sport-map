@@ -101,6 +101,8 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     updated_at: '2026-09-28T10:00:00Z',
     rating_avg: null,
     rating_count: 0,
+    privacy_masked: false,
+    privacy_hidden: false,
     owner_id: 'me',
     geometry: { type: 'LineString', coordinates: body.coordinates },
     elevation_profile: body.elevations ?? null,

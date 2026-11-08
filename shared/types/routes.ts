@@ -24,6 +24,9 @@ export type RouteDetail = Pick<
   Tables<'routes'>,
   | 'id' | 'name' | 'description' | 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'elevation_loss_m'
   | 'is_public' | 'is_loop' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
+  // Privacy zones (#254): the team sees the track without its start or end (masked), or doesn't see the route
+  // (hidden). The owner gets the full track and these flags, the others only the visible part.
+  | 'privacy_masked' | 'privacy_hidden'
 > & {
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.

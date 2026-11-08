@@ -242,6 +242,12 @@
       "loopEnd": "Back to the start",
       "number": "Stage {number}",
       "at": "Estimated time from the start: "
+    },
+    "privacy": {
+      "masked": "Start and end hidden by {name}: the track, distance and climb are those of the visible part.",
+      "maskedOwner": "The rest of the team doesn't see the start and end of this route, which are in one of your privacy zones.",
+      "hiddenOwner": "The rest of the team doesn't see this route: it lies entirely within your privacy zones.",
+      "settingsLink": "My zones"
     }
   },
   "reviews": {
@@ -1084,6 +1090,7 @@
       "sport": "Default sport",
       "paces": "My paces",
       "startArea": "My start area",
+      "privacy": "Privacy",
       "voice": "Voice guidance"
     },
     "profileHint": "What the team sees on {link} ({username}).",
@@ -1129,6 +1136,29 @@
       "clear": "Remove the area",
       "saved": "Start area saved",
       "cleared": "Start area removed"
+    },
+    "privacy": {
+      "hint": "The start and end of your routes and outings inside one of these zones (home, work…) stay hidden from the rest of the team, on the map and in shared link previews: the track starts where it leaves the zone, and the distance and climb others see are those of the visible part. You still see everything.",
+      "none": "No zone: the team sees your tracks in full.",
+      "radius": "Radius {radius}",
+      "remove": "Remove the zone {name}",
+      "removeConfirm": "Remove the zone “{name}”? The start and end of your routes inside it will be visible to the team again.",
+      "unnamed": "Unnamed zone",
+      "new": "Add a zone",
+      "mapHint": "Search an address or tap the map to place the zone's centre. The circle actually used is moved slightly at random, so that the centre can't be found by crossing several routes.",
+      "radiusLabel": "Radius",
+      "label": "Name",
+      "labelPlaceholder": "Home",
+      "optional": "Optional",
+      "add": "Add the zone",
+      "added": "Zone added: your routes and outings are up to date",
+      "addFailed": "Zone not added",
+      "removed": "Zone removed: your routes and outings are up to date",
+      "removeFailed": "Zone not removed",
+      "notApplied": "Some routes or outings couldn't be updated",
+      "reapplied": "Your routes and outings are up to date",
+      "retry": "Try again",
+      "loadFailed": "Couldn't load your privacy zones"
     },
     "avatar": {
       "title": "Profile photo",
@@ -1328,7 +1358,11 @@
     "sendLivePointsFailed": "Couldn't send your location",
     "stopLiveShareFailed": "Couldn't stop sharing your location",
     "loadLiveSharesFailed": "Couldn't load the shared locations",
-    "invalidRequest": "Invalid request"
+    "invalidRequest": "Invalid request",
+    "loadPrivacyZonesFailed": "Couldn't load your privacy zones",
+    "savePrivacyZoneFailed": "Couldn't save the privacy zone",
+    "tooManyPrivacyZones": "5 privacy zones at most",
+    "privacyZoneNotFound": "Privacy zone not found"
   },
   "archive": {
     "files": {
@@ -1344,6 +1378,7 @@
       "routing": "routing.json",
       "live": "location-sharing.json",
       "preferences": "settings.json",
+      "privacyZones": "privacy-zones.json",
       "gpxFolder": "routes",
       "photosFolder": "photos"
     },
@@ -1362,6 +1397,7 @@
       "routing": "your number of route calculations today (limited per person)",
       "live": "your location shared with the team during an outing in progress (deleted when the outing ends)",
       "preferences": "your settings kept in your account (basemap, 3D view, map orientation, home filter, “Data” screen, voice guidance)",
+      "privacyZones": "your privacy zones (place, radius, and the randomly moved centre that cuts tracks): the start and end of your routes and outings inside them stay hidden from the team",
       "json": "The .json files are structured text (JSON), readable by most software."
     }
   }

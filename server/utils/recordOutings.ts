@@ -67,13 +67,15 @@ async function freshBestEfforts(supabase: Supabase, rows: StoredEfforts[]): Prom
 
   for (let i = 0; i < stale.length; i += TRACKS_PER_REQUEST) {
     const chunk = new Map(stale.slice(i, i + TRACKS_PER_REQUEST).map(row => [row.id, row.kind]))
-    const { data, error } = await supabase.from('route_outings').select('id, track').in('id', [...chunk.keys()])
+    // The recorder's full points when the team sees them cut by privacy zones (#254).
+    const { data, error } = await supabase.from('route_outings').select('id, track, original:outing_originals(track)').in('id', [...chunk.keys()])
     if (!data) {
       // The records then miss these outings' best times, until the next load.
       console.error('[freshBestEfforts] tracks', error)
       return efforts
     }
-    await Promise.all(data.map(async ({ id, track }) => {
+    await Promise.all(data.map(async ({ id, track: visible, original }) => {
+      const track = original?.track ?? visible
       if (!Array.isArray(track) || track.length < 2) return
       const computed = bestEfforts(track as unknown as OutingTrackPoint[], chunk.get(id)!)
       efforts.set(id, computed)

@@ -43,6 +43,8 @@ export default defineEventHandler(async (event) => {
     .select('name, sport_type, distance_m, elevation_gain_m, elevation_profile, geometry:route_geojson')
     .eq('id', id)
     .eq('is_public', true)
+    // Entirely inside its owner's privacy zones (#254). Masked routes are cut in the row itself.
+    .eq('privacy_hidden', false)
     .maybeSingle()
 
   if (error) {

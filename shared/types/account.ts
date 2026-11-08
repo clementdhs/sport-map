@@ -17,3 +17,19 @@ export type MyPreferences = Partial<Record<AccountPreferenceKey, unknown>>
 // GET /api/profile/me/pace-suggestions: the pace on the flat (min/km) each sport's latest GPS outings give, and how
 // many outings it comes from (#146, suggestPaces). Sports without such outings are left out.
 export type PaceSuggestions = Partial<Record<SportType, { pace: number, outings: number }>>
+
+// GET /api/profile/me/privacy-zones (#254): the member's zones as they placed them (the moved centre that cuts
+// tracks stays in the database).
+export type PrivacyZone = {
+  id: string
+  label: string | null
+  center: [lng: number, lat: number]
+  radius_m: number
+}
+
+// POST and DELETE /api/profile/me/privacy-zones: the zones, and whether every route and outing could be cut again
+// (false: some kept their previous cut, POST /api/profile/me/privacy-zones/apply tries again).
+export type PrivacyZonesResult = {
+  zones: PrivacyZone[]
+  applied: boolean
+}

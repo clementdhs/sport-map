@@ -242,6 +242,12 @@
       "loopEnd": "Retour au départ",
       "number": "Étape {number}",
       "at": "Temps de passage estimé : "
+    },
+    "privacy": {
+      "masked": "Départ et arrivée masqués par {name} : la trace, la distance et le dénivelé sont ceux de la partie visible.",
+      "maskedOwner": "Le reste de l'équipe ne voit pas le départ et l'arrivée de ce parcours, qui sont dans une de tes zones de confidentialité.",
+      "hiddenOwner": "Le reste de l'équipe ne voit pas ce parcours : il est entièrement dans tes zones de confidentialité.",
+      "settingsLink": "Mes zones"
     }
   },
   "reviews": {
@@ -1084,6 +1090,7 @@
       "sport": "Sport par défaut",
       "paces": "Mes allures",
       "startArea": "Ma zone de départ",
+      "privacy": "Confidentialité",
       "voice": "Guidage vocal"
     },
     "profileHint": "Ce que l'équipe voit sur {link} ({username}).",
@@ -1129,6 +1136,29 @@
       "clear": "Retirer la zone",
       "saved": "Zone de départ enregistrée",
       "cleared": "Zone de départ retirée"
+    },
+    "privacy": {
+      "hint": "Le départ et l'arrivée de tes parcours et de tes sorties qui sont dans une de ces zones (chez toi, au travail…) restent cachés au reste de l'équipe, sur la carte comme dans l'aperçu des liens partagés : la trace commence à la sortie de la zone, et les distances et le dénivelé montrés aux autres sont ceux de la partie visible. Toi, tu vois tout.",
+      "none": "Aucune zone : l'équipe voit tes traces en entier.",
+      "radius": "Rayon {radius}",
+      "remove": "Retirer la zone {name}",
+      "removeConfirm": "Retirer la zone « {name} » ? Le départ et l'arrivée de tes parcours qui y sont redeviendront visibles pour l'équipe.",
+      "unnamed": "Zone sans nom",
+      "new": "Ajouter une zone",
+      "mapHint": "Cherche une adresse ou touche la carte pour placer le centre de la zone. Le cercle réellement utilisé est légèrement décalé au hasard, pour qu'on ne retrouve pas le centre en croisant plusieurs parcours.",
+      "radiusLabel": "Rayon",
+      "label": "Nom",
+      "labelPlaceholder": "Maison",
+      "optional": "Facultatif",
+      "add": "Ajouter la zone",
+      "added": "Zone ajoutée : tes parcours et sorties sont à jour",
+      "addFailed": "Zone non ajoutée",
+      "removed": "Zone retirée : tes parcours et sorties sont à jour",
+      "removeFailed": "Zone non retirée",
+      "notApplied": "Certains parcours ou sorties n'ont pas pu être mis à jour",
+      "reapplied": "Tes parcours et sorties sont à jour",
+      "retry": "Réessayer",
+      "loadFailed": "Impossible de charger tes zones de confidentialité"
     },
     "avatar": {
       "title": "Photo de profil",
@@ -1328,7 +1358,11 @@
     "sendLivePointsFailed": "Impossible d'envoyer ta position",
     "stopLiveShareFailed": "Impossible d'arrêter le partage de position",
     "loadLiveSharesFailed": "Impossible de charger les positions partagées",
-    "invalidRequest": "Requête invalide"
+    "invalidRequest": "Requête invalide",
+    "loadPrivacyZonesFailed": "Impossible de charger tes zones de confidentialité",
+    "savePrivacyZoneFailed": "Impossible d'enregistrer la zone de confidentialité",
+    "tooManyPrivacyZones": "5 zones de confidentialité au maximum",
+    "privacyZoneNotFound": "Zone de confidentialité introuvable"
   },
   "archive": {
     "files": {
@@ -1344,6 +1378,7 @@
       "routing": "calculs.json",
       "live": "partage-position.json",
       "preferences": "reglages.json",
+      "privacyZones": "zones-de-confidentialite.json",
       "gpxFolder": "parcours",
       "photosFolder": "photos"
     },
@@ -1362,6 +1397,7 @@
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",
       "live": "ta position partagée avec l'équipe pendant une sortie en cours (effacée à la fin de la sortie)",
       "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
+      "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
   }

@@ -12,6 +12,8 @@ import type { LngLat } from '#shared/utils/routes'
 export default defineEventHandler(async (event): Promise<RouteOsmPlaces> => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
+  // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
+  await requireMfa(event)
 
   const id = getRouteIdParam(event)
   const body = await readLocalizedBody(event, osmPlacesPayloadSchema)

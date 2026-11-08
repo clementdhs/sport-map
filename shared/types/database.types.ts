@@ -779,6 +779,7 @@ export type Database = {
       }
       consume_routing_quota: { Args: { daily_limit: number }; Returns: number }
       login_email: { Args: { login_username: string }; Returns: string }
+      mfa_ok: { Args: never; Returns: boolean }
       route_done_count: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {

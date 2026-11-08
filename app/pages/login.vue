@@ -21,9 +21,22 @@ const redirectTo = computed(() => {
   return typeof target === 'string' && target.startsWith('/') && !target.startsWith('//') ? target : '/'
 })
 
+// Signed in: on to the page asked for, unless the account has two-factor authentication and this session has no
+// code yet (#253), sent back here by the auth middleware or just signed in with the password. The claims change
+// again once the code is verified (aal2), which goes on.
+const step = ref<'password' | 'code'>('password')
+async function continueSignedIn() {
+  if (await needsMfaCode()) {
+    step.value = 'code'
+    return
+  }
+  await navigateTo(redirectTo.value)
+}
+if (user.value) await continueSignedIn()
 watch(user, (value) => {
-  if (value) navigateTo(redirectTo.value)
-}, { immediate: true })
+  if (value) continueSignedIn()
+  else step.value = 'password'
+})
 
 // Link previews (WhatsApp, Messages): their bots have no session, so a shared route link lands here. The image
 // draws the route's name and track, and only exists for routes visible to the family.
@@ -87,6 +100,57 @@ async function signInWithUsername(username: string, password: string): Promise<s
   }
 }
 
+type CodeState = { code: string }
+
+const codeFields = computed<AuthFormField[]>(() => [
+  {
+    name: 'code',
+    type: 'text',
+    label: t('auth.mfa.code'),
+    placeholder: '123456',
+    required: true,
+    autocomplete: 'one-time-code',
+    inputmode: 'numeric',
+    maxlength: 9,
+  },
+])
+
+function validateCode(state: Partial<CodeState>): FormError[] {
+  return isTotpCode(normalizeTotpCode(state.code ?? '')) ? [] : [{ name: 'code', message: t('auth.mfa.codeFormat') }]
+}
+
+// The account's first verified app (two at most): the code of either one is accepted by its own factor only, so
+// a code that fails on the first is tried on the second.
+async function onSubmitCode(event: FormSubmitEvent<CodeState>) {
+  loading.value = true
+  errorMessage.value = ''
+  const code = normalizeTotpCode(event.data.code)
+  const { data: factors, error: listError } = await supabase.auth.mfa.listFactors()
+  // No app any more (deleted in the dashboard after a lost phone): the session still lists it until refreshed.
+  if (factors && !factors.totp.length) {
+    await supabase.auth.refreshSession()
+    loading.value = false
+    return continueSignedIn()
+  }
+  let error = listError
+  for (const factor of factors?.totp ?? []) {
+    const result = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code })
+    error = result.error
+    if (!error) break
+  }
+  loading.value = false
+  if (!error) return continueSignedIn()
+  const key = totpErrorKey(error.code)
+  errorMessage.value = key ? t(key) : error.message
+}
+
+async function signOut() {
+  errorMessage.value = ''
+  // This browser only: the default (global) would also sign the member out on the devices where they did type the
+  // code, and anyone holding the password could do it from here.
+  await supabase.auth.signOut({ scope: 'local' })
+}
+
 async function onSubmit(event: FormSubmitEvent<LoginState>) {
   loading.value = true
   errorMessage.value = ''
@@ -107,6 +171,27 @@ async function onSubmit(event: FormSubmitEvent<LoginState>) {
     </div>
     <AuthCard>
       <UAuthForm
+        v-if="step === 'code'"
+        :key="'code'"
+        :title="t('auth.mfa.title')"
+        :description="t('auth.mfa.description')"
+        :fields="codeFields"
+        :validate="validateCode"
+        :loading="loading"
+        :submit="{ label: t('auth.mfa.submit'), block: true, size: 'xl' }"
+        :ui="AUTH_FORM_UI"
+        @submit="onSubmitCode"
+      >
+        <template #validation>
+          <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
+        </template>
+        <template #footer>
+          <UButton :label="t('auth.mfa.otherAccount')" color="neutral" variant="link" class="px-0" @click="signOut" />
+        </template>
+      </UAuthForm>
+      <UAuthForm
+        v-else
+        :key="'password'"
         :title="t('auth.login.title')"
         :fields="fields"
         :validate="validate"

@@ -3,7 +3,7 @@ import type { ProfileInfo } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
 // Account settings, reached from the account menu, in sections with their own anchor (#111): profile, account
-// (password, data), appearance and language, default sport, paces per sport, voice guidance.
+// (password, data), security (two-factor authentication), appearance and language, default sport, paces per sport, voice guidance.
 const { t } = useI18n()
 const { maptilerKey } = useRuntimeConfig().public
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
@@ -60,6 +60,7 @@ function onPasswordChanged() {
 const sections = computed(() => [
   { id: 'profile', label: t('settings.sections.profile'), icon: 'i-lucide-user' },
   { id: 'account', label: t('settings.sections.account'), icon: 'i-lucide-key-round' },
+  { id: 'security', label: t('settings.sections.security'), icon: 'i-lucide-shield-check' },
   { id: 'appearance', label: t('settings.sections.appearance'), icon: 'i-lucide-palette' },
   { id: 'sport', label: t('settings.sections.sport'), icon: 'i-lucide-footprints' },
   { id: 'paces', label: t('settings.sections.paces'), icon: 'i-lucide-timer' },
@@ -131,6 +132,17 @@ const voice = useVoicePrefs()
             <NewPasswordForm :submit-label="t('settings.changePassword')" class="max-w-sm" @done="onPasswordChanged" />
           </div>
           <AccountData :username="profile.username" />
+        </section>
+
+        <section id="security" :class="SECTION_CLASS" aria-labelledby="settings-security-title">
+          <h2 id="settings-security-title" :class="TITLE_CLASS">{{ t('settings.sections.security') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.mfa.sectionHint') }}</p>
+          <div :class="CARD_CLASS">
+            <!-- The factors come from the auth server, read in the browser. -->
+            <ClientOnly>
+              <TwoFactorSettings />
+            </ClientOnly>
+          </div>
         </section>
 
         <section id="appearance" :class="SECTION_CLASS" aria-labelledby="settings-appearance-title">

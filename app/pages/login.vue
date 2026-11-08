@@ -146,7 +146,9 @@ async function onSubmitCode(event: FormSubmitEvent<CodeState>) {
 
 async function signOut() {
   errorMessage.value = ''
-  await supabase.auth.signOut()
+  // This browser only: the default (global) would also sign the member out on the devices where they did type the
+  // code, and anyone holding the password could do it from here.
+  await supabase.auth.signOut({ scope: 'local' })
 }
 
 async function onSubmit(event: FormSubmitEvent<LoginState>) {

@@ -113,3 +113,37 @@ begin
   return found;
 end;
 $$;
+
+-- Same for the routing quota (the API also calls requireMfa): a direct call without the code spends nothing.
+create or replace function public.consume_routing_quota(daily_limit integer)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  caller uuid := auth.uid();
+  today date := (now() at time zone 'Europe/Paris')::date;
+  used integer;
+begin
+  if caller is null then
+    raise exception 'consume_routing_quota: not signed in' using errcode = '42501';
+  end if;
+  if not public.mfa_ok() then
+    return -1;
+  end if;
+  -- Only today's counter matters.
+  delete from public.routing_usage where user_id = caller and day < today;
+
+  insert into public.routing_usage as usage (user_id, day, count)
+  values (caller, today, 1)
+  on conflict (user_id, day) do update set count = usage.count + 1
+    where usage.count < daily_limit
+  returning usage.count into used;
+
+  if used is null or used > daily_limit then
+    return -1;
+  end if;
+  return daily_limit - used;
+end;
+$$;

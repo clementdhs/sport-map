@@ -59,7 +59,7 @@ test('asks members who turned it on for a code from their app', async ({ page, b
     // A new sign-in with the e-mail: the password alone opens nothing.
     const other = await newPage(browser)
     await signIn(other, account.email, account.password)
-    await expect(other.getByRole('heading', { name: 'Code de vérification' })).toBeVisible()
+    await expect(other.getByText('Code de vérification', { exact: true })).toBeVisible()
     // RLS shows an aal1 session nothing, even through the API, and service role routes refuse it too.
     expect((await other.request.get('/api/profile/me/info')).status()).toBe(500)
     expect((await other.request.get(`/api/profile/${SEED_OWNER.username}`)).status()).toBe(404)
@@ -68,7 +68,7 @@ test('asks members who turned it on for a code from their app', async ({ page, b
     await other.goto('/settings')
     await expect(other).toHaveURL('/login?redirect=/settings')
     await waitForHydration(other)
-    await expect(other.getByRole('heading', { name: 'Code de vérification' })).toBeVisible()
+    await expect(other.getByText('Code de vérification', { exact: true })).toBeVisible()
 
     // A wrong code is refused, the right one goes on to the page asked for.
     const code = other.locator('input[name="code"]')
@@ -85,7 +85,7 @@ test('asks members who turned it on for a code from their app', async ({ page, b
     // Same with the username; another account can be used instead.
     const third = await newPage(browser)
     await signIn(third, account.username, account.password)
-    await expect(third.getByRole('heading', { name: 'Code de vérification' })).toBeVisible()
+    await expect(third.getByText('Code de vérification', { exact: true })).toBeVisible()
     await third.getByRole('button', { name: 'Changer de compte' }).click()
     await expect(third.locator('input[name="identifier"]')).toBeVisible()
     await third.goto('/')

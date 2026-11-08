@@ -527,8 +527,8 @@ export type Database = {
           start_point: unknown
           updated_at: string
           way_info: Json | null
-          route_geojson: Json | null
           route_done_count: number | null
+          route_geojson: Json | null
           route_preview: Json | null
           route_quote: Json | null
           route_thumbnail: Json | null
@@ -660,17 +660,17 @@ export type Database = {
       }
       consume_routing_quota: { Args: { daily_limit: number }; Returns: number }
       login_email: { Args: { login_username: string }; Returns: string }
-      route_geojson: {
-        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
-        Returns: {
-          error: true
-        } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
-      }
       route_done_count: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {
           error: true
         } & "the function public.route_done_count with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_geojson: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
       route_preview: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }

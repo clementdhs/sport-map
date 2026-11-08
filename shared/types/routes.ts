@@ -23,7 +23,7 @@ export type OutingTimes = {
 export type RouteDetail = Pick<
   Tables<'routes'>,
   | 'id' | 'name' | 'description' | 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'elevation_loss_m'
-  | 'is_public' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
+  | 'is_public' | 'is_loop' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
 > & {
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.
@@ -38,7 +38,7 @@ export type RouteDetail = Pick<
   photos: RoutePhoto[]
   // Outings recorded with the GPS on this route, latest first
   outings: RouteOuting[]
-  owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
+  owner: Pick<Tables<'profiles'>, 'username' | 'display_name' | 'avatar_path'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null
 }

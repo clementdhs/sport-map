@@ -20,7 +20,8 @@ const { t } = useI18n()
 const reviewSchemaLocalized = useLocalizedSchema(reviewSchema)
 
 const base = `/api/routes/${props.routeId}/reviews`
-const { data } = await useFetch<RouteReviews>(base)
+// Shared with RouteTeamWords (#233): one request, and the mutations below show there too.
+const { data } = await useFetch<RouteReviews>(base, { key: routeReviewsKey(props.routeId) })
 
 const myReview = computed(() => data.value?.reviews.find(review => review.is_mine) ?? null)
 const canReview = computed(() => !!user.value && !props.isOwner && props.isPublic)

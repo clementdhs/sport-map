@@ -12,6 +12,10 @@ const props = defineProps<{
   grades?: number[] | null
   // Metres along the track of a flyover's moving point (#74), shown when nothing is hovered
   marker?: number | null
+  // Numbered steps on the line (#233), as on the map: metres along the track and their number
+  steps?: { distanceM: number, label: string }[]
+  // The caption as a section heading with the elevation range (route page, #233), else a small block caption
+  heading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -47,6 +51,17 @@ const axis = computed(() => {
   return { min, max, low, high, ticks }
 })
 
+// Kilometre ticks under the plot: a round step giving at most 5 intervals, the total at the end.
+const KM_STEPS = [1, 2, 5, 10, 20, 50, 100]
+const kmTicks = computed(() => {
+  const km = totalM.value / 1000
+  const step = KM_STEPS.find(s => km / s <= 5) ?? KM_STEPS.at(-1)!
+  const ticks: number[] = []
+  // The last round tick stays clear of the total written at the right end.
+  for (let value = step; value < km - step * 0.4; value += step) ticks.push(value)
+  return ticks.map(value => ({ value, left: (value / km) * 100 }))
+})
+
 const toX = (meters: number) => totalM.value ? (meters / totalM.value) * WIDTH : 0
 const toY = (elevation: number) => HEIGHT - ((elevation - axis.value.low) / (axis.value.high - axis.value.low)) * HEIGHT
 
@@ -72,6 +87,9 @@ const slopePaths = computed(() => {
   })
   return pieces
 })
+
+// Step markers on the line.
+const stepMarkers = computed(() => (props.steps ?? []).map(step => ({ label: step.label, ...pointAt(step.distanceM) })))
 
 const areaPath = computed(() => `${linePath.value}L${WIDTH},${HEIGHT}L0,${HEIGHT}Z`)
 
@@ -99,13 +117,18 @@ const active = computed(() => {
 const flyoverMarker = computed(() => {
   const meters = props.marker
   if (meters == null || activeIndex.value !== null || !totalM.value) return null
+  return pointAt(meters)
+})
+
+// Where the line is `meters` along the track, between the track's points, in % of the plot.
+function pointAt(meters: number) {
   const i = Math.max(1, firstAtOrAfter(meters))
   const [m0, m1] = [distances.value[i - 1]!, distances.value[i]!]
   const [e0, e1] = [props.elevations[i - 1]!, props.elevations[i]!]
   const ratio = m1 > m0 ? Math.min(1, Math.max(0, (meters - m0) / (m1 - m0))) : 1
   const elevation = e0 + (e1 - e0) * ratio
   return { left: (toX(Math.min(meters, totalM.value)) / WIDTH) * 100, top: (toY(elevation) / HEIGHT) * 100 }
-})
+}
 
 function firstAtOrAfter(meters: number): number {
   let low = 0
@@ -152,9 +175,13 @@ const summary = computed(() =>
 
 <template>
   <figure class="space-y-1">
-    <figcaption class="text-sm font-medium">{{ t('elevationProfile.title') }}</figcaption>
+    <figcaption class="flex items-baseline justify-between gap-2">
+      <span :class="heading ? 'font-display text-[1.375rem] leading-tight font-bold' : 'text-sm font-medium'">{{ t('elevationProfile.title') }}</span>
+      <span class="text-sm text-muted">{{ t('elevationProfile.range', { min: formatElevation(axis.min), max: formatElevation(axis.max) }) }}</span>
+    </figcaption>
 
-    <div class="flex gap-2">
+    <!-- Room above the plot for the step markers of a summit. -->
+    <div class="flex gap-2" :class="{ 'pt-5': stepMarkers.length }">
       <div class="relative h-32 w-12 shrink-0 text-xs text-muted tabular-nums" aria-hidden="true">
         <span
           v-for="tick in axis.ticks"
@@ -185,9 +212,10 @@ const summary = computed(() =>
             :y2="toY(tick)"
             stroke="var(--ui-border)"
             stroke-width="1"
+            stroke-dasharray="2 4"
             vector-effect="non-scaling-stroke"
           />
-          <path :d="areaPath" :fill="TRACK_CSS_COLOR" fill-opacity="0.1" />
+          <path :d="areaPath" :fill="TRACK_CSS_COLOR" fill-opacity="0.14" />
           <path
             v-for="(piece, i) in slopePaths"
             :key="i"
@@ -204,12 +232,22 @@ const summary = computed(() =>
             :d="linePath"
             fill="none"
             :stroke="TRACK_CSS_COLOR"
-            stroke-width="2"
+            stroke-width="2.2"
             stroke-linejoin="round"
             stroke-linecap="round"
             vector-effect="non-scaling-stroke"
           />
         </svg>
+
+        <!-- Numbered like the map's markers; the steps' list says the same, so they are hidden from screen readers. -->
+        <span
+          v-for="step in stepMarkers"
+          :key="step.label"
+          class="pointer-events-none absolute flex h-4.5 min-w-4.5 -translate-x-1/2 -translate-y-[calc(100%+3px)] items-center justify-center rounded-[2px] bg-inverted px-0.5 text-[0.625rem] font-bold text-inverted"
+          :style="{ left: `${step.left}%`, top: `${step.top}%` }"
+          aria-hidden="true"
+          data-testid="profile-step"
+        >{{ step.label }}</span>
 
         <template v-if="flyoverMarker">
           <div class="pointer-events-none absolute inset-y-0 w-px bg-inverted/40" :style="{ left: `${flyoverMarker.left}%` }" />
@@ -240,8 +278,14 @@ const summary = computed(() =>
       </div>
     </div>
 
-    <div class="ml-14 flex justify-between text-xs text-muted tabular-nums" aria-hidden="true">
-      <span>0 km</span>
+    <div class="relative ml-14 flex h-4 justify-between font-numbers text-xs text-muted tabular-nums" aria-hidden="true">
+      <span>0</span>
+      <span
+        v-for="tick in kmTicks"
+        :key="tick.value"
+        class="absolute -translate-x-1/2"
+        :style="{ left: `${tick.left}%` }"
+      >{{ formatNumber(tick.value) }}</span>
       <span>{{ formatDistance(totalM) }}</span>
     </div>
   </figure>

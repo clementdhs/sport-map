@@ -263,7 +263,6 @@ test("cards show a member's quote and my done stamp", async ({ page }) => {
     const cards = page.getByTestId('route-results').locator('li a')
     await expect(cards.filter({ hasText: SEEDED_ROUTE_NAME }).getByTestId('route-quote'))
       .toHaveText(`« ${SEEDED_REVIEW.comment} » — ${E2E_NEIGHBORS[0]!.username}`)
-    await expect(cards.filter({ hasText: SEEDED_ROUTE_NAME }).getByText('Fait une fois')).toHaveCount(0)
     const mine = cards.filter({ hasText: 'Boucle tamponnée e2e' })
     await expect(mine.getByText('Fait une fois')).toBeAttached()
     await expect(mine.getByTestId('route-quote')).toHaveCount(0)

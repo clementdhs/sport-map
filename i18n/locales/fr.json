@@ -663,7 +663,8 @@
       "arrival": "Arrivée estimée",
       "time": "Heure",
       "battery": "Batterie"
-    }
+    },
+    "onRoute": "sur « {name} »"
   },
   "follow": {
     "title": "Suivre « {name} »",
@@ -672,9 +673,6 @@
     "arrived": "Tu es arrivé !",
     "recenter": "Recentrer",
     "done": "Parcouru",
-    "remaining": "Restant",
-    "remainingGain": "D+ restant",
-    "percent": "{percent} % du parcours",
     "accuracy": "Précision GPS : ± {accuracy} m",
     "searchingPosition": "Recherche de ta position…",
     "searchingGps": "Recherche du signal GPS…",
@@ -684,7 +682,14 @@
     "record": "Enregistrer la sortie",
     "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé.",
     "headingUp": "Orienter la carte dans le sens de la marche",
-    "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement"
+    "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement",
+    "arrival": "Arrivée",
+    "arrivalIn": "Arrivée dans {distance}, environ {duration}",
+    "arrivalAt": "Arrivée dans {distance}",
+    "inProgress": "Suivi en cours",
+    "time": "Temps",
+    "panel": "Progression",
+    "progress": "{done} parcourus sur {total} ({percent} %)"
   },
   "live": {
     "heading": "En direct",
@@ -821,6 +826,7 @@
     "app": {
       "routes": "Parcours",
       "route": "Tracé d'un parcours",
+      "routeDone": "Partie déjà parcourue (suivi)",
       "start": "Départ",
       "end": "Arrivée",
       "waypoint": "Point de passage numéroté",

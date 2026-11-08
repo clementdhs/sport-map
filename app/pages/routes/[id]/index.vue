@@ -131,6 +131,17 @@ const profileSteps = computed(() => steps.value.map((step, i) => ({ distanceM: s
 const osm = useRouteOsmPlaces(parcours.value.id, coordinates, parcours.value.osm_places)
 const osmPlaces = computed(() => placesAlongTrack(coordinates.value, osm.places.value))
 const isOwner = computed(() => user.value?.sub === parcours.value?.owner_id)
+const privacyNotice = computed(() => {
+  const shown = parcours.value
+  if (!shown) return null
+  if (isOwner.value) {
+    if (shown.privacy_hidden && shown.is_public) return t('route.privacy.hiddenOwner')
+    return shown.privacy_masked ? t('route.privacy.maskedOwner') : null
+  }
+  return shown.privacy_masked
+    ? t('route.privacy.masked', { name: shown.owner?.display_name ?? shown.owner?.username ?? '' })
+    : null
+})
 // "Fait ×N" (#229): the member's outings on the route, a route only marked as done counting once.
 const doneCount = computed(() => Math.max(outings.value.filter(outing => outing.is_mine).length, viewer.value.completed_at ? 1 : 0))
 
@@ -346,6 +357,15 @@ useSeoMeta({
         <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
       </div>
+
+      <!-- Privacy zones (#254): the owner sees the full track, the others its visible part. -->
+      <p v-if="privacyNotice" class="mt-2 flex items-start gap-1.5 text-sm text-muted" data-privacy-notice>
+        <UIcon name="i-lucide-shield" class="mt-0.5 size-4 shrink-0" />
+        <span>
+          {{ privacyNotice }}
+          <ULink v-if="isOwner" to="/settings#privacy" class="text-primary">{{ t('route.privacy.settingsLink') }}</ULink>
+        </span>
+      </p>
     </div>
 
     <KeyFigures :figures="figures" />

@@ -13,12 +13,13 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
       is_public, is_loop, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois, way_info,
-      rating_avg, rating_count,
+      rating_avg, rating_count, privacy_masked, privacy_hidden,
       geometry:route_geojson,
+      ${ORIGINAL_COLUMNS},
       osm_places:route_osm_places(places, searched_at),
       owner:profiles(username, display_name, avatar_path),
       photos:route_photos(id, storage_path),
-      outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, has_track, user:profiles(username, display_name))
+      outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, has_track, user:profiles(username, display_name), original:outing_originals(outing_id))
     `)
     .eq('id', id)
     .order('created_at', { referencedTable: 'route_photos' })
@@ -48,16 +49,23 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     }
   }
 
-  const { photos, outings, osm_places: osmPlaces, ...route } = data
+  // The full track for its owner (route_originals is theirs only); the team gets the routes row's visible part.
+  const { photos, outings, osm_places: osmPlaces, original, ...stored } = data
+  const route = { ...stored, ...original }
   return {
     ...route,
     // Typed by hand: inferring it here is circular for TypeScript.
-    outings: outings.map(({ user_id: userId, ...outing }: typeof outings[number]) => ({ ...outing, is_mine: userId === user?.sub })),
-    geometry: data.geometry as unknown as LineString,
-    elevation_profile: data.elevation_profile as number[] | null,
-    editor_state: data.editor_state as EditorState | null,
-    pois: data.pois as Poi[],
-    way_info: data.way_info as WayInfo | null,
+    outings: outings.map(({ user_id: userId, original: outingOriginal, ...outing }: typeof outings[number]) => ({
+      ...outing,
+      // An outing entirely inside its recorder's zones keeps its points for them only.
+      has_track: !!outing.has_track || !!outingOriginal,
+      is_mine: userId === user?.sub,
+    })),
+    geometry: route.geometry as unknown as LineString,
+    elevation_profile: route.elevation_profile as number[] | null,
+    editor_state: route.editor_state as EditorState | null,
+    pois: route.pois as Poi[],
+    way_info: route.way_info as WayInfo | null,
     osm_places: osmPlaces ? { places: osmPlaces.places as OsmPlace[], searched_at: osmPlaces.searched_at } : null,
     photos: await signPhotos(supabase, photos),
     viewer,

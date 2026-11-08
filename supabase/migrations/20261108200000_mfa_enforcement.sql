@@ -76,7 +76,16 @@ create policy "Two-factor members need a code" on public.login_attempts
 create policy "Two-factor members need a code" on public.routing_usage
   as restrictive for all to authenticated
   using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
--- TODO(#254): privacy_zones, route_originals, outing_originals once #254 is merged.
+-- Privacy zones (#254): the zones, and the full tracks their owner alone sees.
+create policy "Two-factor members need a code" on public.privacy_zones
+  as restrictive for all to authenticated
+  using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "Two-factor members need a code" on public.route_originals
+  as restrictive for all to authenticated
+  using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
+create policy "Two-factor members need a code" on public.outing_originals
+  as restrictive for all to authenticated
+  using ((select public.mfa_ok())) with check ((select public.mfa_ok()));
 
 -- Route photos and profile photos (the only buckets).
 create policy "Two-factor members need a code" on storage.objects

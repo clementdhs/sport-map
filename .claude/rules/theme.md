@@ -12,6 +12,10 @@ paths:
   - "app/assets/css/main.css"
   - "app/components/SportBadge.vue"
   - "app/components/RouteCard.vue"
+  - "app/components/RouteCardSkeleton.vue"
+  - "app/components/SportChips.vue"
+  - "app/pages/discover.vue"
+  - "server/utils/routeList.ts"
   - "app/components/SportMark.vue"
   - "app/components/DurationSign.vue"
   - "app/components/KeyFigures.vue"
@@ -46,9 +50,17 @@ The signs of the direction, shared by every screen (looks from the canvas's "Fin
 - `SportMark`: the sport as a two-bar blaze (white ringed with ink, then `--sport`), `aria-hidden`, always next to the sport's name. `SportBadge` leads with it instead of the sport's icon (route cards, route page); the sport selects keep their icons until their screens are redone.
 - `DurationSign`: `minutes` (nothing when `null`) on a yellow arrow (`clip-path`, an outer ink shape 1.5px larger for the outline), `size` `sm` (cards) or `md`; screen readers hear "Durée estimée : 2 h 35" (`signage.duration`). No `~`: the label says it is an estimate. Route cards show it in place of their clock badge.
 - `KeyFigures`: the cartouche, a `<dl>` with one ruled column per `KeyFigure` (`app/utils/keyFigures.ts`: label, value, unit set apart with `splitUnit`, `highlight` on the yellow, `hint` in an info tooltip). Labels wrap and units go under the figure rather than truncating (4 columns at 360 px with outdoor readability). The route page's distance / duration / D+ / D− row uses it, the duration highlighted with the pace tooltip (`useDurationMethod`, shared with `DurationEstimate`).
-- `DoneStamp`: "Fait ×N" tilted rust stamp from `count`, nothing at 0, "Fait 3 fois" / "Fait une fois" for screen readers. The parent places it (`absolute`); its inner ring is cut out of `--stamp-bg` (default the surface `--ui-bg`; set it to the paper when it lies on the page). On the route page, N is the member's outings there (`is_mine`), a route only marked as done counting once. Cards wait for a count in `RouteListItem` (Découvrir screen).
-- `HerePlate`: "Vous êtes ici · place · alt. 22 m" under a yellow band, altitude left out when unknown. Not used yet (Découvrir screen).
-- `ContourTexture`: faint contour lines (`--contour`) at the top of a `relative` header, `aria-hidden`, the header's content `relative` above it. Not used yet.
+- `DoneStamp`: "Fait ×N" tilted rust stamp from `count`, nothing at 0, "Fait 3 fois" / "Fait une fois" for screen readers. The parent places it (`absolute`); its inner ring is cut out of `--stamp-bg` (default the surface `--ui-bg`; set it to the paper when it lies on the page). On the route page, N is the member's outings there (`is_mine`), a route only marked as done counting once. On route cards, N is `RouteListItem.done_count` (#232, same rule, computed in SQL by `route_done_count`).
+- `HerePlate`: "Vous êtes ici · place · alt. 22 m" under a yellow band, altitude left out when unknown. On /discover (#232) the place is `placeAt` (`app/utils/startArea.ts`): the member's start area (when it has a name), while the map's centre is inside it; no plate elsewhere, nor for a place picked in the search box (where the map looks, not where the member is) (no reverse geocoding: MapTiler's quota), and no altitude yet. The list's heading then says "Près de chez toi" (start area) or "Dans cette zone".
+- `ContourTexture`: faint contour lines (`--contour`) at the top of a `relative` header, `aria-hidden`, the header's content `relative` above it. Used by /discover's header.
+- `SportChips` (#232): a one-choice filter as pill buttons (`aria-pressed`, in a labelled `role="group"`), led by `SportMark`, the chosen one in ink (`bg-inverted`), scrolled sideways; `toggle` sends a click on the chosen chip back to that value. Home: "Tous" + the six sports with short names (`sportChips.*`), the member's default sport (#148) first, bound to the search's sport (the filters' select shows the same value). /discover: the OSM kinds.
+
+# Route cards (#232)
+
+`RouteCard` from the canvas's "Final — Découvrir" board: a 72 px thumbnail (`bg-elevated`, three `--contour` lines, the outline in `--map-track` over a surface casing, an ink start dot; the sport's icon when the track can't be drawn), then the sport in small capitals in `--sport-text` with its mark and "· Boucle", the name in Barlow Condensed (2 lines), the quote in italics, distance and D+ in `font-numbers` with their units muted and the `DurationSign` on the right, then rating and owner in small text. The card is the surface on the paper, sand border, `border-primary` when highlighted from the map. `DoneStamp` hangs over its top right corner (`-top-2.5`), so lists keep 14 px between cards and the sport and name lines keep `pe-12` for it.
+
+- **Quote**: `RouteListItem.quote`, the latest review with a comment that isn't hidden (`route_quote` in SQL, cut to 200 characters, author's display name else username), none without one (Clem's choice: no fallback on the description). `--sport-text` written straight on the surfaces is checked at 4.5:1 too.
+- Both come with the card's data, never one request per card: computed fields `route_quote` / `route_done_count` in `ROUTE_LIST_COLUMNS` (`server/utils/routeList.ts`, `toRouteListItem` / `toRouteQuote`) and the `quote` / `done_count` columns of `search_routes`. Endpoints building `RouteListItem` by hand must fill both.
 
 # Theme: mode and accent color
 

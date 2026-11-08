@@ -30,8 +30,9 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     console.error('[GET /api/routes]', error)
     throw apiError(event, 500, 'api.searchFailed')
   }
-  return (data as SearchRow[]).map(({ marker_lng, marker_lat, thumbnail, owner_avatar_path, ...route }) => ({
+  return (data as SearchRow[]).map(({ marker_lng, marker_lat, thumbnail, owner_avatar_path, quote, ...route }) => ({
     ...route,
+    quote: toRouteQuote(quote),
     // Null for owners without a photo, whatever the generated type says.
     owner_avatar_path: owner_avatar_path ?? null,
     thumbnail: thumbnailPath(thumbnail),

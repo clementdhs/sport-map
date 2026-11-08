@@ -59,6 +59,8 @@ describe('sport colors contrast', () => {
         expect(contrast(shades[dark ? 400 : 700]!, surface), `${mode} icon on ${background}`).toBeGreaterThanOrEqual(3)
         const badge = dark ? veilContrast(shades[300]!, shades[400]!, 0.15, surface) : contrast(shades[800]!, shades[100]!)
         expect(badge, `${mode} badge on ${background}`).toBeGreaterThanOrEqual(4.5)
+        // The sport's name written straight on the surface (route cards, #232)
+        expect(contrast(shades[dark ? 300 : 800]!, surface), `${mode} label on ${background}`).toBeGreaterThanOrEqual(4.5)
       }
     }
   })

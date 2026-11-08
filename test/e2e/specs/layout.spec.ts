@@ -150,7 +150,7 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   const expand = sheet.getByRole('button', { name: 'Agrandir le panneau' })
   // It opens collapsed (#197): only its title stays; the hidden content leaves the keyboard and screen reader order.
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
-  await expect(sheet).toContainText('2 parcours dans cette zone')
+  await expect(sheet).toContainText('2 parcours ici')
   await expect(collapse).toBeDisabled()
   await expect(sheet.locator('[inert]')).toHaveCount(1)
 
@@ -170,7 +170,7 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   const tabBar = (await page.getByRole('navigation', { name: 'Navigation principale' }).boundingBox())!
   const sheetBox = (await sheet.boundingBox())!
   expect(sheetBox.y + sheetBox.height).toBeCloseTo(tabBar.y, 0)
-  const header = (await sheet.getByText('2 parcours dans cette zone').first().boundingBox())!
+  const header = (await sheet.getByText('2 parcours ici').first().boundingBox())!
   const x = header.x + 40
   await page.mouse.move(x, header.y + 5)
   await page.mouse.down()
@@ -220,7 +220,7 @@ test('collapses the side panel on a computer and remembers it after a reload', a
   const map = page.locator('[data-map-loaded]')
   const collapse = page.getByRole('button', { name: 'Réduire le panneau' })
   const show = page.getByRole('button', { name: 'Afficher le panneau' })
-  const title = page.getByText('2 parcours dans cette zone').filter({ visible: true })
+  const title = page.getByText('2 parcours ici').filter({ visible: true })
   const width = (await map.boundingBox())!.width
   await expect(collapse).toHaveAttribute('aria-expanded', 'true')
 
@@ -246,7 +246,7 @@ test('collapses the side panel on a computer and remembers it after a reload', a
   await page.reload()
   await waitForMap(page)
   await expect(panel).toBeVisible()
-  await expect(panel).toContainText('2 parcours dans cette zone')
+  await expect(panel).toContainText('2 parcours ici')
 })
 
 test('resizes the side panel with the mouse or the keyboard and remembers its width', async ({ page }) => {

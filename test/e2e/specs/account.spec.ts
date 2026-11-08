@@ -167,7 +167,7 @@ test('edits the profile and the appearance from the settings, reached through th
   // Its own routes, drawn, without "by" on its own profile.
   await openProfileRoutes(page)
   const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
-  await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
+  await expect(card.getByTestId('route-track')).toHaveAttribute('d', /^M\d+ \d+L/)
   await expect(card).not.toContainText(`par ${users.account.displayName}`)
   await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')

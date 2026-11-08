@@ -1,3 +1,4 @@
+import type { LngLat } from '#shared/utils/routes'
 import type { Bounds, MapFocus } from '~/stores/routeSearch'
 
 // "Ma zone de dÃ©part" (#147): where the maps open (home, editor, /discover) when they have no view of their own
@@ -38,4 +39,12 @@ export function parseStartArea(value: unknown): StartArea | null {
     bounds: [west, south, east, north],
     name: typeof name === 'string' && name.trim() ? name.trim().slice(0, MAX_NAME_LENGTH) : null,
   }
+}
+
+// The "you are here" plate of /discover (#232): the first named area holding the map's centre (the member's start
+// area), null when the view is elsewhere. No reverse geocoding: MapTiler's quota is for the tiles.
+export function placeAt(center: LngLat, areas: (StartArea | null | undefined)[]): StartArea | null {
+  const [lng, lat] = center
+  return areas.find((area): area is StartArea => !!area?.name
+    && lng >= area.bounds[0] && lng <= area.bounds[2] && lat >= area.bounds[1] && lat <= area.bounds[3]) ?? null
 }

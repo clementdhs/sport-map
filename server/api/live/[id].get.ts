@@ -53,7 +53,8 @@ export default defineEventHandler(async (event): Promise<LiveShareDetail> => {
   let routeGeometry: LineString | null = null
   if (share.route_id && !after) {
     const client = share.route ? supabase : serverSupabaseServiceRole<Database>(event)
-    const { data } = await client.from('routes').select('geometry:route_geojson').eq('id', share.route_id).maybeSingle()
+    // A route entirely inside the sharer's privacy zones keeps its full track in the row (#254): never sent.
+    const { data } = await client.from('routes').select('geometry:route_geojson').eq('id', share.route_id).eq('privacy_hidden', false).maybeSingle()
     routeGeometry = (data?.geometry as unknown as LineString | undefined) ?? null
   }
 

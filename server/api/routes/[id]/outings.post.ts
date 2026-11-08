@@ -1,4 +1,5 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import type { Json } from '#shared/types/database.types'
 
 // Saves an outing recorded while following a route: listed on the route's page with the others, and the
 // route is marked as completed with its times and leaves the "À faire" list. Its GPS points and their times
@@ -19,13 +20,31 @@ export default defineEventHandler(async (event) => {
   }
   if (!route) throw apiError(event, 404, 'api.routeNotFound')
 
+  let track: ReturnType<typeof maskedOutingColumns>
+  try {
+    track = maskedOutingColumns(body.track, await loadMaskCircles(supabase, user.sub))
+  }
+  catch (zonesError) {
+    console.error('[POST /api/routes/:id/outings] zones', zonesError)
+    throw apiError(event, 500, 'api.saveRecordingFailed')
+  }
+
   const startedAt = new Date(body.started_at).toISOString()
   const times = { started_at: startedAt, duration_s: body.duration_s, moving_s: body.moving_s }
   let { data: outing, error } = await supabase
     .from('route_outings')
-    .insert({ user_id: user.sub, route_id: routeId, distance_m: body.distance_m, track: body.track ?? null, ...times })
+    .insert({ user_id: user.sub, route_id: routeId, distance_m: body.distance_m, track: track.track as unknown as Json, ...times })
     .select('id')
     .single()
+  // Its full points, for the member only (#254); a retry already saved them.
+  if (!error && outing && track.original) {
+    const original = await supabase.from('outing_originals').insert({ outing_id: outing.id, track: track.original as unknown as Json })
+    if (original.error) {
+      console.error('[POST /api/routes/:id/outings] original', original.error)
+      await supabase.from('route_outings').delete().eq('id', outing.id)
+      throw apiError(event, 500, 'api.saveRecordingFailed')
+    }
+  }
   // Already saved by an earlier attempt whose answer was lost: that's a success.
   if (error?.code === '23505') {
     ({ data: outing, error } = await supabase

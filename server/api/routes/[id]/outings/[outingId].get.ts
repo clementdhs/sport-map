@@ -14,7 +14,7 @@ export default defineEventHandler(async (event): Promise<OutingDetail> => {
   // RLS: outings share their route's visibility.
   const { data, error } = await supabase
     .from('route_outings')
-    .select('track')
+    .select('track, original:outing_originals(track)')
     .eq('id', outingId!)
     .eq('route_id', routeId)
     .maybeSingle()
@@ -22,8 +22,10 @@ export default defineEventHandler(async (event): Promise<OutingDetail> => {
     console.error('[GET /api/routes/:id/outings/:outingId]', error)
     throw apiError(event, 500, 'api.loadOutingFailed')
   }
+  // The recorder's full points (#254, theirs only), else what the team sees.
+  const track = data?.original?.track ?? data?.track
   // Outings recorded before their points were kept have no detail.
-  if (!data?.track) throw apiError(event, 404, 'api.outingNotFound')
+  if (!track) throw apiError(event, 404, 'api.outingNotFound')
 
-  return { track: data.track as OutingTrackPoint[] }
+  return { track: track as OutingTrackPoint[] }
 })

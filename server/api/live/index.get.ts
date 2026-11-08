@@ -80,6 +80,8 @@ async function followedRoutes(event: H3Event, ids: (string | null)[]): Promise<M
     .from('routes')
     .select('id, sport_type, thumbnail:route_thumbnail')
     .in('id', routeIds)
+    // Entirely inside the sharer's privacy zones (#254): the row keeps the full track.
+    .eq('privacy_hidden', false)
   if (error) console.error('[GET /api/live] routes', error)
   for (const row of data ?? []) routes.set(row.id, row)
   return routes

@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from('routes')
-    .select('name, description, sport_type, elevation_profile, pois, geometry:route_geojson')
+    .select(`name, description, sport_type, elevation_profile, pois, geometry:route_geojson, ${ORIGINAL_COLUMNS}`)
     .eq('id', id)
     .maybeSingle()
 
@@ -19,8 +19,10 @@ export default defineEventHandler(async (event) => {
   // RLS hides private routes of other users.
   if (!data) throw apiError(event, 404, 'api.routeNotFound')
 
-  const coordinates = (data.geometry as unknown as LineString).coordinates as LngLat[]
-  const elevations = data.elevation_profile as number[] | null
+  // The owner exports the full track, the team what it sees (#254).
+  const track = { ...data, ...data.original }
+  const coordinates = (track.geometry as unknown as LineString).coordinates as LngLat[]
+  const elevations = track.elevation_profile as number[] | null
 
   setResponseHeaders(event, {
     'Content-Type': 'application/gpx+xml; charset=utf-8',
@@ -32,7 +34,7 @@ export default defineEventHandler(async (event) => {
     type: data.sport_type,
     coordinates,
     elevations: elevations?.length === coordinates.length ? elevations : null,
-    pois: data.pois as Poi[],
+    pois: track.pois as Poi[],
     locale: getRequestLocale(event),
   })
 })

@@ -41,8 +41,8 @@ async function onSubmit(event: FormSubmitEvent<ForgotState>) {
 </script>
 
 <template>
-  <UContainer class="flex justify-center py-12">
-    <UPageCard class="w-full max-w-md">
+  <AuthScreen>
+    <AuthCard>
       <div v-if="sent" class="space-y-4">
         <UAlert
           color="success"
@@ -56,11 +56,11 @@ async function onSubmit(event: FormSubmitEvent<ForgotState>) {
       <UAuthForm
         v-else
         :title="t('auth.forgot.title')"
-        icon="i-lucide-key-round"
         :fields="fields"
         :validate="validate"
         :loading="loading"
-        :submit="{ label: t('auth.forgot.submit'), block: true }"
+        :submit="{ label: t('auth.forgot.submit'), block: true, size: 'xl' }"
+        :ui="AUTH_FORM_UI"
         @submit="onSubmit"
       >
         <template #description>
@@ -70,9 +70,9 @@ async function onSubmit(event: FormSubmitEvent<ForgotState>) {
           <UAlert v-if="errorMessage" color="error" variant="subtle" icon="i-lucide-circle-alert" :title="errorMessage" />
         </template>
         <template #footer>
-          <ULink to="/login" class="text-primary font-medium">{{ t('auth.forgot.backToLogin') }}</ULink>
+          <ULink to="/login" class="text-primary font-semibold">{{ t('auth.forgot.backToLogin') }}</ULink>
         </template>
       </UAuthForm>
-    </UPageCard>
-  </UContainer>
+    </AuthCard>
+  </AuthScreen>
 </template>

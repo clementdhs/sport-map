@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Table of contents of the settings page (#111): a sticky strip of chips under the header on phones, a sticky
 // column on the left on computers. Each section has its anchor (`/settings#voice`); the link of the section
-// being read is highlighted.
+// being read is highlighted, in ink like the other chips of the topo look (#237).
 const props = defineProps<{ sections: { id: string, label: string, icon: string }[] }>()
 
 const { t } = useI18n()
@@ -73,18 +73,20 @@ watch(active, (id) => {
 <template>
   <nav
     :aria-label="t('settings.sectionsLabel')"
-    class="sticky top-(--ui-header-height) z-10 -mx-4 border-b border-default bg-paper/95 backdrop-blur sm:-mx-6 md:top-[calc(var(--ui-header-height)+2rem)] md:mx-0 md:self-start md:border-0 md:bg-transparent md:backdrop-blur-none"
+    class="sticky top-(--ui-header-height) z-10 -mx-4 border-b border-default bg-paper sm:-mx-6 md:top-[calc(var(--ui-header-height)+2rem)] md:mx-0 md:self-start md:border-0 md:bg-transparent"
   >
-    <ul ref="list" class="relative flex gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] sm:px-6 md:flex-col md:gap-1 md:overflow-visible md:p-0">
+    <ul ref="list" class="relative flex gap-1.5 overflow-x-auto px-4 py-3 [scrollbar-width:none] sm:px-6 md:flex-col md:gap-1 md:overflow-visible md:p-0">
       <li v-for="section in sections" :key="section.id" class="shrink-0">
         <a
           :href="`#${section.id}`"
           :aria-current="active === section.id ? 'location' : undefined"
-          class="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-(--ui-primary) md:rounded-md md:py-2"
-          :class="active === section.id ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-elevated hover:text-default'"
+          class="flex h-8.5 items-center gap-2 rounded-full border px-3 text-sm whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--ui-primary) md:h-auto md:rounded-md md:py-2"
+          :class="active === section.id
+            ? 'border-(--ui-bg-inverted) bg-inverted font-semibold text-inverted'
+            : 'border-accented bg-default font-medium text-default hover:bg-elevated md:border-transparent md:bg-transparent md:text-muted md:hover:text-default'"
           @click="go($event, section.id)"
         >
-          <UIcon :name="section.icon" class="size-4 shrink-0" aria-hidden="true" />
+          <UIcon :name="section.icon" class="size-4 shrink-0 max-md:hidden" aria-hidden="true" />
           {{ section.label }}
         </a>
       </li>

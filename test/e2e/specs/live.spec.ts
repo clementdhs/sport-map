@@ -157,8 +157,15 @@ test.describe('as another member', () => {
     await page.getByRole('link', { name: `${users.account.displayName} est en sortie` }).click()
     await expect(page).toHaveURL(`/live/${id}`)
     await page.getByRole('link', { name: 'Sorties en cours' }).click()
-    await expect(page.getByRole('heading', { name: 'Sorties en cours' })).toBeVisible()
-    await page.getByRole('link', { name: new RegExp(`Sortie de ${users.account.displayName}`) }).click()
+    await expect(page.getByRole('heading', { name: 'Sorties en cours · 1' })).toBeVisible()
+    // Not sharing: the way to start, through a recording.
+    await expect(page.getByRole('region', { name: 'Partager ma position' }).getByRole('link', { name: 'Enregistrer' })).toHaveAttribute('href', '/record')
+    // The card's mini-map draws the route followed and the track covered (~330 m), ending on the position.
+    const card = page.getByRole('link', { name: new RegExp(`Sortie de ${users.account.displayName}`) })
+    await expect(card.getByTestId('live-thumbnail').locator('path[d^="M"]')).toHaveCount(4) // 2 contour lines
+    await expect(card.getByTestId('live-thumbnail').locator('circle')).toHaveCount(2)
+    await expect(card).toContainText(/33\d m/)
+    await card.click()
 
     // The map of the outing, with the route followed and how old the latest position is.
     await waitForMap(page)

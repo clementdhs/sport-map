@@ -9,6 +9,8 @@ const { outdoor, setOutdoor } = useOutdoorReadability()
     :model-value="outdoor"
     :label="t('readability.label')"
     :description="t('readability.hint')"
+    size="lg"
+    :ui="{ root: 'flex-row-reverse justify-between gap-4', wrapper: 'ms-0' }"
     data-testid="outdoor-readability"
     @update:model-value="setOutdoor"
   />

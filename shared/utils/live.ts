@@ -35,6 +35,11 @@ export const livePointsSchema = z.object({
 export type LivePointsPayload = z.infer<typeof livePointsSchema>
 
 // Only the points taken after `after` (the latest one already received), to fetch the track bit by bit.
+// GET /api/live: `map` adds what the /live cards draw (tracks, routes' outlines); the home banner goes without.
+export const liveListQuerySchema = z.object({
+  map: z.stringbool().optional(),
+})
+
 export const liveShareQuerySchema = z.object({
   after: z.iso.datetime({ offset: true }).optional(),
 })

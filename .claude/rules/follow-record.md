@@ -10,6 +10,8 @@ paths:
   - "app/utils/compass.ts"
   - "app/utils/mapOrientation.ts"
   - "app/components/LiveData.vue"
+  - "app/components/ArrivalSign.vue"
+  - "app/components/FollowProfile.vue"
   - "app/utils/voiceGuide.ts"
   - "app/utils/speech.ts"
   - "app/components/VoiceGuideSettings.vue"
@@ -41,3 +43,12 @@ paths:
 - Phone compass (`useCompass`, mounted with `RouteFollow`, paused while the page is hidden): `deviceorientationabsolute` in Chrome, Android and the Android app's WebView (no plugin; the hosted site is a secure context, a `CAP_SERVER_URL=http://…` debug build is not and gets no compass), else `deviceorientation` when `absolute` or with iOS's `webkitCompassHeading`. iOS needs `DeviceOrientationEvent.requestPermission()` during a tap: the first tap on the page asks, so does turning heading up on. Recent Chromium (Playwright included) defines it too but sends the absolute event without it: never wait for it on that path. `screenHeading()` (`app/utils/compass.ts`) adds the top of the screen and the back of the phone laid flat (works flat, tilted or upright) and corrects for `screen.orientation.angle`; readings are smoothed (`smoothCompass`) and published at most every 100 ms in whole degrees. No reading within 3 s (computers) or a refusal: `available` false, and turning heading up says the map only turns while moving. e2e tests dispatch synthetic `DeviceOrientationEvent`s and read `data-map-bearing`.
 - Live location sharing with the team ("Partager ma position", both pages, `useLiveShare` + `LiveShareControl`): `.claude/rules/live-sharing.md`.
 - Battery (#182): `RouteFollow` pans with `jumpTo` (an `easeTo` redrew the map for 500 ms at every fix) and eases only to turn or during an easing; a recorded track is redrawn at most every 3 s (MapLibre tiles the whole line again each time), the GPS arrow showing the latest position. The native GPS keeps `distanceFilter: 0`: a filter saves little and would stop fixes when standing still, counted as a gap. Before/after battery measures are Clem's field test.
+
+# Topo look of follow mode and recording (#235)
+
+From the canvas's "Suivre un parcours" and "Enregistrer — données" boards (#226).
+
+- Follow mode: a `map-float` top bar (quit link "Quitter" as an icon, "Suivi en cours" over the route's name, outdoor readability and voice guidance), then `ArrivalSign` (yellow sign "Arrivée · remaining distance · duration", `data-testid="remaining"`; the duration is `remainingDurationMin`: the average moving speed once known, else the route estimate with the member's pace over what is left), hidden on the data screen and once arrived. Alerts are solid (sun). The bottom panel is on the paper with 22 px top corners: `FollowProfile` (mini profile, covered part in `--map-track-done`, GPS-blue position; `UProgress` without elevations), three ruled figures (Parcouru, Temps, Allure or Vitesse as on the data screen, `live-label` / `live-figure` / `live-unit` utilities of `main.css`), then "Données / Carte" and "Enregistrer la sortie" (or the recording's status, Pause and Terminer, 56 px). The panel doesn't overlap the map: its scale and attribution stay visible.
+- The covered part of the route on the map is a `line-gradient` (`doneGradient`, `setRouteDone` in `routeLayers.ts`, colour `APP_MAP_COLORS.trackDone`: darker in light mode, lighter in dark mode), redrawn only past a thousandth of the route and never while the map is covered or hidden (`RouteFollow` `doneFraction`).
+- `/record`: the top bar holds the status as an ink pill with the stopwatch (`data-testid="elapsed"`, words only from sm up), the panel three figures (distance, speed, D+) and Pause / Terminer.
+- Data screen: the first chosen value very large on the paper (sized by its box, `container-type: size`), the route's sport and name under it in follow mode, the others in a two-column `KeyFigures` cartouche (`columns`, `fill`: rows share the height, figures sized by their cell), each cell keeping `data-field`. Recording's default values start with the distance, then the mockup's six (moving time, average speed, D+, D−, altitude, max speed); its elapsed time is in the top bar.

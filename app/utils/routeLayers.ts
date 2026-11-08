@@ -8,6 +8,8 @@ import { APP_MAP_COLORS, mapColor } from '~/utils/topoStyle'
 // (`mapColor`). Start, waypoints and end are images (app/utils/mapMarkers.ts).
 export const ROUTE_COLOR = APP_MAP_COLORS.track.light
 export const CASING_COLOR = APP_MAP_COLORS.casing.light
+// The part already covered in follow mode (#235)
+export const ROUTE_DONE_COLOR = APP_MAP_COLORS.trackDone.light
 // The same rust outside the map (elevation profile, flyover), following the app's mode (`--map-track`, main.css).
 export const TRACK_CSS_COLOR = 'var(--map-track)'
 
@@ -122,6 +124,19 @@ export function setRouteLayerData(map: Map, { line, points }: RouteLayerData) {
 // back to the route colour.
 export function setRouteGradient(map: Map, gradient: unknown[] | null) {
   map.setPaintProperty('route-line', 'line-gradient', (gradient ?? undefined) as ExpressionSpecification | undefined)
+}
+
+// Follow mode (#235): the line in a stronger rust up to `fraction` of its length (0 to 1), as a line-gradient (the
+// source has lineMetrics), so that each fix only changes a paint property, not the line's data.
+export function doneGradient(fraction: number, done: string, track: string): ExpressionSpecification | null {
+  if (!(fraction > 0)) return null
+  // Stops must be strictly ascending: the switch from one colour to the other takes a millionth of the line.
+  if (fraction >= 1 - 2e-6) return ['interpolate', ['linear'], ['line-progress'], 0, done, 1, done]
+  return ['interpolate', ['linear'], ['line-progress'], 0, done, fraction, done, fraction + 1e-6, track, 1, track]
+}
+
+export function setRouteDone(map: Map, fraction: number) {
+  setRouteGradient(map, doneGradient(fraction, mapColor(map, 'trackDone'), mapColor(map, 'track')))
 }
 
 export function setRouteHover(map: Map, point: LngLat | null) {

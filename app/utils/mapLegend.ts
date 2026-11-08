@@ -7,7 +7,7 @@ import { SLOPE_CLASSES } from '#shared/utils/slopes'
 import { DIFFICULTY_CLASSES, SURFACE_CLASSES } from '#shared/utils/wayInfo'
 import { OSM_INCOMPLETE_DASHES, OSM_ROUTE_LINE } from '~/utils/osmRouteLayers'
 import { endMarker, sportMarker, startMarker, viaMarker, type MarkerDrawing } from '~/utils/mapMarkers'
-import { CASING_COLOR, GPS_COLOR, ROUTE_COLOR } from '~/utils/routeLayers'
+import { CASING_COLOR, GPS_COLOR, ROUTE_COLOR, ROUTE_DONE_COLOR } from '~/utils/routeLayers'
 import { TOPO_PALETTES } from '~/utils/topoStyle'
 
 // Map legend (#76): the app's own symbols, drawn from the constants that draw them on the map, and the symbols of
@@ -92,6 +92,7 @@ export const APP_LEGEND: LegendGroup[] = [
     title: 'mapLegend.app.routes',
     items: [
       { label: 'mapLegend.app.route', samples: [casedLine(ROUTE_COLOR)] },
+      { label: 'mapLegend.app.routeDone', samples: [casedLine(ROUTE_DONE_COLOR)] },
       { label: 'mapLegend.app.start', samples: [{ kind: 'marker', drawing: startMarker('light') }] },
       { label: 'mapLegend.app.end', samples: [{ kind: 'marker', drawing: endMarker('light') }] },
       { label: 'mapLegend.app.waypoint', samples: [{ kind: 'marker', drawing: viaMarker('light', 1) }] },

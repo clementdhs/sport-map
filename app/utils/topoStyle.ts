@@ -262,6 +262,9 @@ export function topoStyle(style: StyleSpecification, dark: boolean): StyleSpecif
 // Layers are added with the colours of the map's style; when it changes, `switchAppColors` swaps them.
 export const APP_MAP_COLORS = {
   track: { light: '#b8461f', dark: '#e07a4f' },
+  // The part of the route already covered in follow mode (#235): darker in light mode, lighter on the dark paper,
+  // so it stands out more than what is left either way.
+  trackDone: { light: '#6e2a12', dark: '#f4ab88' },
   casing: { light: '#fffdf8', dark: '#141815' },
 } as const
 

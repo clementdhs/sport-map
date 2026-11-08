@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { estimateDurationMin } from '#shared/utils/routes'
 import {
   averageSpeed,
   currentLap,
@@ -9,6 +10,7 @@ import {
   MODE_FIELDS,
   moveField,
   parseLiveDataPrefs,
+  remainingDurationMin,
   toggleField,
   type LiveStats,
 } from '~/utils/liveStats'
@@ -186,5 +188,17 @@ describe('toggleField and moveField', () => {
     expect(moveField(['distance', 'speed', 'time'], 0, 1)).toEqual(['speed', 'distance', 'time'])
     expect(moveField(['distance', 'speed'], 0, -1)).toEqual(['distance', 'speed'])
     expect(moveField(['distance', 'speed'], 1, 1)).toEqual(['distance', 'speed'])
+  })
+})
+
+describe('remainingDurationMin', () => {
+  it('uses the average moving speed once known', () => {
+    // 3 km at 2 m/s: 25 min
+    expect(remainingDurationMin('hiking', 3000, 300, 2)).toBeCloseTo(25)
+  })
+
+  it('falls back on the route estimate, with the member pace when given', () => {
+    expect(remainingDurationMin('trail', 5000, 100, null, 6)).toBeCloseTo(estimateDurationMin('trail', 5000, 100, 6))
+    expect(remainingDurationMin('hiking', 5000, null, 0.1)).toBeCloseTo(estimateDurationMin('hiking', 5000, null))
   })
 })

@@ -130,15 +130,16 @@ test.describe('as the test account', () => {
     await expect(heading).toBeVisible()
     expect(await heading.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 
-    // No truncated name between the follow bar's buttons.
+    // The follow bar (#235) shows the name on its own line, cut with an ellipsis before the buttons, never under them.
     await page.goto(`/routes/${accountRouteId}/follow`)
     await waitForMap(page)
     await expect(page.getByRole('link', { name: 'Quitter' })).toBeVisible()
     // Exact: the route announcer also holds the name, in the page title.
     const barName = page.getByText(ACCOUNT_ROUTE_NAME, { exact: true })
-    await expect(barName).toBeHidden()
-    await page.setViewportSize({ width: 768, height: 1024 })
     await expect(barName).toBeVisible()
+    const nameBox = (await barName.boundingBox())!
+    const toggleBox = (await page.getByRole('button', { name: 'Lisibilité en extérieur' }).boundingBox())!
+    expect(nameBox.x + nameBox.width).toBeLessThanOrEqual(toggleBox.x)
   })
 })
 

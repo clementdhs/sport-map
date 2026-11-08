@@ -216,9 +216,38 @@ body {
 /* The tracks' rust outside the map canvas (elevation profile, flyover), as on the maps (APP_MAP_COLORS, #230). */
 :root {
   --map-track: #b8461f;
+  /* The part already covered in follow mode (#235, APP_MAP_COLORS.trackDone). */
+  --map-track-done: #6e2a12;
 }
 .dark {
   --map-track: #e07a4f;
+  --map-track-done: #f4ab88;
+}
+
+/* The figures of the follow and recording panels (#235): big enough to read while moving, the strongest text on
+   the paper, units set apart. */
+@utility live-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-muted);
+}
+@utility live-figure {
+  font-family: var(--font-numbers);
+  font-size: 1.875rem;
+  line-height: 1.15;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--ui-text-highlighted);
+}
+@utility live-unit {
+  margin-inline-start: 0.125rem;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ui-text-muted);
 }
 
 /* Profile statistics (#236): bars in the tracks' rust, the current period in ink (cream in dark mode), checked with

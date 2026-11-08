@@ -10,6 +10,8 @@ const PAGE_SIZE = 1000
 export default defineEventHandler(async (event): Promise<LiveShareDetail> => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
+  // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
+  await requireMfa(event)
 
   const shareId = getLiveShareIdParam(event)
   const { after } = getLocalizedQuery(event, liveShareQuerySchema)

@@ -39,9 +39,9 @@ test('draws, saves and deletes a route, in English', async ({ page }) => {
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
   await expect(page.getByRole('heading', { name: 'English e2e route' })).toBeVisible()
   await expect(page.getByText('Private', { exact: true })).toBeVisible()
-  const pois = page.getByRole('region', { name: 'Points of interest' })
-  await expect(pois).toContainText('Water point')
-  await expect(pois).toContainText('Fountain')
+  const steps = page.getByRole('region', { name: 'Stages' })
+  await expect(steps.getByTestId('route-step').first()).toContainText(/Fountain.*Water point/)
+  await expect(steps.getByTestId('route-step').last()).toContainText('Finish')
 
   await page.getByRole('button', { name: 'More actions' }).click()
   await page.getByRole('menuitem', { name: 'Delete the route' }).click()

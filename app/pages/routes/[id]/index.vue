@@ -6,7 +6,7 @@ import type { ActivityType, LngLat, OutingTrackPoint } from '#shared/utils/route
 import type { SheetSnap } from '~/components/MapSheetLayout.vue'
 import type { KeyFigure } from '~/utils/keyFigures'
 
-const { formatDistance, formatDate, formatShortDate, formatSpeed, formatNumber } = useFormat()
+const { formatDistance, formatDate, formatShortDate, formatSpeed, formatRating } = useFormat()
 
 // Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })
@@ -123,13 +123,10 @@ const photos = ref<RoutePhoto[]>(parcours.value.photos)
 const outings = ref<RouteOuting[]>(parcours.value.outings)
 const viewer = ref<ViewerActivity>(parcours.value.viewer ?? { saved: false, completed_at: null, duration_s: null, moving_s: null })
 
-// In the order they come along the track.
-const pois = computed(() => {
-  if (coordinates.value.length < 2) return []
-  return (parcours.value?.pois ?? [])
-    .map(poi => ({ ...poi, distanceM: snapToTrack(coordinates.value, poi.coordinates).distanceM }))
-    .sort((a, b) => a.distanceM - b.distanceM)
-})
+// The author's points of interest as the route's steps (#233, Clem's choice), in the order they come along the
+// track: numbered the same in the list, on the profile and on the map.
+const steps = computed(() => routeSteps(coordinates.value, parcours.value?.elevation_profile, parcours.value?.elevation_gain_m ?? null, parcours.value?.pois ?? []))
+const profileSteps = computed(() => steps.value.map((step, i) => ({ distanceM: step.distanceM, label: String(i + 1) })))
 // Useful places from OpenStreetMap (#52): searched the first time the page shows them, then saved with the route.
 const osm = useRouteOsmPlaces(parcours.value.id, coordinates, parcours.value.osm_places)
 const osmPlaces = computed(() => placesAlongTrack(coordinates.value, osm.places.value))
@@ -142,17 +139,19 @@ const durationMethod = useDurationMethod(() => parcours.value!.sport_type, () =>
 const figures = computed((): KeyFigure[] => {
   const p = parcours.value!
   const [distance, distanceUnit] = splitUnit(formatDistance(p.distance_m))
-  const metres = (value: number | null) => value != null ? { value: String(Math.round(value)), unit: 'm' } : { value: '—' }
+  const metres = (value: number | null | undefined) => value != null ? { value: String(Math.round(value)), unit: 'm' } : { value: '—' }
+  const highPoint = p.elevation_profile?.length ? Math.max(...p.elevation_profile) : null
+  // The mockups' order (#233): distance, climbing, the duration on the yellow, the high point.
   return [
     { label: t('route.distance'), value: distance, unit: distanceUnit },
+    { label: t('route.gain'), ...metres(p.elevation_gain_m) },
     {
       label: t('duration.short'),
       value: formatDuration(estimateDuration(p.sport_type, p.distance_m, p.elevation_gain_m)),
       highlight: true,
       hint: durationMethod.value,
     },
-    { label: t('route.gain'), ...metres(p.elevation_gain_m) },
-    { label: t('route.loss'), ...metres(p.elevation_loss_m) },
+    { label: t('route.highPoint'), ...metres(highPoint) },
   ]
 })
 const summary = computed(() => {
@@ -183,9 +182,6 @@ async function toggleActivity(type: ActivityType) {
     pendingActivity.value = null
   }
 }
-
-// Secondary actions: icon above a short label, sharing the row evenly ("Fait le 18 oct." may take two lines).
-const actionUi = { base: 'flex-col justify-center gap-1 px-1 py-2 text-xs', leadingIcon: 'size-5', label: 'max-w-full text-center leading-tight' }
 
 const collectionsOpen = ref(false)
 const deleteOpen = ref(false)
@@ -281,7 +277,8 @@ useSeoMeta({
       <ClientOnly>
         <MapRouteDisplay
           :coordinates="coordinates"
-          :pois="parcours.pois"
+          :pois="steps"
+          numbered-pois
           :osm-places="osm.places.value"
           :line-gradient="trackGradient"
           :hover-point="hoverPoint"
@@ -302,78 +299,92 @@ useSeoMeta({
       {{ parcours.name }}
     </template>
 
-    <div class="relative space-y-1" :class="{ 'pe-16': doneCount }">
-      <DoneStamp :count="doneCount" class="absolute end-0 -top-1" />
-      <div class="flex flex-wrap items-center gap-2">
-        <SportBadge :sport="parcours.sport_type" />
+    <div class="relative">
+      <!-- On the sheet's paper, its ring cut out of it. -->
+      <DoneStamp :count="doneCount" size="lg" class="absolute end-0 top-0 [--stamp-bg:var(--ui-bg-paper)]" />
+      <p
+        class="flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-muted uppercase"
+        :class="[`sport-${parcours.sport_type}`, { 'pe-20': doneCount }]"
+      >
+        <SportMark :sport="parcours.sport_type" />
+        <span class="min-w-0 truncate">
+          <span class="text-(--sport-text)">{{ t(`sports.${parcours.sport_type}`) }}</span>
+          <template v-if="parcours.is_loop"> · {{ t('routeCard.loop') }}</template>
+        </span>
+      </p>
+
+      <!-- Also in the sheet's header on phones (collapsed sheet). -->
+      <h1 class="mt-1.5 text-4xl leading-none font-bold tracking-tight break-words" :class="{ 'pe-20': doneCount }">{{ parcours.name }}</h1>
+
+      <p class="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted" :class="{ 'pe-20': doneCount }">
+        <MemberAvatar
+          v-if="parcours.owner"
+          :name="parcours.owner.display_name ?? parcours.owner.username"
+          :path="parcours.owner.avatar_path"
+          size="xs"
+        />
+        <span>
+          {{ t('route.by') }}
+          <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-highlighted hover:underline">
+            {{ parcours.owner.display_name ?? parcours.owner.username }}
+          </ULink>
+          <span v-if="isOwner" class="ms-1">{{ t('route.you') }}</span>
+        </span>
+        <template v-if="parcours.rating_count && parcours.rating_avg != null">
+          <span aria-hidden="true">·</span>
+          <ULink :to="{ query: { ...route.query, tab: 'reviews' } }" replace class="hover:underline">
+            <span class="font-semibold text-highlighted"><span aria-hidden="true">★ </span>{{ formatRating(parcours.rating_avg) }}</span>
+            ({{ t('routeCard.reviews', parcours.rating_count) }})
+          </ULink>
+        </template>
+        <span aria-hidden="true">·</span>
+        <span>{{ formatDate(parcours.created_at) }}</span>
+      </p>
+
+      <div v-if="!parcours.is_public || parcours.source !== 'drawn'" class="mt-2 flex flex-wrap items-center gap-2">
         <UBadge v-if="!parcours.is_public" icon="i-lucide-lock" :label="t('routeCard.private')" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'gpx_import'" icon="i-lucide-file-up" :label="t('route.importedGpx')" color="neutral" variant="subtle" />
         <UBadge v-if="parcours.source === 'recorded'" icon="i-lucide-satellite" :label="t('route.recordedGps')" color="neutral" variant="subtle" />
       </div>
-
-      <!-- Phones: the sheet title already shows the name; the heading stays for screen readers. -->
-      <h1 class="text-2xl font-semibold max-md:sr-only">{{ parcours.name }}</h1>
-
-      <p class="text-sm text-muted">
-        {{ t('route.by') }}
-        <ULink v-if="parcours.owner" :to="`/profile/${parcours.owner.username}`" class="font-medium text-default hover:underline">
-          {{ parcours.owner.display_name ?? parcours.owner.username }}
-        </ULink>
-        <span v-if="isOwner" class="ms-1">{{ t('route.you') }}</span>
-        · {{ formatDate(parcours.created_at) }}
-      </p>
     </div>
 
     <KeyFigures :figures="figures" />
 
     <!-- One main action (#103), then the others as a row of icons with short labels. -->
-    <div class="space-y-2">
+    <div class="space-y-1.5">
       <UButton
         :to="`/routes/${parcours.id}/follow`"
         icon="i-lucide-navigation"
         :label="t('route.follow')"
-        size="lg"
+        size="xl"
         block
+        class="text-[1.0625rem]"
       />
       <div class="grid grid-cols-4 gap-1">
-        <UButton
+        <RouteActionButton
           :icon="viewer.saved ? 'i-lucide-list-todo' : 'i-lucide-list-plus'"
           :label="t('route.todo')"
           :aria-label="viewer.saved ? t('route.todoRemove') : t('route.todoAdd')"
-          :color="viewer.saved ? 'primary' : 'neutral'"
-          variant="ghost"
+          :active="viewer.saved"
           :loading="pendingActivity === 'saved'"
-          :ui="actionUi"
           @click="toggleActivity('saved')"
         />
-        <UButton
-          :icon="viewer.completed_at ? 'i-lucide-circle-check' : 'i-lucide-flag'"
+        <RouteActionButton
+          :icon="viewer.completed_at ? 'i-lucide-check' : 'i-lucide-flag'"
           :label="viewer.completed_at ? t('route.completedOn', { date: formatShortDate(viewer.completed_at) }) : t('route.completeShort')"
           :aria-label="viewer.completed_at ? undefined : t('route.complete')"
-          :color="viewer.completed_at ? 'primary' : 'neutral'"
-          variant="ghost"
+          :active="!!viewer.completed_at"
           :loading="pendingActivity === 'completed'"
-          :ui="actionUi"
           @click="toggleActivity('completed')"
         />
-        <UButton
+        <RouteActionButton
           icon="i-lucide-drone"
           :label="t('flyover.start')"
-          color="neutral"
-          variant="ghost"
-          :ui="actionUi"
           :disabled="!flyover.ready || coordinates.length < 2"
           @click="flyOverRoute"
         />
         <UDropdownMenu :items="moreActions" :content="{ align: 'end' }" :ui="{ content: 'w-72' }">
-          <UButton
-            icon="i-lucide-ellipsis"
-            :label="t('route.moreShort')"
-            :aria-label="t('route.moreActions')"
-            color="neutral"
-            variant="ghost"
-            :ui="actionUi"
-          />
+          <RouteActionButton icon="i-lucide-ellipsis" :label="t('route.moreShort')" :aria-label="t('route.moreActions')" />
         </UDropdownMenu>
       </div>
     </div>
@@ -400,6 +411,8 @@ useSeoMeta({
             :elevations="parcours.elevation_profile"
             :grades="colouring === 'slopes' ? slopes?.profile.grades : null"
             :marker="flyover.subject?.kind === 'route' ? flyover.along : null"
+            :steps="profileSteps"
+            heading
             @hover="hoverPoint = $event"
           />
 
@@ -413,6 +426,18 @@ useSeoMeta({
             </template>
           </p>
 
+          <RouteSteps
+            v-if="steps.length"
+            :steps="steps"
+            :sport="parcours.sport_type"
+            :distance-m="parcours.distance_m"
+            :elevation-gain-m="parcours.elevation_gain_m"
+            :is-loop="parcours.is_loop"
+            @hover="hoverPoint = $event"
+          />
+
+          <RouteTeamWords :route-id="parcours.id" @more="activeTab = 'reviews'" />
+
           <div v-if="ways" class="space-y-3">
             <RouteBreakdown :title="t('ways.surfaceTitle')" :classes="SURFACE_CLASSES" :shares="ways.surface.shares" labels="ways.surface" />
             <RouteBreakdown
@@ -424,33 +449,6 @@ useSeoMeta({
             />
             <p class="text-xs text-muted">{{ t('ways.source') }}</p>
           </div>
-
-          <section v-if="pois.length" class="space-y-2" aria-labelledby="pois-title">
-            <h2 id="pois-title" class="text-base font-semibold">{{ t('route.pois') }}</h2>
-            <ul class="space-y-1">
-              <li
-                v-for="(poi, i) in pois"
-                :key="i"
-                class="flex items-start gap-3 rounded-md p-2 hover:bg-elevated"
-                @mouseenter="hoverPoint = poi.coordinates"
-                @mouseleave="hoverPoint = null"
-              >
-                <span
-                  class="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-white"
-                  :style="{ backgroundColor: POI_COLORS[poi.type] }"
-                >
-                  <UIcon :name="POI_ICONS[poi.type]" class="size-4" />
-                </span>
-                <div class="min-w-0 text-sm">
-                  <p>
-                    <span class="font-medium">{{ t(`pois.${poi.type}`) }}</span>
-                    <span class="text-muted"> · km {{ formatNumber(poi.distanceM / 1000, { maximumFractionDigits: 1 }) }}</span>
-                  </p>
-                  <p v-if="poi.note" class="break-words text-muted">{{ poi.note }}</p>
-                </div>
-              </li>
-            </ul>
-          </section>
 
           <RouteOsmPlaces
             :places="osmPlaces"

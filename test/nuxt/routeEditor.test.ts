@@ -95,6 +95,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     elevation_gain_m: null,
     elevation_loss_m: null,
     is_public: body.is_public,
+    is_loop: false,
     source: body.source ?? 'drawn',
     created_at: '2026-09-28T10:00:00Z',
     updated_at: '2026-09-28T10:00:00Z',
@@ -109,7 +110,7 @@ function routeDetail(body: RouteCreatePayload, overrides: Partial<RouteDetail> =
     osm_places: null,
     photos: [],
     outings: [],
-    owner: { username: 'test', display_name: null },
+    owner: { username: 'test', display_name: null, avatar_path: null },
     viewer: null,
     ...overrides,
   }

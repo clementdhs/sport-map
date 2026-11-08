@@ -197,6 +197,10 @@ body {
   --mark-edge: var(--ui-text-highlighted);
   --stamp: #b8461f;
   --contour: #d3c3a2;
+  /* The route page's steps (#233): the wooden post and the outline of the signs fixed on it (decorative, the
+     signs' text is on the surface). */
+  --post: #a99f8c;
+  --step-edge: var(--ui-color-neutral-900);
 }
 .dark {
   --sign: #e3b53c;
@@ -205,6 +209,8 @@ body {
   --mark-edge: var(--ui-text-highlighted);
   --stamp: #e8875c;
   --contour: #2f3831;
+  --post: #4a524b;
+  --step-edge: #3a423b;
 }
 
 /* The tracks' rust outside the map canvas (elevation profile, flyover), as on the maps (APP_MAP_COLORS, #230). */

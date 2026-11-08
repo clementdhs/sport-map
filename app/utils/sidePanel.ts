@@ -5,7 +5,7 @@ export interface SidePanelState {
   width: number
 }
 
-export const SIDE_PANEL_WIDTH = { min: 320, default: 384, max: 720 }
+export const SIDE_PANEL_WIDTH = { min: 320, default: 440, max: 720 }
 // Narrowest map left beside the panel.
 const MIN_MAP_WIDTH = 360
 

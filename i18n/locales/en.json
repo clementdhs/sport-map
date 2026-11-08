@@ -232,7 +232,17 @@
     },
     "pois": "Points of interest",
     "deleteTitle": "Delete this route?",
-    "deleteDescription": "It will also disappear from other users' To do lists and completed routes. This can't be undone."
+    "deleteDescription": "It will also disappear from other users' To do lists and completed routes. This can't be undone.",
+    "highPoint": "High point",
+    "teamWords": "Words from the team",
+    "allReviews": "All reviews",
+    "steps": {
+      "title": "Stages",
+      "end": "Finish",
+      "loopEnd": "Back to the start",
+      "number": "Stage {number}",
+      "at": "Estimated time from the start: "
+    }
   },
   "reviews": {
     "saveFailed": "Couldn't save your review",
@@ -379,7 +389,8 @@
     "title": "Elevation profile",
     "summary": "Elevation profile: from {min} to {max} over {distance}",
     "at": "at {distance}",
-    "grade": "Grade: {grade} %"
+    "grade": "Grade: {grade} %",
+    "range": "from {min} to {max}"
   },
   "flyover": {
     "start": "3D flyover",

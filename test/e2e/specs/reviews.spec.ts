@@ -59,6 +59,8 @@ test('moderates the reviews of its own route', async ({ page, requestAs, account
   await page.getByRole('tab', { name: /Avis/ }).click()
   const reviews = page.getByRole('region', { name: 'Avis', exact: true })
   await expect(reviews).toContainText(SEEDED_REVIEW.comment)
+  // The latest comments are quoted in the overview too (#233).
+  await expect(page.getByTestId('team-word')).toContainText(SEEDED_REVIEW.comment)
   // No rating of one's own route.
   await expect(reviews.getByRole('button', { name: 'Publier mon avis' })).toHaveCount(0)
 
@@ -67,6 +69,7 @@ test('moderates the reviews of its own route', async ({ page, requestAs, account
 
   await reviews.getByRole('button', { name: 'Masquer le commentaire' }).click()
   await expect(reviews).toContainText("Commentaire masqué par l'auteur du parcours")
+  await expect(page.getByTestId('team-word')).toHaveCount(0)
   expect(await asMember()).toMatchObject({ rating_count: 1, reviews: [] })
 
   await reviews.getByRole('button', { name: 'Afficher le commentaire' }).click()

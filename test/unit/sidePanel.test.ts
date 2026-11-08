@@ -8,8 +8,8 @@ describe('parseSidePanel', () => {
   })
 
   it('keeps the default width when none was saved', () => {
-    expect(parseSidePanel('{"collapsed":true}')).toEqual({ collapsed: true, width: 384 })
-    expect(parseSidePanel('{"collapsed":false,"width":"wide"}')).toEqual({ collapsed: false, width: 384 })
+    expect(parseSidePanel('{"collapsed":true}')).toEqual({ collapsed: true, width: 440 })
+    expect(parseSidePanel('{"collapsed":false,"width":"wide"}')).toEqual({ collapsed: false, width: 440 })
   })
 
   it('falls back to the default on missing or broken values', () => {

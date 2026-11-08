@@ -12,11 +12,11 @@ export default defineEventHandler(async (event): Promise<RouteDetail> => {
     .from('routes')
     .select(`
       id, name, description, sport_type, distance_m, elevation_gain_m, elevation_loss_m,
-      is_public, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois, way_info,
+      is_public, is_loop, source, created_at, updated_at, owner_id, elevation_profile, editor_state, pois, way_info,
       rating_avg, rating_count,
       geometry:route_geojson,
       osm_places:route_osm_places(places, searched_at),
-      owner:profiles(username, display_name),
+      owner:profiles(username, display_name, avatar_path),
       photos:route_photos(id, storage_path),
       outings:route_outings(id, user_id, started_at, duration_s, moving_s, distance_m, has_track, user:profiles(username, display_name))
     `)

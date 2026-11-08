@@ -56,10 +56,14 @@ test('draws, saves, then edits a route', async ({ page }) => {
   await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Goudron\s+50\s%/)
   await expect(page.getByRole('region', { name: 'Type de surface' })).toContainText(/Chemin\s+50\s%/)
   await expect(page.getByRole('region', { name: 'Difficulté VTT (échelle S0 à S6)' })).toContainText('S2 obstacles, marches')
-  const pois = page.getByRole('region', { name: "Points d'intérêt" })
-  await expect(pois).toContainText("Point d'eau")
-  await expect(pois).toContainText('Fontaine')
+  // The points of interest are the route's steps (#233): numbered signs, with the arrival on the yellow.
+  const steps = page.getByRole('region', { name: 'Étapes' })
+  await expect(steps.getByTestId('route-step')).toHaveCount(2)
+  await expect(steps.getByTestId('route-step').first()).toContainText(/Fontaine.*Point d'eau/)
+  await expect(steps.getByTestId('route-step').last()).toContainText('Arrivée')
+  await expect(page.getByTestId('profile-step')).toHaveText('1')
   await expect(page.locator('[data-poi-marker]')).toHaveCount(1)
+  await expect(page.getByRole('img', { name: "Étape 1 · Point d'eau — Fontaine" })).toBeVisible()
 
   // Editing reopens the same route, and saving updates it in place.
   const detailUrl = page.url()

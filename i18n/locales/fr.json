@@ -232,7 +232,17 @@
     },
     "pois": "Points d'intérêt",
     "deleteTitle": "Supprimer ce parcours ?",
-    "deleteDescription": "Il disparaîtra aussi des listes « À faire » et des parcours réalisés des autres utilisateurs. Cette action est définitive."
+    "deleteDescription": "Il disparaîtra aussi des listes « À faire » et des parcours réalisés des autres utilisateurs. Cette action est définitive.",
+    "highPoint": "Point haut",
+    "teamWords": "Les mots de l'équipe",
+    "allReviews": "Tous les avis",
+    "steps": {
+      "title": "Étapes",
+      "end": "Arrivée",
+      "loopEnd": "Retour au départ",
+      "number": "Étape {number}",
+      "at": "Temps de passage estimé : "
+    }
   },
   "reviews": {
     "saveFailed": "Impossible d'enregistrer ton avis",
@@ -379,7 +389,8 @@
     "title": "Profil altimétrique",
     "summary": "Profil altimétrique : altitude de {min} à {max} sur {distance}",
     "at": "à {distance}",
-    "grade": "Pente : {grade} %"
+    "grade": "Pente : {grade} %",
+    "range": "de {min} à {max}"
   },
   "flyover": {
     "start": "Survol 3D",

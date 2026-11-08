@@ -121,13 +121,14 @@ test.describe('as the test account', () => {
       expect(await label.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
     }
 
-    // The sheet title shows the name; the h1 is only there for screen readers.
+    // The sheet title shows the name (collapsed sheet), and the big h1 of the topo header (#233) wraps rather
+    // than overflowing.
     await page.goto(`/routes/${accountRouteId}`)
     await waitForMap(page)
     await expect(page.locator('aside[data-sheet]')).toContainText(ACCOUNT_ROUTE_NAME)
     const heading = page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })
-    await expect(heading).toHaveCount(1)
-    expect((await heading.boundingBox())?.width).toBeLessThanOrEqual(1)
+    await expect(heading).toBeVisible()
+    expect(await heading.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 
     // No truncated name between the follow bar's buttons.
     await page.goto(`/routes/${accountRouteId}/follow`)
@@ -254,7 +255,7 @@ test('resizes the side panel with the mouse or the keyboard and remembers its wi
   await waitForMap(page)
   const panel = page.locator('aside[data-panel]')
   const edge = page.getByRole('separator', { name: 'Redimensionner le panneau' })
-  await expect(edge).toHaveAttribute('aria-valuenow', '384')
+  await expect(edge).toHaveAttribute('aria-valuenow', '440')
   await expect(edge).toHaveAttribute('aria-valuemin', '320')
   await expect(edge).toHaveAttribute('aria-valuemax', '720')
 
@@ -265,8 +266,8 @@ test('resizes the side panel with the mouse or the keyboard and remembers its wi
   await page.mouse.down()
   await page.mouse.move(x - 200, 300, { steps: 10 })
   await page.mouse.up()
-  await expect(edge).toHaveAttribute('aria-valuenow', '584')
-  expect((await panel.boundingBox())!.width).toBeCloseTo(584, 0)
+  await expect(edge).toHaveAttribute('aria-valuenow', '640')
+  expect((await panel.boundingBox())!.width).toBeCloseTo(640, 0)
   await page.mouse.move(x - 200, 300)
   await page.mouse.down()
   await page.mouse.move(x + 300, 300, { steps: 5 })

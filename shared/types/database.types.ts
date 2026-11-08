@@ -791,6 +791,18 @@ export type Database = {
           error: true
         } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
+      route_original_geojson: {
+        Args: { "": Database["public"]["Tables"]["route_originals"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_original_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_original_thumbnail: {
+        Args: { "": Database["public"]["Tables"]["route_originals"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_original_thumbnail with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       route_preview: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {

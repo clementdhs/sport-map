@@ -142,26 +142,37 @@ test.describe('as the test account', () => {
   })
 })
 
-test('moves the bottom sheet over the map on a phone with its buttons, the keyboard or a drag', async ({ page }) => {
+test('moves the bottom sheet over the map on a phone with a tap or a drag on its header', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
   await waitForMap(page)
   const sheet = page.locator('aside[data-sheet]')
-  const collapse = sheet.getByRole('button', { name: 'Réduire le panneau' })
-  const expand = sheet.getByRole('button', { name: 'Agrandir le panneau' })
+  const title = sheet.getByText('2 parcours ici').first()
   // It opens collapsed (#197): only its title stays; the hidden content leaves the keyboard and screen reader order.
+  // Its header has no arrow buttons (#247): the drag handle alone moves it.
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
   await expect(sheet).toContainText('2 parcours ici')
-  await expect(collapse).toBeDisabled()
+  await expect(sheet.getByRole('button', { name: /panneau/ })).toHaveCount(0)
   await expect(sheet.locator('[inert]')).toHaveCount(1)
 
-  await expand.focus()
-  await page.keyboard.press('Enter')
+  // A tap on the collapsed header opens it at half height; dragging it to the top opens it fully.
+  await title.click()
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
   await expect(sheet.locator('[inert]')).toHaveCount(0)
-  await page.keyboard.press('Enter')
+  // Its height animates: the drag starts once its top edge stops moving.
+  let top = -1
+  await expect(async () => {
+    const y = (await sheet.boundingBox())!.y
+    const settled = Math.abs(y - top) < 1
+    top = y
+    expect(settled).toBe(true)
+  }).toPass({ intervals: [100] })
+  const halfHeader = (await title.boundingBox())!
+  await page.mouse.move(halfHeader.x + 40, halfHeader.y + 5)
+  await page.mouse.down()
+  await page.mouse.move(halfHeader.x + 40, 60, { steps: 10 })
+  await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'full')
-  await expect(expand).toBeDisabled()
 
   // Dragging its header: to the bottom collapses it, then a third of the way up opens it at half height.
   // Once its height animation is over, the full sheet starts right under the floating top bar, still reachable,
@@ -185,6 +196,16 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await page.mouse.move(x, tabBar.y - 260, { steps: 5 })
   await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
+
+  // A tap on the open header collapses it; from the keyboard, Enter on the header toggles it the same way.
+  await title.click()
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  const headerButton = sheet.getByRole('button', { name: '2 parcours ici' })
+  await expect(headerButton).toHaveAttribute('aria-expanded', 'false')
+  await headerButton.focus()
+  await page.keyboard.press('Enter')
+  await expect(sheet).toHaveAttribute('data-sheet', 'half')
+  await expect(headerButton).toHaveAttribute('aria-expanded', 'true')
 })
 
 // #142: the collapsed sheet's emptied content area kept its padding and drew the search field over the tab bar.

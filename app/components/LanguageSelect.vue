@@ -5,7 +5,7 @@ const items = computed(() => locales.value.map(item => ({ label: item.name ?? it
 </script>
 
 <template>
-  <UFormField :label="t('language.label')">
-    <USelect :model-value="locale" :items="items" class="w-48" @update:model-value="setLocale" />
+  <UFormField :label="t('language.label')" orientation="horizontal" :ui="{ root: 'items-center' }">
+    <USelect :model-value="locale" :items="items" class="w-40" @update:model-value="setLocale" />
   </UFormField>
 </template>

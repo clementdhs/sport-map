@@ -676,6 +676,14 @@
     "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement"
   },
   "live": {
+    "heading": "En direct",
+    "refreshed": "Les sorties de l'équipe en ce moment · actualisé toutes les {seconds} s",
+    "shareTitle": "Partager ma position",
+    "shareHint": "Lance l'enregistrement de ta sortie : l'équipe te suit, {hours} h au plus.",
+    "shareAction": "Enregistrer",
+    "count": "{title} · {count}",
+    "startedAt": "depuis {time}",
+    "ago": "il y a {ago}",
     "title": "Sorties en cours",
     "intro": "Les membres de l'équipe qui partagent leur position pendant une sortie.",
     "none": "Personne ne partage sa position en ce moment.",

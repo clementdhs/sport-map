@@ -93,31 +93,41 @@ const fields = computed(() => SPORT_TYPES.map(sport => ({ sport, suggestion: sug
 
 <template>
   <div class="space-y-4">
-    <div class="grid gap-4 sm:grid-cols-2">
-      <UFormField
-        v-for="{ sport, suggestion } in fields"
-        :key="sport"
-        :label="t(`sports.${sport}`)"
-        :hint="t('settings.paces.default', { value: `${format(sport, DEFAULT_PACES[sport])} ${unit(sport)}` })"
-        :error="errors[sport]"
-        :class="`sport-${sport}`"
-      >
-        <!-- Fixed ids: the generated ones differ between the server and the browser on this page. -->
-        <UInput
-          :id="`pace-${sport}`"
-          v-model="drafts[sport]"
-          :placeholder="format(sport, DEFAULT_PACES[sport])"
-          :inputmode="isPaceSetting(sport) ? undefined : 'decimal'"
-          autocomplete="off"
-          :icon="SPORT_ICONS[sport]"
-          :ui="{ leadingIcon: 'text-(--sport)' }"
-          class="w-full"
-          @change="save(sport)"
+    <!-- One ruled row per sport (#237): its mark and name on the left, the field on the right. -->
+    <div class="divide-y divide-default rounded-lg border border-default bg-default px-3.5">
+      <div v-for="{ sport, suggestion } in fields" :key="sport" class="py-3" :class="`sport-${sport}`">
+        <UFormField
+          :label="t(`sports.${sport}`)"
+          :description="t('settings.paces.default', { value: `${format(sport, DEFAULT_PACES[sport])} ${unit(sport)}` })"
+          :error="!!errors[sport]"
+          orientation="horizontal"
+          :ui="{ root: 'items-center', label: 'flex items-center gap-2.5 text-[0.9375rem]', description: 'ms-6.5 text-xs', container: 'w-32 shrink-0' }"
         >
-          <template #trailing>
-            <span class="text-xs text-muted">{{ unit(sport) }}</span>
+          <template #label="{ label }">
+            <SportMark :sport="sport" />
+            {{ label }}
           </template>
-        </UInput>
+          <!-- Fixed ids: the generated ones differ between the server and the browser on this page. -->
+          <UInput
+            :id="`pace-${sport}`"
+            v-model="drafts[sport]"
+            :placeholder="format(sport, DEFAULT_PACES[sport])"
+            :inputmode="isPaceSetting(sport) ? undefined : 'decimal'"
+            :aria-errormessage="errors[sport] ? `pace-${sport}-error` : undefined"
+            autocomplete="off"
+            class="w-full"
+            :ui="{ base: 'font-numbers text-lg font-semibold tabular-nums' }"
+            @change="save(sport)"
+          >
+            <template #trailing>
+              <span class="text-xs text-muted">{{ unit(sport) }}</span>
+            </template>
+          </UInput>
+        </UFormField>
+        <!-- Under the row rather than in the narrow field column. -->
+        <div aria-live="polite">
+          <p v-if="errors[sport]" :id="`pace-${sport}-error`" class="mt-2 text-sm text-error">{{ errors[sport] }}</p>
+        </div>
         <div v-if="suggestion" class="mt-2 space-y-1.5 text-sm" :data-pace-suggestion="sport">
           <p>{{ t('settings.paces.suggestion', { count: suggestion.outings, value: `${format(sport, suggestion.pace)} ${unit(sport)}` }, suggestion.outings) }}</p>
           <div class="flex gap-2">
@@ -125,7 +135,7 @@ const fields = computed(() => SPORT_TYPES.map(sport => ({ sport, suggestion: sug
             <UButton size="xs" color="neutral" variant="ghost" :label="t('settings.paces.ignore')" @click="dismiss(sport)" />
           </div>
         </div>
-      </UFormField>
+      </div>
     </div>
 
     <div class="space-y-2">

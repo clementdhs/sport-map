@@ -1,4 +1,6 @@
 import type { LineString } from 'geojson'
+import type { SportType } from '../utils/routes'
+import type { LiveThumbnail } from '../utils/liveThumbnail'
 
 export interface LivePoint {
   fixed_at: string
@@ -23,6 +25,16 @@ export interface LiveShareSummary {
   expires_at: string
   // When the latest point was taken, null before the first one arrives.
   last_fixed_at: string | null
+}
+
+// A share in the /live list (#237), with what its card shows: the sport and the mini-map of the route followed
+// (even one the viewer may not open, like the full map) and the track covered so far.
+export interface LiveShareListItem extends LiveShareSummary {
+  // The route's sport, null when recording freely
+  sport: SportType | null
+  // Length of the track covered (m)
+  distance_m: number
+  thumbnail: LiveThumbnail | null
 }
 
 // A share and its track. Without `after`, all its points and the route followed (even one the viewer may not

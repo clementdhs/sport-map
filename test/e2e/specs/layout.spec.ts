@@ -48,7 +48,7 @@ test.describe('as the test account', () => {
       await expect(nav.getByRole('link', { name: 'Découvrir' })).toHaveAttribute('aria-current', 'page')
       await nav.getByRole('link', { name: 'En direct' }).click()
       await expect(page).toHaveURL(/\/live$/)
-      await expect(page.getByRole('heading', { name: 'Sorties en cours', level: 1 })).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'En direct', level: 1 })).toBeVisible()
 
       // The account menu keeps the account's own entries.
       await page.getByRole('button', { name: 'Mon compte' }).click()

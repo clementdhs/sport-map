@@ -676,6 +676,14 @@
     "noCompass": "Compass unavailable: the map only turns while you move"
   },
   "live": {
+    "heading": "Live",
+    "refreshed": "The team's outings right now · refreshed every {seconds} s",
+    "shareTitle": "Share my location",
+    "shareHint": "Start recording your outing: the team follows you, {hours} h at most.",
+    "shareAction": "Record",
+    "count": "{title} · {count}",
+    "startedAt": "since {time}",
+    "ago": "{ago} ago",
     "title": "Outings in progress",
     "intro": "Team members sharing their location during an outing.",
     "none": "Nobody is sharing their location right now.",

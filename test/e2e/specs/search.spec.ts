@@ -146,7 +146,7 @@ test('shows the results without scrolling on a phone, filters in a drawer', asyn
   const sheet = page.locator('aside[data-sheet]')
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
   await expect(sheet).toContainText('2 parcours ici')
-  await sheet.getByRole('button', { name: 'Agrandir le panneau' }).click()
+  await sheet.getByText('2 parcours ici').first().click()
   const cards = page.getByTestId('route-results').locator('li a')
   await expect(cards).toHaveCount(2)
   await expect(cards.first()).toBeInViewport()

@@ -7,7 +7,7 @@ import { isMapDark, mapColor } from '~/utils/topoStyle'
 // Automatic loop proposals (#50), over the editor's layers (its track is hidden meanwhile).
 
 // Categorical slots 1 to 3 of the dataviz palette, one per proposal, each mode's own steps, validated all-pairs on the
-// map's background (light #efe8d8, dark #171c18; loops.md). The list beside the map names each one, so they read
+// map's background (light #f7f4ec, dark #141815 since #258, each a little more contrast than before; loops.md). The list beside the map names each one, so they read
 // without the colours.
 export const LOOP_COLORS = [
   { light: '#2a78d6', dark: '#3987e5' },

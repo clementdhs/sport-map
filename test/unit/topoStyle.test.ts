@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { LayerSpecification, StyleSpecification } from 'maplibre-gl'
 import { mapStyleTransform } from '~/utils/mapStyle'
 import { APP_MAP_COLORS, ROAD_CASING_LAYER, switchAppColors, TOPO_PALETTES, topoStyle } from '~/utils/topoStyle'
+import { contrast } from './contrast'
 
 // A few layers of MapTiler Outdoor (outdoor-v2), as its style.json gives them.
 const ROAD_WIDTH = ['interpolate', ['linear', 1], ['zoom'], 5, 0, 16, ['match', ['get', 'class'], 'motorway', 10, 3]]
@@ -29,6 +30,35 @@ describe('topoStyle', () => {
       expect(layer(style, 'Wood').paint).toEqual({ 'fill-color': palette.wood, 'fill-opacity': 0.8 })
       expect(layer(style, 'Road network').paint['line-color']).toBe(palette.road)
     }
+  })
+
+  // #258: the first topo tint veiled the map (paths, woods and relief too close to the paper).
+  it('keeps paths readable on the paper and in the woods, and contour lines see-through, light and dark', () => {
+    for (const palette of Object.values(TOPO_PALETTES)) {
+      expect(contrast(palette.path, palette.background)).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(palette.path, palette.wood)).toBeGreaterThanOrEqual(3)
+      expect(contrast(palette.wood, palette.background)).toBeGreaterThanOrEqual(1.2)
+      expect(palette.contourOpacity).toBeLessThanOrEqual(0.5)
+      expect(palette.contourIndexOpacity).toBeLessThanOrEqual(0.75)
+    }
+  })
+
+  it('draws the contour lines and rivers with the palette', () => {
+    const style = topoStyle({
+      ...OUTDOOR,
+      layers: [
+        { id: 'Contour index', type: 'line', source: 'maptiler_planet', 'source-layer': 'contour', paint: { 'line-color': 'hsla(36, 45%, 45%, 0.8)', 'line-width': 1 } },
+        { id: 'Contour', type: 'line', source: 'maptiler_planet', 'source-layer': 'contour', paint: { 'line-color': 'hsl(36, 45%, 50%)' } },
+        { id: 'River', type: 'line', source: 'maptiler_planet', 'source-layer': 'waterway', paint: { 'line-color': 'hsl(205, 56%, 73%)' } },
+      ],
+    } as StyleSpecification, false)
+    const { contour, contourIndex, contourOpacity, contourIndexOpacity, river } = TOPO_PALETTES.light
+    expect(layer(style, 'Contour index').paint).toEqual({ 'line-color': contourIndex, 'line-opacity': contourIndexOpacity, 'line-width': 1 })
+    expect(layer(style, 'Contour').paint).toEqual({
+      'line-color': contour,
+      'line-opacity': ['step', ['zoom'], ['match', ['get', 'nth_line'], 0, 0, contourOpacity], 15, contourOpacity],
+    })
+    expect(layer(style, 'River').paint['line-color']).toBe(river)
   })
 
   it('cases the roads in sand, just below them, with a gap as wide as the road', () => {

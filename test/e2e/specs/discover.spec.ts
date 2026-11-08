@@ -47,7 +47,7 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(page).toHaveURL('/routes/create')
   await expect(page.getByText('Parcours balisé importé').first()).toBeVisible()
   await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 1')
-  await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Randonnée')
+  await expect(page.getByRole('group', { name: 'Sport', exact: true }).getByRole('button', { pressed: true })).toHaveText('Rando')
   await expect(page.getByLabel('Description')).toHaveValue(/openstreetmap\.org\/relation\/389996/)
   // A 3.8 km loop in OpenStreetMap, with the gain the list showed.
   await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)

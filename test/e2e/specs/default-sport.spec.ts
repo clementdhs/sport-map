@@ -28,11 +28,11 @@ test('a default sport set in the settings is preselected in the editor and offer
   // Preselected in the editor, and still the member's to change.
   await page.goto('/routes/create')
   await waitForMap(page)
-  const sport = page.getByRole('combobox', { name: 'Sport' })
-  await expect(sport).toContainText('Trail')
-  await sport.click()
-  await page.getByRole('option', { name: 'VTT' }).click()
-  await expect(sport).toContainText('VTT')
+  const editorSports = page.getByRole('group', { name: 'Sport', exact: true })
+  const sport = editorSports.getByRole('button', { pressed: true })
+  await expect(sport).toHaveText('Trail')
+  await editorSports.getByRole('button', { name: 'VTT', exact: true }).click()
+  await expect(sport).toHaveText('VTT')
 
   // On the home page, a quick filter the member turns on and off: their hiking route only shows without it.
   const [hikeId, trailId] = await Promise.all(([['Sentier rando e2e du sport', 'hiking'], ['Sentier trail e2e du sport', 'trail']] as const)

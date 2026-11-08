@@ -10,3 +10,9 @@ export function useSportItems() {
     ui: { itemLeadingIcon: `sport-${value} text-(--sport)` },
   })))
 }
+
+// The sports as `SportChips` items (#232, #234): short names led by the sports' marks.
+export function useSportChips() {
+  const { t } = useI18n()
+  return computed(() => SPORT_TYPES.map((sport: SportType) => ({ value: sport, label: t(`sportChips.${sport}`), sport })))
+}

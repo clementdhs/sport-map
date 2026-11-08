@@ -28,12 +28,6 @@ const SNAP_HEIGHTS: Record<SheetSnap, string> = {
 
 // Sheet position, which a page may change (the route page collapses it during a flyover).
 const snap = defineModel<SheetSnap>('snap', { default: 'half' })
-const index = computed(() => SNAPS.indexOf(snap.value))
-
-function move(step: 1 | -1) {
-  snap.value = SNAPS[Math.min(SNAPS.length - 1, Math.max(0, index.value + step))]!
-}
-
 // Below md the collapsed sheet hides its content: made inert so keyboard and screen reader users skip it.
 const MOBILE_QUERY = '(max-width: 767.98px)'
 const mobile = ref(false)
@@ -144,15 +138,20 @@ function onPointerMove(event: PointerEvent) {
   drag.lastTime = event.timeStamp
 }
 
+// A tap (no real move) or Enter / Space on the header opens a collapsed sheet and collapses an open one. The header has
+// no arrow buttons (#247): this and dragging are the only ways to move it.
+function toggle() {
+  snap.value = snap.value === 'collapsed' ? 'half' : 'collapsed'
+}
+
 function onPointerUp(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return
   const { velocity, startY } = drag
   drag = null
   const height = dragHeight.value
   dragHeight.value = null
-  // A tap (no real move) opens a collapsed sheet and collapses an open one.
   if (height === null || Math.abs(event.clientY - startY) < 6) {
-    snap.value = snap.value === 'collapsed' ? 'half' : 'collapsed'
+    toggle()
     return
   }
   // A flick goes one position further in its direction; a slow drag stops at the nearest position.
@@ -308,33 +307,20 @@ const overlayHidden = computed(() => dragHeight.value === null
 
         <div
           ref="header"
-          class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col px-4 select-none active:cursor-grabbing md:hidden"
+          role="button"
+          tabindex="0"
+          :aria-expanded="snap !== 'collapsed'"
+          class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col rounded-t-[inherit] px-4 outline-none select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset active:cursor-grabbing md:hidden"
           @pointerdown="onPointerDown"
           @pointermove="onPointerMove"
           @pointerup="onPointerUp"
           @pointercancel="onPointerUp"
+          @keydown.enter.prevent="toggle"
+          @keydown.space.prevent="toggle"
         >
           <div class="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-(--ui-border-accented)" aria-hidden="true" />
-          <div class="flex min-h-0 flex-1 items-center gap-2">
-            <div class="min-w-0 flex-1 truncate font-medium">
-              <slot name="title" />
-            </div>
-            <UButton
-              icon="i-lucide-chevron-down"
-              color="neutral"
-              variant="ghost"
-              :aria-label="t('sheet.collapse')"
-              :disabled="snap === 'collapsed'"
-              @click="move(-1)"
-            />
-            <UButton
-              icon="i-lucide-chevron-up"
-              color="neutral"
-              variant="ghost"
-              :aria-label="t('sheet.expand')"
-              :disabled="snap === 'full'"
-              @click="move(1)"
-            />
+          <div class="flex min-h-0 min-w-0 flex-1 items-center truncate font-medium">
+            <slot name="title" />
           </div>
         </div>
 

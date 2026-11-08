@@ -8,6 +8,8 @@ export type KeyFigure = {
   highlight?: boolean
   // Explanation in a tooltip next to the label
   hint?: string
+  // Set as the cell's data-field (the live data screen's value, #235)
+  id?: string
 }
 
 // "21,40 km" → ["21,40", "km"]: figures and units are set apart in the cartouche.

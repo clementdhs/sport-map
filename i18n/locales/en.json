@@ -663,7 +663,8 @@
       "arrival": "Est. arrival",
       "time": "Clock",
       "battery": "Battery"
-    }
+    },
+    "onRoute": "on “{name}”"
   },
   "follow": {
     "title": "Follow “{name}”",
@@ -672,9 +673,6 @@
     "arrived": "You've arrived!",
     "recenter": "Recenter",
     "done": "Done",
-    "remaining": "Remaining",
-    "remainingGain": "Gain left",
-    "percent": "{percent} % of the route",
     "accuracy": "GPS accuracy: ± {accuracy} m",
     "searchingPosition": "Finding your location…",
     "searchingGps": "Looking for a GPS signal…",
@@ -684,7 +682,14 @@
     "record": "Record the outing",
     "finishDescription": "It's added to this route's outings, and the route is marked as completed.",
     "headingUp": "Turn the map to the direction of travel",
-    "noCompass": "Compass unavailable: the map only turns while you move"
+    "noCompass": "Compass unavailable: the map only turns while you move",
+    "arrival": "Finish",
+    "arrivalIn": "Finish in {distance}, about {duration}",
+    "arrivalAt": "Finish in {distance}",
+    "inProgress": "Following",
+    "time": "Time",
+    "panel": "Progress",
+    "progress": "{done} covered of {total} ({percent}%)"
   },
   "live": {
     "heading": "Live",
@@ -821,6 +826,7 @@
     "app": {
       "routes": "Routes",
       "route": "Route track",
+      "routeDone": "Part already covered (follow mode)",
       "start": "Start",
       "end": "Finish",
       "waypoint": "Numbered waypoint",

@@ -1,5 +1,7 @@
 import { distance } from '@turf/turf'
 import { MIN_PACE_SPEED_MS, formatPace, formatStopwatch } from '#shared/utils/format'
+import { estimateDurationMin } from '#shared/utils/routes'
+import type { SportType } from '#shared/utils/routes'
 import type { RecordedPoint, Recording } from '~/utils/recorder'
 
 // The big values of the "data" screen of follow mode and outing recording, read at a glance while moving.
@@ -36,9 +38,10 @@ export const MODE_FIELDS: Record<LiveMode, readonly LiveField[]> = {
   record: LIVE_FIELDS.filter(field => !FOLLOW_ONLY.includes(field)),
 }
 
+// The first one is shown very large (#235): the distance. Recording shows its elapsed time in the top bar.
 export const DEFAULT_FIELDS: Record<LiveMode, LiveField[]> = {
   follow: ['distance', 'remaining', 'speed', 'remainingGain', 'arrival', 'time'],
-  record: ['elapsed', 'distance', 'speed', 'averageSpeed', 'gain', 'time'],
+  record: ['distance', 'movingTime', 'averageSpeed', 'gain', 'loss', 'altitude', 'maxSpeed'],
 }
 
 export interface LiveStats {
@@ -181,6 +184,19 @@ export function averageSpeed(distanceM: number, movingMs: number): number | null
 export function estimatedArrival(now: number, remainingM: number, speedMs: number | null): number | null {
   if (!speedMs || speedMs < MIN_PACE_SPEED_MS) return null
   return now + (remainingM / speedMs) * 1000
+}
+
+// Follow mode's arrival sign (#235): minutes left at the average moving speed once known, before that the route's
+// estimate (the member's pace for the sport, else its default one) over what is left of it.
+export function remainingDurationMin(
+  sport: SportType,
+  remainingM: number,
+  remainingGainM: number | null,
+  speedMs: number | null,
+  paceMinPerKm?: number,
+): number {
+  if (speedMs && speedMs >= MIN_PACE_SPEED_MS) return remainingM / speedMs / 60
+  return estimateDurationMin(sport, remainingM, remainingGainM, paceMinPerKm)
 }
 
 export interface LiveValue {

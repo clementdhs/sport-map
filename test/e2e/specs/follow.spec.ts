@@ -58,7 +58,8 @@ test.describe('follow mode', () => {
     await context.setGeolocation({ latitude: 45.85, longitude: 6.16, accuracy: 10 })
     await expect(page.getByText("Tu t'éloignes du tracé")).toBeHidden()
     await expect(page.getByText('Tu es arrivé !')).toBeVisible()
-    await expect(remaining).toHaveText('0 m')
+    // The arrival sign makes way for the alert (#235).
+    await expect(remaining).toBeHidden()
 
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))

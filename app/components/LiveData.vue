@@ -1,13 +1,19 @@
 <script setup lang="ts">
+import type { SportType } from '#shared/utils/routes'
+import type { KeyFigure } from '~/utils/keyFigures'
 import type { LiveDataPrefs, LiveField, LiveMode, MeasuredStats } from '~/utils/liveStats'
 
 // The "data" screen of follow mode and outing recording: the chosen values in the chosen order, as big as the
 // screen allows, to be read at arm's length while running or riding. The choice is kept in the member's account.
+// Topo look (#235): the first value very large on the paper, the others in a two-column cartouche (`KeyFigures`).
 const props = defineProps<{
   mode: LiveMode
   stats: MeasuredStats
   // Pace (min/km) rather than speed (km/h) until the walker picks one
   defaultPace: boolean
+  // Follow mode: the route followed, under the first value
+  sport?: SportType
+  routeName?: string
 }>()
 // "Tour" pressed: the page starts a new lap.
 const emit = defineEmits<{ lap: [] }>()
@@ -36,6 +42,8 @@ const tiles = computed(() => {
   const stats = { ...props.stats, batteryLevel: battery.level.value }
   return shown.value.map(field => ({ field, label: label(field), ...liveValue(field, stats, pace.value, locale()) }))
 })
+const hero = computed(() => tiles.value[0])
+const figures = computed<KeyFigure[]>(() => tiles.value.slice(1).map(tile => ({ id: tile.field, label: tile.label, value: tile.value, unit: tile.unit })))
 
 // Laps: the button only shows with a lap value on screen, so that it isn't pressed by mistake.
 const lapShown = computed(() => shown.value.includes('lapTime') || shown.value.includes('lapDistance'))
@@ -74,37 +82,36 @@ const chosenUnit = computed({
 </script>
 
 <template>
-  <div class="flex h-full flex-col bg-default">
-    <!-- Strongest text color on the plain background: the most contrast in bright sunlight. -->
-    <dl
-      v-if="tiles.length"
-      class="grid min-h-0 flex-1 auto-rows-fr gap-px overflow-hidden bg-(--ui-border-accented)"
-      :class="tiles.length > 1 ? 'grid-cols-2' : 'grid-cols-1'"
-      data-testid="live-data"
-    >
-      <!-- Sized by both sides of the tile: many values make short tiles. -->
-      <div
-        v-for="tile in tiles"
-        :key="tile.field"
-        class="flex min-h-0 flex-col items-center justify-center overflow-hidden bg-default px-1 py-1 text-center [container-type:size] last:odd:col-span-2"
-        :data-field="tile.field"
-      >
-        <dt class="truncate text-sm font-semibold tracking-wide text-toned uppercase">{{ tile.label }}</dt>
-        <dd class="font-numbers leading-none font-semibold whitespace-nowrap text-highlighted tabular-nums">
-          <span class="text-[min(22cqw,55cqh,6rem)]" data-testid="live-value">{{ tile.value }}</span>
-          <span v-if="tile.unit" class="ml-1 text-[min(9cqw,22cqh,2rem)]">{{ tile.unit }}</span>
+  <div class="flex h-full flex-col bg-paper">
+    <!-- Strongest text color on the plain paper: the most contrast in bright sunlight. -->
+    <div v-if="hero" class="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-3 pb-2" data-testid="live-data">
+      <!-- Sized by both sides of its box: many values leave it less room. -->
+      <dl class="flex min-h-0 shrink-0 basis-[30%] flex-col justify-center [container-type:size]" :class="figures.length ? '' : 'flex-1'" :data-field="hero.field">
+        <dt class="truncate text-[min(0.875rem,12cqh)] font-bold tracking-widest text-muted uppercase">{{ hero.label }}</dt>
+        <dd class="font-numbers leading-[0.95] font-semibold tracking-tight whitespace-nowrap text-highlighted tabular-nums">
+          <span class="text-[min(30cqw,70cqh,9rem)]">{{ hero.value }}</span>{{ ' ' }}<span
+            v-if="hero.unit"
+            class="font-sans text-[min(8cqw,18cqh,2rem)] font-semibold tracking-normal text-muted"
+          >{{ hero.unit }}</span>
         </dd>
-      </div>
-    </dl>
+      </dl>
+      <p v-if="sport" class="flex min-w-0 shrink-0 items-center gap-2 text-sm text-muted">
+        <SportMark :sport="sport" />
+        <span class="truncate">{{ t(`sports.${sport}`) }}<template v-if="routeName"> · {{ t('liveData.onRoute', { name: routeName }) }}</template></span>
+      </p>
+      <KeyFigures v-if="figures.length" :figures="figures" :columns="figures.length > 1 ? 2 : 1" fill class="min-h-0 flex-1" />
+    </div>
     <p v-else class="flex flex-1 items-center justify-center p-4 text-center text-muted">{{ t('liveData.empty') }}</p>
 
-    <div class="flex items-center justify-between gap-2 border-t border-default p-2">
+    <div class="flex items-center justify-between gap-2 px-4 pb-2">
       <UButton
         v-if="lapShown"
         icon="i-lucide-flag"
         :label="t('liveData.lap')"
         color="neutral"
         variant="outline"
+        size="lg"
+        class="ring-[1.5px] ring-(--ui-border-inverted)"
         @click="startLap"
       />
       <UButton
@@ -112,6 +119,7 @@ const chosenUnit = computed({
         :label="t('liveData.customize')"
         color="neutral"
         variant="ghost"
+        size="lg"
         class="ml-auto"
         @click="settingsOpen = true"
       />

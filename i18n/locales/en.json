@@ -101,7 +101,7 @@
     "textFirst": "The first {count} routes for “{query}”",
     "textCount": "{count} route for “{query}” | {count} routes for “{query}”",
     "zoneNone": "No route in this area",
-    "zoneCount": "{count} route in this area | {count} routes in this area",
+    "zoneCount": "{count} route here | {count} routes here",
     "limit": {
       "nearest": "The {count} routes closest to the centre of the map",
       "recent": "The {count} most recent routes in the area",
@@ -122,7 +122,7 @@
       "textFirst": "Your first {count} routes for “{query}”",
       "textCount": "{count} of your routes for “{query}” | {count} of your routes for “{query}”",
       "zoneNone": "None of your routes in this area",
-      "zoneCount": "{count} of your routes in this area | {count} of your routes in this area",
+      "zoneCount": "{count} of your routes here | {count} of your routes here",
       "zoneEmptyHint": "Move the map, change the filters, or {link}.",
       "showAll": "show the team's routes too",
       "limit": {
@@ -172,7 +172,8 @@
   "routeCard": {
     "private": "Private",
     "loop": "Loop",
-    "gain": "+{gain} m",
+    "gainUnit": "m gain",
+    "quote": "“{comment}” — {author}",
     "by": "by {name}",
     "reviews": "{count} review | {count} reviews"
   },
@@ -495,6 +496,8 @@
   "discover": {
     "title": "Marked routes",
     "kind": "Route type",
+    "nearby": "Near you",
+    "inView": "In this area",
     "kinds": {
       "foot": "On foot",
       "bicycle": "Cycling",
@@ -1120,6 +1123,16 @@
       "frameHint": "Seen by the team, round, next to your name.",
       "zoom": "Zoom"
     }
+  },
+  "sportChips": {
+    "label": "Sport",
+    "all": "All",
+    "running": "Running",
+    "trail": "Trail",
+    "hiking": "Hiking",
+    "cycling": "Cycling",
+    "road_cycling": "Road bike",
+    "mountain_biking": "MTB"
   },
   "sports": {
     "running": "Road running",

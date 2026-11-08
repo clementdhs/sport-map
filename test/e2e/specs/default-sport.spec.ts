@@ -9,10 +9,11 @@ const saved = (page: Page) => page.waitForResponse(response =>
   /\/api\/profile\/me\/preferences$/.test(response.url()) && response.request().method() === 'PATCH' && response.ok())
 
 test('a default sport set in the settings is preselected in the editor and offered on the home page', async ({ page }) => {
-  // Without one, nothing changes.
+  // Without one, the home page's sport chips keep their order.
   await page.goto('/')
   await waitForHydration(page)
-  await expect(page.getByRole('button', { name: 'Trail' })).toHaveCount(0)
+  const chips = page.getByRole('group', { name: 'Sport', exact: true }).getByRole('button')
+  await expect(chips.nth(1)).toHaveText('Course')
 
   await page.goto('/settings#sport')
   await waitForHydration(page)
@@ -42,7 +43,9 @@ test('a default sport set in the settings is preselected in the editor and offer
     await page.goto('/')
     await waitForMap(page)
     const cards = page.getByTestId('route-results').locator('li a')
-    const quickFilter = page.getByRole('button', { name: 'Trail' })
+    // The default sport comes first among the chips.
+    await expect(chips.nth(1)).toHaveText('Trail')
+    const quickFilter = page.getByRole('button', { name: 'Trail', exact: true })
     await expect(cards.filter({ hasText: 'Sentier rando e2e du sport' })).toHaveCount(1)
     await expect(quickFilter).toHaveAttribute('aria-pressed', 'false')
     await quickFilter.click()
@@ -67,7 +70,7 @@ test('a default sport set in the settings is preselected in the editor and offer
   await cleared
   await page.goto('/')
   await waitForHydration(page)
-  await expect(page.getByRole('button', { name: 'Trail' })).toHaveCount(0)
+  await expect(page.getByRole('group', { name: 'Sport', exact: true }).getByRole('button').nth(1)).toHaveText('Course')
 })
 
 test.describe('saving an outing', () => {

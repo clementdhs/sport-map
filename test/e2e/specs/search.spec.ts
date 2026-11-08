@@ -1,5 +1,5 @@
 import { insertRows, supabaseAdmin } from '../admin'
-import { expect, SEED_OWNER, SEEDED_LOOP_NAME, SEEDED_ROUTE_NAME, test, waitForMap } from '../fixtures'
+import { E2E_NEIGHBORS, expect, SEED_OWNER, SEEDED_LOOP_NAME, SEEDED_REVIEW, SEEDED_ROUTE_NAME, test, waitForMap } from '../fixtures'
 
 // These tests count every route visible to the team in France, and every route matching their words, while
 // other spec files run: those put the routes they make visible to the team far away (FAR_AWAY in fixtures.ts).
@@ -24,14 +24,14 @@ test.describe('my routes and the team\'s', () => {
       await waitForMap(page)
       const cards = page.getByTestId('route-results').locator('li a')
       await expect(page.getByRole('tab', { name: 'Mes parcours' })).toHaveAttribute('aria-selected', 'true')
-      await expect(page.getByRole('paragraph').filter({ hasText: '1 de tes parcours dans cette zone' })).toBeVisible()
+      await expect(page.getByRole('paragraph').filter({ hasText: '1 de tes parcours ici' })).toBeVisible()
       await expect(cards).toHaveCount(1)
       await expect(cards.first()).toContainText('Raidillon privé e2e du membre')
       await expect(cards.first().getByLabel('Privé', { exact: true })).toBeVisible()
 
       // "Tous" adds the team's routes, kept after a reload.
       await page.getByRole('tab', { name: 'Tous' }).click()
-      await expect(page.getByRole('paragraph').filter({ hasText: '3 parcours dans cette zone' })).toBeVisible()
+      await expect(page.getByRole('paragraph').filter({ hasText: '3 parcours ici' })).toBeVisible()
       await expect(cards).toHaveCount(3)
       await page.reload()
       await waitForMap(page)
@@ -70,9 +70,9 @@ test('finds a route of another member on the home map and opens it', async ({ pa
   // Its author by display name, not username.
   await expect(card).toContainText(`par ${SEED_OWNER.displayName}`)
   // Its outline and its stats.
-  await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
+  await expect(card.getByTestId('route-track')).toHaveAttribute('d', /^M\d+ \d+L/)
   await expect(card).toContainText('Course sur route')
-  await expect(card).toContainText(/D\+ \d+ m/)
+  await expect(card).toContainText(/\d+ m D\+/)
   await card.click()
 
   await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
@@ -145,7 +145,7 @@ test('shows the results without scrolling on a phone, filters in a drawer', asyn
   // The sheet opens collapsed (#197): its title alone gives the count; once opened at half height, the first card shows.
   const sheet = page.locator('aside[data-sheet]')
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
-  await expect(sheet).toContainText('2 parcours dans cette zone')
+  await expect(sheet).toContainText('2 parcours ici')
   await sheet.getByRole('button', { name: 'Agrandir le panneau' }).click()
   const cards = page.getByTestId('route-results').locator('li a')
   await expect(cards).toHaveCount(2)
@@ -248,4 +248,27 @@ test('finds routes by name or description, anywhere, ignoring accents and case',
 
   await page.getByRole('button', { name: 'Effacer la recherche' }).click()
   await expect(page.getByRole('paragraph').filter({ hasText: 'Aucun parcours dans cette zone' })).toBeVisible()
+})
+
+// Route cards (#232): the latest review's comment as a member's quote, and the viewer's "Fait ×N" stamp, both
+// coming with the search results.
+test("cards show a member's quote and my done stamp", async ({ page }) => {
+  const { id } = await (await page.request.post('/api/routes', {
+    data: { name: 'Boucle tamponnée e2e', sport_type: 'trail', is_public: false, coordinates: [[6.25, 45.88], [6.27, 45.89]] },
+  })).json() as { id: string }
+  try {
+    expect((await page.request.put(`/api/routes/${id}/activity/completed`)).ok()).toBe(true)
+    await page.goto('/')
+    await waitForMap(page)
+    const cards = page.getByTestId('route-results').locator('li a')
+    await expect(cards.filter({ hasText: SEEDED_ROUTE_NAME }).getByTestId('route-quote'))
+      .toHaveText(`« ${SEEDED_REVIEW.comment} » — ${E2E_NEIGHBORS[0]!.username}`)
+    await expect(cards.filter({ hasText: SEEDED_ROUTE_NAME }).getByText('Fait une fois')).toHaveCount(0)
+    const mine = cards.filter({ hasText: 'Boucle tamponnée e2e' })
+    await expect(mine.getByText('Fait une fois')).toBeAttached()
+    await expect(mine.getByTestId('route-quote')).toHaveCount(0)
+  }
+  finally {
+    await page.request.delete(`/api/routes/${id}`)
+  }
 })

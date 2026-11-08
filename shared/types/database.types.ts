@@ -528,7 +528,9 @@ export type Database = {
           updated_at: string
           way_info: Json | null
           route_geojson: Json | null
+          route_done_count: number | null
           route_preview: Json | null
+          route_quote: Json | null
           route_thumbnail: Json | null
         }
         Insert: {
@@ -664,11 +666,23 @@ export type Database = {
           error: true
         } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
+      route_done_count: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_done_count with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       route_preview: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {
           error: true
         } & "the function public.route_preview with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_quote: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_quote with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
       route_thumbnail: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
@@ -697,6 +711,7 @@ export type Database = {
         Returns: {
           created_at: string
           distance_m: number
+          done_count: number
           elevation_gain_m: number
           id: string
           is_loop: boolean
@@ -706,6 +721,7 @@ export type Database = {
           name: string
           owner_avatar_path: string
           owner_name: string
+          quote: Json
           rating_avg: number
           rating_count: number
           sport_type: Database["public"]["Enums"]["sport_type"]

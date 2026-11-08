@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseStartArea, startAreaFromPlace } from '~/utils/startArea'
+import { parseStartArea, placeAt, startAreaFromPlace } from '~/utils/startArea'
 
 describe('startAreaFromPlace', () => {
   it('frames a place with its own extent', () => {
@@ -50,5 +50,20 @@ describe('parseStartArea', () => {
     expect(parseStartArea({ bounds: [3.13, 50.58, 2.97, 50.68] })).toBeNull()
     expect(parseStartArea({ bounds: [-200, 50.58, 3.13, 50.68] })).toBeNull()
     expect(parseStartArea({ bounds: [2.97, 50.58, 3.13, 95] })).toBeNull()
+  })
+})
+
+describe('placeAt', () => {
+  const lille = { bounds: [2.97, 50.58, 3.13, 50.68] as [number, number, number, number], name: 'Lille' }
+  const picked = { bounds: [3.0, 50.6, 3.1, 50.65] as [number, number, number, number], name: 'Citadelle' }
+
+  it('names the first area holding the centre', () => {
+    expect(placeAt([3.05, 50.63], [picked, lille])?.name).toBe('Citadelle')
+    expect(placeAt([2.98, 50.59], [picked, lille])?.name).toBe('Lille')
+  })
+
+  it('names nothing elsewhere, nor an area taken from a map view', () => {
+    expect(placeAt([6.86, 45.83], [picked, lille])).toBeNull()
+    expect(placeAt([3.05, 50.63], [{ ...lille, name: null }, null, undefined])).toBeNull()
   })
 })

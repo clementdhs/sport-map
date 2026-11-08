@@ -101,7 +101,7 @@
     "textFirst": "Les {count} premiers parcours pour « {query} »",
     "textCount": "{count} parcours pour « {query} » | {count} parcours pour « {query} »",
     "zoneNone": "Aucun parcours dans cette zone",
-    "zoneCount": "{count} parcours dans cette zone | {count} parcours dans cette zone",
+    "zoneCount": "{count} parcours ici | {count} parcours ici",
     "limit": {
       "nearest": "Les {count} parcours les plus proches du centre de la carte",
       "recent": "Les {count} parcours les plus récents de la zone",
@@ -122,7 +122,7 @@
       "textFirst": "Tes {count} premiers parcours pour « {query} »",
       "textCount": "{count} de tes parcours pour « {query} » | {count} de tes parcours pour « {query} »",
       "zoneNone": "Aucun de tes parcours dans cette zone",
-      "zoneCount": "{count} de tes parcours dans cette zone | {count} de tes parcours dans cette zone",
+      "zoneCount": "{count} de tes parcours ici | {count} de tes parcours ici",
       "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
       "showAll": "affiche aussi les parcours de l'équipe",
       "limit": {
@@ -172,7 +172,8 @@
   "routeCard": {
     "private": "Privé",
     "loop": "Boucle",
-    "gain": "D+ {gain} m",
+    "gainUnit": "m D+",
+    "quote": "« {comment} » — {author}",
     "by": "par {name}",
     "reviews": "{count} avis | {count} avis"
   },
@@ -495,6 +496,8 @@
   "discover": {
     "title": "Parcours balisés",
     "kind": "Type de parcours",
+    "nearby": "Près de chez toi",
+    "inView": "Dans cette zone",
     "kinds": {
       "foot": "À pied",
       "bicycle": "Vélo",
@@ -1120,6 +1123,16 @@
       "frameHint": "Visible par l'équipe, en rond, à côté de ton nom.",
       "zoom": "Zoom"
     }
+  },
+  "sportChips": {
+    "label": "Sport",
+    "all": "Tous",
+    "running": "Course",
+    "trail": "Trail",
+    "hiking": "Rando",
+    "cycling": "Vélo",
+    "road_cycling": "Vélo route",
+    "mountain_biking": "VTT"
   },
   "sports": {
     "running": "Course sur route",

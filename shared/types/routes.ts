@@ -86,6 +86,17 @@ export type RouteListItem = {
   created_at: string
   // Outline drawn by the route card (thumbnailPath), null when the track can't be drawn
   thumbnail: string | null
+  // The latest visible review with a comment (route_quote in SQL), null without one
+  quote: RouteQuote | null
+  // How many times the viewer did the route: their outings, a route only marked as done counting once
+  done_count: number
+}
+
+export type RouteQuote = {
+  // At most 200 characters
+  comment: string
+  // Display name of the review's author, or their username
+  author: string
 }
 
 export type RouteSummary = RouteListItem & {

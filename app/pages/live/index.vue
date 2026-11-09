@@ -8,7 +8,8 @@ useSeoMeta({ title: () => `${t('live.title')} — sportmap` })
 
 const { data: shares, refresh } = await useFetch<LiveShareListItem[]>('/api/live', { query: { map: true }, default: () => [] })
 usePolling(refresh, LIVE_POLL_INTERVAL_S * 1000)
-// Sharing starts from a recording (or follow mode): offered while the member isn't sharing already.
+// Sharing starts from a recording (or follow mode), which offers it once started (`?share=1`, #262): offered here
+// while the member isn't sharing already.
 const sharing = computed(() => shares.value.some(share => share.is_mine))
 
 const now = ref<number | null>(null)
@@ -37,7 +38,7 @@ onBeforeUnmount(() => clearInterval(clock))
         <p class="text-sm text-toned">{{ t('live.shareHint', { hours: LIVE_SHARE_MAX_HOURS }) }}</p>
       </div>
       <UButton
-        to="/record"
+        to="/record?share=1"
         :label="t('live.shareAction')"
         size="lg"
         class="shrink-0 bg-(--sign) font-bold text-(--sign-text) hover:bg-(--sign)/85"

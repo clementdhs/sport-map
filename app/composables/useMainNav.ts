@@ -1,5 +1,6 @@
 // Sections of the main navigation (#101): bottom tab bar on phones, app header from md up. A section stays current
-// on the pages it leads to (a route page for the map, a collection for the profile).
+// on the pages it leads to (a route page for the map, a collection for the profile). Coach took the place of
+// "En direct" (#262), reached from the home banner and the "Partager ma position" choice.
 export interface MainNavItem {
   label: string
   icon: string
@@ -11,7 +12,7 @@ export interface MainNavItem {
 const SECTIONS = [
   { key: 'map', icon: 'i-lucide-map', to: '/', within: ['/routes/'] },
   { key: 'discover', icon: 'i-lucide-signpost', to: '/discover', within: [] },
-  { key: 'live', icon: 'i-lucide-radio', to: '/live', within: [] },
+  { key: 'coach', icon: 'i-lucide-activity', to: '/coach', within: [] },
   { key: 'profile', icon: 'i-lucide-user', to: '/profile', within: ['/collections/'] },
 ] as const
 
@@ -30,11 +31,21 @@ export function useMainNav() {
   }))
 }
 
-// Choices of the tab bar's central button; the header shows them as two buttons.
+export interface NewItem {
+  kind: 'record' | 'share' | 'create'
+  label: string
+  short: string
+  icon: string
+  to: string
+}
+
+// Choices of the tab bar's central button; the header shows them as buttons. Sharing one's position starts a
+// recording that offers the share once the outing has started (`?share=1`, #262).
 export function useNewItems() {
   const { t } = useI18n()
-  return computed(() => [
-    { label: t('header.record'), short: t('mapBar.record'), icon: 'i-lucide-circle-dot', to: '/record' },
-    { label: t('header.create'), short: t('mapBar.create'), icon: 'i-lucide-plus', to: '/routes/create' },
+  return computed<NewItem[]>(() => [
+    { kind: 'record', label: t('header.record'), short: t('mapBar.record'), icon: 'i-lucide-circle-dot', to: '/record' },
+    { kind: 'share', label: t('header.share'), short: t('mapBar.share'), icon: 'i-lucide-radio', to: '/record?share=1' },
+    { kind: 'create', label: t('header.create'), short: t('mapBar.create'), icon: 'i-lucide-plus', to: '/routes/create' },
   ])
 }

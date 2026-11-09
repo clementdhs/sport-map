@@ -20,10 +20,10 @@ test.describe('as the test account', () => {
       // Nothing to go back to from the home page.
       await expect(page.getByRole('button', { name: 'Retour' })).toHaveCount(0)
 
-      // Creating and recording: the tab bar's central button on phones, two header buttons on computers.
+      // Recording, sharing and creating: the tab bar's central button on phones, three header buttons on computers.
       async function openNew(name: string) {
         if (phone) {
-          await nav.getByRole('button', { name: 'Créer ou enregistrer' }).click()
+          await nav.getByRole('button', { name: 'Enregistrer, partager ou créer' }).click()
           await page.getByRole('menuitem', { name }).click()
         }
         else {
@@ -43,12 +43,21 @@ test.describe('as the test account', () => {
       await page.getByRole('link', { name: 'Quitter' }).click()
       await expect(page).toHaveURL(/\/$/)
 
+      // Sharing one's position records an outing that offers the share once started (live.spec.ts).
+      await openNew('Partager ma position')
+      await expect(page).toHaveURL(/\/record\?share=1$/)
+      await page.getByRole('link', { name: 'Quitter' }).click()
+      await expect(page).toHaveURL(/\/$/)
+
       await nav.getByRole('link', { name: 'Découvrir' }).click()
       await expect(page).toHaveURL(/\/discover/)
       await expect(nav.getByRole('link', { name: 'Découvrir' })).toHaveAttribute('aria-current', 'page')
-      await nav.getByRole('link', { name: 'En direct' }).click()
-      await expect(page).toHaveURL(/\/live$/)
-      await expect(page.getByRole('heading', { name: 'En direct', level: 1 })).toBeVisible()
+      // The coach took the place of "En direct" (#262).
+      await expect(nav.getByRole('link', { name: 'En direct' })).toHaveCount(0)
+      await nav.getByRole('link', { name: 'Coach' }).click()
+      await expect(page).toHaveURL(/\/coach$/)
+      await expect(nav.getByRole('link', { name: 'Coach' })).toHaveAttribute('aria-current', 'page')
+      await expect(page.getByRole('heading', { name: 'Coach', level: 1 })).toBeVisible()
 
       // The account menu keeps the account's own entries.
       await page.getByRole('button', { name: 'Mon compte' }).click()

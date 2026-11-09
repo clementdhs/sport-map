@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Bottom tab bar of the phones (#101): the main sections, labels always shown, and a central button opening
-// the choice between recording an outing and creating a route. Not positioned: the layouts place it.
+// the choice between recording an outing, sharing one's position and creating a route. Not positioned: the layouts place it.
 const user = useSupabaseUser()
 const { t } = useI18n()
 const items = useMainNav()

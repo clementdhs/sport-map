@@ -3,6 +3,7 @@
     "account": "Mon compte",
     "accountNamed": "Mon compte ({name})",
     "record": "Enregistrer une sortie",
+    "share": "Partager ma position",
     "create": "Créer un parcours",
     "login": "Connexion",
     "profile": "Mon profil",
@@ -732,6 +733,7 @@
     "endedDescription": "{name} ne partage plus sa position.",
     "seeAll": "Voir les sorties en cours",
     "banner": "{name} est en sortie",
+    "bannerAll": "Voir tout",
     "bannerLink": "Voir sa position",
     "share": "Partager ma position",
     "confirmTitle": "Partager ta position avec l'équipe ?",
@@ -908,8 +910,8 @@
     "label": "Navigation principale",
     "map": "Carte",
     "discover": "Découvrir",
-    "new": "Créer ou enregistrer",
-    "live": "En direct",
+    "new": "Enregistrer, partager ou créer",
+    "coach": "Coach",
     "profile": "Profil"
   },
   "mapBar": {
@@ -917,6 +919,7 @@
     "back": "Retour",
     "home": "Accueil",
     "record": "Enregistrer",
+    "share": "Partager",
     "create": "Créer"
   },
   "sheet": {
@@ -1444,5 +1447,8 @@
       "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
+  },
+  "coach": {
+    "title": "Coach"
   }
 }

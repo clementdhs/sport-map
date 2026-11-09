@@ -427,7 +427,13 @@
     "gpxTooShort": "La trace contient moins de 2 points.",
     "gpxOneFile": "Dépose un seul fichier GPX à la fois.",
     "gpxNotGpx": "Seuls les fichiers GPX (.gpx) peuvent être importés.",
-    "overpassBusy": "Le service OpenStreetMap (Overpass) est surchargé, réessaie dans un moment."
+    "overpassBusy": "Le service OpenStreetMap (Overpass) est surchargé, réessaie dans un moment.",
+    "importInvalid": "Ce fichier est illisible ou abîmé.",
+    "importNoTrack": "Ce fichier ne contient aucune sortie.",
+    "importNoTimes": "Ce fichier n'a pas d'heures de passage : c'est un tracé, pas une sortie. Importe-le depuis l'éditeur.",
+    "importTooShort": "La trace de cette sortie contient moins de 2 points.",
+    "importType": "Seuls les fichiers GPX, FIT et TCX sont acceptés.",
+    "importTooLarge": "Fichier trop lourd (20 Mo au plus)."
   },
   "editor": {
     "replaceWithGpx": "Remplacer le tracé en cours par ce fichier GPX ?",
@@ -1525,5 +1531,20 @@
   },
   "coach": {
     "title": "Coach"
+  },
+  "outingImport": {
+    "button": "Importer des sorties",
+    "title": "Import des sorties",
+    "progress": "Fichier {done} sur {total}…",
+    "imported": "{count} sortie importée | {count} sorties importées",
+    "duplicates": "{count} déjà présente | {count} déjà présentes",
+    "failed": "{count} fichier non importé | {count} fichiers non importés",
+    "failure": "{file} : {message}",
+    "where": "Elles comptent dans tes statistiques et ta forme, et figurent dans tes parcours faits, en privé."
+  },
+  "coachImport": {
+    "title": "Aller plus vite : importe tes sorties",
+    "text": "Fichiers GPX, FIT ou TCX de ta montre ou d'une autre application. Le coach lit tes 5 dernières semaines.",
+    "choose": "Choisir des fichiers"
   }
 }

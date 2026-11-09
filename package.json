@@ -45,6 +45,7 @@
     "@turf/turf": "^7.4.0",
     "@vite-pwa/nuxt": "^1.1.1",
     "fflate": "^0.8.3",
+    "fit-file-parser": "6.2.7",
     "maplibre-gl": "^6.14.0",
     "nuxt": "^4.6.4",
     "pinia": "^4.0.3",

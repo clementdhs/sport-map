@@ -257,6 +257,19 @@ body {
   --chart-current: var(--ui-text-highlighted);
 }
 
+/* The coach's form gauge (#263): recovery, progress and overload, checked with the dataviz validator against the
+   paper and the surface in both modes; each zone is also written under the gauge. */
+:root {
+  --form-recovery: #4a86cf;
+  --form-progress: #00836a;
+  --form-overload: #b8461f;
+}
+.dark {
+  --form-recovery: #5a92d6;
+  --form-progress: #1d9e7c;
+  --form-overload: #d9703f;
+}
+
 /* The profile's panels on a computer (#236): the surface with its border, around each block of the statistics. */
 @utility profile-panel {
   border: 1px solid var(--ui-border);

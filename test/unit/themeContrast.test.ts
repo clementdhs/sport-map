@@ -94,3 +94,15 @@ describe('signage contrast', () => {
     }
   })
 })
+
+// The coach's form gauge (#263): its three zones stand out from the paper and the surface they lie on (3:1).
+describe('form gauge contrast', () => {
+  it.each(modes)('passes in %s mode', (mode) => {
+    const color = theme(mode)
+    for (const zone of ['--form-recovery', '--form-progress', '--form-overload']) {
+      for (const background of ['--ui-bg-paper', '--ui-bg']) {
+        expect(contrast(color(zone), color(background)), `${zone} on ${background}`).toBeGreaterThanOrEqual(3)
+      }
+    }
+  })
+})

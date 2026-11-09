@@ -1444,5 +1444,80 @@
       "privacyZones": "your privacy zones (place, radius, and the randomly moved centre that cuts tracks): the start and end of your routes and outings inside them stay hidden from the team",
       "json": "The .json files are structured text (JSON), readable by most software."
     }
+  },
+  "coachForm": {
+    "title": "Your current form",
+    "back": "Coach",
+    "details": "Details",
+    "subtitle": "Worked out from your recorded outings and the routes you marked as done, on foot.",
+    "states": {
+      "learning": "The coach is getting to know you",
+      "recovery": "Recovering",
+      "progress": "Progressing",
+      "overload": "Overloading"
+    },
+    "zones": {
+      "recovery": "Recovery",
+      "progress": "Progress",
+      "overload": "Overload"
+    },
+    "gauge": "Current form",
+    "ratioValue": "Your last 7 days against your base: × {ratio}",
+    "summary": "Last 7 days: {load} km-effort, {comparison} your base ({baseline} / wk).",
+    "comparison": {
+      "more": "{percent} % more than",
+      "less": "{percent} % less than",
+      "same": "as much as"
+    },
+    "advice": {
+      "recovery": "You have room to train more.",
+      "progress": "Keep going, without adding more.",
+      "overload": "Ease off for a few days."
+    },
+    "explain": {
+      "recovery": "You're doing less than usual: your body is recovering. Time to train a little more.",
+      "progress": "You're doing as much as usual or a little more: that's how you progress. Beyond × {high}, the risk of injury rises: the coach will then suggest easy sessions.",
+      "overload": "You're doing much more than usual: the risk of injury rises. The coach suggests easy sessions while your base catches up."
+    },
+    "recent": "Last 7 days",
+    "recentHint": "{distance} and {gain} m of gain",
+    "baseline": "Your base",
+    "baselineWeeks": "Weekly average of the 4 weeks before.",
+    "baselineDays": "Weekly average of the {count} days before: your history starts there.",
+    "perWeek": "/ wk",
+    "unit": "km-effort",
+    "outingLoad": "{load} km-effort",
+    "noRecent": "No outing in the last 7 days.",
+    "cycling": "Bike rides don't count yet: a kilometre on a bike isn't worth one on foot.",
+    "chart": {
+      "title": "Load per week",
+      "week": "7 days",
+      "baseline": "Base",
+      "baselineValue": "base {load}",
+      "last": "7 d",
+      "range": "{start} to {end}",
+      "unitHint": "1 km-effort = 1 km on the flat; 100 m of gain count as 1 km.",
+      "caption": "Load of the last 8 weeks, in km-effort, and the base of each",
+      "period": "Period",
+      "load": "Load"
+    },
+    "rules": {
+      "title": "What the coach does with it",
+      "current": "your current form",
+      "recovery": "(under × {low}): you can train more, it suggests intervals or a long outing.",
+      "progress": "(× {low} to {high}): it alternates key sessions and endurance.",
+      "overload": "(over × {high}): a short easy run or rest, nothing intense."
+    },
+    "learning": {
+      "title": "The coach is getting to know you",
+      "text": "It needs {count} weeks of outings to judge your form.",
+      "remaining": "{count} more day. | {count} more days.",
+      "days": "{days} of {total} days gone, {outings} with an outing",
+      "daysAgo": "{count} day ago | {count} days ago",
+      "today": "Today",
+      "verdict": "Coach's verdict",
+      "hint": "Record your outings with sportmap, or mark the routes you followed as done: each one counts.",
+      "record": "Record an outing"
+    }
   }
 }

@@ -3,6 +3,7 @@
     "account": "Mon compte",
     "accountNamed": "Mon compte ({name})",
     "record": "Enregistrer une sortie",
+    "share": "Partager ma position",
     "create": "Créer un parcours",
     "login": "Connexion",
     "profile": "Mon profil",
@@ -732,6 +733,7 @@
     "endedDescription": "{name} ne partage plus sa position.",
     "seeAll": "Voir les sorties en cours",
     "banner": "{name} est en sortie",
+    "bannerAll": "Voir tout",
     "bannerLink": "Voir sa position",
     "share": "Partager ma position",
     "confirmTitle": "Partager ta position avec l'équipe ?",
@@ -908,8 +910,8 @@
     "label": "Navigation principale",
     "map": "Carte",
     "discover": "Découvrir",
-    "new": "Créer ou enregistrer",
-    "live": "En direct",
+    "new": "Enregistrer, partager ou créer",
+    "coach": "Coach",
     "profile": "Profil"
   },
   "mapBar": {
@@ -917,6 +919,7 @@
     "back": "Retour",
     "home": "Accueil",
     "record": "Enregistrer",
+    "share": "Partager",
     "create": "Créer"
   },
   "sheet": {
@@ -1519,5 +1522,8 @@
       "hint": "Enregistre tes sorties avec sportmap, ou marque comme faits les parcours que tu as suivis : chacune compte.",
       "record": "Enregistrer une sortie"
     }
+  },
+  "coach": {
+    "title": "Coach"
   }
 }

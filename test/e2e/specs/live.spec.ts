@@ -105,6 +105,7 @@ test.describe('sharing the location during an outing', () => {
     await expect.poll(shares).toEqual([])
   })
 
+  // Reached from "Partager ma position" (#262): the recording asks at once when the outing starts.
   test('shares the position while recording, and stops when the outing is discarded', async ({ page, context, requestAs }) => {
     test.slow()
     await page.clock.install({ time: new Date('2026-10-04T08:00:00Z') })
@@ -112,14 +113,15 @@ test.describe('sharing the location during an outing', () => {
     const member = await requestAs('family')
     const shares = async () => await (await member.get('/api/live')).json() as LiveShareSummary[]
 
-    await page.goto('/record')
+    await page.goto('/record?share=1')
     await waitForMap(page)
     await expect(page.getByText(/Précision GPS/)).toBeVisible()
     // Offered once the outing has started.
     await expect(page.getByRole('button', { name: 'Partager ma position' })).toHaveCount(0)
+    const confirm = page.getByRole('dialog', { name: "Partager ta position avec l'équipe ?" })
+    await expect(confirm).toHaveCount(0)
     await page.getByRole('button', { name: 'Démarrer' }).click()
-    await page.getByRole('button', { name: 'Partager ma position' }).click()
-    await page.getByRole('dialog', { name: "Partager ta position avec l'équipe ?" }).getByRole('button', { name: 'Partager', exact: true }).click()
+    await confirm.getByRole('button', { name: 'Partager', exact: true }).click()
     await expect(page.getByText("Position partagée avec l'équipe")).toBeVisible()
     await expect.poll(shares).toEqual([expect.objectContaining({ route: null })])
 
@@ -154,12 +156,15 @@ test.describe('as another member', () => {
 
     // Announced on the home page, listed among the outings in progress.
     await page.goto('/')
+    // One member out: no "Voir tout", the banner itself leads to the share.
+    await expect(page.getByRole('link', { name: `${users.account.displayName} est en sortie` })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Voir tout' })).toHaveCount(0)
     await page.getByRole('link', { name: `${users.account.displayName} est en sortie` }).click()
     await expect(page).toHaveURL(`/live/${id}`)
     await page.getByRole('link', { name: 'Sorties en cours' }).click()
     await expect(page.getByRole('heading', { name: 'Sorties en cours · 1' })).toBeVisible()
     // Not sharing: the way to start, through a recording.
-    await expect(page.getByRole('region', { name: 'Partager ma position' }).getByRole('link', { name: 'Enregistrer' })).toHaveAttribute('href', '/record')
+    await expect(page.getByRole('region', { name: 'Partager ma position' }).getByRole('link', { name: 'Enregistrer' })).toHaveAttribute('href', '/record?share=1')
     // The card's mini-map draws the route followed and the track covered (~330 m), ending on the position.
     const card = page.getByRole('link', { name: new RegExp(`Sortie de ${users.account.displayName}`) })
     await expect(card.getByTestId('live-thumbnail').locator('path[d^="M"]')).toHaveCount(4) // 2 contour lines
@@ -190,5 +195,30 @@ test.describe('as another member', () => {
     // Nothing in progress any more.
     await page.goto('/live')
     await expect(page.getByText('Personne ne partage sa position en ce moment.')).toBeVisible()
+  })
+
+  // The list has no tab of its own any more (#262): with several members out, the home banner leads to it. Their
+  // shares are made up (only the banner's request), so that no real one runs beside the other tests.
+  test('leads from the home banner to the list when several members share their position', async ({ page }) => {
+    const share = (id: string, name: string): LiveShareSummary => ({
+      id,
+      user_name: name,
+      user_avatar_path: null,
+      is_mine: false,
+      route: null,
+      follows_route: false,
+      started_at: new Date().toISOString(),
+      expires_at: new Date(Date.now() + 3_600_000).toISOString(),
+      last_fixed_at: null,
+    })
+    await page.route('**/api/live', route => route.fulfill({
+      json: [share('6f1c1a52-6a8e-4c3e-9f1d-2b1f6f4b7a01', 'Alice'), share('6f1c1a52-6a8e-4c3e-9f1d-2b1f6f4b7a02', 'Bob')],
+    }))
+    await page.goto('/')
+    await expect(page.getByRole('link', { name: 'Alice est en sortie' })).toHaveAttribute('href', '/live/6f1c1a52-6a8e-4c3e-9f1d-2b1f6f4b7a01')
+    await expect(page.getByRole('link', { name: 'Bob est en sortie' })).toBeVisible()
+    await page.getByRole('link', { name: 'Voir tout' }).click()
+    await expect(page).toHaveURL(/\/live$/)
+    await expect(page.getByRole('heading', { name: 'En direct', level: 1 })).toBeVisible()
   })
 })

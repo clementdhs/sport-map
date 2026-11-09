@@ -23,6 +23,8 @@ const live = useLiveShare(null, fix)
 watch(recording, (current) => {
   if (!current) live.stop()
 })
+// Reached from "Partager ma position" (#262): the share is offered once, as soon as the outing has started.
+const askShare = ref(useRoute().query.share === '1')
 
 function discardDraft() {
   if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
@@ -264,8 +266,10 @@ function discard() {
           :last-sent-at="live.lastSentAt.value"
           :waiting="live.waiting.value"
           :now="now"
+          :ask="askShare"
           @start="live.start"
           @stop="live.stop"
+          @asked="askShare = false"
         />
       </template>
 

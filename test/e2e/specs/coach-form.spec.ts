@@ -24,7 +24,14 @@ test('a member with dated outings sees their form, then an overload', async ({ p
     // Two outings a week for the 4 weeks before, two in the last 7 days: as much as usual.
     for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo)
 
-    await page.goto('/coach/forme')
+    // The card of the coach page opens the detail.
+    await page.goto('/coach')
+    await waitForHydration(page)
+    const card = page.getByTestId('coach-form-card')
+    await expect(card).toHaveAttribute('data-state', 'progress')
+    await expect(card).toContainText('En progression')
+    await card.click()
+    await expect(page).toHaveURL(/\/coach\/forme$/)
     await waitForHydration(page)
     const state = page.getByTestId('coach-form-state')
     await expect(state).toHaveAttribute('data-state', 'progress')

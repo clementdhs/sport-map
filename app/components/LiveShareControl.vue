@@ -8,11 +8,18 @@ const props = defineProps<{
   lastSentAt: number | null
   waiting: number
   now: number
+  // Opens the confirmation as soon as the control shows: the "Partager ma position" choice (#262)
+  ask?: boolean
 }>()
-const emit = defineEmits<{ start: [], stop: [] }>()
+const emit = defineEmits<{ start: [], stop: [], asked: [] }>()
 const { t } = useI18n()
 
 const confirmOpen = ref(false)
+onMounted(() => {
+  if (!props.ask) return
+  confirmOpen.value = true
+  emit('asked')
+})
 function confirm() {
   confirmOpen.value = false
   emit('start')

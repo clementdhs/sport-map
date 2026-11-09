@@ -3,6 +3,7 @@
     "account": "My account",
     "accountNamed": "My account ({name})",
     "record": "Record an outing",
+    "share": "Share my location",
     "create": "Create a route",
     "login": "Sign in",
     "profile": "My profile",
@@ -732,6 +733,7 @@
     "endedDescription": "{name} is no longer sharing their location.",
     "seeAll": "See outings in progress",
     "banner": "{name} is out",
+    "bannerAll": "See all",
     "bannerLink": "See their location",
     "share": "Share my location",
     "confirmTitle": "Share your location with the team?",
@@ -908,8 +910,8 @@
     "label": "Main navigation",
     "map": "Map",
     "discover": "Discover",
-    "new": "Create or record",
-    "live": "Live",
+    "new": "Record, share or create",
+    "coach": "Coach",
     "profile": "Profile"
   },
   "mapBar": {
@@ -917,6 +919,7 @@
     "back": "Back",
     "home": "Home",
     "record": "Record",
+    "share": "Share",
     "create": "Create"
   },
   "sheet": {
@@ -1519,5 +1522,8 @@
       "hint": "Record your outings with sportmap, or mark the routes you followed as done: each one counts.",
       "record": "Record an outing"
     }
+  },
+  "coach": {
+    "title": "Coach"
   }
 }

@@ -72,6 +72,41 @@ export type Database = {
           },
         ]
       }
+      coach_goals: {
+        Row: {
+          kind: string
+          race_date: string | null
+          race_distance_m: number | null
+          race_gain_m: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          kind: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          kind?: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collections: {
         Row: {
           created_at: string

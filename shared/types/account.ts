@@ -33,3 +33,12 @@ export type PrivacyZonesResult = {
   zones: PrivacyZone[]
   applied: boolean
 }
+
+// GET and PUT /api/profile/me/coach-goal (#264): what the member trains for, null on GET until they pick one. The
+// race fields are set for a race only (its gain may be unknown).
+export type CoachGoal = {
+  kind: 'resume' | 'progress' | 'race'
+  race_date: string | null
+  race_distance_m: number | null
+  race_gain_m: number | null
+}

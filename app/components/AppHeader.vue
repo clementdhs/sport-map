@@ -1,10 +1,10 @@
 <script setup lang="ts">
 // App header (#101). From md up it is the same on every page but the full-screen ones (editor, follow, record,
-// a live share): logo, main navigation, record / create, account. Below md the tab bar holds the navigation and
+// a live share): logo, main navigation, record / share / create, account. Below md the tab bar holds the navigation and
 // the map pages show MapTopBar instead.
 // `wide` (map pages, #154): the content spans the whole width, like the map, instead of the centred column of
 // the text pages. Topo look (#231): surface with a sand edge, the current section on a pill, "Enregistrer" outlined
-// in ink with a red dot, "Créer" in the accent, the member's avatar.
+// in ink with a red dot, "Partager" outlined the same way (#262), "Créer" in the accent, the member's avatar.
 defineProps<{ wide?: boolean }>()
 
 const user = useSupabaseUser()
@@ -48,23 +48,24 @@ const newItems = useNewItems()
 
     <template #right>
       <template v-if="user">
-        <!-- In the tab bar's central button on phones. -->
+        <!-- In the tab bar's central button on phones. Labels from lg up, the share's from xl: three of them don't fit
+             beside the sections at 1024 px. -->
         <UButton
-          v-for="(item, index) in newItems"
+          v-for="item in newItems"
           :key="item.to"
           :to="item.to"
-          :icon="index === 0 ? undefined : item.icon"
+          :icon="item.kind === 'record' ? undefined : item.icon"
           :label="item.short"
           :aria-label="item.label"
-          :color="index === 0 ? 'neutral' : 'primary'"
-          :variant="index === 0 ? 'outline' : 'solid'"
+          :color="item.kind === 'create' ? 'primary' : 'neutral'"
+          :variant="item.kind === 'create' ? 'solid' : 'outline'"
           size="lg"
           class="h-9.5 font-semibold max-md:hidden"
-          :class="{ 'ring-[1.5px] ring-(--ui-border-inverted) max-lg:px-3.5': index === 0 }"
-          :ui="{ label: 'hidden lg:inline' }"
+          :class="{ 'ring-[1.5px] ring-(--ui-border-inverted) max-lg:px-3.5': item.kind !== 'create' }"
+          :ui="{ label: item.kind === 'share' ? 'hidden xl:inline' : 'hidden lg:inline' }"
         >
           <!-- Recording: a red dot, like a camera's. -->
-          <template v-if="index === 0" #leading>
+          <template v-if="item.kind === 'record'" #leading>
             <span class="size-2.5 shrink-0 rounded-full bg-error" aria-hidden="true" />
           </template>
         </UButton>

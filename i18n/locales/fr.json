@@ -1448,6 +1448,81 @@
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
     }
   },
+  "coachForm": {
+    "title": "Ta forme du moment",
+    "back": "Coach",
+    "details": "Détails",
+    "subtitle": "Calculée sur tes sorties enregistrées et tes parcours marqués comme faits, à pied.",
+    "states": {
+      "learning": "Le coach apprend à te connaître",
+      "recovery": "En récupération",
+      "progress": "En progression",
+      "overload": "En surcharge"
+    },
+    "zones": {
+      "recovery": "Récupération",
+      "progress": "Progression",
+      "overload": "Surcharge"
+    },
+    "gauge": "Forme du moment",
+    "ratioValue": "Rapport entre tes 7 derniers jours et ton fond : × {ratio}",
+    "summary": "7 derniers jours : {load} km-effort, {comparison} ton fond ({baseline} / sem.).",
+    "comparison": {
+      "more": "{percent} % de plus que",
+      "less": "{percent} % de moins que",
+      "same": "autant que"
+    },
+    "advice": {
+      "recovery": "Tu as de la marge pour charger.",
+      "progress": "Continue, sans en rajouter.",
+      "overload": "Lève le pied quelques jours."
+    },
+    "explain": {
+      "recovery": "Tu en fais moins que d'habitude : ton corps récupère. C'est le moment de charger un peu.",
+      "progress": "Tu en fais autant ou un peu plus que d'habitude : c'est ce qui fait progresser. Au-delà de × {high}, le risque de blessure monte : le coach te proposera alors des séances faciles.",
+      "overload": "Tu en fais beaucoup plus que d'habitude : le risque de blessure monte. Le coach te propose des séances faciles, le temps que ton fond rattrape."
+    },
+    "recent": "7 derniers jours",
+    "recentHint": "{distance} et {gain} m de D+",
+    "baseline": "Ton fond",
+    "baselineWeeks": "Moyenne par semaine des 4 semaines d'avant.",
+    "baselineDays": "Moyenne par semaine des {count} jours d'avant : ton historique commence là.",
+    "perWeek": "/ sem.",
+    "unit": "km-effort",
+    "outingLoad": "{load} km-effort",
+    "noRecent": "Aucune sortie ces 7 derniers jours.",
+    "cycling": "Les sorties à vélo ne comptent pas encore : un kilomètre à vélo n'en vaut pas un à pied.",
+    "chart": {
+      "title": "Charge par semaine",
+      "week": "7 jours",
+      "baseline": "Fond",
+      "baselineValue": "fond {load}",
+      "last": "7 j",
+      "range": "Du {start} au {end}",
+      "unitHint": "1 km-effort = 1 km à plat ; 100 m de D+ comptent pour 1 km.",
+      "caption": "Charge des 8 dernières semaines, en km-effort, et le fond de chacune",
+      "period": "Période",
+      "load": "Charge"
+    },
+    "rules": {
+      "title": "Ce que le coach en fait",
+      "current": "ta forme du moment",
+      "recovery": "(moins de × {low}) : tu peux charger, il propose fractionné ou sortie longue.",
+      "progress": "(× {low} à {high}) : il alterne séance clé et endurance.",
+      "overload": "(plus de × {high}) : footing court ou repos, rien d'intense."
+    },
+    "learning": {
+      "title": "Le coach apprend à te connaître",
+      "text": "Il lui faut {count} semaines de sorties pour juger ta forme.",
+      "remaining": "Encore {count} jour. | Encore {count} jours.",
+      "days": "{days} jours sur {total} écoulés, {outings} avec une sortie",
+      "daysAgo": "Il y a {count} jour | Il y a {count} jours",
+      "today": "Aujourd'hui",
+      "verdict": "Avis du coach",
+      "hint": "Enregistre tes sorties avec sportmap, ou marque comme faits les parcours que tu as suivis : chacune compte.",
+      "record": "Enregistrer une sortie"
+    }
+  },
   "coach": {
     "title": "Coach"
   }

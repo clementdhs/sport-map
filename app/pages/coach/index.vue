@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { MyProfile } from '#shared/types/routes'
+
 // The coach (#261): the session of the day, chosen from the member's form, goal and time available. Its own tab
 // in the main navigation since #262, in place of "En direct"; the other sub-issues of #261 fill the page.
 const { t } = useI18n()
@@ -12,6 +14,10 @@ const today = computed(() => new Date().toLocaleDateString(locale(), {
   month: 'long',
   timeZone: 'Europe/Paris',
 }))
+
+// The form of the moment (#263) from the profile's outings, like the statistics. Without them (error) the page
+// still shows, without the card.
+const { data: profile } = await useFetch<MyProfile>('/api/profile/me')
 </script>
 
 <template>
@@ -22,5 +28,6 @@ const today = computed(() => new Date().toLocaleDateString(locale(), {
       </p>
       <h1 class="text-[2.5rem] leading-none font-bold">{{ t('coach.title') }}</h1>
     </div>
+    <CoachFormCard v-if="profile" :outings="profile.outings" />
   </UContainer>
 </template>

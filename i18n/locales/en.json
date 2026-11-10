@@ -1323,7 +1323,13 @@
     "editorMismatch": "The editor's state doesn't match the track",
     "movingExceedsDuration": "The moving time is longer than the outing",
     "maxPois": "{max} points of interest maximum",
-    "wayInfoMismatch": "The way information doesn't match the track"
+    "wayInfoMismatch": "The way information doesn't match the track",
+    "raceDateRequired": "Enter the race date",
+    "raceDatePast": "The race can't be in the past",
+    "raceDateFar": "Race too far ahead: 2 years at most",
+    "raceDistanceRequired": "Enter the distance",
+    "raceDistanceRange": "Between 1 and 300 km",
+    "raceGainRange": "Between 0 and 20,000 m"
   },
   "api": {
     "signInRequired": "Sign-in required",
@@ -1409,7 +1415,9 @@
     "loadPrivacyZonesFailed": "Couldn't load your privacy zones",
     "savePrivacyZoneFailed": "Couldn't save the privacy zone",
     "tooManyPrivacyZones": "5 privacy zones at most",
-    "privacyZoneNotFound": "Privacy zone not found"
+    "privacyZoneNotFound": "Privacy zone not found",
+    "loadCoachGoalFailed": "Couldn't load your goal",
+    "saveCoachGoalFailed": "Couldn't save your goal"
   },
   "archive": {
     "files": {
@@ -1427,7 +1435,8 @@
       "preferences": "settings.json",
       "privacyZones": "privacy-zones.json",
       "gpxFolder": "routes",
-      "photosFolder": "photos"
+      "photosFolder": "photos",
+      "coachGoal": "coach-goal.json"
     },
     "readme": {
       "intro": "Data of {username} on sportmap, exported on {date}.",
@@ -1445,7 +1454,8 @@
       "live": "your location shared with the team during an outing in progress (deleted when the outing ends)",
       "preferences": "your settings kept in your account (basemap, 3D view, map orientation, home filter, “Data” screen, voice guidance)",
       "privacyZones": "your privacy zones (place, radius, and the randomly moved centre that cuts tracks): the start and end of your routes and outings inside them stay hidden from the team",
-      "json": "The .json files are structured text (JSON), readable by most software."
+      "json": "The .json files are structured text (JSON), readable by most software.",
+      "coachGoal": "the goal you gave the coach: ease back in, progress, or get ready for a race (its date, distance and gain)"
     }
   },
   "coachForm": {
@@ -1525,5 +1535,84 @@
   },
   "coach": {
     "title": "Coach"
+  },
+  "coachGoal": {
+    "title": "Your goal",
+    "label": "Goal:",
+    "none": "not chosen yet",
+    "edit": "Change",
+    "choose": "Choose",
+    "kinds": {
+      "resume": "Ease back in",
+      "progress": "Progress",
+      "race": "Get ready for a race"
+    },
+    "hints": {
+      "resume": "Easy sessions, volume going up slowly",
+      "progress": "A key session every other outing, endurance in between",
+      "race": "Long runs growing towards the distance, and a lighter last week"
+    },
+    "race": "{distance} race on {date}",
+    "raceGain": "{distance} race with {gain} of gain on {date}",
+    "when": {
+      "today": "today",
+      "past": "past",
+      "days": "tomorrow | in {n} days",
+      "weeks": "in {n} wk"
+    },
+    "date": "Date",
+    "distance": "Distance (km)",
+    "gain": "Gain (m)",
+    "gainHint": "Optional",
+    "save": "Save",
+    "saved": "Goal saved",
+    "noGoalHint": "Without a goal, the coach helps you progress."
+  },
+  "coachSession": {
+    "heading": "Today's session · {date}",
+    "durations": "How much time do you have?",
+    "other": "Another session",
+    "kinds": {
+      "rest": "Rest",
+      "raceDay": "Race day",
+      "recovery": "Recovery jog",
+      "endurance": "Endurance run",
+      "long": "Long run",
+      "longHilly": "Hilly long run",
+      "shortHills": "Short hills",
+      "longHills": "Long hills",
+      "intervals": "Intervals"
+    },
+    "reasons": {
+      "learning": "The coach is still getting to know you: an easy run, at a conversational pace, meanwhile.",
+      "overloadRest": "Your last 7 days are well above your base: rest today, fitness also builds while recovering.",
+      "overloadJog": "Your last 7 days are above your base: a short, easy jog to keep the legs moving.",
+      "raceDay": "It's race day: nothing else on the programme. Have a good race!",
+      "taper": "Your race is tomorrow: lighter runs to arrive fresh, at an easy pace. | Your race is in {n} days: lighter runs to arrive fresh, at an easy pace.",
+      "raceLong": "Your race is in {n} days: the long run grows towards its distance, still at an easy pace.",
+      "resume": "You're easing back in: easy endurance, the volume will go up little by little.",
+      "recovery": "You've recovered well: it's the day for a key session.",
+      "progressKey": "You're progressing: a key session today, endurance on the next outing.",
+      "progressEasy": "You're progressing: endurance today to absorb the key session, the next one comes on the following outing."
+    },
+    "blocks": {
+      "label": "Session outline",
+      "warmup": "Warm-up",
+      "cooldown": "Cool-down",
+      "easy": "Endurance",
+      "hilly": "Rolling endurance",
+      "recovery": "Easy jog",
+      "hills": "{count} × {effort} uphill",
+      "fast": "{count} × {effort} fast",
+      "hillsDetail": "{count} × {effort} uphill, at a sustained effort, {recovery} recovery on the way down",
+      "fastDetail": "{count} × {effort} fast, {recovery} recovery jogging",
+      "summary": "Warm-up {warmup}, {reps}, cool-down {cooldown}"
+    },
+    "distance": "Distance",
+    "gain": "Gain",
+    "pace": "Easy pace",
+    "paceTitle": "Your easy pace, the one of your settings",
+    "paceValue": "{pace}/km",
+    "restText": "No session today: a walk, some stretching, or nothing at all."
   }
 }

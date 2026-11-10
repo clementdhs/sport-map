@@ -1323,7 +1323,13 @@
     "editorMismatch": "L'état de l'éditeur ne correspond pas au tracé",
     "movingExceedsDuration": "Le temps en mouvement dépasse la durée de la sortie",
     "maxPois": "{max} points d'intérêt maximum",
-    "wayInfoMismatch": "Les informations sur les voies ne correspondent pas au tracé"
+    "wayInfoMismatch": "Les informations sur les voies ne correspondent pas au tracé",
+    "raceDateRequired": "Indique la date de la course",
+    "raceDatePast": "La course ne peut pas être déjà passée",
+    "raceDateFar": "Course trop lointaine : 2 ans au plus",
+    "raceDistanceRequired": "Indique la distance",
+    "raceDistanceRange": "Entre 1 et 300 km",
+    "raceGainRange": "Entre 0 et 20 000 m"
   },
   "api": {
     "signInRequired": "Connexion requise",
@@ -1409,7 +1415,9 @@
     "loadPrivacyZonesFailed": "Impossible de charger tes zones de confidentialité",
     "savePrivacyZoneFailed": "Impossible d'enregistrer la zone de confidentialité",
     "tooManyPrivacyZones": "5 zones de confidentialité au maximum",
-    "privacyZoneNotFound": "Zone de confidentialité introuvable"
+    "privacyZoneNotFound": "Zone de confidentialité introuvable",
+    "loadCoachGoalFailed": "Impossible de charger ton objectif",
+    "saveCoachGoalFailed": "Impossible d'enregistrer ton objectif"
   },
   "archive": {
     "files": {
@@ -1427,7 +1435,8 @@
       "preferences": "reglages.json",
       "privacyZones": "zones-de-confidentialite.json",
       "gpxFolder": "parcours",
-      "photosFolder": "photos"
+      "photosFolder": "photos",
+      "coachGoal": "objectif-coach.json"
     },
     "readme": {
       "intro": "Données de {username} sur sportmap, exportées le {date}.",
@@ -1445,7 +1454,8 @@
       "live": "ta position partagée avec l'équipe pendant une sortie en cours (effacée à la fin de la sortie)",
       "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
       "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
-      "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
+      "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.",
+      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+)"
     }
   },
   "coachForm": {
@@ -1525,5 +1535,84 @@
   },
   "coach": {
     "title": "Coach"
+  },
+  "coachGoal": {
+    "title": "Ton objectif",
+    "label": "Objectif :",
+    "none": "pas encore choisi",
+    "edit": "Modifier",
+    "choose": "Choisir",
+    "kinds": {
+      "resume": "Reprendre en douceur",
+      "progress": "Progresser",
+      "race": "Préparer une course"
+    },
+    "hints": {
+      "resume": "Séances faciles, volume qui monte lentement",
+      "progress": "Une séance clé une sortie sur deux, de l'endurance entre les deux",
+      "race": "Des sorties longues qui montent vers la distance, et un allègement la dernière semaine"
+    },
+    "race": "course de {distance} le {date}",
+    "raceGain": "course de {distance} et {gain} D+ le {date}",
+    "when": {
+      "today": "aujourd'hui",
+      "past": "passée",
+      "days": "demain | dans {n} jours",
+      "weeks": "dans {n} sem."
+    },
+    "date": "Date",
+    "distance": "Distance (km)",
+    "gain": "D+ (m)",
+    "gainHint": "Facultatif",
+    "save": "Enregistrer",
+    "saved": "Objectif enregistré",
+    "noGoalHint": "Sans objectif, le coach t'aide à progresser."
+  },
+  "coachSession": {
+    "heading": "Séance du jour · {date}",
+    "durations": "Combien de temps as-tu ?",
+    "other": "Autre séance",
+    "kinds": {
+      "rest": "Repos",
+      "raceDay": "Jour de course",
+      "recovery": "Footing de récupération",
+      "endurance": "Sortie en endurance",
+      "long": "Sortie longue",
+      "longHilly": "Sortie longue vallonnée",
+      "shortHills": "Côtes courtes",
+      "longHills": "Côtes longues",
+      "intervals": "Fractionné"
+    },
+    "reasons": {
+      "learning": "Le coach apprend encore à te connaître : une sortie facile, en aisance respiratoire, en attendant.",
+      "overloadRest": "Tes 7 derniers jours dépassent largement ton fond : repos aujourd'hui, la forme se construit aussi en récupérant.",
+      "overloadJog": "Tes 7 derniers jours dépassent ton fond : un footing court et tranquille, pour garder les jambes en mouvement.",
+      "raceDay": "C'est le jour de ta course : rien d'autre au programme. Bonne course !",
+      "taper": "Ta course est demain : on allège pour arriver frais, en endurance tranquille. | Ta course est dans {n} jours : on allège pour arriver frais, en endurance tranquille.",
+      "raceLong": "Ta course est dans {n} jours : la sortie longue monte vers sa distance, toujours en endurance.",
+      "resume": "Tu reprends en douceur : de l'endurance facile, le volume montera petit à petit.",
+      "recovery": "Tu as bien récupéré : c'est le jour pour une séance clé.",
+      "progressKey": "Tu progresses : une séance clé aujourd'hui, de l'endurance à la sortie suivante.",
+      "progressEasy": "Tu progresses : de l'endurance aujourd'hui pour assimiler la séance clé, la prochaine viendra à la sortie suivante."
+    },
+    "blocks": {
+      "label": "Déroulé de la séance",
+      "warmup": "Échauffement",
+      "cooldown": "Retour au calme",
+      "easy": "Endurance",
+      "hilly": "Endurance vallonnée",
+      "recovery": "Footing tranquille",
+      "hills": "{count} × {effort} en côte",
+      "fast": "{count} × {effort} rapide",
+      "hillsDetail": "{count} × {effort} en montée, à effort soutenu, récupération {recovery} en redescendant",
+      "fastDetail": "{count} × {effort} rapide, récupération {recovery} en trottinant",
+      "summary": "Échauffement {warmup}, {reps}, retour au calme {cooldown}"
+    },
+    "distance": "Distance",
+    "gain": "D+",
+    "pace": "Allure EF",
+    "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
+    "paceValue": "{pace}/km",
+    "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
   }
 }

@@ -510,11 +510,6 @@
     "startPlaced": "Départ placé sur la carte.",
     "myPosition": "Ma position",
     "pickOnMap": "Déplacer",
-    "shape": "Type de parcours",
-    "shapes": {
-      "loop": "Boucle",
-      "out_and_back": "Aller-retour"
-    },
     "target": "Boucle selon",
     "distance": "Distance",
     "duration": "Durée",
@@ -524,6 +519,8 @@
     "distanceWithGain": "Environ {distance} avec ~{gain} m de D+.",
     "range": "Longueur approximative (± 20 %)",
     "rangeHint": "Plus de tracés possibles autour de la longueur visée.",
+    "outAndBack": "Aller-retour",
+    "outAndBackHint": "Revenir par le même chemin.",
     "outOfRange": "Une boucle fait entre {min} et {max}.",
     "generate": "Proposer des boucles",
     "regenerate": "Autres propositions",

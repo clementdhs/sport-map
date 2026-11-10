@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
-  climbOf, isOnTarget, isShortestThrough,LOOP_TOLERANCES, type LoopClimb, loopCorner, loopLengthForDuration, loopRoutePoints,
+  climbOf, isOnTarget, isShortestThrough, isViaInReach, LOOP_TOLERANCES, type LoopClimb, loopCorner, loopLengthForDuration, loopRoutePoints,
   loopViaPlaces, loopViaQuery, loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain,
   seedBearing, typicalGainPerKm, viaSearchRadius,
 } from '#shared/utils/loops'
@@ -206,6 +206,21 @@ describe('loopRoutePoints', () => {
     expect(far.points.slice(0, 2)).toEqual([START, PEAK])
     expect(metres(START, far.points[2]!)).toBeCloseTo(5_000, -1)
     expect(far.radiuses).toEqual([350, 1000, -1])
+  })
+})
+
+describe('loopRoutePoints through a far place', () => {
+  it('goes straight there and back when that is already the whole loop', () => {
+    const route = loopRoutePoints('loop', START, 7_700, 3, PEAK)!
+    expect(route.points).toEqual([START, PEAK, START])
+    expect(route.radiuses).toEqual([350, 1000, 350])
+  })
+})
+
+describe('isViaInReach', () => {
+  it('accepts places the browser could have picked only', () => {
+    expect(isViaInReach(START, PEAK)).toBe(true)
+    expect(isViaInReach(START, [START[0], START[1] + 0.1])).toBe(false)
   })
 })
 

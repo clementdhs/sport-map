@@ -53,6 +53,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const settledCount = ref(0)
   // Answers for proposals that were cleared since are ignored.
   let generation = 0
+  // True from the click until the proposals are ranked: the panel picks the first one only once they are.
+  const ranking = ref(false)
 
   // The distance asked for: a duration is turned into a distance at the member's pace (#146), climbing as much as
   // the chosen climbing usually does (#214).
@@ -61,20 +63,24 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     ? Math.round(distanceKm.value * 1000)
     : loopLengthForDuration(editor.details.sport_type, durationMin.value, preferences.values.paces[editor.details.sport_type], gainPerKmM.value))
   const targetInRange = computed(() => targetM.value >= LOOP_MIN_M && targetM.value <= LOOP_MAX_M)
-  const generating = computed(() => viaStatus.value === 'searching' || proposals.value.some(proposal => proposal.status === 'loading'))
+  const generating = computed(() => ranking.value || viaStatus.value === 'searching' || proposals.value.some(proposal => proposal.status === 'loading'))
   const canGenerate = computed(() => !!start.value && targetInRange.value && !generating.value && !editor.routingQuotaReached)
 
   function clearProposals() {
     generation++
+    ranking.value = false
     proposals.value = []
     highlighted.value = null
     viaStatus.value = 'idle'
     viaPlace.value = null
   }
 
+  // The highlighted proposal stays highlighted where it moves.
   function rank() {
+    const seed = highlighted.value === null ? null : proposals.value[highlighted.value]?.seed
     proposals.value = rankByClimb(proposals.value, editor.details.sport_type, climb.value)
-    highlighted.value = null
+    const index = proposals.value.findIndex(proposal => proposal.seed === seed)
+    highlighted.value = index < 0 ? null : index
   }
 
   // The place the proposals go through, searched in OpenStreetMap around the start; null without one.
@@ -143,6 +149,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   async function generate() {
     if (!canGenerate.value || !start.value) return
     clearProposals()
+    ranking.value = true
     const current = generation
     const from = start.value
     const place = via.value === 'none' ? null : await findVia(via.value, from, current)
@@ -191,6 +198,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     }))
     if (current !== generation) return
     rank()
+    ranking.value = false
     settledCount.value++
   }
 

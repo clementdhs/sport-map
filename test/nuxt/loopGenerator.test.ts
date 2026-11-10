@@ -207,7 +207,8 @@ describe('proposals', () => {
     loop.climb = 'flat'
     await nextTick()
     expect(loop.proposals.map(proposal => proposal.seed)).toEqual([0, 2, 1])
-    expect(loop.highlighted).toBeNull()
+    // The highlighted proposal (seed 1) stays highlighted where it moved.
+    expect(loop.highlighted).toBe(2)
     expect(loopCalls).toHaveLength(3)
   })
 

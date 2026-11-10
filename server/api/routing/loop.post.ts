@@ -11,6 +11,7 @@ export default defineEventHandler(async (event): Promise<RoutingLoopResponse> =>
   if (!user) throw apiError(event, 401, 'api.signInRequired')
 
   const { start, length_m, sport_type, seed, shape, precision, via } = await readLocalizedBody(event, routingLoopSchema)
+  if (via && !isViaInReach(start, via)) throw apiError(event, 422, 'api.loopViaTooFar')
   const tolerance = LOOP_TOLERANCES[precision]
   const offTarget = shape === 'out_and_back' ? 'api.outAndBackOffTarget' : 'api.loopOffTarget'
 

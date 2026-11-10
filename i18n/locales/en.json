@@ -510,11 +510,6 @@
     "startPlaced": "Start placed on the map.",
     "myPosition": "My location",
     "pickOnMap": "Move",
-    "shape": "Route type",
-    "shapes": {
-      "loop": "Loop",
-      "out_and_back": "Out and back"
-    },
     "target": "Loop by",
     "distance": "Distance",
     "duration": "Duration",
@@ -524,6 +519,8 @@
     "distanceWithGain": "About {distance} with ~{gain} m of climbing.",
     "range": "Approximate length (± 20%)",
     "rangeHint": "More possible routes around the length you want.",
+    "outAndBack": "Out and back",
+    "outAndBackHint": "Come back the same way.",
     "outOfRange": "A loop is between {min} and {max} long.",
     "generate": "Suggest loops",
     "regenerate": "Other suggestions",

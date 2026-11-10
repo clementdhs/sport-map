@@ -16,14 +16,17 @@ const targetItems = computed(() => [
   { label: t('loop.duration'), value: 'duration' },
 ])
 
-const shapeItems = computed(() => LOOP_SHAPES.map(value => ({ label: t(`loop.shapes.${value}`), value })))
 const climbItems = computed(() => LOOP_CLIMBS.map(value => ({ label: t(`loop.climbs.${value}`), value })))
 const viaItems = computed(() => (['none', ...LOOP_VIA_TYPES] as const).map(value => ({ label: t(`loop.vias.${value}`), value })))
 const range = computed({
   get: () => loop.precision === 'range',
   set: (value: boolean) => { loop.precision = value ? 'range' : 'precise' },
 })
-const outAndBack = computed(() => loop.shape === 'out_and_back')
+// A switch rather than tabs: the mode bar above already has a "Boucle" tab.
+const outAndBack = computed({
+  get: () => loop.shape === 'out_and_back',
+  set: (value: boolean) => { loop.shape = value ? 'out_and_back' : 'loop' },
+})
 
 // The other side of the target: the duration of the distance, or the distance covered in the duration, with the
 // gain the chosen climbing usually brings.
@@ -111,8 +114,6 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
 
     <SportChips v-model="editor.details.sport_type" :items="sportChips" :label="t('filters.sport')" />
 
-    <UTabs v-model="loop.shape" :items="shapeItems" :content="false" size="sm" :aria-label="t('loop.shape')" />
-
     <div>
       <div class="flex items-center justify-between gap-3">
         <UTabs
@@ -138,7 +139,10 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
         class="mt-3"
       />
       <p class="mt-2 text-sm text-muted">{{ targetHint }}</p>
-      <USwitch v-model="range" :label="t('loop.range')" :description="t('loop.rangeHint')" size="sm" class="mt-3" />
+      <div class="mt-3 space-y-2">
+        <USwitch v-model="range" :label="t('loop.range')" :description="t('loop.rangeHint')" size="sm" />
+        <USwitch v-model="outAndBack" :label="t('loop.outAndBack')" :description="t('loop.outAndBackHint')" size="sm" />
+      </div>
     </div>
 
     <div>

@@ -164,6 +164,10 @@ export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number
   const crowM = lengthM / PATH_DETOUR
   if (shape === 'loop') {
     if (!via) return null
+    // Already the shortest loop through the place: its third corner would be the start itself.
+    if (isShortestThrough(shape, start, lengthM, via)) {
+      return { points: [start, via, start], radiuses: [START_RADIUS_M, VIA_RADIUS_M, START_RADIUS_M] }
+    }
     return {
       points: [start, via, loopCorner(start, via, crowM, seedAngle(seed)), start],
       radiuses: [START_RADIUS_M, VIA_RADIUS_M, -1, START_RADIUS_M],
@@ -210,6 +214,11 @@ export const LOOP_VIA_TYPES = ['peak', 'water'] as const
 export type LoopViaType = typeof LOOP_VIA_TYPES[number]
 // Overpass is asked around the start, at most this far.
 export const VIA_SEARCH_MAX_M = 10_000
+
+// The server only routes through a place the browser could have picked.
+export function isViaInReach(start: LngLat, via: LngLat): boolean {
+  return metres(start, via) <= VIA_SEARCH_MAX_M
+}
 
 // How far a place can be, as the crow flies, for going there and back to fit in the length.
 export function viaSearchRadius(lengthM: number, tolerance: number): number {

@@ -255,7 +255,7 @@ test('generates an out and back of a rough length through the highest peak (#214
   const [lng, lat] = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number)
   peak = [lng!, lat! + 0.018]
 
-  await panel.getByRole('tab', { name: 'Aller-retour' }).click()
+  await panel.getByRole('switch', { name: /Aller-retour/ }).click()
   await panel.getByRole('switch', { name: /Longueur approximative/ }).click()
   await panel.getByRole('tab', { name: 'Costaud' }).click()
   await panel.getByRole('combobox', { name: 'Passer par' }).click()

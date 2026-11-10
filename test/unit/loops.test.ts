@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
   climbOf, isOnTarget, isShortestThrough,LOOP_TOLERANCES, type LoopClimb, loopCorner, loopLengthForDuration, loopRoutePoints,
-  loopViaPlaces, loopViaQuery, loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb,
+  loopViaPlaces, loopViaQuery, loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain,
   seedBearing, typicalGainPerKm, viaSearchRadius,
 } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
@@ -115,6 +115,17 @@ describe('climbing (#214)', () => {
     expect(ids('rolling')).toEqual(['rolling', 'flat', 'hilly', 'failed'])
     // Ties keep their order.
     expect(rankByClimb([proposals[1]!, { ...proposals[1]!, id: 'twin' }], 'running', 'hilly').map(({ id }) => id)).toEqual(['flat', 'twin'])
+  })
+
+  it('ranks the proposals closest first to a gain per km', () => {
+    const proposals = [
+      { id: 'failed', status: 'failed', distanceM: 0, gainM: null },
+      { id: 'flat', status: 'ready', distanceM: 10_000, gainM: 50 },
+      { id: 'hilly', status: 'ready', distanceM: 10_000, gainM: 300 },
+      { id: 'rolling', status: 'ready', distanceM: 10_000, gainM: 130 },
+    ]
+    // 250 m over 10 km: the hilliest first.
+    expect(rankByGain(proposals, 25).map(({ id }) => id)).toEqual(['hilly', 'rolling', 'flat', 'failed'])
   })
 })
 

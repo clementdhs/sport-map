@@ -88,18 +88,28 @@ export function typicalGainPerKm(sport: SportType, climb: LoopClimb): number {
 // Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
 type RankedProposal = { status: string, distanceM: number, gainM: number | null }
 
-// Proposals in the order of the climbing asked for: the flattest first for a flat outing, the hilliest for a
-// hilly one, the closest to the middle otherwise; the missing ones last, in their order.
-export function rankByClimb<T extends RankedProposal>(proposals: T[], sport: SportType, climb: LoopClimb): T[] {
-  const middle = typicalGainPerKm(sport, 'rolling')
-  const score = ({ status, distanceM, gainM }: T) => {
-    if (status !== 'ready') return Number.POSITIVE_INFINITY
-    const perKm = gainPerKm(distanceM, gainM)
-    return climb === 'flat' ? perKm : climb === 'hilly' ? -perKm : Math.abs(perKm - middle)
-  }
-  return proposals.map((proposal, index) => ({ proposal, index, score: score(proposal) }))
+// Proposals by score, lowest first; the missing ones last, in their order.
+function rankBy<T extends RankedProposal>(proposals: T[], score: (perKm: number) => number): T[] {
+  return proposals.map((proposal, index) => ({
+    proposal,
+    index,
+    score: proposal.status === 'ready' ? score(gainPerKm(proposal.distanceM, proposal.gainM)) : Number.POSITIVE_INFINITY,
+  }))
     .sort((a, b) => a.score - b.score || a.index - b.index)
     .map(({ proposal }) => proposal)
+}
+
+// Proposals in the order of the climbing asked for: the flattest first for a flat outing, the hilliest for a
+// hilly one, the closest to the middle otherwise.
+export function rankByClimb<T extends RankedProposal>(proposals: T[], sport: SportType, climb: LoopClimb): T[] {
+  if (climb === 'flat') return rankBy(proposals, perKm => perKm)
+  if (climb === 'hilly') return rankBy(proposals, perKm => -perKm)
+  return rankByGain(proposals, typicalGainPerKm(sport, 'rolling'))
+}
+
+// Proposals closest first to a gain per km (m), e.g. a planned session's gain over its distance.
+export function rankByGain<T extends RankedProposal>(proposals: T[], targetPerKmM: number): T[] {
+  return rankBy(proposals, perKm => Math.abs(perKm - targetPerKmM))
 }
 
 // Paths wind: a point this far as the crow flies is about PATH_DETOUR times as far along paths.

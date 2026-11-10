@@ -26,7 +26,7 @@ test('a recorded outing is the session of the day, its feeling weighs on the for
 
   try {
     for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo)
-    expect((await page.request.put('/api/profile/me/coach-goal', { data: { kind: 'progress' } })).ok()).toBe(true)
+    // No goal set: coach-session.spec.ts, run after this one on the same account on CI, starts without any.
 
     // The recorder times fixes with Date.now(): a fake clock, half an hour ago so the outing ends before now.
     await page.clock.install({ time: new Date(Date.now() - 30 * 60_000) })

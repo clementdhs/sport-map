@@ -427,7 +427,13 @@
     "gpxTooShort": "The track has fewer than 2 points.",
     "gpxOneFile": "Drop a single GPX file at a time.",
     "gpxNotGpx": "Only GPX files (.gpx) can be imported.",
-    "overpassBusy": "The OpenStreetMap service (Overpass) is busy, try again in a moment."
+    "overpassBusy": "The OpenStreetMap service (Overpass) is busy, try again in a moment.",
+    "importInvalid": "This file is unreadable or damaged.",
+    "importNoTrack": "This file contains no outing.",
+    "importNoTimes": "This file has no times: it is a route, not an outing. Import it from the editor.",
+    "importTooShort": "This outing's track has fewer than 2 points.",
+    "importType": "Only GPX, FIT and TCX files are accepted.",
+    "importTooLarge": "File too large (20 MB at most)."
   },
   "editor": {
     "replaceWithGpx": "Replace the current track with this GPX file?",
@@ -1614,5 +1620,20 @@
     "paceTitle": "Your easy pace, the one of your settings",
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all."
+  },
+  "outingImport": {
+    "button": "Import outings",
+    "title": "Importing outings",
+    "progress": "File {done} of {total}…",
+    "imported": "{count} outing imported | {count} outings imported",
+    "duplicates": "{count} already there | {count} already there",
+    "failed": "{count} file not imported | {count} files not imported",
+    "failure": "{file}: {message}",
+    "where": "They count in your statistics and your form, and are listed in your done routes, privately."
+  },
+  "coachImport": {
+    "title": "Get there sooner: import your outings",
+    "text": "GPX, FIT or TCX files from your watch or another app. The coach reads your last 5 weeks.",
+    "choose": "Choose files"
   }
 }

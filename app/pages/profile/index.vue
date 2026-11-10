@@ -45,6 +45,16 @@ const routeTabs = computed(() => [
   <UContainer v-if="data" class="max-w-3xl space-y-6 py-8 lg:max-w-6xl">
     <ProfileHeader :profile="data.profile">
       <template #actions>
+        <!-- Outings recorded by a watch or another app (#268) -->
+        <OutingImportButton
+          icon="i-lucide-upload"
+          :label="t('outingImport.button')"
+          :aria-label="t('outingImport.button')"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          :ui="{ label: 'hidden sm:inline' }"
+        />
         <UButton
           :to="`/profile/${data.profile.username}`"
           icon="i-lucide-eye"

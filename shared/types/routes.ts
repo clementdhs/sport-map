@@ -241,3 +241,8 @@ export type CollectionDetail = {
   // Only the routes the viewer may see, with a simplified track for the map
   routes: (RouteListItem & { preview: LineString })[]
 }
+// POST /api/outings/import (#268): the route of the outing saved, or of the outing the member already had.
+export type OutingImportResponse = {
+  route_id: string
+  duplicate: boolean
+}

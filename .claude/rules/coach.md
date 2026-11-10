@@ -9,6 +9,7 @@ paths:
   - "app/components/CoachGoal*.vue"
   - "app/components/CoachSessionCard.vue"
   - "app/components/CoachForm*.vue"
+  - "app/components/CoachImport.vue"
   - "app/composables/useFormSentence.ts"
   - "app/pages/coach/**"
   - "test/nuxt/coachForm.test.ts"
@@ -27,6 +28,7 @@ No plan over weeks and no AI: fixed, tested rules on what the member really did 
 - **History**: from the oldest outing before a gap of more than 28 days without any, so a member back from a long break starts learning again. Under 21 days of history the state is `learning` (start card, 21 boxes: days with an outing filled, rest days empty, today ringed, future days dashed, the coach's verdict on the last). The baseline averages only the days of history inside the 28 (`baselineDays`, 14 at least), so a member with 3 weeks isn't judged on 4; the cartouche's tooltip then says so.
 - Chart (`formWeeks`): 8 windows of 7 days ending today (rolling, not calendar weeks: the last one is the form itself), each with the baseline it was judged against as a dashed ink line, none while that window's history was too short. HTML bars like the statistics (`--chart-bar`, the last in `--chart-current`) and an `sr-only` table.
 - Gauge (`CoachFormGauge`, `role="meter"`): zones on 30 / 45 / 25 % of the width up to × 2 (`gaugePosition`), colours `--form-recovery|progress|overload` (`main.css`, dataviz validator on paper and surface in both modes, 3:1 in `themeContrast.test.ts`), each zone written under it. The state's name stays in ink: text never wears a data colour.
+- Import (#268): while learning, `CoachImport` (mockup 5, "Choisir des fichiers") under the start card imports GPX, FIT or TCX outings (`outing-import.md`); they count in the form like any GPS outing.
 - e2e (`coach-form.spec.ts`): outings dated through `POST /api/routes/:id/outings` (`started_at` in the past) on a private ~50 km route, whose load dwarfs the short outings other specs leave on the shared account; listed outings are filtered by that route's name.
 
 ## Session of the day (#264)

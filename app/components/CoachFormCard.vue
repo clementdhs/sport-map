@@ -2,7 +2,8 @@
 import type { LoadOuting } from '#shared/utils/trainingForm'
 
 // "Ta forme du moment" on the coach page (#263, mockup 1): the state, the three-zone gauge and a sentence on the
-// last 7 days, linking to the detail page. While the coach is still learning, the start card instead.
+// last 7 days, linking to the detail page. While the coach is still learning, the start card instead, and the
+// import of outings recorded elsewhere (#268, mockup 5) to get there sooner.
 const props = defineProps<{
   outings: LoadOuting[]
 }>()
@@ -13,7 +14,10 @@ const sentence = useFormSentence(form)
 </script>
 
 <template>
-  <CoachFormStart v-if="form.state === 'learning'" :form="form" />
+  <template v-if="form.state === 'learning'">
+    <CoachFormStart :form="form" />
+    <CoachImport />
+  </template>
   <NuxtLink
     v-else
     to="/coach/forme"

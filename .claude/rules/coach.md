@@ -4,6 +4,9 @@ paths:
   - "shared/utils/coachSessions.ts"
   - "shared/utils/coachGoal.ts"
   - "shared/utils/coachReview.ts"
+  - "shared/utils/weatherSlot.ts"
+  - "test/unit/weatherSlot.test.ts"
+  - "server/api/profile/me/coach-weather.get.ts"
   - "test/unit/trainingForm.test.ts"
   - "test/unit/coachSessions.test.ts"
   - "test/unit/coachReview.test.ts"
@@ -12,6 +15,7 @@ paths:
   - "server/api/profile/me/coach-goal*"
   - "app/components/CoachGoal*.vue"
   - "app/components/CoachSessionCard.vue"
+  - "app/components/CoachWeatherSlot.vue"
   - "app/components/CoachForm*.vue"
   - "app/components/CoachImport.vue"
   - "app/composables/useFormSentence.ts"
@@ -43,6 +47,14 @@ No plan over weeks and no AI: fixed, tested rules on what the member really did 
 - **Stable for the day**: the pick among the allowed sessions is `(days since 1970 + clicks on « Autre séance ») % count`, so a reload gives the same session and the next day another. Duration (60 min by default) and « Autre séance » aren't saved on the server (Clem's open point in #264: the simplest choice); since #267 they are kept in this browser for the day (`coachChoice.ts`), restored when the card mounts; changing the duration resets « Autre séance ». The form used is the card's (today included): recording today's outing can change the state, not the alternation.
 - **Card** (`CoachSessionCard`): ink header with the date, title and `DurationSign` (the session's own minutes, less than chosen when capped), the reason sentence, the outline strip (width = minutes, height and the form colours = effort: easy blue, rolling green, effort orange; `role="img"` with the written outline), distance / D+ / easy pace, the duration pills (`aria-pressed`), « Autre séance » only with more than one session allowed.
 - e2e (`coach-session.spec.ts`): same dated outings as `coach-form.spec.ts` (progress), goal set to a race then `resume`, whose sessions follow the duration without depending on the alternation.
+
+## Best weather slot (#265)
+
+- **Place**: the device's position only when the browser already allows it (`navigator.permissions`, never a prompt), rounded to 0.01° before it leaves the device; else the server's `usualStart`: the ~1 km square most of the last 20 outings start from (newest on a tie), else of the member's 20 latest routes, given by its newest route's `start_point` (hex EWKB, `pointFromWkb`) and first elevation. No place: `GET /api/profile/me/coach-weather` returns null.
+- **Quota**: `forecastAt` (`server/utils/openMeteo.ts`) is the route pages' cached function (`weather.md`); with the usual start, its key (rounded start + elevation) is the one that route's page uses, so a forecast already loaded costs no call. The API sends 2 days of hours and of sunrise / sunset; the slot is worked out in the browser (`bestSlot`), so changing the duration costs no request.
+- **Slot** (`bestSlot`, pure, unit-tested): starts on the hour, from now or sunrise to sunset of today (the place's local time, `utc_offset_seconds`), lasting the session's own minutes (`plan.minutes`, less than chosen when capped). Compared in order, lowest first: rain over the slot (0.1 mm, the last hour weighted by the share covered), strongest wind (by 5 km/h), mean gap to 8–15 °C (whole degrees); ties go to the earliest. No daylight hour left: the card hides (`dark`); some, but too few for the session: « Plus assez de jour aujourd'hui » (`short`).
+- **Card** (`CoachWeatherSlot`, mockup 1, under the duration pills in `CoachSessionCard`): « Meilleur créneau : 12 h – 13 h 30 · 11°, sans pluie » (« vent N km/h » added from 30 km/h), a band of up to 6 daylight hours with the slot's as centred as the day allows, on `--sign` yellow; a cell writes « pluie » (from 0.1 mm), else « vent », else its temperature, in ink. The Open-Meteo credit is required. Loaded once after the page; offline, without a place or when Open-Meteo fails, the card stays hidden and the session shows alone. Hidden on a rest day.
+- e2e (`coach-weather.spec.ts`): the fake Open-Meteo sets its time zone so the place is at 9 o'clock whenever the tests run (`test/e2e/fake-weather.ts`), dry today, daylight 07:30–18:00; the worker's account route gives the place. Highlighted cells = hours the slot touches.
 
 ## Review after an outing (#267)
 

@@ -1,5 +1,6 @@
 import type { AccountPreferenceKey } from '../utils/preferences'
 import type { SportType } from '../utils/routes'
+import type { SlotForecast } from '../utils/weatherSlot'
 
 // GET /api/profile/me/export: the text files of the archive, and the photos the browser downloads (signed
 // URLs, valid an hour) to add to it. The archive is zipped in the browser, as photos would exceed the size
@@ -41,4 +42,11 @@ export type CoachGoal = {
   race_date: string | null
   race_distance_m: number | null
   race_gain_m: number | null
+}
+
+// GET /api/profile/me/coach-weather (#265): the hourly forecast of the next days where the member runs, for the
+// best slot of the coach's session, worked out in the browser (bestSlot) as the duration changes. null without
+// a place: no position given and no outing yet.
+export type CoachWeather = SlotForecast & {
+  utcOffsetSeconds: number
 }

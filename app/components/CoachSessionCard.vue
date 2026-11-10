@@ -178,6 +178,8 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
       </div>
     </fieldset>
 
+    <CoachWeatherSlot :minutes="plan.minutes" />
+
     <UButton
       v-if="choice.options > 1"
       :label="t('coachSession.other')"

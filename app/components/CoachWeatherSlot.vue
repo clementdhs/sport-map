@@ -9,6 +9,8 @@ import { bestSlot, WINDY_KMH, type WeatherSlot } from '#shared/utils/weatherSlot
 const props = defineProps<{
   // The session's own minutes
   minutes: number
+  // The day of the session (#279), a French local date: today or one of the next days the forecast covers
+  day: string
 }>()
 
 const { t } = useI18n()
@@ -44,9 +46,12 @@ onMounted(async () => {
   catch {}
 })
 
-// The place's local time read again with each duration, so a page left open doesn't offer a slot gone by.
+// The place's local time read again with each duration, so a page left open doesn't offer a slot gone by. A later
+// day is looked at from its midnight, so from its sunrise.
+const nowLocal = () => localTime(new Date(), weather.value?.utcOffsetSeconds ?? 0)
+const later = computed(() => !!weather.value && props.day > nowLocal().slice(0, 10))
 const result = computed(() => (weather.value && props.minutes > 0
-  ? bestSlot(weather.value, localTime(new Date(), weather.value.utcOffsetSeconds), props.minutes)
+  ? bestSlot(weather.value, later.value ? `${props.day}T00:00` : nowLocal(), props.minutes)
   : null))
 
 function clock(minutes: number): string {
@@ -78,7 +83,7 @@ function details(slot: WeatherSlot): string {
         <strong>{{ t('coachWeather.range', { start: clock(result.slot.startMin), end: clock(result.slot.endMin) }) }}</strong>
         · {{ details(result.slot) }}
       </span>
-      <span v-else>{{ t('coachWeather.short') }}</span>
+      <span v-else>{{ t(later ? 'coachWeather.shortDay' : 'coachWeather.short') }}</span>
     </p>
     <ol
       v-if="result.slot"

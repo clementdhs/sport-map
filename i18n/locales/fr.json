@@ -1619,6 +1619,10 @@
   },
   "coachSession": {
     "heading": "Séance du jour · {date}",
+    "headingOn": "Séance prévue · {date}",
+    "days": "Quel jour ?",
+    "today": "Aujourd'hui",
+    "tomorrow": "Demain",
     "durations": "Combien de temps as-tu ?",
     "other": "Autre séance",
     "kinds": {
@@ -1662,15 +1666,17 @@
     "pace": "Allure EF",
     "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
     "paceValue": "{pace}/km",
-    "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
+    "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout.",
+    "ahead": "Prévue d'après ta forme si tu ne sors pas d'ici là : elle bougera avec tes prochaines sorties."
   },
   "sessionRoute": {
     "title": "Tracé de la séance",
     "heading": "Séance du jour · {duration}",
+    "headingOn": "Séance du {date} · {duration}",
     "loading": "Le coach prépare la séance du jour…",
     "loadFailed": "La séance du jour n'a pas pu être chargée.",
     "retry": "Réessayer",
-    "nothingToTrace": "Pas de tracé à générer pour cette séance aujourd'hui.",
+    "nothingToTrace": "Pas de tracé à générer pour cette séance.",
     "backToCoach": "Retour au coach",
     "generate": "Générer le tracé",
     "fromHome": "Générer le tracé depuis chez moi",
@@ -1733,6 +1739,7 @@
     "rain": "{mm} mm de pluie",
     "wind": "vent {speed} km/h",
     "short": "Plus assez de jour aujourd'hui pour cette séance.",
+    "shortDay": "Pas assez de jour ce jour-là pour cette séance.",
     "band": "Prévisions des prochaines heures",
     "cellRain": "pluie",
     "cellWind": "vent",

@@ -63,7 +63,14 @@ const explanation = computed(() => {
   if (current.plan.reps) return outline.value.summary
   return t(`coachSession.reasons.${current.reason}`, { n: current.raceDays ?? 0 }, current.raceDays ?? 1)
 })
-const heading = computed(() => (plan.value ? t('sessionRoute.heading', { duration: formatDuration(plan.value.minutes) }) : ''))
+// « Séance du jour », or the day chosen on the coach page (#279)
+const heading = computed(() => {
+  if (!plan.value) return ''
+  const duration = formatDuration(plan.value.minutes)
+  return coach.day.value === localDate(new Date())
+    ? t('sessionRoute.heading', { duration })
+    : t('sessionRoute.headingOn', { duration, date: dayName() })
+})
 // A road run, whatever the editor's sport once the route is saved (save() resets it).
 const minutesOf = ({ distanceM, gainM }: LoopProposal) => estimateDuration('running', distanceM, gainM)
 const gainOf = ({ gainM }: LoopProposal) => `${formatNumber(Math.round(gainM ?? 0))} m`
@@ -93,10 +100,11 @@ const failure = computed(() => (!loop.generating && loop.proposals.length && loo
   : null))
 
 // Following, saving and exporting all need the route saved, once per proposal: private, named after the session
-// and the day, its outline as description. The route is remembered for today's review (#267, coachChoice.ts).
+// and the day, its outline as description. The route is remembered for that day's review (#267, coachChoice.ts).
 const saved = ref<{ seed: number, id: string } | null>(null)
 const acting = ref<'follow' | 'save' | 'gpx' | null>(null)
-const dayName = () => new Date().toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
+// The session's day: today, or the one chosen on the coach page (#279)
+const dayName = () => dayNoon(coach.day.value).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
 
 async function savedRouteId(): Promise<string | null> {
   const proposal = pickedProposal.value
@@ -122,7 +130,7 @@ async function savedRouteId(): Promise<string | null> {
     Object.assign(editor.details, details)
     throw error
   }
-  saveSessionRoute(id, coach.today)
+  saveSessionRoute(id, coach.day.value)
   saved.value = { seed: proposal.seed, id }
   return id
 }

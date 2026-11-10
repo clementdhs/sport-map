@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { buildSession } from '#shared/utils/coachSessions'
 import { formEffect, matchesSession, outingFeelingSchema, regularity, repeatTimes, tomorrowSession } from '#shared/utils/coachReview'
+import { coachDays, outingDaysBefore, sessionOfTheDay, sessionOn } from '#shared/utils/coachSessions'
 import type { OutingTrackPoint } from '#shared/utils/routes'
 import { FEELING_FACTORS, type LoadOuting, outingLoad, trainingForm } from '#shared/utils/trainingForm'
 
@@ -209,5 +210,58 @@ describe('tomorrowSession', () => {
   it('rests after a heavy overload', () => {
     const outings = [outing(0, 60), outing(1, 60), ...history()]
     expect(tomorrowSession(outings, { goal: null, minutes: 60, easyPace: 6 }, NOW).kind).toBe('rest')
+  })
+})
+
+describe('coachDays', () => {
+  it('gives today and the next days the forecast covers, as French dates', () => {
+    expect(coachDays(NOW)).toEqual(['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12'])
+    // 00:30 in Paris is already the next day.
+    expect(coachDays(new Date('2026-11-09T23:30:00Z'))[0]).toBe('2026-11-10')
+  })
+
+  it('skips no day when summer time starts', () => {
+    // 23:30 in Paris on the eve of the 23-hour day
+    expect(coachDays(new Date('2026-03-28T22:30:00Z'))).toEqual(['2026-03-28', '2026-03-29', '2026-03-30', '2026-03-31'])
+  })
+})
+
+describe('sessionOn', () => {
+  const input = { goal: null, minutes: 60 as const, easyPace: 6 }
+
+  it('gives today the session of the day', () => {
+    const outings = [outing(1), ...history()]
+    const form = trainingForm(outings, NOW)
+    const today = sessionOfTheDay({
+      ...input,
+      state: form.state,
+      ratio: form.ratio,
+      outingDays: outingDaysBefore(outings, form.historyDays, NOW),
+      today: '2026-11-09',
+    })
+    expect(sessionOn(outings, input, '2026-11-09')).toEqual(today)
+  })
+
+  it('gives a later day the session of its form, the outings until then among the days before', () => {
+    const outings = [outing(0), ...history()]
+    expect(sessionOn(outings, input, '2026-11-10').plan).toEqual(tomorrowSession(outings, input, NOW))
+    const later = trainingForm(outings, new Date('2026-11-12T12:00:00Z'))
+    expect(sessionOn(outings, input, '2026-11-12')).toEqual(sessionOfTheDay({
+      ...input,
+      state: later.state,
+      ratio: later.ratio,
+      outingDays: outingDaysBefore(outings, later.historyDays, new Date('2026-11-12T12:00:00Z')),
+      today: '2026-11-12',
+    }))
+  })
+
+  it('walks through the other sessions with « Autre séance »', () => {
+    const outings = [outing(1), ...history()]
+    // The day of a key session, one outing day out of two
+    const day = coachDays(NOW).find(date => sessionOn(outings, input, date).options > 1)
+    expect(day).toBeDefined()
+    const first = sessionOn(outings, input, day!)
+    const kinds = new Set(Array.from({ length: first.options }, (_, i) => sessionOn(outings, input, day!, i).plan.kind))
+    expect(kinds.size).toBe(first.options)
   })
 })

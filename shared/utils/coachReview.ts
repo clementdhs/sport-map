@@ -1,9 +1,7 @@
 import * as z from 'zod'
-import type { CoachGoal } from '../types/account'
-import { localDate } from './outings'
 import { type LngLat, type OutingTrackPoint, smoothByDistance, trackDistances } from './routes'
 import { climbs } from './slopes'
-import { outingDaysBefore, type SessionDuration, type SessionPlan, sessionOfTheDay } from './coachSessions'
+import { coachDays, type DayInput, type SessionPlan, sessionOn } from './coachSessions'
 import { type FormState, FEELINGS, type LoadOuting, trainingForm } from './trainingForm'
 
 // The coach's review after an outing (#267, mockup 4): whether it was the session of the day, the time of each
@@ -161,24 +159,8 @@ export function formEffect<T extends LoadOuting>(outings: T[], outing: T, now = 
   return { before: before.ratio, after: after.ratio, state: after.state }
 }
 
-export type TomorrowInput = {
-  goal: CoachGoal | null
-  minutes: SessionDuration
-  easyPace: number
-}
-
 // Tomorrow's session of the day if the member doesn't go out again today: the rules of #264 on tomorrow's form,
-// with today's outing among the days before.
-export function tomorrowSession(outings: LoadOuting[], input: TomorrowInput, now = new Date()): SessionPlan {
-  const tomorrow = new Date(now.getTime() + 86_400_000)
-  const form = trainingForm(outings, tomorrow)
-  return sessionOfTheDay({
-    state: form.state,
-    ratio: form.ratio,
-    goal: input.goal,
-    minutes: input.minutes,
-    outingDays: outingDaysBefore(outings, form.historyDays, tomorrow),
-    easyPace: input.easyPace,
-    today: localDate(tomorrow),
-  }).plan
+// with today's outing among the days before, and `other` clicks on « Autre séance » chosen for it (#279).
+export function tomorrowSession(outings: LoadOuting[], input: DayInput, now = new Date(), other = 0): SessionPlan {
+  return sessionOn(outings, input, coachDays(now)[1]!, other).plan
 }

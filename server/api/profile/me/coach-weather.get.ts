@@ -1,12 +1,13 @@
 import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
 import type { CoachWeather } from '#shared/types/account'
 import type { Database } from '#shared/types/database.types'
+import { COACH_DAYS } from '#shared/utils/coachSessions'
 import { coachWeatherQuerySchema, type StartPlace, usualStart } from '#shared/utils/weatherSlot'
 
 // Outings looked at for the usual start, newest first
 const RECENT_OUTINGS = 20
-// Forecast days sent: today, and tomorrow for a page left open past midnight
-const DAYS = 2
+// Forecast days sent: all those `forecastAt` asks for, the days the coach plans for (#279, COACH_DAYS)
+const DAYS = COACH_DAYS
 
 // The hourly forecast for the best slot of the coach's session (#265): at the member's position when the browser
 // gives it (rounded to 0.01°), else at the start of their recent outings (usualStart), else of their latest

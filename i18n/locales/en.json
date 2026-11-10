@@ -458,7 +458,8 @@
     "haveTrack": "Already have a track?",
     "modes": {
       "loop": "Loop",
-      "manual": "By hand"
+      "manual": "By hand",
+      "session": "Session"
     },
     "quotaReached": "Routing limit reached for today",
     "quotaReachedHint": "To keep the free routing service available, everyone gets a limited number of routings a day. Until tomorrow, new segments are drawn as straight lines, without elevation.",
@@ -1662,6 +1663,29 @@
     "paceTitle": "Your easy pace, the one of your settings",
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all."
+  },
+  "sessionRoute": {
+    "title": "Session route",
+    "heading": "Today's session · {duration}",
+    "loading": "The coach is preparing today's session…",
+    "loadFailed": "Today's session couldn't be loaded.",
+    "retry": "Try again",
+    "nothingToTrace": "No route to generate for this session today.",
+    "backToCoach": "Back to the coach",
+    "generate": "Generate the route",
+    "fromHome": "Generate the route from home",
+    "climbsEnough": "The route goes through {count} climbs of about {length} at {grade} %: one hill per repeat, the way down is your recovery.",
+    "climbsFew": "The route goes through one climb of about {length} at {grade} %: run up it for each of your {repeats} repeats, the way down is your recovery. | The route goes through {count} climbs of about {length} at {grade} %: take them in turn for your {repeats} repeats, the way down is your recovery.",
+    "climbsNone": "No loop around the start has a climb long and steep enough for this session: here is the closest one. You can also pick another session.",
+    "climbsCount": "no hill | 1 hill | {count} hills",
+    "climbsLabel": "{count} hill · {grade} % | {count} hills · {grade} %",
+    "warmup": "Warm-up {distance}",
+    "cooldown": "Cool-down {distance}",
+    "others": "Other routes for this session",
+    "follow": "Follow now",
+    "save": "Save",
+    "gpx": "GPX for my watch",
+    "gpxSaved": "Route saved, GPX downloaded"
   },
   "coachReview": {
     "title": "Outing review",

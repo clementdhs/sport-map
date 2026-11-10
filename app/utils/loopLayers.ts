@@ -16,9 +16,13 @@ export const LOOP_COLORS = [
 ] as const
 
 export const VIA_COLOR = '#1f2937'
+// The climbs of a session's route (#266), in ink over the picked loop: the ink of each mode, so they read on the
+// coloured line and on either map.
+export const CLIMB_INK = { light: '#1d2520', dark: '#f3eee3' } as const
 
 const LOOPS_SOURCE = 'loop-proposals'
 const START_SOURCE = 'loop-start'
+const CLIMBS_SOURCE = 'loop-climbs'
 export const LOOPS_HIT_LAYER = 'loop-proposals-hit'
 
 export interface LoopLayerData {
@@ -28,6 +32,8 @@ export interface LoopLayerData {
   // Coordinates of each proposal, in list order (empty while loading or failed)
   loops: LngLat[][]
   highlighted: number | null
+  // The climbs of the highlighted loop in the session mode (#266), each a stretch of it
+  climbs?: LngLat[][]
 }
 
 // Rebuilt when the highlight changes: the highlighted loop goes last, so it is drawn above the others (three lines
@@ -52,10 +58,18 @@ function startData(start: LngLat | null, via: LngLat | null): FeatureCollection<
   }
 }
 
+function climbsData(climbs: LngLat[][] = []): FeatureCollection<LineString> {
+  return {
+    type: 'FeatureCollection',
+    features: climbs.filter(stretch => stretch.length >= 2).map(coordinates => ({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates } })),
+  }
+}
+
 export function addLoopLayers(map: Map) {
   map.on('style.load', repaintLoops)
   map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, via: null, loops: [], highlighted: null }) })
   map.addSource(START_SOURCE, { type: 'geojson', data: startData(null, null) })
+  map.addSource(CLIMBS_SOURCE, { type: 'geojson', data: climbsData() })
 
   map.addLayer({
     id: 'loop-proposals-casing',
@@ -70,6 +84,14 @@ export function addLoopLayers(map: Map) {
     source: LOOPS_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': loopColors(map), 'line-width': ['case', ['get', 'highlighted'], 6, 4], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
+  })
+  // Wider than the loop and squared off, like ruled stretches over it (mockup 3).
+  map.addLayer({
+    id: 'loop-climbs',
+    type: 'line',
+    source: CLIMBS_SOURCE,
+    layout: { 'line-cap': 'butt', 'line-join': 'round' },
+    paint: { 'line-color': CLIMB_INK[isMapDark(map) ? 'dark' : 'light'], 'line-width': 8 },
   })
   map.addLayer({
     id: LOOPS_HIT_LAYER,
@@ -105,9 +127,11 @@ function loopColors(map: Map): ExpressionSpecification {
 
 function repaintLoops(this: void, event: { target: Map }) {
   if (event.target.getLayer('loop-proposals')) event.target.setPaintProperty('loop-proposals', 'line-color', loopColors(event.target))
+  if (event.target.getLayer('loop-climbs')) event.target.setPaintProperty('loop-climbs', 'line-color', CLIMB_INK[isMapDark(event.target) ? 'dark' : 'light'])
 }
 
 export function setLoopLayerData(map: Map, data: LoopLayerData) {
   map.getSource<GeoJSONSource>(LOOPS_SOURCE)?.setData(loopsData(data))
   map.getSource<GeoJSONSource>(START_SOURCE)?.setData(startData(data.start, data.via))
+  map.getSource<GeoJSONSource>(CLIMBS_SOURCE)?.setData(climbsData(data.climbs))
 }

@@ -1,4 +1,6 @@
 import type { FetchError } from 'ofetch'
+import type { SessionPlan } from '#shared/utils/coachSessions'
+import type { Climb } from '#shared/utils/slopes'
 import type { LoopClimb, LoopViaType } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, LoopPrecision, LoopShape, RoutingLoopRequest, RoutingLoopResponse, WayInfo } from '#shared/utils/routes'
@@ -16,6 +18,8 @@ export interface LoopProposal {
   wayInfo: WayInfo | null
   distanceM: number
   gainM: number | null
+  // In the session mode (#266), the climbs fit for the session's hill repeats (none for other sessions)
+  climbs: Climb[] | null
   // Why no loop came back, in the user's language
   error: string | null
 }
@@ -29,6 +33,11 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const preferences = usePreferencesStore()
 
   const open = ref(false)
+  // The "Séance" mode of the panel (#266): the loops aim at the coach's session of the day, `session` once it is
+  // worked out. `fromCoach`: opened by "Générer le tracé depuis chez moi", whose click asks for the loops.
+  const forSession = ref(false)
+  const session = ref<SessionPlan | null>(null)
+  const fromCoach = ref(false)
   const start = ref<LngLat | null>(null)
   // True while the next click on the map places the start.
   const placingStart = ref(false)
@@ -59,7 +68,9 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   // The distance asked for: a duration is turned into a distance at the member's pace (#146), climbing as much as
   // the chosen climbing usually does (#214).
   const gainPerKmM = computed(() => typicalGainPerKm(editor.details.sport_type, climb.value))
-  const targetM = computed(() => target.value === 'distance'
+  const targetM = computed(() => forSession.value
+    ? Math.round(session.value?.distanceM ?? 0)
+    : target.value === 'distance'
     ? Math.round(distanceKm.value * 1000)
     : loopLengthForDuration(editor.details.sport_type, durationMin.value, preferences.values.paces[editor.details.sport_type], gainPerKmM.value))
   const targetInRange = computed(() => targetM.value >= LOOP_MIN_M && targetM.value <= LOOP_MAX_M)
@@ -78,7 +89,9 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   // The highlighted proposal stays highlighted where it moves.
   function rank() {
     const seed = highlighted.value === null ? null : proposals.value[highlighted.value]?.seed
-    proposals.value = rankByClimb(proposals.value, editor.details.sport_type, climb.value)
+    proposals.value = forSession.value && session.value
+      ? rankForSession(proposals.value, session.value)
+      : rankByClimb(proposals.value, editor.details.sport_type, climb.value)
     const index = proposals.value.findIndex(proposal => proposal.seed === seed)
     highlighted.value = index < 0 ? null : index
   }
@@ -107,6 +120,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   // The start is shared with the hand-drawn mode (#215): the track's start when there is one.
   function show() {
+    forSession.value = false
+    session.value = null
     open.value = true
     start.value = editor.waypoints[0] ?? start.value
     placingStart.value = !start.value
@@ -115,13 +130,28 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   function hide() {
     clearProposals()
     open.value = false
+    forSession.value = false
+    session.value = null
     placingStart.value = false
+  }
+
+  // The session mode (#266): a road run at the member's running pace, as the coach plans it, from the shared
+  // start. The session comes once the panel has worked it out (`setSession`).
+  function showSession() {
+    show()
+    forSession.value = true
+    editor.details.sport_type = 'running'
+  }
+
+  function setSession(plan: SessionPlan | null) {
+    session.value = plan
   }
 
   // Leaving the editor: a draft keeps its start in its track, and a saved route mustn't lend its own to the next one.
   function leave() {
     hide()
     start.value = null
+    fromCoach.value = false
   }
 
   // Back to drawing by hand: an empty track starts from the loop's start (undo removes it).
@@ -138,10 +168,14 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   // Proposals routed for another sport, or of another shape, would mislead.
   // Synchronous: a change made just before generate() mustn't clear the new proposals.
-  watch([() => editor.details.sport_type, shape, via], clearProposals, { flush: 'sync' })
+  watch([() => editor.details.sport_type, shape, via], () => {
+    // The session mode has no sport to pick: saving its route resets the editor's.
+    if (!forSession.value) clearProposals()
+  }, { flush: 'sync' })
+  watch(session, clearProposals, { flush: 'sync' })
   // Ranking again costs no request.
   watch(climb, () => {
-    if (proposals.value.length && !generating.value) rank()
+    if (!forSession.value && proposals.value.length && !generating.value) rank()
   })
 
   // One request per proposal, each with its own seed (direction): they show up as they come back, then are ranked
@@ -152,17 +186,21 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     ranking.value = true
     const current = generation
     const from = start.value
-    const place = via.value === 'none' ? null : await findVia(via.value, from, current)
+    // A session's loops keep to its distance, with none of the loop mode's options.
+    const plan = forSession.value ? session.value : null
+    const place = plan || via.value === 'none' ? null : await findVia(via.value, from, current)
     if (current !== generation) return
     const firstSeed = Math.floor(Math.random() * (1_000_000 - LOOP_PROPOSALS))
     const body: Omit<RoutingLoopRequest, 'seed'> = {
       start: from,
       length_m: targetM.value,
-      sport_type: editor.details.sport_type,
-      shape: shape.value,
-      precision: precision.value,
+      // The session's run, whatever the editor's sport: its default sport may be preselected after showSession().
+      sport_type: plan ? 'running' : editor.details.sport_type,
+      shape: plan ? 'loop' : shape.value,
+      precision: plan ? 'precise' : precision.value,
       ...(place ? { via: place.coordinates } : {}),
     }
+    const hill = plan ? sessionHill(plan) : null
     proposals.value = Array.from({ length: LOOP_PROPOSALS }, (_, i): LoopProposal => ({
       seed: firstSeed + i,
       status: 'loading',
@@ -171,6 +209,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       wayInfo: null,
       distanceM: 0,
       gainM: null,
+      climbs: null,
       error: null,
     }))
     await Promise.all(proposals.value.map(async ({ seed }, i) => {
@@ -185,6 +224,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
           wayInfo: result.way_info ?? null,
           distanceM: trackDistances(result.coordinates).at(-1) ?? 0,
           gainM: elevationStats(result.coordinates, result.elevations).gain,
+          climbs: hill && result.elevations ? sessionClimbs(result.coordinates, result.elevations, hill) : null,
         })
       }
       catch (error) {
@@ -210,10 +250,24 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     hide()
   }
 
+  // The picked proposal: the one highlighted (from the list or the map), else the first one ready once every
+  // answer is in (the first to come back isn't always the first one).
+  const picked = computed(() => {
+    const ready = (i: number | null) => i !== null && proposals.value[i]?.status === 'ready'
+    if (ready(highlighted.value)) return highlighted.value
+    if (generating.value) return null
+    const first = proposals.value.findIndex(proposal => proposal.status === 'ready')
+    return first < 0 ? null : first
+  })
+  // The map shows the picked one above the others.
+  watch(picked, (index) => {
+    if (index !== null) highlighted.value = index
+  })
+
   return {
-    open, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
+    open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
     viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
-    show, hide, leave, switchToManual, setStart, generate, choose,
+    show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose,
   }
 })

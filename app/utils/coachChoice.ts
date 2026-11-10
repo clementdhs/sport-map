@@ -7,6 +7,8 @@ import { DEFAULT_SESSION_DURATION, SESSION_DURATIONS, type SessionDuration } fro
 // is worked out again from the outings each time, and a session is only matched with an outing of the same day.
 const CHOICE_KEY = 'sport-map:coach-choice'
 const DETACHED_KEY = 'sport-map:coach-detached'
+// The route traced for today's session (#266): an outing on it is the session, whatever its time.
+const SESSION_ROUTE_KEY = 'sport-map:coach-session-route'
 // The latest outings detached are enough: only today's can be the session of the day.
 const MAX_DETACHED = 20
 
@@ -52,4 +54,14 @@ export function isDetached(outingId: string): boolean {
 export function setDetached(outingId: string, detached: boolean) {
   const ids = (read<string[]>(DETACHED_KEY) ?? []).filter(id => typeof id === 'string' && id !== outingId)
   write(DETACHED_KEY, detached ? [outingId, ...ids].slice(0, MAX_DETACHED) : ids)
+}
+
+export function saveSessionRoute(routeId: string, today: string) {
+  write(SESSION_ROUTE_KEY, { routeId, date: today })
+}
+
+// The route traced for today's session, null without one.
+export function sessionRouteOf(today: string): string | null {
+  const saved = read<{ routeId: string, date: string }>(SESSION_ROUTE_KEY)
+  return saved?.date === today && typeof saved.routeId === 'string' ? saved.routeId : null
 }

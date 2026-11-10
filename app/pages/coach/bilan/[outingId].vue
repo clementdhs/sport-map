@@ -60,15 +60,17 @@ const plan = computed(() => {
 // Only on the client: whether it was the session depends on this browser's choice and detached outings.
 const mounted = ref(false)
 const detached = ref(false)
+const sessionRoute = ref<string | null>(null)
 onMounted(() => {
   choice.value = loadCoachChoice(today)
+  sessionRoute.value = sessionRouteOf(today)
   detached.value = isDetached(outingId)
   mounted.value = true
 })
 const matches = computed(() => mounted.value
   && countsInForm.value
   && isToday.value
-  && matchesSession(plan.value, outing.value.moving_s))
+  && matchesSession(plan.value, outing.value.moving_s, outing.value.route_id === sessionRoute.value))
 const isSession = computed(() => matches.value && !detached.value)
 function toggleDetached() {
   detached.value = !detached.value

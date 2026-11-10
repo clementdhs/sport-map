@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { lineString, nearestPointOnLine } from '@turf/turf'
-import type { Map, MapMouseEvent, MapTouchEvent, PointLike } from 'maplibre-gl'
+import type { Map, MapMouseEvent, MapTouchEvent, Marker, PointLike } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
+import { climbsSummary, trackStretch } from '#shared/utils/sessionRoute'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 
 const props = defineProps<{
@@ -201,12 +202,48 @@ watch(layerData, (data) => {
   if (map.value) setRouteLayerData(map.value, data)
 })
 
+// The session mode's picked loop (#266): its climbs in ink, and "4 côtes · 7 %" over the first one.
+const sessionProposal = computed(() => (loop.open && loop.forSession && loop.picked !== null ? loop.proposals[loop.picked] ?? null : null))
+const sessionClimbs = computed(() => {
+  const proposal = sessionProposal.value
+  return proposal ? (proposal.climbs ?? []).map(climb => trackStretch(proposal.coordinates, climb.startM, climb.endM)) : []
+})
+
 const loopLayerData = computed(() => ({
   start: loop.open ? loop.start : null,
   via: loop.open ? loop.viaPlace?.coordinates ?? null : null,
   loops: loop.proposals.map(proposal => proposal.coordinates),
   highlighted: loop.highlighted,
+  climbs: sessionClimbs.value,
 }))
+
+const { t } = useI18n()
+const climbsLabel = computed(() => {
+  const summary = climbsSummary(sessionProposal.value?.climbs ?? [])
+  const first = sessionClimbs.value[0]
+  if (!summary || !first?.length) return null
+  return { text: t('sessionRoute.climbsLabel', { count: summary.count, grade: summary.grade }, summary.count), at: first[Math.floor(first.length / 2)]! }
+})
+// An ink label on the map; the panel says the same in words, so it is hidden from screen readers.
+let labelMarker: Marker | null = null
+watch([map, climbsLabel], async ([instance, label]) => {
+  if (!instance || !label) {
+    labelMarker?.remove()
+    return
+  }
+  if (!labelMarker) {
+    const { Marker } = await import('maplibre-gl')
+    const element = document.createElement('div')
+    element.className = 'pointer-events-none rounded bg-inverted px-2 py-0.5 font-numbers text-[0.8125rem] font-bold whitespace-nowrap text-inverted shadow-sm'
+    element.setAttribute('aria-hidden', 'true')
+    element.dataset.testid = 'session-climbs-label'
+    labelMarker ??= new Marker({ element, anchor: 'bottom', offset: [0, -8] })
+  }
+  if (!climbsLabel.value) return
+  labelMarker.getElement().textContent = climbsLabel.value.text
+  labelMarker.setLngLat(climbsLabel.value.at).addTo(instance)
+})
+onBeforeUnmount(() => labelMarker?.remove())
 
 // Index of the proposed loop under the pointer.
 function loopAt(instance: Map, point: PointLike): number | null {

@@ -1621,6 +1621,22 @@
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all."
   },
+  "coachWeather": {
+    "title": "Weather for the session",
+    "best": "Best slot:",
+    "range": "{start} – {end}",
+    "hour": "{h}:00",
+    "hourMinutes": "{h}:{m}",
+    "noRain": "no rain",
+    "fewDrops": "a few drops",
+    "rain": "{mm} mm of rain",
+    "wind": "wind {speed} km/h",
+    "short": "Not enough daylight left today for this session.",
+    "band": "Forecast for the next hours",
+    "cellRain": "rain",
+    "cellWind": "wind",
+    "chosen": "chosen slot"
+  },
   "outingImport": {
     "button": "Import outings",
     "title": "Importing outings",

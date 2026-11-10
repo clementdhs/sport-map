@@ -1621,6 +1621,22 @@
     "paceValue": "{pace}/km",
     "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
   },
+  "coachWeather": {
+    "title": "Météo de la séance",
+    "best": "Meilleur créneau :",
+    "range": "{start} – {end}",
+    "hour": "{h} h",
+    "hourMinutes": "{h} h {m}",
+    "noRain": "sans pluie",
+    "fewDrops": "quelques gouttes",
+    "rain": "{mm} mm de pluie",
+    "wind": "vent {speed} km/h",
+    "short": "Plus assez de jour aujourd'hui pour cette séance.",
+    "band": "Prévisions des prochaines heures",
+    "cellRain": "pluie",
+    "cellWind": "vent",
+    "chosen": "créneau retenu"
+  },
   "outingImport": {
     "button": "Importer des sorties",
     "title": "Import des sorties",

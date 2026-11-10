@@ -39,39 +39,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      collection_routes: {
-        Row: {
-          added_at: string
-          collection_id: string
-          route_id: string
-        }
-        Insert: {
-          added_at?: string
-          collection_id: string
-          route_id: string
-        }
-        Update: {
-          added_at?: string
-          collection_id?: string
-          route_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "collection_routes_collection_id_fkey"
-            columns: ["collection_id"]
-            isOneToOne: false
-            referencedRelation: "collections"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "collection_routes_route_id_fkey"
-            columns: ["route_id"]
-            isOneToOne: false
-            referencedRelation: "routes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       coach_goals: {
         Row: {
           kind: string
@@ -103,6 +70,39 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_routes: {
+        Row: {
+          added_at: string
+          collection_id: string
+          route_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          route_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          route_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_routes_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_routes_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
             referencedColumns: ["id"]
           },
         ]

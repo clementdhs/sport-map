@@ -12,8 +12,8 @@ import { type FormState, FEELINGS, type LoadOuting, trainingForm } from './train
 
 export const outingFeelingSchema = z.object({ feeling: z.enum(FEELINGS).nullable() })
 
-// An outing is the session of the day when its moving time is within a quarter of the session's, 10 min at least
-// (the route of the session isn't known yet: #266).
+// An outing is the session of the day when it followed the route traced for it (#266), or else when its moving
+// time is within a quarter of the session's, 10 min at least.
 const MATCH_SHARE = 0.25
 const MATCH_MIN_MINUTES = 10
 // Half the window smoothByDistance averages elevations over
@@ -21,8 +21,10 @@ const SMOOTHING_HALF_M = 50
 // GPS altitudes this close are the same height
 const EVEN_M = 0.5
 
-export function matchesSession(plan: SessionPlan, movingS: number | null): boolean {
-  if (!plan.minutes || movingS === null) return false
+export function matchesSession(plan: SessionPlan, movingS: number | null, onSessionRoute = false): boolean {
+  if (!plan.minutes) return false
+  if (onSessionRoute) return true
+  if (movingS === null) return false
   return Math.abs(movingS / 60 - plan.minutes) <= Math.max(MATCH_MIN_MINUTES, plan.minutes * MATCH_SHARE)
 }
 

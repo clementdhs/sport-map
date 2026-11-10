@@ -458,7 +458,8 @@
     "haveTrack": "Déjà un tracé ?",
     "modes": {
       "loop": "Boucle",
-      "manual": "À la main"
+      "manual": "À la main",
+      "session": "Séance"
     },
     "quotaReached": "Limite de calculs atteinte pour aujourd'hui",
     "quotaReachedHint": "Pour préserver le service gratuit de calcul d'itinéraire, chacun a un nombre limité de calculs par jour. D'ici demain, les nouveaux segments sont tracés en ligne droite, sans dénivelé.",
@@ -1662,6 +1663,29 @@
     "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
     "paceValue": "{pace}/km",
     "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
+  },
+  "sessionRoute": {
+    "title": "Tracé de la séance",
+    "heading": "Séance du jour · {duration}",
+    "loading": "Le coach prépare la séance du jour…",
+    "loadFailed": "La séance du jour n'a pas pu être chargée.",
+    "retry": "Réessayer",
+    "nothingToTrace": "Pas de tracé à générer pour cette séance aujourd'hui.",
+    "backToCoach": "Retour au coach",
+    "generate": "Générer le tracé",
+    "fromHome": "Générer le tracé depuis chez moi",
+    "climbsEnough": "Le tracé passe par {count} montées d'environ {length} à {grade} % : une côte par répétition, la descente sert de récupération.",
+    "climbsFew": "Le tracé passe par une montée d'environ {length} à {grade} % : monte-la pour chacune de tes {repeats} répétitions, la descente sert de récupération. | Le tracé passe par {count} montées d'environ {length} à {grade} % : enchaîne-les pour tes {repeats} répétitions, la descente sert de récupération.",
+    "climbsNone": "Aucune boucle autour du départ n'a de montée assez longue et assez raide pour cette séance : voici celle qui s'en approche le plus. Tu peux aussi choisir une autre séance.",
+    "climbsCount": "sans côte | 1 côte | {count} côtes",
+    "climbsLabel": "{count} côte · {grade} % | {count} côtes · {grade} %",
+    "warmup": "Échauffement {distance}",
+    "cooldown": "Retour au calme {distance}",
+    "others": "Autres tracés pour cette séance",
+    "follow": "Suivre maintenant",
+    "save": "Enregistrer",
+    "gpx": "GPX pour ma montre",
+    "gpxSaved": "Parcours enregistré, GPX téléchargé"
   },
   "coachReview": {
     "title": "Bilan de la sortie",

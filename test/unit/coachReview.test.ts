@@ -40,6 +40,12 @@ describe('matchesSession', () => {
     expect(matchesSession(plan, 80 * 60)).toBe(false)
   })
 
+  it('takes an outing on the route traced for the session, whatever its time (#266)', () => {
+    expect(matchesSession(plan, 30 * 60, true)).toBe(true)
+    expect(matchesSession(plan, null, true)).toBe(true)
+    expect(matchesSession(buildSession('rest', 0, 6), 3600, true)).toBe(false)
+  })
+
   it('allows 10 min at least on short sessions', () => {
     const short = buildSession('recovery', 30, 6)
     expect(matchesSession(short, 21 * 60)).toBe(true)

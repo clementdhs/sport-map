@@ -2,6 +2,7 @@ import { createError, readBody } from 'h3'
 import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { buildSession } from '#shared/utils/coachSessions'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest } from '#shared/utils/routes'
 
@@ -31,6 +32,9 @@ const loopCalls: RoutingLoopRequest[] = []
 const offTargetSeeds = new Set<number>()
 // Metres climbed per point on the first side, by seed (1 otherwise).
 const climbBySeed = new Map<number, number>()
+// Seeds whose loop goes over hills of 400 m at 7 % (#266): 4 points up, 4 down, 2 flat, all along.
+const hillySeeds = new Set<number>()
+const hilly = (i: number) => 100 + [0, 7, 14, 21, 28, 21, 14, 7, 0, 0][i % 10]!
 let routingQuota: number | null = null
 registerEndpoint('/api/routing/loop', {
   method: 'POST',
@@ -44,7 +48,9 @@ registerEndpoint('/api/routing/loop', {
     if (offTargetSeeds.has(body.seed)) {
       throw createError({ statusCode: 422, statusMessage: 'Pas de boucle de cette distance dans cette direction' })
     }
-    return { ...squareLoop(body.start, body.length_m, climbBySeed.get(body.seed)), quota_remaining: routingQuota ?? 299 }
+    const loop = squareLoop(body.start, body.length_m, climbBySeed.get(body.seed))
+    if (hillySeeds.has(body.seed)) loop.elevations = loop.coordinates.map((_, i) => hilly(i))
+    return { ...loop, quota_remaining: routingQuota ?? 299 }
   },
 })
 
@@ -68,6 +74,7 @@ beforeEach(() => {
   segmentCalls.length = 0
   offTargetSeeds.clear()
   climbBySeed.clear()
+  hillySeeds.clear()
   searchLoopViaMock.mockReset()
   routingQuota = null
   // Seeds 0, 1 and 2.
@@ -286,6 +293,79 @@ describe('proposals', () => {
     await pending
     expect(loop.proposals).toEqual([])
     expect(loop.settledCount).toBe(0)
+  })
+})
+
+describe('session mode (#266)', () => {
+  it('aims at the session distance with plain loops, ranked by the session gain', async () => {
+    const editor = useRouteEditorStore()
+    editor.details.sport_type = 'hiking'
+    const loop = useLoopGeneratorStore()
+    loop.shape = 'out_and_back'
+    loop.precision = 'range'
+    loop.showSession()
+    expect(loop.forSession).toBe(true)
+    expect(editor.details.sport_type).toBe('running')
+    // No request before the session is known.
+    loop.setStart(START)
+    expect(loop.canGenerate).toBe(false)
+
+    const plan = buildSession('endurance', 60, 6)
+    loop.setSession(plan)
+    climbBySeed.set(0, 4).set(1, 0.5).set(2, 2)
+    await loop.generate()
+    expect(loopCalls).toHaveLength(3)
+    expect(loopCalls.every(call => call.length_m === Math.round(plan.distanceM) && call.sport_type === 'running'
+      && call.shape === 'loop' && call.precision === 'precise' && !call.via)).toBe(true)
+    // Endurance climbs about 5 m/km: seed 2 (~5 m/km) first, then the flatter seed 1, the hilliest last.
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([2, 1, 0])
+    expect(loop.proposals.every(proposal => proposal.climbs === null)).toBe(true)
+    expect(loop.picked).toBe(0)
+  })
+
+  it('puts first the loop with the climbs a hill session needs', async () => {
+    hillySeeds.add(2)
+    const loop = useLoopGeneratorStore()
+    loop.showSession()
+    const plan = buildSession('longHills', 60, 6)
+    loop.setSession(plan)
+    loop.setStart(START)
+    await loop.generate()
+    expect(loop.proposals[0]!.seed).toBe(2)
+    expect(loop.proposals[0]!.climbs!.length).toBeGreaterThanOrEqual(plan.reps!.count)
+    expect(loop.proposals.slice(1).every(proposal => proposal.climbs!.length === 0)).toBe(true)
+  })
+
+  it('keeps its proposals when the editor resets its sport, and clears them with another session', async () => {
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    loop.showSession()
+    loop.setSession(buildSession('endurance', 60, 6))
+    loop.setStart(START)
+    await loop.generate()
+    // Saving the route resets the editor's details.
+    editor.details.sport_type = 'hiking'
+    await nextTick()
+    expect(loop.proposals).toHaveLength(3)
+
+    loop.setSession(buildSession('endurance', 45, 6))
+    expect(loop.proposals).toEqual([])
+  })
+
+  it('leaves the session behind in the other modes', () => {
+    const loop = useLoopGeneratorStore()
+    loop.showSession()
+    loop.setSession(buildSession('endurance', 60, 6))
+    loop.show()
+    expect(loop.forSession).toBe(false)
+    expect(loop.session).toBeNull()
+    expect(loop.targetM).toBe(10_000)
+
+    loop.showSession()
+    loop.fromCoach = true
+    loop.leave()
+    expect(loop.fromCoach).toBe(false)
+    expect(loop.open).toBe(false)
   })
 })
 

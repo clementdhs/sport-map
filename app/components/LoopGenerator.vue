@@ -74,21 +74,8 @@ watch(() => loop.proposals.length, async (count, before) => {
   list.value?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
 })
 
-const { locating, locate } = useCurrentPosition()
-
-// The picked proposal: the one highlighted (from this list or the map), else the first one ready.
-const picked = computed(() => {
-  const ready = (i: number | null) => i !== null && loop.proposals[i]?.status === 'ready'
-  if (ready(loop.highlighted)) return loop.highlighted
-  // Not before every answer is in: the first to come back isn't always the first one.
-  if (loop.generating) return null
-  const first = loop.proposals.findIndex(proposal => proposal.status === 'ready')
-  return first < 0 ? null : first
-})
-// The map shows the picked one above the others.
-watch(picked, (index) => {
-  if (index !== null) loop.highlighted = index
-})
+// The picked proposal (the store's): the one highlighted, else the first one ready.
+const picked = computed(() => loop.picked)
 
 function choose() {
   if (picked.value === null) return
@@ -155,32 +142,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <USelect v-model="loop.via" :items="viaItems" class="w-full" />
     </UFormField>
 
-    <!-- The start as on the map: the yellow square of a route's start. -->
-    <div class="flex items-center gap-2.5 rounded-md border border-default bg-default py-2 ps-3 pe-2">
-      <span class="size-3.5 shrink-0 rounded-[3px] border-2 border-(--sign-edge) bg-(--sign) dark:border-(--ui-border-inverted)" aria-hidden="true" />
-      <p class="min-w-0 flex-1">
-        <span class="block text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('loop.start') }}</span>
-        <span class="block text-sm font-semibold text-highlighted">{{ loop.start ? t('loop.startPlaced') : t('loop.noStart') }}</span>
-      </p>
-      <UTooltip :text="t('loop.myPosition')">
-        <UButton
-          icon="i-lucide-locate-fixed"
-          color="neutral"
-          variant="ghost"
-          :aria-label="t('loop.myPosition')"
-          :loading="locating"
-          @click="locate(loop.setStart)"
-        />
-      </UTooltip>
-      <UButton
-        v-if="loop.start && !loop.placingStart"
-        :label="t('loop.pickOnMap')"
-        color="neutral"
-        variant="outline"
-        class="ring-(--ui-border-inverted)"
-        @click="loop.placingStart = true"
-      />
-    </div>
+    <LoopStartRow />
 
     <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? 'text-highlighted' : 'text-muted'" role="status">
       <UIcon

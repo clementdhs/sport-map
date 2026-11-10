@@ -14,6 +14,8 @@ const props = defineProps<{
   marker?: number | null
   // Numbered steps on the line (#233), as on the map: metres along the track and their number
   steps?: { distanceM: number, label: string }[]
+  // Stretches drawn in ink over the line (#266: the climbs of a session's route), metres along the track
+  marks?: { startM: number, endM: number }[]
   // The caption as a section heading with the elevation range (route page, #233), else a small block caption
   heading?: boolean
 }>()
@@ -87,6 +89,16 @@ const slopePaths = computed(() => {
   })
   return pieces
 })
+
+// Ink stretches over the line, from point to point between their ends.
+const markPaths = computed(() => (props.marks ?? []).map(({ startM, endM }) => {
+  const points = [pointAt(startM)]
+  distances.value.forEach((meters, i) => {
+    if (meters > startM && meters < endM) points.push({ left: (toX(meters) / WIDTH) * 100, top: (toY(props.elevations[i]!) / HEIGHT) * 100 })
+  })
+  points.push(pointAt(endM))
+  return points.map(({ left, top }, i) => `${i ? 'L' : 'M'}${((left / 100) * WIDTH).toFixed(1)},${((top / 100) * HEIGHT).toFixed(1)}`).join('')
+}))
 
 // Step markers on the line.
 const stepMarkers = computed(() => (props.steps ?? []).map(step => ({ label: step.label, ...pointAt(step.distanceM) })))
@@ -236,6 +248,18 @@ const summary = computed(() =>
             stroke-linejoin="round"
             stroke-linecap="round"
             vector-effect="non-scaling-stroke"
+          />
+          <path
+            v-for="(d, i) in markPaths"
+            :key="`mark-${i}`"
+            :d="d"
+            fill="none"
+            stroke="var(--ui-text-highlighted)"
+            stroke-width="4"
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            vector-effect="non-scaling-stroke"
+            data-testid="profile-mark"
           />
         </svg>
 

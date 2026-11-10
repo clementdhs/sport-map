@@ -21,25 +21,32 @@ const loop = useLoopGeneratorStore()
 // The store outlives the page: leaving the editor closes the loop proposals.
 onBeforeUnmount(() => loop.leave())
 
-// One panel, two modes (#215): an automatic loop, or a track drawn point by point. They share the start.
+// One panel, two modes (#215): an automatic loop, or a track drawn point by point. They share the start. The
+// create page has a third, the route of the coach's session of the day (#266).
 const route = useRoute()
 const router = useRouter()
-const mode = computed<CreateMode>(() => loop.open ? 'loop' : 'manual')
+const mode = computed<CreateMode>(() => loop.open ? (loop.forSession ? 'session' : 'loop') : 'manual')
 const modeItems = computed(() => [
   { label: t('editor.modes.loop'), value: 'loop' },
   { label: t('editor.modes.manual'), value: 'manual' },
+  ...(props.rememberMode ? [{ label: t('editor.modes.session'), value: 'session' }] : []),
 ])
+
+function openMode(next: CreateMode) {
+  if (next === 'loop') loop.show()
+  else if (next === 'session') loop.showSession()
+  else loop.switchToManual()
+}
 
 function setMode(value: string | number) {
   const next = parseCreateMode(value)
   if (!next || next === mode.value) return
-  if (next === 'loop') loop.show()
-  else loop.switchToManual()
+  openMode(next)
   if (props.rememberMode) saveCreateMode(next)
 }
 
 const askedMode = props.rememberMode ? parseCreateMode(route.query.mode) : null
-if (askedMode === 'loop') loop.show()
+if (askedMode === 'loop' || askedMode === 'session') openMode(askedMode)
 // The remembered mode is only on the device, and never hides a draft (a track imported from the marked routes).
 onMounted(() => {
   if (props.rememberMode && !askedMode && !editor.waypoints.length && loadCreateMode() === 'loop') loop.show()
@@ -245,7 +252,7 @@ async function onSubmit() {
     </template>
 
     <template #title>
-      {{ loop.open ? t('loop.title') : editor.waypoints.length >= 2 ? formatDistance(editor.distanceM) : editor.details.name.trim() || t('editor.newRoute') }}
+      {{ mode === 'session' ? t('sessionRoute.title') : loop.open ? t('loop.title') : editor.waypoints.length >= 2 ? formatDistance(editor.distanceM) : editor.details.name.trim() || t('editor.newRoute') }}
     </template>
 
     <!-- A segmented control on the paper, the current mode on the surface (#234). -->
@@ -263,7 +270,8 @@ async function onSubmit() {
       @update:model-value="setMode"
     />
 
-    <LoopGenerator v-if="loop.open" />
+    <SessionRoute v-if="mode === 'session'" />
+    <LoopGenerator v-else-if="loop.open" />
 
     <template v-else>
       <!-- The sport comes first: it decides how the segments are routed. -->

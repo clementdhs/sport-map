@@ -72,25 +72,16 @@ const BAR: Record<BlockKind, string> = {
   effort: 'h-full bg-(--form-overload)',
 }
 
-const minutesText = (value: number) => (value < 1 ? `${Math.round(value * 60)} s` : `${formatNumber(value)} min`)
-const outline = computed(() => {
-  const { blocks, reps, kind } = plan.value
-  if (!reps) {
-    const middle = t(`coachSession.blocks.${kind === 'longHilly' ? 'hilly' : kind === 'recovery' ? 'recovery' : 'easy'}`)
-    return { start: null, middle, end: null, summary: middle }
-  }
-  const values = { count: reps.count, effort: minutesText(reps.effortMin), recovery: minutesText(reps.recoveryMin) }
-  return {
-    start: t('coachSession.blocks.warmup'),
-    middle: t(`coachSession.blocks.${reps.hill ? 'hills' : 'fast'}`, values),
-    end: t('coachSession.blocks.cooldown'),
-    summary: t('coachSession.blocks.summary', {
-      warmup: minutesText(blocks[0]!.minutes),
-      reps: t(`coachSession.blocks.${reps.hill ? 'hillsDetail' : 'fastDetail'}`, values),
-      cooldown: minutesText(blocks.at(-1)!.minutes),
-    }),
-  }
-})
+const outline = useSessionOutline(plan)
+
+// The route of the session (#266): the Créer panel's session mode, which this click asks to generate from the
+// device's position. Nothing is routed before the click (OpenRouteService quota).
+const loop = useLoopGeneratorStore()
+const routable = computed(() => hasSessionRoute(plan.value))
+function traceSession() {
+  loop.fromCoach = true
+  navigateTo('/routes/create?mode=session')
+}
 
 const distance = computed(() => `${formatNumber(plan.value.distanceM / 1000, { maximumFractionDigits: 1 })} km`)
 const gain = computed(() => `${formatNumber(plan.value.gainM)} m`)
@@ -179,6 +170,17 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
     </fieldset>
 
     <CoachWeatherSlot :minutes="plan.minutes" />
+
+    <UButton
+      v-if="routable"
+      :label="t('sessionRoute.fromHome')"
+      icon="i-lucide-route"
+      size="lg"
+      block
+      class="min-h-12"
+      data-testid="coach-session-route"
+      @click="traceSession()"
+    />
 
     <UButton
       v-if="choice.options > 1"

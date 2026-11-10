@@ -113,7 +113,9 @@ test.describe('follow mode', () => {
     await expect(dialog).toContainText('30 min')
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
 
-    // Back on the route's page, on its outings.
+    // The coach's review (#267, coach-review.spec.ts), then back on the route's page, on its outings.
+    await expect(page).toHaveURL(/\/coach\/bilan\/[0-9a-f-]{36}$/)
+    await page.getByRole('link', { name: 'Terminer' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${id}\\?tab=outings$`))
     await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME, level: 1 })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Passages/ })).toHaveAttribute('aria-selected', 'true')

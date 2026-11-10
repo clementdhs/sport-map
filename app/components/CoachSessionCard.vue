@@ -13,7 +13,7 @@ import type { FormSummary, LoadOuting } from '#shared/utils/trainingForm'
 
 // "Séance du jour" on the coach page (#264, mockup 1): the session the rules pick from the form, the goal and the
 // time available, its blocks, distance, gain and easy pace, the duration picker and "Autre séance". The choices
-// stay in the page: the same inputs give the same session all day.
+// are kept in this browser for the day (coachChoice.ts): the same inputs give the same session all day.
 const props = defineProps<{
   outings: LoadOuting[]
   form: FormSummary
@@ -30,6 +30,16 @@ const minutes = ref<SessionDuration>(DEFAULT_SESSION_DURATION)
 // Clicks on "Autre séance", back to the session of the day with each duration
 const other = ref(0)
 watch(minutes, () => { other.value = 0 })
+// Kept in this browser for the day (#267): shown again on the next visit, and the review after today's outing
+// looks for this same session. Restored once mounted, so the server's render (60 min) hydrates as is.
+onMounted(async () => {
+  const saved = loadCoachChoice(localDate(new Date()))
+  minutes.value = saved.minutes
+  // After the reset of « Autre séance » that changing the duration triggers
+  await nextTick()
+  other.value = saved.other
+  watch([minutes, other], () => saveCoachChoice({ minutes: minutes.value, other: other.value }, localDate(new Date())))
+})
 
 // Runs are planned at the member's running pace (#146), the default one without a setting.
 const easyPace = computed(() => paces.value.running ?? DEFAULT_PACES.running)

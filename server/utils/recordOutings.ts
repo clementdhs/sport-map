@@ -3,10 +3,11 @@ import type { Database } from '#shared/types/database.types'
 import type { RecordOuting } from '#shared/types/routes'
 import { type BestEfforts, bestEfforts, bestEffortsAreFresh } from '#shared/utils/bestEfforts'
 import { type OutingTrackPoint, SPORT_KINDS, type SportKind } from '#shared/utils/routes'
+import type { Feeling } from '#shared/utils/trainingForm'
 
 type Supabase = Awaited<ReturnType<typeof serverSupabaseClient<Database>>>
 
-const OUTING_COLUMNS = 'id, route_id, started_at, duration_s, moving_s, distance_m, has_track, best_efforts, route:routes(name, sport_type, distance_m, elevation_gain_m)'
+const OUTING_COLUMNS = 'id, route_id, started_at, duration_s, moving_s, distance_m, has_track, best_efforts, feeling, route:routes(name, sport_type, distance_m, elevation_gain_m)'
 // Tracks are loaded this many at a time: up to 10,000 points each.
 const TRACKS_PER_REQUEST = 10
 
@@ -39,6 +40,8 @@ export async function ownRecordedOutings(supabase: Supabase, userId: string): Pr
     outing_id: outing.id,
     covered_m: outing.distance_m,
     best_efforts: efforts.get(outing.id) ?? null,
+    // The check constraint keeps it to FEELINGS.
+    feeling: outing.feeling as Feeling | null,
   }))
 }
 

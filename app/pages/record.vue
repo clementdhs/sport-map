@@ -139,10 +139,11 @@ async function save() {
   }
   saving.value = true
   try {
-    const { id } = await $fetch<{ id: string }>('/api/recordings', { method: 'POST', body })
+    const { id, outing_id } = await $fetch<{ id: string, outing_id: string }>('/api/recordings', { method: 'POST', body })
     stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
-    await navigateTo(`/routes/${id}`)
+    // The coach's review (#267) for the outings of its form, the route itself otherwise.
+    await navigateTo(countsForForm(form) ? `/coach/bilan/${outing_id}` : `/routes/${id}`)
   }
   catch (error) {
     toast.add({

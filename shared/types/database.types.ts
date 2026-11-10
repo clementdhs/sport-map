@@ -520,6 +520,7 @@ export type Database = {
           created_at: string
           distance_m: number
           duration_s: number
+          feeling: string | null
           has_track: boolean | null
           id: string
           moving_s: number
@@ -533,6 +534,7 @@ export type Database = {
           created_at?: string
           distance_m: number
           duration_s: number
+          feeling?: string | null
           has_track?: boolean | null
           id?: string
           moving_s: number
@@ -546,6 +548,7 @@ export type Database = {
           created_at?: string
           distance_m?: number
           duration_s?: number
+          feeling?: string | null
           has_track?: boolean | null
           id?: string
           moving_s?: number

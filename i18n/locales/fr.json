@@ -1423,7 +1423,8 @@
     "tooManyPrivacyZones": "5 zones de confidentialité au maximum",
     "privacyZoneNotFound": "Zone de confidentialité introuvable",
     "loadCoachGoalFailed": "Impossible de charger ton objectif",
-    "saveCoachGoalFailed": "Impossible d'enregistrer ton objectif"
+    "saveCoachGoalFailed": "Impossible d'enregistrer ton objectif",
+    "saveFeelingFailed": "Impossible d'enregistrer le ressenti"
   },
   "archive": {
     "files": {
@@ -1620,6 +1621,41 @@
     "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
     "paceValue": "{pace}/km",
     "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
+  },
+  "coachReview": {
+    "title": "Bilan de la sortie",
+    "finished": "Sortie terminée · {time}",
+    "stampLine1": "Séance",
+    "stampLine2": "faite",
+    "distance": "Distance",
+    "gain": "D+",
+    "duration": "Durée",
+    "repeats": {
+      "hills": "Ta côte | Tes {n} côtes",
+      "fast": "Ta fraction | Tes {n} fractions"
+    },
+    "spreadTime": "{s} s",
+    "spreadPace": "{s} s/km",
+    "regularity": {
+      "veryRegular": "Très régulier : {spread} d'écart entre la plus rapide et la plus lente.",
+      "regular": "Régulier : {spread} d'écart entre la plus rapide et la plus lente.",
+      "irregular": "Irrégulier : {spread} d'écart entre la plus rapide et la plus lente."
+    },
+    "lastSlowest": "La dernière a coûté un peu plus, c'est normal.",
+    "feelingTitle": "Comment c'était ?",
+    "feelingHint": "Ton ressenti affine le calcul de ta forme.",
+    "feelings": {
+      "easy": "Facile",
+      "ok": "Correct",
+      "hard": "Dur",
+      "very_hard": "Très dur"
+    },
+    "feelingFailed": "Impossible d'enregistrer le ressenti",
+    "tomorrow": "Demain :",
+    "tomorrowSession": "{session}, {duration}",
+    "done": "Terminer",
+    "detach": "Ce n'était pas la séance du jour",
+    "attach": "C'était la séance du jour"
   },
   "coachWeather": {
     "title": "Météo de la séance",

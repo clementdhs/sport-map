@@ -4,9 +4,15 @@ import { SPORT_KINDS } from './routes'
 
 // The coach's form of the moment (#263): the load of the last 7 days against the member's usual load (their
 // "fond", the weekly average of the 4 weeks before). No heart rate: the load is in km-effort, 1 km on the flat
-// = 1, 100 m of gain = 1 km. Pure, computed in the browser from the profile's outings.
+// = 1, 100 m of gain = 1 km, weighed by how the outing felt. Pure, computed in the browser from the profile's outings.
 
-export type LoadOuting = Pick<StatsOuting, 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'completed_at'>
+export type LoadOuting = Pick<StatsOuting, 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'completed_at' | 'feeling'>
+
+// How the outing felt (#267), given on the review after it: it weighs the outing's load, a hard outing tiring more
+// than its kilometres say. Without one, the load is the kilometres'.
+export const FEELINGS = ['easy', 'ok', 'hard', 'very_hard'] as const
+export type Feeling = typeof FEELINGS[number]
+export const FEELING_FACTORS: Record<Feeling, number> = { easy: 0.8, ok: 1, hard: 1.15, very_hard: 1.3 }
 
 // recovery: under × 0.8, progress: × 0.8 to 1.5, overload: over × 1.5; learning: not enough history yet
 export type FormState = 'learning' | 'recovery' | 'progress' | 'overload'
@@ -28,8 +34,9 @@ export function countsForForm(outing: Pick<LoadOuting, 'sport_type'>): boolean {
   return SPORT_KINDS[outing.sport_type] !== 'ride'
 }
 
-export function outingLoad(outing: Pick<LoadOuting, 'distance_m' | 'elevation_gain_m'>): number {
-  return Math.max(0, outing.distance_m) / 1000 + Math.max(0, outing.elevation_gain_m ?? 0) / 100
+export function outingLoad(outing: Pick<LoadOuting, 'distance_m' | 'elevation_gain_m' | 'feeling'>): number {
+  const km = Math.max(0, outing.distance_m) / 1000 + Math.max(0, outing.elevation_gain_m ?? 0) / 100
+  return km * (outing.feeling ? FEELING_FACTORS[outing.feeling] : 1)
 }
 
 export type FormWindow = {

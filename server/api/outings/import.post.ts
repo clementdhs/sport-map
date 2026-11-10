@@ -37,7 +37,7 @@ export default defineEventHandler(async (event): Promise<OutingImportResponse> =
     }
   }
 
-  const id = await saveRecording(event, supabase, user.sub, { ...body, route }, 'POST /api/outings/import')
+  const { routeId } = await saveRecording(event, supabase, user.sub, { ...body, route }, 'POST /api/outings/import')
   setResponseStatus(event, 201)
-  return { route_id: id, duplicate: false }
+  return { route_id: routeId, duplicate: false }
 })

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { LoopProposal } from '~/stores/loopGenerator'
 
-// Automatic loop panel of the route editor (#50), in the topo look (#234): sport chips, target, start on its
-// yellow square, then the proposals drawn on the map (`useLoopGeneratorStore`), one of them picked to be chosen.
+// Automatic loop panel of the route editor (#50), in the topo look (#234): sport chips, shape, target, climbing and
+// place to go through (#214), start on its yellow square, then the proposals drawn on the map
+// (`useLoopGeneratorStore`), ranked by climbing, one of them picked to be chosen.
 const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 const { t } = useI18n()
@@ -15,12 +16,44 @@ const targetItems = computed(() => [
   { label: t('loop.duration'), value: 'duration' },
 ])
 
-// The other side of the target: the duration of the distance, or the distance covered in the duration.
+const climbItems = computed(() => LOOP_CLIMBS.map(value => ({ label: t(`loop.climbs.${value}`), value })))
+const viaItems = computed(() => (['none', ...LOOP_VIA_TYPES] as const).map(value => ({ label: t(`loop.vias.${value}`), value })))
+const range = computed({
+  get: () => loop.precision === 'range',
+  set: (value: boolean) => { loop.precision = value ? 'range' : 'precise' },
+})
+// A switch rather than tabs: the mode bar above already has a "Boucle" tab.
+const outAndBack = computed({
+  get: () => loop.shape === 'out_and_back',
+  set: (value: boolean) => { loop.shape = value ? 'out_and_back' : 'loop' },
+})
+
+// The other side of the target: the duration of the distance, or the distance covered in the duration, with the
+// gain the chosen climbing usually brings.
 const targetHint = computed(() => {
   if (!loop.targetInRange) return t('loop.outOfRange', { min: formatDistance(LOOP_MIN_M), max: formatDistance(LOOP_MAX_M) })
+  const gain = Math.round(loop.gainPerKmM * loop.targetM / 1000)
   return loop.target === 'distance'
-    ? t('loop.flatDuration', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, null)) })
-    : t('loop.flatDistance', { distance: formatDistance(loop.targetM) })
+    ? t('loop.durationWithGain', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, gain)), gain })
+    : t('loop.distanceWithGain', { distance: formatDistance(loop.targetM), gain })
+})
+
+// What came of the search for a place to go through.
+const viaMessage = computed(() => {
+  if (loop.via === 'none') return null
+  const type = loop.via
+  const radius = formatDistance(loop.viaRadiusM)
+  switch (loop.viaStatus) {
+    case 'searching': return t(`loop.viaSearching.${type}`, { radius })
+    case 'none': return t(`loop.viaNone.${type}`, { radius })
+    case 'failed': return t(`loop.viaFailed.${type}`)
+    case 'found': {
+      const place = loop.viaPlace!
+      const name = place.name ?? t(`loop.viaUnnamed.${type}`)
+      return place.ele === undefined ? t('loop.viaFound', { name }) : t('loop.viaFoundEle', { name, ele: place.ele })
+    }
+    default: return null
+  }
 })
 // The slider holds the figure; it is written out above it, like the mockup's "15 km".
 const target = computed(() => loop.target === 'distance'
@@ -67,6 +100,8 @@ function proposalFigures({ distanceM, gainM }: LoopProposal) {
   return t('loop.summary', { distance: formatDistance(distanceM), gain: Math.round(gainM ?? 0) })
 }
 
+const proposalClimb = ({ distanceM, gainM }: LoopProposal) => t(`loop.climbs.${climbOf(editor.details.sport_type, distanceM, gainM)}`)
+
 function proposalMinutes({ distanceM, gainM }: LoopProposal) {
   return estimateDuration(editor.details.sport_type, distanceM, gainM)
 }
@@ -104,7 +139,21 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
         class="mt-3"
       />
       <p class="mt-2 text-sm text-muted">{{ targetHint }}</p>
+      <div class="mt-3 space-y-2">
+        <USwitch v-model="range" :label="t('loop.range')" :description="t('loop.rangeHint')" size="sm" />
+        <USwitch v-model="outAndBack" :label="t('loop.outAndBack')" :description="t('loop.outAndBackHint')" size="sm" />
+      </div>
     </div>
+
+    <div>
+      <p class="mb-1.5 text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('loop.climb') }}</p>
+      <UTabs v-model="loop.climb" :items="climbItems" :content="false" size="sm" :aria-label="t('loop.climb')" />
+      <p class="mt-2 text-sm text-muted">{{ t('loop.climbHint') }}</p>
+    </div>
+
+    <UFormField :label="t('loop.via')" :ui="{ label: 'text-[0.6875rem] font-bold tracking-wider text-muted uppercase' }">
+      <USelect v-model="loop.via" :items="viaItems" class="w-full" />
+    </UFormField>
 
     <!-- The start as on the map: the yellow square of a route's start. -->
     <div class="flex items-center gap-2.5 rounded-md border border-default bg-default py-2 ps-3 pe-2">
@@ -133,6 +182,16 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       />
     </div>
 
+    <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? 'text-highlighted' : 'text-muted'" role="status">
+      <UIcon
+        :name="loop.viaStatus === 'searching' ? 'i-lucide-loader-circle' : OSM_PLACE_ICONS[loop.via === 'peak' ? 'peak' : 'water']"
+        class="mt-0.5 size-4 shrink-0"
+        :class="{ 'animate-spin': loop.viaStatus === 'searching' }"
+        aria-hidden="true"
+      />
+      <span>{{ viaMessage }}</span>
+    </p>
+
     <template v-if="!loop.proposals.length">
       <UButton
         icon="i-lucide-wand-sparkles"
@@ -148,7 +207,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
     <template v-else>
       <div class="flex items-center gap-2.5">
         <h3 id="loop-proposals" class="text-[0.6875rem] font-bold tracking-wider whitespace-nowrap text-muted uppercase">
-          {{ t('loop.proposals') }}
+          {{ t(outAndBack ? 'loop.outAndBackProposals' : 'loop.proposals') }}
         </h3>
         <span class="h-px flex-1 bg-accented" aria-hidden="true" />
       </div>
@@ -169,7 +228,10 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
               aria-hidden="true"
             />
             <span class="min-w-0 flex-1">
-              <span class="block font-semibold text-highlighted">{{ t('loop.proposal', { n: i + 1 }) }}</span>
+              <span class="flex items-center gap-2 font-semibold text-highlighted">
+                {{ t(outAndBack ? 'loop.outAndBackProposal' : 'loop.proposal', { n: i + 1 }) }}
+                <UBadge v-if="proposal.status === 'ready'" :label="proposalClimb(proposal)" color="neutral" variant="soft" size="sm" />
+              </span>
               <span v-if="proposal.status === 'loading'" class="block text-sm text-muted">
                 <UIcon name="i-lucide-loader-circle" class="mr-1 size-4 animate-spin align-text-bottom" />{{ t('editor.routing') }}
               </span>
@@ -193,7 +255,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
           @click="loop.generate()"
         />
         <UButton
-          :label="t('loop.choose')"
+          :label="t(outAndBack ? 'loop.chooseOutAndBack' : 'loop.choose')"
           size="lg"
           block
           :disabled="picked === null"

@@ -515,16 +515,54 @@
     "duration": "Durée",
     "distanceKm": "Distance (km)",
     "durationMin": "Durée (min)",
-    "flatDuration": "Environ {duration} sur le plat.",
-    "flatDistance": "Environ {distance} sur le plat.",
+    "durationWithGain": "Environ {duration} avec ~{gain} m de D+.",
+    "distanceWithGain": "Environ {distance} avec ~{gain} m de D+.",
+    "range": "Longueur approximative (± 20 %)",
+    "rangeHint": "Plus de tracés possibles autour de la longueur visée.",
+    "outAndBack": "Aller-retour",
+    "outAndBackHint": "Revenir par le même chemin.",
     "outOfRange": "Une boucle fait entre {min} et {max}.",
     "generate": "Proposer des boucles",
     "regenerate": "Autres propositions",
     "quotaHint": "Chaque proposition compte dans ta limite quotidienne de calculs (jusqu'à {attempts} calculs).",
+    "climb": "Dénivelé",
+    "climbs": {
+      "flat": "Plat",
+      "rolling": "Vallonné",
+      "hilly": "Costaud"
+    },
+    "climbHint": "Les propositions sont classées de la plus proche à la plus éloignée de ce choix.",
+    "via": "Passer par",
+    "vias": {
+      "none": "Aucun lieu imposé",
+      "peak": "Le sommet le plus haut à portée",
+      "water": "Un point d'eau potable"
+    },
+    "viaSearching": {
+      "peak": "Recherche d'un sommet à moins de {radius}…",
+      "water": "Recherche d'un point d'eau à moins de {radius}…"
+    },
+    "viaNone": {
+      "peak": "Aucun sommet référencé à moins de {radius} : les propositions ne passent par aucun.",
+      "water": "Aucun point d'eau potable référencé à moins de {radius} : les propositions ne passent par aucun."
+    },
+    "viaFailed": {
+      "peak": "OpenStreetMap ne répond pas : les propositions ne passent par aucun sommet.",
+      "water": "OpenStreetMap ne répond pas : les propositions ne passent par aucun point d'eau."
+    },
+    "viaUnnamed": {
+      "peak": "un sommet sans nom",
+      "water": "un point d'eau potable"
+    },
+    "viaFound": "Passe par {name}.",
+    "viaFoundEle": "Passe par {name} ({ele} m).",
     "proposals": "Boucles proposées",
+    "outAndBackProposals": "Allers-retours proposés",
     "proposal": "Boucle {n}",
+    "outAndBackProposal": "Aller-retour {n}",
     "summary": "{distance} · {gain} m D+",
     "choose": "Choisir cette boucle",
+    "chooseOutAndBack": "Choisir cet aller-retour",
     "replaceConfirm": "Remplacer le tracé en cours par cette boucle ?"
   },
   "discover": {
@@ -1397,6 +1435,9 @@
     "routingFailed": "Impossible de calculer l'itinéraire",
     "loopNotFound": "Aucun chemin praticable autour de ce départ",
     "loopOffTarget": "Pas de boucle de cette distance dans cette direction",
+    "loopViaNotFound": "Aucun chemin praticable jusqu'au lieu de passage",
+    "loopViaTooFar": "Ce lieu est trop loin par les chemins pour cette distance",
+    "outAndBackOffTarget": "Pas d'aller-retour de cette distance dans cette direction",
     "exportFailed": "Impossible de préparer l'export",
     "exportPhotosFailed": "Impossible de préparer l'export des photos",
     "usernameMismatch": "Le pseudo saisi ne correspond pas",

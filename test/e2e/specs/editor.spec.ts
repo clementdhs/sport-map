@@ -191,13 +191,14 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await trail.click()
     await expect(trail).toHaveAttribute('aria-pressed', 'true')
     await panel.getByRole('tab', { name: 'Durée' }).click()
-    // Trail is estimated at 8 min/km on the flat: 60 min by default, in 5 min steps.
-    await expect(panel.getByText('Environ 7,50 km sur le plat.')).toBeVisible()
+    // Trail is estimated at 8 min/km on the flat, plus 100 m of gain as 1 km: rolling, 27.5 m per km (#214).
+    // 60 min by default, in 5 min steps.
+    await expect(panel.getByText('Environ 5,88 km avec ~162 m de D+.')).toBeVisible()
     const duration = panel.getByRole('slider', { name: 'Durée (min)' })
     await duration.press('ArrowLeft')
     await duration.press('ArrowLeft')
     await expect(duration).toHaveAttribute('aria-valuenow', '50')
-    await expect(panel.getByText('Environ 6,25 km sur le plat.')).toBeVisible()
+    await expect(panel.getByText('Environ 4,90 km avec ~135 m de D+.')).toBeVisible()
 
     const requests: { length_m: number, sport_type: string, seed: number }[] = []
     page.on('request', (request) => {
@@ -208,10 +209,10 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await expect(proposals).toHaveCount(3)
     for (const [i, proposal] of (await proposals.all()).entries()) {
       await expect(proposal).toContainText(`Boucle ${i + 1}`)
-      await expect(proposal).toContainText(/6,2\d km · \d+ m D\+/)
+      await expect(proposal).toContainText(/4,9\d km · \d+ m D\+/)
       await expect(proposal).toContainText(/Durée estimée : \d/)
     }
-    expect(requests.map(({ length_m, sport_type }) => ({ length_m, sport_type }))).toEqual(Array(3).fill({ length_m: 6250, sport_type: 'trail' }))
+    expect(requests.map(({ length_m, sport_type }) => ({ length_m, sport_type }))).toEqual(Array(3).fill({ length_m: 4902, sport_type: 'trail' }))
     expect(new Set(requests.map(request => request.seed)).size).toBe(3)
     await expect(panel.getByRole('button', { name: 'Autres propositions' })).toBeEnabled()
 
@@ -223,7 +224,7 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await expect(picked).toContainText('Boucle 2')
     await panel.getByRole('button', { name: 'Choisir cette boucle' }).click()
     await expect(panel).toHaveCount(0)
-    await expect(page.locator('p.text-3xl')).toHaveText(/^6,2\d km$/)
+    await expect(page.locator('p.text-3xl')).toHaveText(/^4,9\d km$/)
     await expect(page.getByText('Le parcours revient à son point de départ.')).toBeVisible()
     await expect(page.getByText('Profil altimétrique')).toBeVisible()
     await expect(page.getByRole('group', { name: 'Sport', exact: true }).getByRole('button', { pressed: true })).toHaveText('Trail')
@@ -236,6 +237,52 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     await expect(page.locator('p.text-3xl')).toHaveText('0 m')
   })
 }
+
+test('generates an out and back of a rough length through the highest peak (#214)', async ({ page }) => {
+  // A peak 2 km north of the map's centre, once the start is placed there.
+  let peak: [number, number] | null = null
+  await page.route('**/api/interpreter', async (route) => {
+    const elements = peak ? [{ type: 'node', id: 42, lon: peak[0], lat: peak[1], tags: { natural: 'peak', ele: '1234', name: 'Mont Test' } }] : []
+    await route.fulfill({ json: { elements } })
+  })
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+  const [lng, lat] = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number)
+  peak = [lng!, lat! + 0.018]
+
+  await panel.getByRole('switch', { name: /Aller-retour/ }).click()
+  await panel.getByRole('switch', { name: /Longueur approximative/ }).click()
+  await panel.getByRole('tab', { name: 'Costaud' }).click()
+  await panel.getByRole('combobox', { name: 'Passer par' }).click()
+  await page.getByRole('option', { name: 'Le sommet le plus haut à portée' }).click()
+
+  const requests: { shape: string, precision: string, via?: [number, number] }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText('Passe par Mont Test (1234 m).')).toBeVisible()
+  const proposals = panel.getByRole('list', { name: 'Allers-retours proposés' }).getByRole('listitem')
+  await expect(proposals).toHaveCount(3)
+  await expect(proposals.first()).toContainText('Aller-retour 1')
+  // The fixtures' squares climb 50 m: flat for a run of 10 km.
+  await expect(proposals.first()).toContainText('Plat')
+  expect(requests).toHaveLength(3)
+  for (const request of requests) {
+    expect(request.shape).toBe('out_and_back')
+    expect(request.precision).toBe('range')
+    expect(request.via?.[0]).toBeCloseTo(peak[0], 5)
+    expect(request.via?.[1]).toBeCloseTo(peak[1], 5)
+  }
+
+  await panel.getByRole('button', { name: 'Choisir cet aller-retour' }).click()
+  await expect(page.locator('p.text-3xl')).toHaveText(/^10,0\d km$/)
+})
 
 test('shares the start between the modes and remembers the last one', async ({ page }) => {
   await page.goto('/routes/create')

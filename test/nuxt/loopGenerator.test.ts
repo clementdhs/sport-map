@@ -1,13 +1,14 @@
 import { createError, readBody } from 'h3'
-import { registerEndpoint } from '@nuxt/test-utils/runtime'
+import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest } from '#shared/utils/routes'
 
 const START: LngLat = [6.12, 45.9]
 
-// A square loop from the start, a point every 100 m, as long as asked; climbing 1 m per point on the first side.
-function squareLoop([lng, lat]: LngLat, lengthM: number) {
+// A square loop from the start, a point every 100 m, as long as asked; climbing `climb` m per point on the first side.
+function squareLoop([lng, lat]: LngLat, lengthM: number, climb = 1) {
   const dLat = 100 / 111_320
   const dLng = dLat / Math.cos(lat * Math.PI / 180)
   const steps = Math.round(lengthM / 400)
@@ -20,7 +21,7 @@ function squareLoop([lng, lat]: LngLat, lengthM: number) {
       coordinates.push([lng + x * dLng, lat + y * dLat])
     }
   }
-  const elevations = coordinates.map((_, i) => 100 + Math.min(i, steps))
+  const elevations = coordinates.map((_, i) => 100 + Math.min(i, steps) * climb)
   return { coordinates, elevations }
 }
 
@@ -28,6 +29,8 @@ function squareLoop([lng, lat]: LngLat, lengthM: number) {
 // quota set, it counts down and answers 429 once it is used up, like the real one.
 const loopCalls: RoutingLoopRequest[] = []
 const offTargetSeeds = new Set<number>()
+// Metres climbed per point on the first side, by seed (1 otherwise).
+const climbBySeed = new Map<number, number>()
 let routingQuota: number | null = null
 registerEndpoint('/api/routing/loop', {
   method: 'POST',
@@ -41,9 +44,13 @@ registerEndpoint('/api/routing/loop', {
     if (offTargetSeeds.has(body.seed)) {
       throw createError({ statusCode: 422, statusMessage: 'Pas de boucle de cette distance dans cette direction' })
     }
-    return { ...squareLoop(body.start, body.length_m), quota_remaining: routingQuota ?? 299 }
+    return { ...squareLoop(body.start, body.length_m, climbBySeed.get(body.seed)), quota_remaining: routingQuota ?? 299 }
   },
 })
+
+// Overpass, for the place to go through (#214).
+const { searchLoopViaMock } = vi.hoisted(() => ({ searchLoopViaMock: vi.fn() }))
+mockNuxtImport('searchLoopVia', () => searchLoopViaMock)
 
 const segmentCalls: RoutingSegmentRequest[] = []
 registerEndpoint('/api/routing/segment', {
@@ -60,6 +67,8 @@ beforeEach(() => {
   loopCalls.length = 0
   segmentCalls.length = 0
   offTargetSeeds.clear()
+  climbBySeed.clear()
+  searchLoopViaMock.mockReset()
   routingQuota = null
   // Seeds 0, 1 and 2.
   vi.spyOn(Math, 'random').mockReturnValue(0)
@@ -118,9 +127,12 @@ describe('proposals', () => {
     loop.setStart(START)
     loop.target = 'duration'
     loop.durationMin = 90
-    expect(loop.targetM).toBe(7500)
+    // Rolling by default: 27.5 m per km add 2.75 min to the 12 per km on the flat (#214).
+    expect(loop.targetM).toBe(6102)
     await loop.generate()
-    expect(loopCalls[0]!.length_m).toBe(7500)
+    expect(loopCalls[0]!.length_m).toBe(6102)
+    loop.climb = 'hilly'
+    expect(loop.targetM).toBe(5294)
   })
 
   it('refuses distances the service can\'t loop', () => {
@@ -136,8 +148,9 @@ describe('proposals', () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     await loop.generate()
-    expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'failed', 'ready'])
-    expect(loop.proposals[1]!.error).toBe('Pas de boucle de cette distance dans cette direction')
+    // Missing proposals go last.
+    expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'ready', 'failed'])
+    expect(loop.proposals[2]!.error).toBe('Pas de boucle de cette distance dans cette direction')
   })
 
   it('stops at the daily quota, warning once', async () => {
@@ -165,6 +178,73 @@ describe('proposals', () => {
     editor.details.sport_type = 'mountain_biking'
     await nextTick()
     expect(loop.proposals).toEqual([])
+  })
+
+  it('sends the shape and the precision (#214)', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    await loop.generate()
+    expect(loopCalls.every(call => call.shape === 'loop' && call.precision === 'precise' && !call.via)).toBe(true)
+
+    loop.shape = 'out_and_back'
+    await nextTick()
+    expect(loop.proposals).toEqual([])
+    loop.precision = 'range'
+    loopCalls.length = 0
+    await loop.generate()
+    expect(loopCalls.every(call => call.shape === 'out_and_back' && call.precision === 'range')).toBe(true)
+  })
+
+  it('ranks the proposals by climbing, again without a request when it changes (#214)', async () => {
+    climbBySeed.set(0, 1).set(1, 5).set(2, 3)
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.climb = 'hilly'
+    await loop.generate()
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([1, 2, 0])
+
+    loop.highlighted = 0
+    loop.climb = 'flat'
+    await nextTick()
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([0, 2, 1])
+    expect(loop.highlighted).toBeNull()
+    expect(loopCalls).toHaveLength(3)
+  })
+
+  it('goes through the highest peak in reach, searched once (#214)', async () => {
+    const peak = (id: string, lat: number, ele: number): OsmPlace => ({ id, type: 'peak', coordinates: [6.12, lat], ele, name: id })
+    searchLoopViaMock.mockResolvedValue([peak('low', 45.91, 900), peak('high', 45.92, 1400)])
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'peak'
+    await loop.generate()
+
+    // 10 km within 10 %: 11 km there and back, 4.2 km as the crow flies.
+    expect(searchLoopViaMock).toHaveBeenCalledWith('peak', START, 4231)
+    expect(loop.viaStatus).toBe('found')
+    expect(loop.viaPlace?.id).toBe('high')
+    expect(loopCalls.every(call => call.via?.[1] === 45.92)).toBe(true)
+
+    await loop.generate()
+    expect(searchLoopViaMock).toHaveBeenCalledTimes(1)
+    expect(loop.viaPlace?.id).toBe('high')
+  })
+
+  it('goes without a place when none is in reach or Overpass fails (#214)', async () => {
+    searchLoopViaMock.mockResolvedValue([])
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'water'
+    await loop.generate()
+    expect(loop.viaStatus).toBe('none')
+    expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'ready', 'ready'])
+    expect(loopCalls.every(call => !call.via)).toBe(true)
+
+    searchLoopViaMock.mockRejectedValue(new Error('busy'))
+    loop.setStart([6.2, 45.9])
+    await loop.generate()
+    expect(loop.viaStatus).toBe('failed')
+    expect(loop.proposals).toHaveLength(3)
   })
 
   it('shares the start with the hand-drawn mode', () => {

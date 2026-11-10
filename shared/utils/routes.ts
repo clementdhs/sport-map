@@ -278,15 +278,26 @@ export type RoutingSegmentResponse = {
 export const LOOP_MIN_M = 1000
 export const LOOP_MAX_M = 100_000
 
+// A loop, or an out and back (#214): the way out, then the same way back.
+export const LOOP_SHAPES = ['loop', 'out_and_back'] as const
+export type LoopShape = typeof LOOP_SHAPES[number]
+// How close to the asked length a proposal must come: "Précise" or "Fourchette" (#214).
+export const LOOP_PRECISIONS = ['precise', 'range'] as const
+export type LoopPrecision = typeof LOOP_PRECISIONS[number]
+
 export const routingLoopSchema = z.object({
   start: coordinateSchema,
   length_m: z.number().int().min(LOOP_MIN_M).max(LOOP_MAX_M),
   sport_type: z.enum(SPORT_TYPES),
   // Picks the loop's direction: one seed per proposal.
   seed: z.number().int().min(0).max(1_000_000),
+  shape: z.enum(LOOP_SHAPES).default('loop'),
+  precision: z.enum(LOOP_PRECISIONS).default('precise'),
+  // A place to go through (a peak, a drinking water point), found in OpenStreetMap by the browser.
+  via: coordinateSchema.optional(),
 })
 
-export type RoutingLoopRequest = z.infer<typeof routingLoopSchema>
+export type RoutingLoopRequest = z.input<typeof routingLoopSchema>
 
 export type RoutingLoopResponse = {
   coordinates: LngLat[]

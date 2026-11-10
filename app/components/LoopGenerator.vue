@@ -14,13 +14,40 @@ const targetItems = computed(() => [
   { label: t('loop.distance'), value: 'distance' },
   { label: t('loop.duration'), value: 'duration' },
 ])
+const shapeItems = computed(() => LOOP_SHAPES.map(value => ({ label: t(`loop.shapes.${value}`), value })))
+const climbItems = computed(() => LOOP_CLIMBS.map(value => ({ label: t(`loop.climbs.${value}`), value })))
+const viaItems = computed(() => (['none', ...LOOP_VIA_TYPES] as const).map(value => ({ label: t(`loop.vias.${value}`), value })))
+const range = computed({
+  get: () => loop.precision === 'range',
+  set: (value: boolean) => { loop.precision = value ? 'range' : 'precise' },
+})
 
-// The other side of the target: the duration of the distance, or the distance covered in the duration.
+// The other side of the target: the duration of the distance, or the distance covered in the duration, with the
+// gain the chosen climbing usually brings.
 const targetHint = computed(() => {
   if (!loop.targetInRange) return t('loop.outOfRange', { min: formatDistance(LOOP_MIN_M), max: formatDistance(LOOP_MAX_M) })
+  const gain = Math.round(loop.gainPerKmM * loop.targetM / 1000)
   return loop.target === 'distance'
-    ? t('loop.flatDuration', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, null)) })
-    : t('loop.flatDistance', { distance: formatDistance(loop.targetM) })
+    ? t('loop.durationWithGain', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, gain)), gain })
+    : t('loop.distanceWithGain', { distance: formatDistance(loop.targetM), gain })
+})
+
+// What came of the search for a place to go through.
+const viaMessage = computed(() => {
+  if (loop.via === 'none') return null
+  const type = loop.via
+  const radius = formatDistance(loop.viaRadiusM)
+  switch (loop.viaStatus) {
+    case 'searching': return t(`loop.viaSearching.${type}`, { radius })
+    case 'none': return t(`loop.viaNone.${type}`, { radius })
+    case 'failed': return t(`loop.viaFailed.${type}`)
+    case 'found': {
+      const place = loop.viaPlace!
+      const name = place.name ?? t(`loop.viaUnnamed.${type}`)
+      return place.ele === undefined ? t('loop.viaFound', { name }) : t('loop.viaFoundEle', { name, ele: place.ele })
+    }
+    default: return null
+  }
 })
 
 // On a phone, new proposals would stay below the fold of the bottom sheet.
@@ -42,6 +69,8 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
   const duration = formatDuration(estimateDuration(editor.details.sport_type, distanceM, gainM))
   return t('loop.summary', { distance: formatDistance(distanceM), gain: Math.round(gainM ?? 0), duration })
 }
+
+const proposalClimb = ({ distanceM, gainM }: LoopProposal) => t(`loop.climbs.${climbOf(editor.details.sport_type, distanceM, gainM)}`)
 </script>
 
 <template>
@@ -80,6 +109,10 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
       <USelect v-model="editor.details.sport_type" :items="sportItems" class="w-full" />
     </UFormField>
 
+    <UFormField :label="t('loop.shape')">
+      <UTabs v-model="loop.shape" :items="shapeItems" :content="false" size="sm" :aria-label="t('loop.shape')" />
+    </UFormField>
+
     <div class="space-y-2">
       <UTabs v-model="loop.target" :items="targetItems" :content="false" size="sm" :aria-label="t('loop.target')" />
       <UFormField v-if="loop.target === 'distance'" :label="t('loop.distanceKm')" :help="targetHint">
@@ -88,7 +121,16 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
       <UFormField v-else :label="t('loop.durationMin')" :help="targetHint">
         <UInputNumber v-model="loop.durationMin" :min="10" :step="5" :step-snapping="false" class="w-full" />
       </UFormField>
+      <USwitch v-model="range" :label="t('loop.range')" :description="t('loop.rangeHint')" size="sm" />
     </div>
+
+    <UFormField :label="t('loop.climb')" :help="t('loop.climbHint')">
+      <UTabs v-model="loop.climb" :items="climbItems" :content="false" size="sm" :aria-label="t('loop.climb')" />
+    </UFormField>
+
+    <UFormField :label="t('loop.via')">
+      <USelect v-model="loop.via" :items="viaItems" class="w-full" />
+    </UFormField>
 
     <UButton
       icon="i-lucide-wand-sparkles"
@@ -99,6 +141,16 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
       @click="loop.generate()"
     />
     <p class="-mt-2 text-xs text-muted">{{ t('loop.quotaHint', { attempts: LOOP_ATTEMPTS }) }}</p>
+
+    <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? '' : 'text-muted'" role="status">
+      <UIcon
+        :name="loop.viaStatus === 'searching' ? 'i-lucide-loader-circle' : OSM_PLACE_ICONS[loop.via === 'peak' ? 'peak' : 'water']"
+        class="mt-0.5 size-4 shrink-0"
+        :class="{ 'animate-spin': loop.viaStatus === 'searching' }"
+        aria-hidden="true"
+      />
+      <span>{{ viaMessage }}</span>
+    </p>
 
     <ul v-if="loop.proposals.length" ref="list" class="space-y-2" :aria-label="t('loop.proposals')" aria-live="polite">
       <li
@@ -111,7 +163,10 @@ function proposalSummary({ distanceM, gainM }: LoopProposal) {
       >
         <span class="size-3 shrink-0 rounded-full" :style="{ backgroundColor: LOOP_COLORS[i % LOOP_COLORS.length] }" aria-hidden="true" />
         <div class="min-w-0 flex-1">
-          <p class="font-medium">{{ t('loop.proposal', { n: i + 1 }) }}</p>
+          <p class="flex items-center gap-2 font-medium">
+            {{ t(loop.shape === 'loop' ? 'loop.proposal' : 'loop.outAndBackProposal', { n: i + 1 }) }}
+            <UBadge v-if="proposal.status === 'ready'" :label="proposalClimb(proposal)" color="neutral" variant="soft" size="sm" />
+          </p>
           <p v-if="proposal.status === 'loading'" class="text-sm text-muted">
             <UIcon name="i-lucide-loader-circle" class="mr-1 size-4 animate-spin align-text-bottom" />{{ t('editor.routing') }}
           </p>

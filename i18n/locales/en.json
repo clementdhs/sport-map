@@ -468,19 +468,58 @@
     "startPlaced": "Start placed (green dot on the map).",
     "myPosition": "My location",
     "pickOnMap": "Pick on the map",
+    "shape": "Route type",
+    "shapes": {
+      "loop": "Loop",
+      "out_and_back": "Out and back"
+    },
     "target": "Loop by",
     "distance": "Distance",
     "duration": "Duration",
     "distanceKm": "Distance (km)",
     "durationMin": "Duration (min)",
-    "flatDuration": "About {duration} on the flat.",
-    "flatDistance": "About {distance} on the flat.",
+    "durationWithGain": "About {duration} with ~{gain} m of climbing.",
+    "distanceWithGain": "About {distance} with ~{gain} m of climbing.",
+    "range": "Approximate length (± 20%)",
+    "rangeHint": "More possible routes around the length you want.",
     "outOfRange": "A loop is between {min} and {max} long.",
     "generate": "Suggest loops",
     "regenerate": "Other suggestions",
     "quotaHint": "Each suggestion counts towards your daily calculation limit (up to {attempts} calculations).",
+    "climb": "Climbing",
+    "climbs": {
+      "flat": "Flat",
+      "rolling": "Rolling",
+      "hilly": "Hilly"
+    },
+    "climbHint": "Suggestions are sorted from the closest to the furthest from this choice.",
+    "via": "Go through",
+    "vias": {
+      "none": "No set place",
+      "peak": "The highest peak in reach",
+      "water": "A drinking water point"
+    },
+    "viaSearching": {
+      "peak": "Looking for a peak within {radius}…",
+      "water": "Looking for a water point within {radius}…"
+    },
+    "viaNone": {
+      "peak": "No peak mapped within {radius}: the suggestions go through none.",
+      "water": "No drinking water point mapped within {radius}: the suggestions go through none."
+    },
+    "viaFailed": {
+      "peak": "OpenStreetMap is not answering: the suggestions go through no peak.",
+      "water": "OpenStreetMap is not answering: the suggestions go through no water point."
+    },
+    "viaUnnamed": {
+      "peak": "an unnamed peak",
+      "water": "a drinking water point"
+    },
+    "viaFound": "Goes through {name}.",
+    "viaFoundEle": "Goes through {name} ({ele} m).",
     "proposals": "Suggested loops",
     "proposal": "Loop {n}",
+    "outAndBackProposal": "Out and back {n}",
     "summary": "{distance} · {gain} m up · ~{duration}",
     "choose": "Choose",
     "chooseLabel": "Choose loop {n}",
@@ -1257,6 +1296,9 @@
     "routingFailed": "Couldn't calculate the route",
     "loopNotFound": "No usable path around this start",
     "loopOffTarget": "No loop of this distance in this direction",
+    "loopViaNotFound": "No usable path to the place to go through",
+    "loopViaTooFar": "This place is too far along the paths for this length",
+    "outAndBackOffTarget": "No out and back of this distance in this direction",
     "exportFailed": "Couldn't prepare the export",
     "exportPhotosFailed": "Couldn't prepare the photo export",
     "usernameMismatch": "The username entered doesn't match",

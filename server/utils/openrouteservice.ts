@@ -101,6 +101,12 @@ export async function roundTrip(event: H3Event, start: LngLat, lengthM: number, 
   return directions(event, sport, { coordinates: [start], options: { round_trip: { length: lengthM, points: LOOP_POINTS, seed } } })
 }
 
+// A route through these points (#214: a loop through a place, the way out of an out and back), each snapped to the
+// paths within its radius (m, -1 for the largest).
+export async function routeThrough(event: H3Event, points: LngLat[], radiuses: number[], sport: SportType): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
+  return directions(event, sport, { coordinates: points, radiuses })
+}
+
 const round6 = (value: number) => Math.round(value * 1e6) / 1e6
 const round1 = (value: number) => Math.round(value * 10) / 10
 

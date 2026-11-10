@@ -9,12 +9,16 @@ import { START_COLOR } from '~/utils/routeLayers'
 // proposal; the list beside the map names each one, so they read without the colours.
 export const LOOP_COLORS = ['#2a78d6', '#d95926', '#199e70'] as const
 
+export const VIA_COLOR = '#1f2937'
+
 const LOOPS_SOURCE = 'loop-proposals'
 const START_SOURCE = 'loop-start'
 export const LOOPS_HIT_LAYER = 'loop-proposals-hit'
 
 export interface LoopLayerData {
   start: LngLat | null
+  // The place the proposals go through (#214)
+  via: LngLat | null
   // Coordinates of each proposal, in list order (empty while loading or failed)
   loops: LngLat[][]
   highlighted: number | null
@@ -33,16 +37,18 @@ function loopsData({ loops, highlighted }: LoopLayerData): FeatureCollection<Lin
   return { type: 'FeatureCollection', features: features.sort((a, b) => Number(a.properties.highlighted) - Number(b.properties.highlighted)) }
 }
 
-function startData(start: LngLat | null): FeatureCollection<Point> {
+// The start, and the place to go through.
+function startData(start: LngLat | null, via: LngLat | null): FeatureCollection<Point> {
+  const points = [...(start ? [{ kind: 'start', coordinates: start }] : []), ...(via ? [{ kind: 'via', coordinates: via }] : [])]
   return {
     type: 'FeatureCollection',
-    features: start ? [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: start } }] : [],
+    features: points.map(({ kind, coordinates }) => ({ type: 'Feature', properties: { kind }, geometry: { type: 'Point', coordinates } })),
   }
 }
 
 export function addLoopLayers(map: Map) {
-  map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, loops: [], highlighted: null }) })
-  map.addSource(START_SOURCE, { type: 'geojson', data: startData(null) })
+  map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, via: null, loops: [], highlighted: null }) })
+  map.addSource(START_SOURCE, { type: 'geojson', data: startData(null, null) })
 
   map.addLayer({
     id: 'loop-proposals-casing',
@@ -64,16 +70,25 @@ export function addLoopLayers(map: Map) {
     source: LOOPS_SOURCE,
     paint: { 'line-color': '#000000', 'line-opacity': 0, 'line-width': 16 },
   })
+  // A ringed point, unlike the start and the waypoints.
+  map.addLayer({
+    id: 'loop-via',
+    type: 'circle',
+    source: START_SOURCE,
+    filter: ['==', ['get', 'kind'], 'via'],
+    paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-color': VIA_COLOR, 'circle-stroke-width': 3 },
+  })
   // Same look as a route's start.
   map.addLayer({
     id: 'loop-start',
     type: 'circle',
     source: START_SOURCE,
+    filter: ['==', ['get', 'kind'], 'start'],
     paint: { 'circle-radius': 7, 'circle-color': START_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
   })
 }
 
 export function setLoopLayerData(map: Map, data: LoopLayerData) {
   map.getSource<GeoJSONSource>(LOOPS_SOURCE)?.setData(loopsData(data))
-  map.getSource<GeoJSONSource>(START_SOURCE)?.setData(startData(data.start))
+  map.getSource<GeoJSONSource>(START_SOURCE)?.setData(startData(data.start, data.via))
 }

@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_goals: {
+        Row: {
+          kind: string
+          race_date: string | null
+          race_distance_m: number | null
+          race_gain_m: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          kind: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          kind?: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_routes: {
         Row: {
           added_at: string

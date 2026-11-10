@@ -18,7 +18,7 @@ const selected = computed({
 </script>
 
 <template>
-  <UFormField :label="t('settings.defaultSport.label')">
-    <USelect id="default-sport" v-model="selected" :items="items" class="w-full max-w-xs" />
+  <UFormField :label="t('settings.defaultSport.label')" orientation="horizontal" :ui="{ root: 'flex-wrap items-center' }">
+    <USelect id="default-sport" v-model="selected" :items="items" class="w-56 max-w-full" />
   </UFormField>
 </template>

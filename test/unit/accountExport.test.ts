@@ -32,6 +32,8 @@ const data: AccountData = {
   routingUsage: [{ day: '2026-09-29', count: 12 }],
   liveShares: [{ started_at: '2026-10-04T08:00:00Z', points: [{ fixed_at: '2026-10-04T08:00:30Z', lng: 3.06, lat: 50.63 }] }],
   preferences: { preferences: { basemap: 'ignPlan', map3d: true }, updated_at: '2026-10-18T09:00:00Z' },
+  privacyZones: [{ label: 'Maison', lng: 3.06, lat: 50.63, radius_m: 500 }],
+  coachGoal: { kind: 'race', race_date: '2026-12-06', race_distance_m: 30_000, race_gain_m: 1200, updated_at: '2026-11-10T09:00:00Z' },
 }
 
 describe('accountArchive', () => {
@@ -39,10 +41,12 @@ describe('accountArchive', () => {
   const file = (path: string) => archive.files.find(entry => entry.path === path)?.content
 
   it('holds a readme and one JSON file per kind of data', () => {
-    expect(archive.files.slice(0, 11).map(entry => entry.path)).toEqual([
+    expect(archive.files.slice(0, 13).map(entry => entry.path)).toEqual([
       'LISEZMOI.txt', 'profil.json', 'parcours.json', 'avis.json', 'activite.json', 'passages.json', 'collections.json', 'signalements.json',
-      'calculs.json', 'partage-position.json', 'reglages.json',
+      'calculs.json', 'partage-position.json', 'reglages.json', 'zones-de-confidentialite.json', 'objectif-coach.json',
     ])
+    expect(JSON.parse(file('zones-de-confidentialite.json')!)).toEqual(data.privacyZones)
+    expect(JSON.parse(file('objectif-coach.json')!)).toEqual(data.coachGoal)
     expect(JSON.parse(file('passages.json')!)).toEqual(data.outings)
     expect(JSON.parse(file('calculs.json')!)).toEqual(data.routingUsage)
     expect(JSON.parse(file('partage-position.json')!)).toEqual(data.liveShares)
@@ -57,7 +61,7 @@ describe('accountArchive', () => {
     const english = accountArchive(data, 'en')
     expect(english.files.map(entry => entry.path)).toEqual([
       'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'outings.json', 'collections.json', 'reports.json',
-      'routing.json', 'location-sharing.json', 'settings.json',
+      'routing.json', 'location-sharing.json', 'settings.json', 'privacy-zones.json', 'coach-goal.json',
       'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
     ])
     const readme = english.files[0]!.content

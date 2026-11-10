@@ -7,6 +7,8 @@ import type { Flyover } from '~/composables/useFlyover'
 const props = defineProps<{
   coordinates: LngLat[]
   pois?: Poi[]
+  // Numbered steps rather than typed points (#233, the route page)
+  numberedPois?: boolean
   // Useful places from OpenStreetMap (#52), shown unless the member turned them off in the "Calques" panel
   osmPlaces?: OsmPlace[]
   // line-gradient colouring the track (slopes, surface or difficulty), null for the plain route colour
@@ -51,5 +53,5 @@ watch(() => props.hoverPoint, (point) => {
     </template>
   </MapView>
   <MapOsmPlaces v-if="map && showOsmPlaces && osmPlaces?.length" :map="map" :places="osmPlaces" />
-  <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" />
+  <MapPoiMarkers v-if="map && pois?.length" :map="map" :pois="pois" :numbered="numberedPois" />
 </template>

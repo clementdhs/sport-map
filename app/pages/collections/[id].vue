@@ -212,7 +212,7 @@ useSeoMeta({
       </UModal>
     </div>
 
-    <ul v-if="routes.length" class="space-y-2" :aria-label="t(todo ? 'todo.routesLabel' : 'collection.routesLabel')">
+    <ul v-if="routes.length" class="space-y-3.5 pt-1" :aria-label="t(todo ? 'todo.routesLabel' : 'collection.routesLabel')">
       <li
         v-for="item in routes"
         :key="item.id"

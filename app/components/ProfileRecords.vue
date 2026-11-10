@@ -33,6 +33,8 @@ const bySport = computed(() => {
 })
 
 const label = (record: PersonalRecord) => t(recordLabelKey(record))
+const now = new Date()
+const recent = (record: PersonalRecord) => isRecentRecord(record.outing.completed_at, now)
 
 function value(record: PersonalRecord): string {
   if (record.metric === 'distance' || record.metric === 'hour') return formatDistance(record.value)
@@ -59,22 +61,22 @@ function link(outing: RecordOuting): string {
 <template>
   <section class="space-y-3" data-testid="records" aria-labelledby="records-title">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <h2 id="records-title" class="text-base font-semibold">{{ t('records.title') }}</h2>
+      <h2 id="records-title" class="font-display text-2xl font-bold">{{ t('records.title') }}</h2>
       <USelect v-model="year" :items="yearItems" :aria-label="t('records.year')" class="w-40" />
     </div>
 
     <p v-if="!records.length" class="text-sm text-muted">{{ t('records.empty') }}</p>
 
     <template v-else>
-      <ul class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <ul class="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 xl:grid-cols-4">
         <li v-for="record in overall" :key="record.key">
-          <ProfileRecordTile :label="label(record)" :value="value(record)" :to="link(record.outing)" :outing="record.outing" />
+          <ProfileRecordTile :label="label(record)" :value="value(record)" :to="link(record.outing)" :outing="record.outing" :recent="recent(record)" />
         </li>
       </ul>
 
       <div v-for="group in bySport" :key="group.sport" class="space-y-2">
-        <h3 class="text-sm font-medium">{{ t('records.bestTimes', { sport: t(`sports.${group.sport}`) }) }}</h3>
-        <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <h3 class="text-sm font-semibold">{{ t('records.bestTimes', { sport: t(`sports.${group.sport}`) }) }}</h3>
+        <ul class="grid grid-cols-2 gap-x-2 gap-y-3 sm:grid-cols-3 xl:grid-cols-4">
           <li v-for="record in group.records" :key="record.key">
             <ProfileRecordTile
               :label="label(record)"
@@ -82,6 +84,7 @@ function link(outing: RecordOuting): string {
               :detail="detail(record)"
               :to="link(record.outing)"
               :outing="record.outing"
+              :recent="recent(record)"
             />
           </li>
         </ul>

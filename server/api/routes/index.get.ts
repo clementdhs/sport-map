@@ -30,11 +30,20 @@ export default defineEventHandler(async (event): Promise<RouteSummary[]> => {
     console.error('[GET /api/routes]', error)
     throw apiError(event, 500, 'api.searchFailed')
   }
-  return (data as SearchRow[]).map(({ marker_lng, marker_lat, thumbnail, owner_avatar_path, ...route }) => ({
-    ...route,
-    // Null for owners without a photo, whatever the generated type says.
-    owner_avatar_path: owner_avatar_path ?? null,
-    thumbnail: thumbnailPath(thumbnail),
-    marker: [marker_lng, marker_lat],
-  }))
+  const rows = data as SearchRow[]
+  // The caller's own routes cut by privacy zones show their full figures (#254: RLS only gives theirs); the
+  // marker stays the visible start, as the search found it.
+  const originals = await routeOriginalFigures(supabase, rows.map(row => row.id))
+  return rows.map(({ marker_lng, marker_lat, thumbnail, owner_avatar_path, quote, ...route }) => {
+    const original = originals.get(route.id)
+    return {
+      ...route,
+      quote: toRouteQuote(quote),
+      // Null for owners without a photo, whatever the generated type says.
+      owner_avatar_path: owner_avatar_path ?? null,
+      thumbnail: thumbnailPath(original?.thumbnail ?? thumbnail),
+      marker: [marker_lng, marker_lat],
+      ...(original && { distance_m: original.distance_m, elevation_gain_m: original.elevation_gain_m }),
+    }
+  })
 })

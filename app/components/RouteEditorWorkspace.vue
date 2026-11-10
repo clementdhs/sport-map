@@ -3,6 +3,7 @@ import type { LngLat } from '#shared/utils/routes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 import type { CreateMode } from '~/utils/createMode'
 import type { SheetSnap } from '~/components/MapSheetLayout.vue'
+import type { KeyFigure } from '~/utils/keyFigures'
 
 const { formatDistance } = useFormat()
 
@@ -25,8 +26,8 @@ const route = useRoute()
 const router = useRouter()
 const mode = computed<CreateMode>(() => loop.open ? 'loop' : 'manual')
 const modeItems = computed(() => [
-  { label: t('editor.modes.loop'), value: 'loop', icon: 'i-lucide-wand-sparkles' },
-  { label: t('editor.modes.manual'), value: 'manual', icon: 'i-lucide-pencil' },
+  { label: t('editor.modes.loop'), value: 'loop' },
+  { label: t('editor.modes.manual'), value: 'manual' },
 ])
 
 function setMode(value: string | number) {
@@ -51,6 +52,8 @@ watch(mode, (value) => {
 
 // The next click on the map places the start: said once, over the map, which a full sheet would hide on a phone.
 const placingStart = computed(() => loop.open ? loop.placingStart : !editor.waypoints.length)
+// A loop's start already placed is moved, and the move can be cancelled.
+const movingStart = computed(() => loop.open && !!loop.start)
 const snap = ref<SheetSnap>('half')
 watch(placingStart, (placing) => {
   if (placing && snap.value === 'full') snap.value = 'half'
@@ -85,7 +88,25 @@ const defaultSport = usePreference('defaultSport')
 watch(defaultSport, sport => editor.preselectSport(sport), { immediate: true })
 
 const sportLabel = computed(() => t(`sports.${editor.details.sport_type}`))
-const sportItems = useSportItems()
+const sportChips = useSportChips()
+
+// D+, D− and the duration in the route page's cartouche (#233, #234), the duration on the yellow.
+const estimateDuration = useDurationEstimate()
+const durationMethod = useDurationMethod(() => editor.details.sport_type, () => editor.elevation?.gain ?? null)
+const figures = computed<KeyFigure[]>(() => {
+  const metres = (value: number | undefined) => value === undefined ? '—' : String(Math.round(value))
+  const unit = editor.elevation ? 'm' : undefined
+  return [
+    { label: t('route.gain'), value: metres(editor.elevation?.gain), unit },
+    { label: t('route.loss'), value: metres(editor.elevation?.loss), unit },
+    {
+      label: t('duration.estimated'),
+      value: editor.distanceM > 0 ? formatDuration(estimateDuration(editor.details.sport_type, editor.distanceM, editor.elevation?.gain ?? null)) : '—',
+      highlight: editor.distanceM > 0,
+      hint: durationMethod.value,
+    },
+  ]
+})
 const poiItems = computed(() => POI_TYPES.map(value => ({ value, label: t(`pois.${value}`), icon: POI_ICONS[value] })))
 
 const gpxInput = useTemplateRef('gpxInput')
@@ -206,15 +227,17 @@ async function onSubmit() {
     <!-- The live region stays in the page, so screen readers announce the instruction when it appears. -->
     <template #overlay>
       <div role="status">
-        <div v-if="placingStart" class="flex items-center gap-2 rounded-md bg-default py-1.5 ps-3 pe-1.5 text-sm shadow-lg ring ring-default">
-          <UIcon name="i-lucide-mouse-pointer-click" class="size-4 shrink-0 text-primary" />
-          <span :class="{ 'py-1 pe-1.5': !(loop.open && loop.start) }">{{ t('loop.placeStart') }}</span>
+        <!-- On the ink (#234): it reads on any part of the map, light or dark. -->
+        <div v-if="placingStart" class="flex items-center gap-2 rounded-md bg-inverted py-1.5 ps-3.5 pe-1.5 text-sm font-medium text-inverted shadow-lg">
+          <UIcon name="i-lucide-mouse-pointer-click" class="size-4 shrink-0" />
+          <span :class="{ 'py-1 pe-2': !movingStart }">{{ movingStart ? t('loop.moveStart') : t('loop.placeStart') }}</span>
           <UButton
-            v-if="loop.open && loop.start"
+            v-if="movingStart"
             :label="t('common.cancel')"
             size="sm"
             color="neutral"
-            variant="ghost"
+            variant="outline"
+            class="bg-transparent text-inverted ring-current/40 hover:bg-transparent hover:ring-current active:bg-transparent"
             @click="loop.placingStart = false"
           />
         </div>
@@ -225,11 +248,18 @@ async function onSubmit() {
       {{ loop.open ? t('loop.title') : editor.waypoints.length >= 2 ? formatDistance(editor.distanceM) : editor.details.name.trim() || t('editor.newRoute') }}
     </template>
 
+    <!-- A segmented control on the paper, the current mode on the surface (#234). -->
     <UTabs
       :model-value="mode"
       :items="modeItems"
       :content="false"
+      color="neutral"
       class="w-full"
+      :ui="{
+        list: 'rounded-md bg-elevated p-1',
+        indicator: 'rounded-[9px] bg-default shadow-sm',
+        trigger: 'h-9 text-[0.9375rem] text-muted data-[state=active]:font-semibold data-[state=active]:text-highlighted',
+      }"
       @update:model-value="setMode"
     />
 
@@ -237,16 +267,15 @@ async function onSubmit() {
 
     <template v-else>
       <!-- The sport comes first: it decides how the segments are routed. -->
-      <div class="flex items-center gap-2">
-        <USelect
-          v-model="editor.details.sport_type"
-          :items="sportItems"
-          :icon="SPORT_ICONS[editor.details.sport_type]"
-          :ui="{ leadingIcon: `sport-${editor.details.sport_type} text-(--sport)` }"
-          :aria-label="t('filters.sport')"
+      <SportChips v-model="editor.details.sport_type" :items="sportChips" :label="t('filters.sport')" />
+      <div class="flex items-start gap-3">
+        <USwitch
+          v-model="editor.snapToPaths"
+          :label="t('editor.snap')"
+          :description="editor.snapToPaths ? t('editor.snapOn', { sport: sportLabel }) : t('editor.snapOff')"
           class="min-w-0 flex-1"
         />
-        <div class="flex gap-2">
+        <div class="flex shrink-0 gap-2">
           <UTooltip :text="t('editor.undo')">
             <UButton
               icon="i-lucide-undo-2"
@@ -290,11 +319,6 @@ async function onSubmit() {
           </UPopover>
         </div>
       </div>
-      <USwitch
-        v-model="editor.snapToPaths"
-        :label="t('editor.snap')"
-        :description="editor.snapToPaths ? t('editor.snapOn', { sport: sportLabel }) : t('editor.snapOff')"
-      />
       <UAlert
         v-if="editor.outdatedSegmentCount"
         color="info"
@@ -313,28 +337,15 @@ async function onSubmit() {
         orientation="vertical"
       />
 
-      <div class="grid grid-cols-3 gap-3">
-        <div class="col-span-3">
-          <p class="flex items-center gap-2 text-sm text-muted">
+      <div class="space-y-2">
+        <div>
+          <p class="flex items-center gap-2 text-[0.6875rem] font-bold tracking-wider text-muted uppercase">
             {{ t('route.distance') }}
             <UIcon v-if="editor.isRouting" name="i-lucide-loader-circle" class="size-4 animate-spin" :aria-label="t('editor.routing')" />
           </p>
-          <p class="font-numbers text-3xl font-semibold tabular-nums">{{ formatDistance(editor.distanceM) }}</p>
+          <p class="font-numbers text-3xl font-semibold text-highlighted tabular-nums">{{ formatDistance(editor.distanceM) }}</p>
         </div>
-        <div>
-          <p class="text-sm text-muted">{{ t('route.gain') }}</p>
-          <p class="font-numbers text-xl font-semibold tabular-nums">{{ editor.elevation ? `${Math.round(editor.elevation.gain)} m` : '—' }}</p>
-        </div>
-        <div>
-          <p class="text-sm text-muted">{{ t('route.loss') }}</p>
-          <p class="font-numbers text-xl font-semibold tabular-nums">{{ editor.elevation ? `${Math.round(editor.elevation.loss)} m` : '—' }}</p>
-        </div>
-        <DurationEstimate
-          v-if="editor.distanceM > 0"
-          :sport="editor.details.sport_type"
-          :distance-m="editor.distanceM"
-          :elevation-gain-m="editor.elevation?.gain ?? null"
-        />
+        <KeyFigures :figures="figures" />
       </div>
 
       <ElevationProfile
@@ -356,6 +367,7 @@ async function onSubmit() {
           color="neutral"
           variant="outline"
           block
+          class="ring-[1.5px] ring-(--ui-border-inverted)"
           :loading="locating"
           @click="locate(startHere)"
         />
@@ -365,6 +377,7 @@ async function onSubmit() {
           color="neutral"
           variant="outline"
           block
+          class="ring-[1.5px] ring-(--ui-border-inverted)"
           @click="openDiscover()"
         />
       </template>
@@ -398,6 +411,7 @@ async function onSubmit() {
           color="neutral"
           variant="outline"
           block
+          class="ring-[1.5px] ring-(--ui-border-inverted) disabled:ring-accented"
           :disabled="!editor.canFinish"
           @click="editor.returnToStart()"
         />
@@ -407,6 +421,7 @@ async function onSubmit() {
           color="neutral"
           variant="outline"
           block
+          class="ring-[1.5px] ring-(--ui-border-inverted) disabled:ring-accented"
           :disabled="!editor.canFinish"
           @click="editor.outAndBack()"
         />
@@ -416,7 +431,7 @@ async function onSubmit() {
       </p>
       <section v-if="editor.track.coordinates.length >= 2" class="space-y-3" aria-labelledby="pois-title">
         <div class="flex items-center justify-between gap-2">
-          <h2 id="pois-title" class="text-base font-semibold">{{ t('route.pois') }}</h2>
+          <h2 id="pois-title" class="text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('route.pois') }}</h2>
           <UButton
             v-if="!editor.placingPoi"
             icon="i-lucide-map-pin-plus"

@@ -10,11 +10,11 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   if (!user) throw apiError(event, 401, 'api.signInRequired')
   const supabase = await serverSupabaseClient(event)
 
-  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences] = await Promise.all([
+  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal] = await Promise.all([
     supabase.from('profiles').select('username, display_name, bio, created_at, avatar_path').eq('id', user.sub).single(),
     supabase
       .from('routes')
-      .select('id, name, description, sport_type, is_public, source, distance_m, elevation_gain_m, elevation_loss_m, elevation_profile, pois, created_at, updated_at, geometry:route_geojson')
+      .select(`id, name, description, sport_type, is_public, source, distance_m, elevation_gain_m, elevation_loss_m, elevation_profile, pois, created_at, updated_at, geometry:route_geojson, ${ORIGINAL_COLUMNS}`)
       .eq('owner_id', user.sub)
       .order('created_at'),
     supabase
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .order('created_at'),
     supabase
       .from('route_outings')
-      .select('route_id, started_at, duration_s, moving_s, distance_m, track, created_at, route:routes(name)')
+      .select('route_id, started_at, duration_s, moving_s, distance_m, feeling, track, created_at, route:routes(name), original:outing_originals(track)')
       .eq('user_id', user.sub)
       .order('started_at'),
     supabase
@@ -45,8 +45,10 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .eq('user_id', user.sub)
       .order('fixed_at', { referencedTable: 'live_positions' }),
     supabase.from('user_preferences').select('preferences, updated_at').eq('user_id', user.sub).maybeSingle(),
+    supabase.from('privacy_zones').select('label, lng, lat, radius_m, mask_lng, mask_lat, created_at').eq('owner_id', user.sub).order('created_at'),
+    supabase.from('coach_goals').select('kind, race_date, race_distance_m, race_gain_m, updated_at').eq('user_id', user.sub).maybeSingle(),
   ])
-  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences].find(result => result.error)
+  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
     throw apiError(event, 500, 'api.exportFailed')
@@ -68,22 +70,29 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   const archive = accountArchive({
     exportedAt: new Date().toISOString(),
     profile: { ...profileData, email: user.email ?? null },
-    routes: routes.data.map(route => ({
-      ...route,
-      elevation_profile: route.elevation_profile as number[] | null,
-      pois: route.pois as Poi[],
-      geometry: route.geometry as unknown as LineString,
-    })),
+    // Full tracks, also of routes the team sees cut by privacy zones (#254).
+    routes: routes.data.map(({ original, ...stored }) => {
+      const { editor_state: _editorState, way_info: _wayInfo, ...full } = original ?? {}
+      const route = { ...stored, ...full }
+      return {
+        ...route,
+        elevation_profile: route.elevation_profile as number[] | null,
+        pois: route.pois as Poi[],
+        geometry: route.geometry as unknown as LineString,
+      }
+    }),
     photos: photos.data,
     avatar: avatar_path,
     reviews: reviews.data!,
     activity: activity.data!,
-    outings: outings.data!,
+    outings: outings.data!.map(({ original, ...outing }) => ({ ...outing, track: original?.track ?? outing.track })),
     collections: collections.data!,
     reports: reports.data!,
     routingUsage: routingUsage.data!,
     liveShares: liveShares.data!,
     preferences: preferences.data,
+    privacyZones: privacyZones.data!,
+    coachGoal: coachGoal.data,
   }, getRequestLocale(event))
 
   // Signed with the caller's session: storage policies let owners read their route photos, and members the

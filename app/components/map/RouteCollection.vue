@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { FeatureCollection, LineString } from 'geojson'
-import type { GeoJSONSource, Map, MapLayerMouseEvent, Popup } from 'maplibre-gl'
+import type { ExpressionSpecification, GeoJSONSource, Map, MapLayerMouseEvent, Popup } from 'maplibre-gl'
 import type { CollectionDetail } from '#shared/types/routes'
 import type { LngLat } from '#shared/utils/routes'
 
@@ -18,6 +18,8 @@ const SOURCE = 'collection-routes'
 const LAYER = 'collection-routes'
 // Wider and invisible: easier to hover or tap than a 4 px line.
 const HIT_LAYER = 'collection-routes-hit'
+
+const HIGHLIGHTED: ExpressionSpecification = ['boolean', ['feature-state', 'highlighted'], false]
 
 const map = shallowRef<Map>()
 let popup: Popup | undefined
@@ -49,7 +51,7 @@ async function onLoad(instance: Map) {
     type: 'line',
     source: SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': ['case', ['boolean', ['feature-state', 'highlighted'], false], 9, 6] },
+    paint: { 'line-color': mapColor(instance, 'casing'), 'line-width': ['case', HIGHLIGHTED, 9, 6] },
   })
   instance.addLayer({
     id: LAYER,
@@ -57,8 +59,8 @@ async function onLoad(instance: Map) {
     source: SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: {
-      'line-color': ROUTE_COLOR,
-      'line-width': ['case', ['boolean', ['feature-state', 'highlighted'], false], 6, 3],
+      'line-color': mapColor(instance, 'track'),
+      'line-width': ['case', HIGHLIGHTED, 6, 3],
     },
   })
   instance.addLayer({
@@ -87,6 +89,13 @@ async function onLoad(instance: Map) {
   })
 
   map.value = instance
+  fadeOthers(props.highlightedId)
+}
+
+// While one route is highlighted, the others fade (#230), so it reads where tracks cross.
+function fadeOthers(id: string | null) {
+  const opacity = id ? ['case', HIGHLIGHTED, 1, 0.5] as ExpressionSpecification : 1
+  for (const layer of [`${LAYER}-casing`, LAYER]) map.value?.setPaintProperty(layer, 'line-opacity', opacity)
 }
 
 watch(() => props.routes, (routes) => {
@@ -97,6 +106,7 @@ watch(() => props.highlightedId, (id, previousId) => {
   if (!map.value) return
   if (previousId) map.value.setFeatureState({ source: SOURCE, id: previousId }, { highlighted: false })
   if (id) map.value.setFeatureState({ source: SOURCE, id }, { highlighted: true })
+  fadeOthers(id)
 })
 </script>
 

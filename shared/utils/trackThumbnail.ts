@@ -3,6 +3,8 @@
 // the lists return (track_thumbnail in SQL), so the client receives a short string instead of coordinates.
 
 export const THUMBNAIL_SIZE = 100
+// Outlines a collection shows in the profile's mosaic (#236)
+export const COLLECTION_COVERS = 4
 // Room left around the track for the stroke and the start dot
 const THUMBNAIL_PADDING = 10
 

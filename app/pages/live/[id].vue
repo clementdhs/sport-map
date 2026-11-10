@@ -74,11 +74,7 @@ const follow = ref(false)
       <!-- Right padding: the map controls stay reachable. -->
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pr-14">
         <div class="pointer-events-auto flex items-center gap-2">
-          <UButton to="/live" icon="i-lucide-arrow-left" :label="t('live.title')" color="neutral" variant="solid" class="shadow-md" />
-          <p v-if="share" class="flex min-w-0 items-center gap-1.5 rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md">
-            <MemberAvatar :name="share.user_name" :path="share.user_avatar_path" size="2xs" />
-            <span class="truncate">{{ share.user_name }}</span>
-          </p>
+          <UButton to="/live" icon="i-lucide-arrow-left" :label="t('live.title')" color="neutral" variant="ghost" class="map-float h-10 font-semibold" />
         </div>
       </div>
 
@@ -88,23 +84,27 @@ const follow = ref(false)
         :label="t('live.centerOn')"
         color="neutral"
         variant="solid"
-        class="absolute right-3 bottom-10 shadow-md"
+        class="absolute right-3 bottom-9 shadow-md"
         @click="follow = true"
       />
     </div>
 
-    <div class="shrink-0 space-y-2 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
+    <!-- The paper of the map sheets (#231), with a shadow upwards; not over the map, whose attribution and scale stay in view. -->
+    <div class="relative z-10 shrink-0 space-y-2 border-t border-default bg-paper p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-6px_20px_rgb(29_37_32/0.12)]" aria-live="polite">
       <template v-if="share">
-        <div class="flex items-center gap-2">
-          <UIcon v-if="!ended" name="i-lucide-radio" class="size-5 shrink-0 animate-pulse text-primary" />
-          <h1 class="font-semibold">
-            {{ share.is_mine ? t('live.myOuting') : t('live.outingOf', { name: share.user_name }) }}
-          </h1>
+        <div class="flex items-center gap-3">
+          <MemberAvatar :name="share.user_name" :path="share.user_avatar_path" size="xl" />
+          <div class="min-w-0 flex-1">
+            <h1 class="flex items-center gap-2 text-2xl leading-tight font-bold">
+              <span v-if="!ended" class="size-2.5 shrink-0 animate-pulse rounded-full bg-(--gps) shadow-[0_0_0_4px_color-mix(in_srgb,var(--gps)_20%,transparent)]" :style="{ '--gps': GPS_COLOR }" aria-hidden="true" />
+              <span class="truncate">{{ share.is_mine ? t('live.myOuting') : t('live.outingOf', { name: share.user_name }) }}</span>
+            </h1>
+            <p class="truncate text-sm">
+              <ULink v-if="share.route" :to="`/routes/${share.route.id}`" class="font-semibold text-primary">{{ share.route.name }}</ULink>
+              <template v-else>{{ share.follows_route ? t('live.privateRoute') : t('live.freeOuting') }}</template>
+            </p>
+          </div>
         </div>
-        <p class="text-sm">
-          <ULink v-if="share.route" :to="`/routes/${share.route.id}`" class="font-medium text-primary">{{ share.route.name }}</ULink>
-          <template v-else>{{ share.follows_route ? t('live.privateRoute') : t('live.freeOuting') }}</template>
-        </p>
         <LiveLastPosition :last-fixed-at="last?.fixed_at ?? null" :now="now" />
         <p class="text-xs text-muted">{{ t('live.since', { time: formatTime(share.started_at) }) }}</p>
       </template>

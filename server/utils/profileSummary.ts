@@ -8,6 +8,7 @@ import type { ProfileSummary } from '#shared/types/routes'
 // routes, hence the service role; only the three totals leave the server. Like the member's own statistics, an
 // outing on a route that another owner has since made private no longer counts.
 export async function memberYearSummary(event: H3Event, userId: string): Promise<ProfileSummary | null> {
+  await requireMfa(event)
   const supabase = serverSupabaseServiceRole<Database>(event)
   const columns = 'route:routes(sport_type, distance_m, elevation_gain_m, is_public, owner_id)'
   const [recorded, done] = await Promise.all([

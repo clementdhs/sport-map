@@ -15,6 +15,8 @@ const props = defineProps<{
   osmPlaces?: OsmPlace[]
   // The data screen covers the map: it then stays still, and catches up when shown again (#182).
   covered?: boolean
+  // Follow mode (#235): share of the route's length already covered, drawn in a stronger rust
+  doneFraction?: number | null
 }>()
 
 // Keep the position centered (and, heading up, the map turned): a gesture on the map turns it off, the page's
@@ -63,6 +65,7 @@ const isCompassButton = (target: EventTarget | null) => target instanceof Elemen
 function onLoad(instance: Map) {
   addRouteLayers(instance, layerData(props.coordinates))
 
+  drawDone(instance)
   setGps = addGpsLayers(instance)
   if (props.fix) showFix(props.fix, Date.now())
   // Only gestures (originalEvent) stop the following, not the map's own easing.
@@ -178,10 +181,22 @@ watch(() => props.coordinates, () => {
 })
 onBeforeUnmount(() => clearTimeout(trackTimer))
 
+// The covered part only changes a paint property, still not while out of sight; at most every thousandth of the
+// route (21 m on 21 km), not at every fix.
+let doneDrawn = 0
+function drawDone(instance: Map) {
+  const fraction = props.doneFraction ?? 0
+  if (!visible.value || Math.abs(fraction - doneDrawn) < 0.001) return
+  doneDrawn = fraction
+  setRouteDone(instance, fraction)
+}
+watch(() => props.doneFraction, () => map.value && drawDone(map.value))
+
 // Back in sight: the track, the arrow and the camera catch up, straight to the right bearing.
 watch(visible, (on) => {
   if (!on || !map.value) return
   if (trackStale) drawTrack()
+  drawDone(map.value)
   const now = Date.now()
   showDirection(props.fix, now)
   aimed = null
@@ -227,7 +242,7 @@ async function toggleOrientation() {
       :aria-pressed="orientation === 'heading'"
       @click="toggleOrientation"
     >
-      <UIcon name="i-lucide-navigation" class="size-4" />
+      <UIcon name="i-lucide-navigation" class="size-5" />
     </button>
   </Teleport>
 </template>

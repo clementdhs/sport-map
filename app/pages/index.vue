@@ -27,12 +27,15 @@ const scope = computed({
   set: (value: SearchScope) => search.setScope(value),
 })
 const scopeItems = computed(() => SEARCH_SCOPES.map(value => ({ value, label: t(`home.scope.${value satisfies SearchScope}`) })))
-// The member's default sport (#148) as a quick filter, which they turn on or off: never applied by itself.
+// Sport chips (#232), the member's default sport (#148) first: a quick filter they turn on or off, never applied
+// by itself.
 const defaultSport = usePreference('defaultSport')
-const sportFilterOn = computed(() => !!defaultSport.value && search.sport === defaultSport.value)
-function toggleSportFilter() {
-  if (defaultSport.value) search.sport = sportFilterOn.value ? 'all' : defaultSport.value
-}
+const sportChips = computed(() => [
+  { value: 'all' as const, label: t('sportChips.all') },
+  ...[...SPORT_TYPES]
+    .sort((a, b) => Number(b === defaultSport.value) - Number(a === defaultSport.value))
+    .map(sport => ({ value: sport, label: t(`sportChips.${sport}`), sport })),
+])
 const sortItems = computed(() => SEARCH_SORTS.map(value => ({ value, label: t(`sorts.${value}`) })))
 
 // The search returns at most MAX_SEARCH_RESULTS routes, picked by the selected sort (home.limit.<sort>).
@@ -93,9 +96,10 @@ watch(() => search.results, (results) => {
     </template>
 
     <template #title>
-      <span class="flex items-center gap-2">
+      <span class="flex items-center gap-2.5 text-xs font-bold tracking-widest text-muted uppercase">
         <span class="truncate">{{ statusLabel }}</span>
-        <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 shrink-0 animate-spin text-muted" aria-hidden="true" />
+        <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 shrink-0 animate-spin" aria-hidden="true" />
+        <span class="h-px min-w-4 flex-1 bg-(--ui-border-accented)" aria-hidden="true" />
       </span>
     </template>
 
@@ -104,19 +108,10 @@ watch(() => search.results, (results) => {
 
     <UTabs v-model="scope" :items="scopeItems" :content="false" size="sm" :aria-label="t('home.scope.label')" />
 
+    <SportChips v-model="search.sport" :items="sportChips" :label="t('sportChips.label')" toggle="all" />
+
     <div class="flex gap-2">
       <SearchFilters />
-      <UButton
-        v-if="defaultSport"
-        :icon="SPORT_ICONS[defaultSport]"
-        :label="t(`sports.${defaultSport}`)"
-        :color="sportFilterOn ? 'primary' : 'neutral'"
-        :variant="sportFilterOn ? 'soft' : 'outline'"
-        :aria-pressed="sportFilterOn"
-        :ui="{ leadingIcon: `sport-${defaultSport} text-(--sport)` }"
-        class="min-w-0 shrink"
-        @click="toggleSportFilter"
-      />
       <USelect
         v-model="search.sort"
         :items="sortItems"
@@ -131,19 +126,19 @@ watch(() => search.results, (results) => {
     </ULink>
 
     <!-- Shown by the sheet title on mobile, still read out from here. -->
-    <p class="flex items-center gap-2 text-sm text-muted max-md:sr-only" aria-live="polite">
+    <p class="flex items-center gap-2 font-display text-3xl leading-none font-bold text-highlighted max-md:sr-only" aria-live="polite">
       {{ statusLabel }}
-      <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-4 animate-spin" :aria-label="t('home.loading')" />
+      <UIcon v-if="search.loading" name="i-lucide-loader-circle" class="size-5 animate-spin text-muted" :aria-label="t('home.loading')" />
     </p>
 
     <!-- Placeholders only for the first search; later ones keep the previous results or hint, dimmed,
          so the list doesn't jump at each map move. -->
-    <ul v-if="!search.searched" class="space-y-2" aria-hidden="true">
+    <ul v-if="!search.searched" class="space-y-3.5" aria-hidden="true">
       <li v-for="i in 3" :key="i">
         <RouteCardSkeleton />
       </li>
     </ul>
-    <ul v-else-if="search.results.length" class="space-y-2" :class="{ 'opacity-60': search.loading }" data-testid="route-results">
+    <ul v-else-if="search.results.length" class="space-y-3.5 pt-1" :class="{ 'opacity-60': search.loading }" data-testid="route-results">
       <li
         v-for="route in search.results"
         :key="route.id"

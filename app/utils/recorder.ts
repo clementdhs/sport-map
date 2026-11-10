@@ -9,11 +9,11 @@ import { resampleTrack } from '~/utils/gpx'
 // Fixes less accurate than this are ignored (indoors, under dense cover, first seconds after start).
 export const MAX_ACCURACY_M = 35
 // Moves shorter than this (or than half the fix's accuracy) are GPS jitter, not progress.
-const MIN_STEP_M = 5
+export const MIN_STEP_M = 5
 // Faster than this is a GPS jump, not a move (160 km/h).
-const MAX_SPEED_MS = 45
+export const MAX_SPEED_MS = 45
 // Slower than this between two fixes is standing still (1 km/h).
-const MIN_MOVING_SPEED_MS = 0.3
+export const MIN_MOVING_SPEED_MS = 0.3
 // No fix for this long: the screen was probably off, the track has a straight gap.
 export const GAP_MS = 60_000
 

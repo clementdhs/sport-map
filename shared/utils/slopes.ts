@@ -92,8 +92,9 @@ export function steepestGrade({ grades }: SlopeProfile): number {
 }
 
 // Climbs along the track, in order: each starts at a low point and goes on until the elevation falls more than
-// CLIMB_TOLERANCE_M below its highest point. Only those gaining at least minGainM.
-export function climbs(coordinates: LngLat[], elevations: number[], along: number[], minGainM = MIN_CLIMB_GAIN_M): Climb[] {
+// CLIMB_TOLERANCE_M (or toleranceM: the coach's short hill repeats gain less than that) below its highest point.
+// Only those gaining at least minGainM.
+export function climbs(coordinates: LngLat[], elevations: number[], along: number[], minGainM = MIN_CLIMB_GAIN_M, toleranceM = CLIMB_TOLERANCE_M): Climb[] {
   const smoothed = smoothByDistance(coordinates, elevations)
   const found: Climb[] = []
   let start = 0
@@ -107,7 +108,7 @@ export function climbs(coordinates: LngLat[], elevations: number[], along: numbe
   }
   for (let i = 1; i < smoothed.length; i++) {
     if (smoothed[i]! > smoothed[top]!) top = i
-    else if (smoothed[top]! - smoothed[i]! > CLIMB_TOLERANCE_M) {
+    else if (smoothed[top]! - smoothed[i]! > toleranceM) {
       close()
       start = i
       top = i

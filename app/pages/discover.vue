@@ -39,11 +39,17 @@ onMounted(() => {
 onBeforeUnmount(() => discover.stopElevations())
 
 const kindItems = computed(() => OSM_ROUTE_KINDS.map(value =>
-  ({ value, label: t(`discover.kinds.${value}`), icon: SPORT_ICONS[OSM_KIND_SPORTS[value]] })))
+  ({ value, label: t(`discover.kinds.${value}`), sport: OSM_KIND_SPORTS[value] })))
 const kind = computed({
   get: () => discover.kind,
   set: (value: OsmRouteKind) => discover.setKind(value),
 })
+
+// "Vous êtes ici" (#232): the member's start area, while the map's centre is in it; the list is then "near you".
+// A place picked in the search box is only where the map looks, not where the member is: no plate there.
+const startArea = usePreference('startArea')
+const herePlace = computed(() => placeAt(discover.view.center, [startArea.value]))
+const listTitle = computed(() => t(herePlace.value ? 'discover.nearby' : 'discover.inView'))
 
 const label = (route: OsmRoute) => route.name ?? route.ref ?? t('discover.unnamed')
 const scopeOf = (route: OsmRoute) => osmRouteScope(route.network)
@@ -162,18 +168,25 @@ async function selectOnMap(id: number) {
 
     <template #title>
       <span v-if="sectionStore.route" class="truncate">{{ sectionTitle }}</span>
-      <span v-else class="flex items-center gap-2">
+      <span v-else class="flex items-center gap-2.5 text-xs font-bold tracking-widest text-muted uppercase">
         <span class="truncate">{{ statusLabel }}</span>
-        <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 shrink-0 animate-spin text-muted" aria-hidden="true" />
+        <UIcon v-if="discover.loading" name="i-lucide-loader-circle" class="size-4 shrink-0 animate-spin" aria-hidden="true" />
+        <span class="h-px min-w-4 flex-1 bg-(--ui-border-accented)" aria-hidden="true" />
       </span>
     </template>
 
-    <h1 class="text-2xl font-semibold max-md:sr-only">{{ t('discover.title') }}</h1>
+    <header class="relative -mx-4 -mt-4 overflow-hidden px-4 pt-4 pb-1">
+      <ContourTexture />
+      <div class="relative space-y-2">
+        <HerePlate v-if="herePlace?.name" :place="herePlace.name" />
+        <h1 class="font-display text-3xl leading-none font-bold md:text-4xl">{{ t('discover.title') }}</h1>
+      </div>
+    </header>
 
     <OsmSectionPanel v-if="sectionStore.route" :name="label(sectionStore.route)" @import="importSection" />
 
     <template v-else>
-      <UTabs v-model="kind" :items="kindItems" :content="false" size="sm" :aria-label="t('discover.kind')" />
+      <SportChips v-model="kind" :items="kindItems" :label="t('discover.kind')" />
       <div>
         <OsmRouteFilters />
       </div>
@@ -212,11 +225,14 @@ async function selectOnMap(id: number) {
         :actions="[{ label: t('discover.retry'), color: 'neutral', variant: 'outline', onClick: () => discover.search() }]"
       />
 
-      <ul v-if="discover.shownRoutes.length" class="space-y-2" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
+      <h2 v-if="discover.shownRoutes.length" class="flex items-center gap-2.5 text-xs font-bold tracking-widest text-muted uppercase">
+        {{ listTitle }}<span class="h-px flex-1 bg-(--ui-border-accented)" aria-hidden="true" />
+      </h2>
+      <ul v-if="discover.shownRoutes.length" class="space-y-3" :class="{ 'opacity-60': discover.loading }" :aria-label="t('discover.results')">
         <li v-for="route in discover.shownRoutes" :id="`osm-route-${route.id}`" :key="route.id">
           <button
             type="button"
-            class="w-full rounded-md border p-3 text-left"
+            class="w-full rounded-lg border bg-default p-3 text-left transition-colors hover:border-accented"
             :class="shownId === route.id ? 'border-primary' : 'border-default'"
             :aria-pressed="discover.selectedId === route.id"
             @mouseenter="discover.highlightedId = route.id"
@@ -225,7 +241,11 @@ async function selectOnMap(id: number) {
             @blur="discover.highlightedId = null"
             @click="selectInList(route)"
           >
-            <span class="block font-medium">{{ label(route) }}</span>
+            <!-- The kind chosen above, for the eye: buttons are named after their route. -->
+            <span class="flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest text-(--sport-text) uppercase" :class="`sport-${OSM_KIND_SPORTS[discover.kind]}`" aria-hidden="true">
+              <SportMark :sport="OSM_KIND_SPORTS[discover.kind]" />{{ t(`discover.kinds.${discover.kind}`) }}
+            </span>
+            <span class="mt-1 block font-display text-xl leading-tight font-bold text-highlighted">{{ label(route) }}</span>
             <span class="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted">
               <span>{{ formatDistance(route.distance_m) }}</span>
               <span v-if="shapeOf(route) === 'linear'">· {{ t('discover.outAndBackDistance', { distance: formatDistance(2 * route.distance_m) }) }}</span>

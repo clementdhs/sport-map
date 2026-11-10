@@ -28,12 +28,6 @@ const SNAP_HEIGHTS: Record<SheetSnap, string> = {
 
 // Sheet position, which a page may change (the route page collapses it during a flyover).
 const snap = defineModel<SheetSnap>('snap', { default: 'half' })
-const index = computed(() => SNAPS.indexOf(snap.value))
-
-function move(step: 1 | -1) {
-  snap.value = SNAPS[Math.min(SNAPS.length - 1, Math.max(0, index.value + step))]!
-}
-
 // Below md the collapsed sheet hides its content: made inert so keyboard and screen reader users skip it.
 const MOBILE_QUERY = '(max-width: 767.98px)'
 const mobile = ref(false)
@@ -144,15 +138,20 @@ function onPointerMove(event: PointerEvent) {
   drag.lastTime = event.timeStamp
 }
 
+// A tap (no real move) or Enter / Space on the header opens a collapsed sheet and collapses an open one. The header has
+// no arrow buttons (#247): this and dragging are the only ways to move it.
+function toggle() {
+  snap.value = snap.value === 'collapsed' ? 'half' : 'collapsed'
+}
+
 function onPointerUp(event: PointerEvent) {
   if (!drag || event.pointerId !== drag.pointerId) return
   const { velocity, startY } = drag
   drag = null
   const height = dragHeight.value
   dragHeight.value = null
-  // A tap (no real move) opens a collapsed sheet and collapses an open one.
   if (height === null || Math.abs(event.clientY - startY) < 6) {
-    snap.value = snap.value === 'collapsed' ? 'half' : 'collapsed'
+    toggle()
     return
   }
   // A flick goes one position further in its direction; a slow drag stops at the nearest position.
@@ -214,7 +213,7 @@ const overlayHidden = computed(() => dragHeight.value === null
     <AppHeader v-if="!fullscreen" wide class="max-md:hidden" />
     <div
       ref="root"
-      class="relative flex min-h-0 flex-1 flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.25rem)] md:flex-row"
+      class="relative flex min-h-0 flex-1 flex-col [--sheet-peek:4rem] [--sheet-top:calc(max(0.75rem,env(safe-area-inset-top))+3.5rem)] md:flex-row"
       :style="{ '--sheet-height': sheetHeight, '--panel-width': `${panelWidth}px` }"
     >
       <div class="absolute inset-x-0 top-0 bottom-(--sheet-peek) md:relative md:min-h-0 md:flex-1">
@@ -234,7 +233,7 @@ const overlayHidden = computed(() => dragHeight.value === null
            The search slot goes under the bar, or beside it when the map is wide enough. -->
       <div
         ref="topArea"
-        class="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-12 left-3 z-10 flex flex-col items-start gap-2 *:pointer-events-auto md:right-auto lg:flex-row lg:items-center"
+        class="pointer-events-none absolute top-[max(0.75rem,env(safe-area-inset-top))] right-15 left-3 z-10 flex flex-col items-start gap-2 *:pointer-events-auto md:right-auto lg:flex-row lg:items-center"
       >
         <div ref="topBar">
           <MapTopBar :back="back" :header="!fullscreen" />
@@ -247,7 +246,7 @@ const overlayHidden = computed(() => dragHeight.value === null
       <!-- Collapsed side panel: its title stays over the map, left of MapLibre's controls, and reopens it. -->
       <div
         v-if="panel.collapsed"
-        class="absolute top-[max(0.75rem,env(safe-area-inset-top))] right-14 z-10 hidden max-w-xs items-center gap-1 rounded-lg border border-default bg-default py-1 pr-1 pl-3 shadow-md md:flex"
+        class="map-float absolute top-[max(0.75rem,env(safe-area-inset-top))] right-16 z-10 hidden max-w-xs items-center gap-1 rounded-md py-1 pr-1 pl-3 md:flex"
       >
         <div class="min-w-0 flex-1 truncate font-medium">
           <slot name="title" />
@@ -268,7 +267,7 @@ const overlayHidden = computed(() => dragHeight.value === null
            would spill onto the tab bar (#142). From md up the collapse tab overflows on purpose onto the map. -->
       <aside
         :id="panelId"
-        class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-xl border-t border-default bg-default shadow-lg md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-t-0 md:border-l md:shadow-none max-md:overflow-hidden"
+        class="absolute inset-x-0 bottom-0 z-10 flex h-(--sheet-height) flex-col rounded-t-[1.375rem] bg-paper shadow-[0_-4px_16px_rgb(29_37_32/0.15)] dark:shadow-[0_-4px_16px_rgb(0_0_0/0.5)] md:relative md:h-auto md:w-(--panel-width) md:shrink-0 md:rounded-none md:border-l md:border-accented md:shadow-none max-md:overflow-hidden"
         :class="{ 'transition-[height] duration-200 ease-out motion-reduce:transition-none': dragHeight === null, 'md:hidden': panel.collapsed }"
         :data-sheet="snap"
         :data-panel="panel.collapsed ? 'collapsed' : 'expanded'"
@@ -298,7 +297,8 @@ const overlayHidden = computed(() => dragHeight.value === null
           icon="i-lucide-chevron-right"
           color="neutral"
           variant="outline"
-          class="absolute top-1/2 right-full hidden h-12 -translate-y-1/2 rounded-r-none bg-default px-1 shadow-md ring-default md:flex"
+          class="absolute top-1/2 right-full hidden h-14 w-5 -translate-y-1/2 justify-center rounded-l-sm rounded-r-none bg-default p-0 text-muted shadow-sm ring-accented hover:text-highlighted md:flex"
+          :ui="{ leadingIcon: 'size-3.5' }"
           :aria-label="t('sheet.collapse')"
           aria-expanded="true"
           :aria-controls="panelId"
@@ -307,33 +307,20 @@ const overlayHidden = computed(() => dragHeight.value === null
 
         <div
           ref="header"
-          class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col px-4 select-none active:cursor-grabbing md:hidden"
+          role="button"
+          tabindex="0"
+          :aria-expanded="snap !== 'collapsed'"
+          class="flex h-(--sheet-peek) shrink-0 cursor-grab touch-none flex-col rounded-t-[inherit] px-4 outline-none select-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset active:cursor-grabbing md:hidden"
           @pointerdown="onPointerDown"
           @pointermove="onPointerMove"
           @pointerup="onPointerUp"
           @pointercancel="onPointerUp"
+          @keydown.enter.prevent="toggle"
+          @keydown.space.prevent="toggle"
         >
-          <div class="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-accented" aria-hidden="true" />
-          <div class="flex min-h-0 flex-1 items-center gap-2">
-            <div class="min-w-0 flex-1 truncate font-medium">
-              <slot name="title" />
-            </div>
-            <UButton
-              icon="i-lucide-chevron-down"
-              color="neutral"
-              variant="ghost"
-              :aria-label="t('sheet.collapse')"
-              :disabled="snap === 'collapsed'"
-              @click="move(-1)"
-            />
-            <UButton
-              icon="i-lucide-chevron-up"
-              color="neutral"
-              variant="ghost"
-              :aria-label="t('sheet.expand')"
-              :disabled="snap === 'full'"
-              @click="move(1)"
-            />
+          <div class="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-(--ui-border-accented)" aria-hidden="true" />
+          <div class="flex min-h-0 min-w-0 flex-1 items-center truncate font-medium">
+            <slot name="title" />
           </div>
         </div>
 

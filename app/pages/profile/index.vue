@@ -21,120 +21,125 @@ if (error.value) {
 // Same outings as the statistics tab: no extra request.
 const summary = computed(() => yearSummary(data.value?.outings ?? []))
 
-const { data: collections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
+const { data: collections, refresh: refreshCollections } = await useFetch<CollectionSummary[]>('/api/collections', { default: () => [] })
 
+// Statistics first (#236), then the member's routes (created and done) and their collections.
 const tabs = computed(() => [
-  { label: t('profile.tabs.created'), slot: 'created' as const, badge: data.value?.created.length ?? 0, icon: 'i-lucide-route' },
-  { label: t('profile.tabs.collections'), slot: 'collections' as const, badge: collections.value.length, icon: 'i-lucide-folder' },
-  { label: t('profile.tabs.completed'), slot: 'completed' as const, badge: data.value?.completed.length ?? 0, icon: 'i-lucide-flag' },
-  { label: t('profile.tabs.stats'), slot: 'stats' as const, icon: 'i-lucide-chart-column' },
+  { label: t('profile.tabs.stats'), value: 'stats', slot: 'stats' as const },
+  { label: t('profile.tabs.routes'), value: 'routes', slot: 'routes' as const },
+  { label: t('profile.tabs.collections'), value: 'collections', slot: 'collections' as const },
+])
+// The open tab is kept in the URL (?tab=routes), so that coming back from a route shows it again.
+const currentRoute = useRoute()
+const activeTab = computed({
+  get: () => tabs.value.find(tab => tab.value === currentRoute.query.tab)?.value ?? 'stats',
+  set: tab => navigateTo({ query: { ...currentRoute.query, tab: tab === 'stats' ? undefined : tab } }, { replace: true }),
+})
+const routeTabs = computed(() => [
+  { label: t('profile.tabs.created'), slot: 'created' as const, badge: data.value?.created.length ?? 0 },
+  { label: t('profile.tabs.completed'), slot: 'completed' as const, badge: data.value?.completed.length ?? 0 },
 ])
 </script>
 
 <template>
-  <UContainer v-if="data" class="max-w-3xl space-y-6 py-8">
-    <ProfileHeader :profile="data.profile" :summary="summary">
+  <UContainer v-if="data" class="max-w-3xl space-y-6 py-8 lg:max-w-6xl">
+    <ProfileHeader :profile="data.profile">
       <template #actions>
+        <!-- Outings recorded by a watch or another app (#268) -->
+        <OutingImportButton
+          icon="i-lucide-upload"
+          :label="t('outingImport.button')"
+          :aria-label="t('outingImport.button')"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          :ui="{ label: 'hidden sm:inline' }"
+        />
         <UButton
           :to="`/profile/${data.profile.username}`"
           icon="i-lucide-eye"
           color="neutral"
           variant="outline"
+          size="lg"
           :aria-label="t('profile.viewPublic')"
         />
-        <UButton to="/settings" icon="i-lucide-settings" :label="t('header.settings')" :aria-label="t('header.settings')" color="neutral" variant="outline" :ui="{ label: 'hidden sm:inline' }" />
+        <UButton
+          to="/settings"
+          icon="i-lucide-settings"
+          :label="t('header.settings')"
+          :aria-label="t('header.settings')"
+          color="neutral"
+          variant="outline"
+          size="lg"
+          :ui="{ label: 'hidden sm:inline' }"
+        />
       </template>
     </ProfileHeader>
 
-    <!-- The goal is a preference of the device and the account, only known in the browser (#141). -->
-    <ClientOnly>
-      <ProfileGoal :outings="data.outings" />
-    </ClientOnly>
-
-    <!-- Below md: icon and count on top, label below, so the 4 full labels fit from 360 px. -->
     <UTabs
+      v-model="activeTab"
       :items="tabs"
       variant="link"
-      class="w-full"
+      class="w-full gap-5"
       :ui="{
-        trigger: 'max-md:w-auto max-md:flex-auto max-md:flex-wrap max-md:gap-x-1 max-md:gap-y-0.5 max-md:px-1',
-        label: 'max-md:order-last max-md:basis-full max-md:text-center max-md:text-xs',
+        list: 'gap-5 border-accented',
+        trigger: 'px-0 text-base data-[state=active]:font-bold',
+        indicator: 'h-[3px]',
       }"
     >
-      <template #created>
-        <ul v-if="data.created.length" class="space-y-2 pt-2">
-          <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" hide-owner /></li>
-        </ul>
-        <UEmpty
-          v-else
-          icon="i-lucide-route"
-          :title="t('profile.noCreated')"
-          :description="t('profile.noCreatedHint')"
-          :actions="[{ label: t('header.create'), icon: 'i-lucide-plus', to: '/routes/create' }]"
-        />
+      <template #stats>
+        <div class="space-y-6">
+          <!-- On a computer: the year and its goal on the left, the chart and the records on the right. -->
+          <div class="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start lg:gap-5">
+            <div class="space-y-6 lg:space-y-5">
+              <ProfileYearSummary :summary="summary" class="lg:profile-panel" />
+              <!-- The goal is a preference of the device and the account, only known in the browser (#141). -->
+              <ClientOnly>
+                <ProfileGoal :outings="data.outings" class="lg:profile-panel" />
+              </ClientOnly>
+            </div>
+            <ProfileStats :outings="data.outings" class="lg:profile-panel" />
+          </div>
+          <ProfileLatestOutings :outings="data.outings" class="profile-panel max-lg:hidden" />
+        </div>
+      </template>
+
+      <template #routes>
+        <UTabs :items="routeTabs" size="sm" class="gap-3" :ui="{ list: 'w-auto self-start' }">
+          <template #created>
+            <ul v-if="data.created.length" class="grid gap-3.5 pt-1 lg:grid-cols-2">
+              <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" hide-owner class="h-full" /></li>
+            </ul>
+            <UEmpty
+              v-else
+              icon="i-lucide-route"
+              :title="t('profile.noCreated')"
+              :description="t('profile.noCreatedHint')"
+              :actions="[{ label: t('header.create'), icon: 'i-lucide-plus', to: '/routes/create' }]"
+            />
+          </template>
+          <template #completed>
+            <ul v-if="data.completed.length" class="grid gap-3.5 pt-1 lg:grid-cols-2">
+              <li v-for="route in data.completed" :key="route.id">
+                <RouteCard :route="route" :note="completedNote(route)" class="h-full" />
+              </li>
+            </ul>
+            <UEmpty
+              v-else
+              icon="i-lucide-flag"
+              :title="t('profile.noCompleted')"
+              :description="t('profile.noCompletedHint')"
+            />
+          </template>
+        </UTabs>
       </template>
 
       <template #collections>
-        <!-- The fixed "À faire" list comes first, then the member's collections. -->
-        <ul class="space-y-2 pt-2">
-          <li>
-            <NuxtLink
-              to="/collections/todo"
-              class="flex items-center gap-3 rounded-lg border border-default p-3 transition-colors hover:bg-elevated focus-visible:bg-elevated"
-            >
-              <UIcon name="i-lucide-list-todo" class="size-5 shrink-0 text-primary" />
-              <div class="min-w-0 flex-1">
-                <p class="font-medium">
-                  {{ t('todo.name') }}
-                  <UIcon name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" :aria-label="t('profile.privateCollection')" />
-                </p>
-                <p class="truncate text-sm text-muted">
-                  {{ t('collections.routeCount', data.todo_count) }} · {{ t('profile.todoHint') }}
-                </p>
-              </div>
-            </NuxtLink>
-          </li>
-          <li v-for="collection in collections" :key="collection.id">
-            <NuxtLink
-              :to="`/collections/${collection.id}`"
-              class="flex items-center gap-3 rounded-lg border border-default p-3 transition-colors hover:bg-elevated focus-visible:bg-elevated"
-            >
-              <UIcon name="i-lucide-folder" class="size-5 shrink-0 text-muted" />
-              <div class="min-w-0 flex-1">
-                <p class="font-medium">
-                  {{ collection.name }}
-                  <UIcon v-if="!collection.is_public" name="i-lucide-lock" class="ml-1 size-3.5 align-baseline text-muted" :aria-label="t('profile.privateCollection')" />
-                </p>
-                <p class="truncate text-sm text-muted">
-                  {{ t('collections.routeCount', collection.route_count) }}<template v-if="collection.description"> · {{ collection.description }}</template>
-                </p>
-              </div>
-            </NuxtLink>
-          </li>
-        </ul>
-        <UEmpty
-          v-if="!collections.length"
-          icon="i-lucide-folder"
-          :title="t('profile.noCollections')"
-          :description="t('profile.noCollectionsHint')"
-          :actions="[{ label: t('profile.discover'), icon: 'i-lucide-map', to: '/' }]"
-        />
-      </template>
-
-      <template #stats>
-        <ProfileStats :outings="data.outings" />
-      </template>
-      <template #completed>
-        <ul v-if="data.completed.length" class="space-y-2 pt-2">
-          <li v-for="route in data.completed" :key="route.id">
-            <RouteCard :route="route" :note="completedNote(route)" />
-          </li>
-        </ul>
-        <UEmpty
-          v-else
-          icon="i-lucide-flag"
-          :title="t('profile.noCompleted')"
-          :description="t('profile.noCompletedHint')"
+        <ProfileCollections
+          :collections="collections"
+          :todo-count="data.todo_count"
+          :todo-thumbnails="data.todo_thumbnails"
+          @created="refreshCollections()"
         />
       </template>
     </UTabs>

@@ -1,6 +1,7 @@
 import type { LineString } from 'geojson'
 import type { BestEfforts } from '../utils/bestEfforts'
 import type { RecordKind } from '../utils/personalRecords'
+import type { Feeling } from '../utils/trainingForm'
 import type { OsmPlace } from '../utils/osmPlaces'
 import type { EditorState, OutingTrackPoint, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
@@ -23,7 +24,10 @@ export type OutingTimes = {
 export type RouteDetail = Pick<
   Tables<'routes'>,
   | 'id' | 'name' | 'description' | 'sport_type' | 'distance_m' | 'elevation_gain_m' | 'elevation_loss_m'
-  | 'is_public' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
+  | 'is_public' | 'is_loop' | 'source' | 'created_at' | 'updated_at' | 'owner_id' | 'rating_avg' | 'rating_count'
+  // Privacy zones (#254): the team sees the track without its start or end (masked), or doesn't see the route
+  // (hidden). The owner gets the full track and these flags, the others only the visible part.
+  | 'privacy_masked' | 'privacy_hidden'
 > & {
   geometry: LineString
   // One elevation (m) per geometry coordinate, when known.
@@ -38,7 +42,7 @@ export type RouteDetail = Pick<
   photos: RoutePhoto[]
   // Outings recorded with the GPS on this route, latest first
   outings: RouteOuting[]
-  owner: Pick<Tables<'profiles'>, 'username' | 'display_name'> | null
+  owner: Pick<Tables<'profiles'>, 'username' | 'display_name' | 'avatar_path'> | null
   // null when nobody is signed in
   viewer: ViewerActivity | null
 }
@@ -86,6 +90,17 @@ export type RouteListItem = {
   created_at: string
   // Outline drawn by the route card (thumbnailPath), null when the track can't be drawn
   thumbnail: string | null
+  // The latest visible review with a comment (route_quote in SQL), null without one
+  quote: RouteQuote | null
+  // How many times the viewer did the route: their outings, a route only marked as done counting once
+  done_count: number
+}
+
+export type RouteQuote = {
+  // At most 200 characters
+  comment: string
+  // Display name of the review's author, or their username
+  author: string
 }
 
 export type RouteSummary = RouteListItem & {
@@ -107,6 +122,8 @@ export type MyProfile = {
   created: RouteListItem[]
   // Routes on the "À faire" list (activity "saved") the viewer can still see
   todo_count: number
+  // Outlines of its last routes, like CollectionSummary.thumbnails
+  todo_thumbnails: string[]
   completed: (RouteListItem & OutingTimes & { completed_at: string })[]
   // What the statistics and the records count
   outings: RecordOuting[]
@@ -120,6 +137,8 @@ export type StatsOuting = Pick<RouteListItem, 'sport_type' | 'distance_m' | 'ele
   completed_at: string
   // Only for outings recorded with the GPS
   moving_s: number | null
+  // How the member's own GPS outing felt (#267), the coach's form only: absent elsewhere
+  feeling?: Feeling | null
 }
 
 // An outing of the member's own statistics, with what their records need (#140).
@@ -206,6 +225,8 @@ export type CollectionSummary = {
   is_public: boolean
   // Routes the viewer can see in it
   route_count: number
+  // Outlines of the last routes added (up to COLLECTION_COVERS, see trackThumbnail), for the profile's mosaic
+  thumbnails: string[]
   // Whether it holds the route the list was asked for (GET /api/collections?route=)
   contains: boolean
 }
@@ -222,4 +243,9 @@ export type CollectionDetail = {
   todo: boolean
   // Only the routes the viewer may see, with a simplified track for the map
   routes: (RouteListItem & { preview: LineString })[]
+}
+// POST /api/outings/import (#268): the route of the outing saved, or of the outing the member already had.
+export type OutingImportResponse = {
+  route_id: string
+  duplicate: boolean
 }

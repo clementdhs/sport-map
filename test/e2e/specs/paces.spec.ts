@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test'
-import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration } from '../fixtures'
+import { ACCOUNT_ROUTE_NAME, expect, openProfileRoutes, test, waitForHydration } from '../fixtures'
 
 // The member's pace per sport (#146): set in the settings, it changes every estimated duration they look at, and
 // can be worked out from their latest GPS outings.
@@ -12,8 +12,8 @@ test('a speed set in the settings changes the durations of the routes, an empty 
   // The worker's hiking route, about 3.9 km without known gain: 46 min at the default 5 km/h.
   const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
   await page.goto('/profile')
-  await waitForHydration(page)
-  await expect(card).toContainText('~45 min')
+  await openProfileRoutes(page)
+  await expect(card).toContainText('45 min')
 
   await page.goto('/settings#paces')
   await waitForHydration(page)
@@ -32,11 +32,11 @@ test('a speed set in the settings changes the durations of the routes, an empty 
 
   // 66 min at 3.5 km/h, on the cards and the route page, which says where it comes from.
   await page.goto('/profile')
-  await waitForHydration(page)
-  await expect(card).toContainText('~1 h 05')
+  await openProfileRoutes(page)
+  await expect(card).toContainText('1 h 05')
   await page.goto(`/routes/${accountRouteId}`)
   await waitForHydration(page)
-  await expect(page.getByText('~1 h 05').first()).toBeVisible()
+  await expect(page.getByText('1 h 05', { exact: true }).first()).toBeVisible()
   await expect(page.getByLabel(/^Ta vitesse de 3,5 km\/h/).first()).toBeAttached()
 
   // Emptied, the field gives the default back.
@@ -48,8 +48,8 @@ test('a speed set in the settings changes the durations of the routes, an empty 
   await hiking.press('Tab')
   await cleared
   await page.goto('/profile')
-  await waitForHydration(page)
-  await expect(card).toContainText('~45 min')
+  await openProfileRoutes(page)
+  await expect(card).toContainText('45 min')
 })
 
 test('offers the median pace of the latest GPS outings, left out the short ones and those without GPS points', async ({ page }) => {

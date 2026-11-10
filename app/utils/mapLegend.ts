@@ -2,11 +2,13 @@ import { normalizePropertyExpression } from '@maplibre/maplibre-gl-style-spec'
 import type { LayerSpecification, StylePropertySpecification, StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
 import type { Map as MapLibreMap } from 'maplibre-gl'
 import { OSM_PLACE_TYPES, type OsmPlaceType } from '#shared/utils/osmPlaces'
-import { POI_TYPES, type PoiType } from '#shared/utils/routes'
+import { POI_TYPES, SPORT_TYPES, type PoiType } from '#shared/utils/routes'
 import { SLOPE_CLASSES } from '#shared/utils/slopes'
 import { DIFFICULTY_CLASSES, SURFACE_CLASSES } from '#shared/utils/wayInfo'
 import { OSM_INCOMPLETE_DASHES, OSM_ROUTE_LINE } from '~/utils/osmRouteLayers'
-import { END_COLOR, GPS_COLOR, ROUTE_COLOR, START_COLOR } from '~/utils/routeLayers'
+import { endMarker, sportMarker, startMarker, viaMarker, type MarkerDrawing } from '~/utils/mapMarkers'
+import { CASING_COLOR, GPS_COLOR, ROUTE_COLOR, ROUTE_DONE_COLOR } from '~/utils/routeLayers'
+import { TOPO_PALETTES } from '~/utils/topoStyle'
 
 // Map legend (#76): the app's own symbols, drawn from the constants that draw them on the map, and the symbols of
 // the MapTiler basemap, read from its loaded style (Plan IGN has an official legend image instead).
@@ -34,6 +36,8 @@ export type LegendSample =
   | { kind: 'poi', type: PoiType }
   | { kind: 'osmPlace', type: OsmPlaceType }
   | { kind: 'image', image: LegendImage }
+  // One of the app's marker images, as app/utils/mapMarkers.ts draws it
+  | { kind: 'marker', drawing: MarkerDrawing }
 
 export interface LegendItem {
   // Translation key
@@ -57,12 +61,12 @@ export function svgDashes(dashes: number[], width: number, cap: LineCap): string
     .join(' ')
 }
 
-// The app's tracks: a white casing under a 4 px line.
-const casedLine = (color: string): LegendSample => ({
+// The app's tracks: a light casing under the line, 4.5 px on 8 for routes (and their colourings), 4 on 7 for GPS.
+const casedLine = (color: string, width = 4.5, casing = 8): LegendSample => ({
   kind: 'layers',
   parts: [
-    { type: 'line', color: '#ffffff', width: 7, opacity: 1, cap: 'round' },
-    { type: 'line', color, width: 4, opacity: 1, cap: 'round' },
+    { type: 'line', color: CASING_COLOR, width: casing, opacity: 1, cap: 'round' },
+    { type: 'line', color, width, opacity: 1, cap: 'round' },
   ],
 })
 
@@ -81,16 +85,18 @@ const osmLine = (dashes?: number[]): LegendSample => ({
   }],
 })
 
-// The same whatever the basemap, over a light background like both basemaps'.
-export const APP_LEGEND_BACKGROUND = '#f1f3f1'
+// The same whatever the basemap, over the light topo map's background (both basemaps are light ones).
+export const APP_LEGEND_BACKGROUND = TOPO_PALETTES.light.background
 export const APP_LEGEND: LegendGroup[] = [
   {
     title: 'mapLegend.app.routes',
     items: [
       { label: 'mapLegend.app.route', samples: [casedLine(ROUTE_COLOR)] },
-      { label: 'mapLegend.app.start', samples: [{ kind: 'circle', radius: 7, color: START_COLOR, stroke: '#ffffff', strokeWidth: 2 }] },
-      { label: 'mapLegend.app.end', samples: [{ kind: 'circle', radius: 7, color: END_COLOR, stroke: '#ffffff', strokeWidth: 2 }] },
-      { label: 'mapLegend.app.waypoint', samples: [{ kind: 'circle', radius: 4, color: '#ffffff', stroke: ROUTE_COLOR, strokeWidth: 2 }] },
+      { label: 'mapLegend.app.routeDone', samples: [casedLine(ROUTE_DONE_COLOR)] },
+      { label: 'mapLegend.app.start', samples: [{ kind: 'marker', drawing: startMarker('light') }] },
+      { label: 'mapLegend.app.end', samples: [{ kind: 'marker', drawing: endMarker('light') }] },
+      { label: 'mapLegend.app.waypoint', samples: [{ kind: 'marker', drawing: viaMarker('light', 1) }] },
+      { label: 'mapLegend.app.routeStart', samples: SPORT_TYPES.map(sport => ({ kind: 'marker', drawing: sportMarker('light', sport) })) },
     ],
   },
   {
@@ -107,7 +113,7 @@ export const APP_LEGEND: LegendGroup[] = [
       { label: 'mapLegend.app.position', samples: [{ kind: 'circle', radius: 8, color: GPS_COLOR, stroke: '#ffffff', strokeWidth: 3 }] },
       { label: 'mapLegend.app.heading', samples: [{ kind: 'arrow' }] },
       { label: 'mapLegend.app.accuracy', samples: [{ kind: 'circle', radius: 12, color: GPS_COLOR, opacity: 0.15 }] },
-      { label: 'mapLegend.app.gpsTrack', samples: [casedLine(GPS_COLOR)] },
+      { label: 'mapLegend.app.gpsTrack', samples: [casedLine(GPS_COLOR, 4, 7)] },
     ],
   },
   {

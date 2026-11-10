@@ -37,7 +37,8 @@ test.describe('follow mode', () => {
     await expect.poll(() => data.locator('[data-field]').evaluateAll(tiles => tiles.map(tile => tile.getAttribute('data-field')))).toEqual(order)
     // With a lap value on screen, "Tour" starts a new lap.
     await page.getByRole('button', { name: 'Tour', exact: true }).click()
-    await expect(page.getByText('Tour 2')).toBeVisible()
+    // Exact: the toast's live region also reads "Notification Tour 2…".
+    await expect(page.getByText('Tour 2', { exact: true })).toBeVisible()
     // The speed needs 5 s of fixes: a dash without unit until then, so a fast machine gets here too early.
     await expect(data.locator('[data-field="speed"]')).toContainText('/km', { timeout: 10_000 })
     await page.reload()
@@ -57,7 +58,8 @@ test.describe('follow mode', () => {
     await context.setGeolocation({ latitude: 45.85, longitude: 6.16, accuracy: 10 })
     await expect(page.getByText("Tu t'éloignes du tracé")).toBeHidden()
     await expect(page.getByText('Tu es arrivé !')).toBeVisible()
-    await expect(remaining).toHaveText('0 m')
+    // The arrival sign makes way for the alert (#235).
+    await expect(remaining).toBeHidden()
 
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
@@ -111,7 +113,9 @@ test.describe('follow mode', () => {
     await expect(dialog).toContainText('30 min')
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
 
-    // Back on the route's page, on its outings.
+    // The coach's review (#267, coach-review.spec.ts), then back on the route's page, on its outings.
+    await expect(page).toHaveURL(/\/coach\/bilan\/[0-9a-f-]{36}$/)
+    await page.getByRole('link', { name: 'Terminer' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${id}\\?tab=outings$`))
     await expect(page.getByRole('heading', { name: SEEDED_ROUTE_NAME, level: 1 })).toBeVisible()
     await expect(page.getByRole('tab', { name: /Passages/ })).toHaveAttribute('aria-selected', 'true')

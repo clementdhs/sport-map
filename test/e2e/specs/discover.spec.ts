@@ -47,11 +47,11 @@ test('finds marked routes around a place and imports one into the editor', async
   await expect(page).toHaveURL('/routes/create')
   await expect(page.getByText('Parcours balisé importé').first()).toBeVisible()
   await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 1')
-  await expect(page.getByRole('combobox', { name: 'Sport' })).toContainText('Randonnée')
+  await expect(page.getByRole('group', { name: 'Sport', exact: true }).getByRole('button', { pressed: true })).toHaveText('Rando')
   await expect(page.getByLabel('Description')).toHaveValue(/openstreetmap\.org\/relation\/389996/)
   // A 3.8 km loop in OpenStreetMap, with the gain the list showed.
   await expect(page.locator('p.text-3xl')).toHaveText(/^3,\d+ km$/)
-  await expect(page.getByText('Dénivelé +', { exact: true }).locator('xpath=following-sibling::p')).toHaveText(`${gain} m`)
+  await expect(page.locator('dt', { hasText: 'Dénivelé +' }).locator('xpath=following-sibling::dd')).toHaveText(`${gain} m`)
 
   // Back to the same search, its URL (written without navigating) kept in the history.
   await page.goBack()
@@ -109,7 +109,7 @@ test('extracts a section of a marked route and imports it into the editor', asyn
   await expect(page.getByLabel('Nom')).toHaveValue('Sentier Denecourt-Colinet 7, km 1 à 3')
   await expect(page.locator('p.text-3xl')).toHaveText(/^(1,9\d|2,00) km$/)
   // The editor keeps the section's elevations.
-  await expect(page.getByText('Dénivelé +', { exact: true }).locator('xpath=following-sibling::p')).toHaveText(`${gain} m`)
+  await expect(page.locator('dt', { hasText: 'Dénivelé +' }).locator('xpath=following-sibling::dd')).toHaveText(`${gain} m`)
 })
 
 // Of the 4 Fontainebleau relations: 2 loops (one tagged, one closing on itself), 1 one-way route, 1 whose ways don't

@@ -1,4 +1,4 @@
-import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration, waitForMap } from '../fixtures'
+import { ACCOUNT_ROUTE_NAME, expect, openProfileRoutes, test, waitForHydration, waitForMap } from '../fixtures'
 
 // A family member moves the bottom sheet and the side panel; the test account goes through the map pages.
 test.use({ role: 'family', searchScope: 'all' })
@@ -20,10 +20,10 @@ test.describe('as the test account', () => {
       // Nothing to go back to from the home page.
       await expect(page.getByRole('button', { name: 'Retour' })).toHaveCount(0)
 
-      // Creating and recording: the tab bar's central button on phones, two header buttons on computers.
+      // Recording, sharing and creating: the tab bar's central button on phones, three header buttons on computers.
       async function openNew(name: string) {
         if (phone) {
-          await nav.getByRole('button', { name: 'Créer ou enregistrer' }).click()
+          await nav.getByRole('button', { name: 'Enregistrer, partager ou créer' }).click()
           await page.getByRole('menuitem', { name }).click()
         }
         else {
@@ -43,12 +43,21 @@ test.describe('as the test account', () => {
       await page.getByRole('link', { name: 'Quitter' }).click()
       await expect(page).toHaveURL(/\/$/)
 
+      // Sharing one's position records an outing that offers the share once started (live.spec.ts).
+      await openNew('Partager ma position')
+      await expect(page).toHaveURL(/\/record\?share=1$/)
+      await page.getByRole('link', { name: 'Quitter' }).click()
+      await expect(page).toHaveURL(/\/$/)
+
       await nav.getByRole('link', { name: 'Découvrir' }).click()
       await expect(page).toHaveURL(/\/discover/)
       await expect(nav.getByRole('link', { name: 'Découvrir' })).toHaveAttribute('aria-current', 'page')
-      await nav.getByRole('link', { name: 'En direct' }).click()
-      await expect(page).toHaveURL(/\/live$/)
-      await expect(page.getByRole('heading', { name: 'Sorties en cours', level: 1 })).toBeVisible()
+      // The coach took the place of "En direct" (#262).
+      await expect(nav.getByRole('link', { name: 'En direct' })).toHaveCount(0)
+      await nav.getByRole('link', { name: 'Coach' }).click()
+      await expect(page).toHaveURL(/\/coach$/)
+      await expect(nav.getByRole('link', { name: 'Coach' })).toHaveAttribute('aria-current', 'page')
+      await expect(page.getByRole('heading', { name: 'Coach', level: 1 })).toBeVisible()
 
       // The account menu keeps the account's own entries.
       await page.getByRole('button', { name: 'Mon compte' }).click()
@@ -61,12 +70,14 @@ test.describe('as the test account', () => {
       await expect(page).toHaveURL(/\/profile$/)
       await expect(nav.getByRole('link', { name: 'Profil' })).toHaveAttribute('aria-current', 'page')
       await expect(page.getByRole('banner')).toBeVisible()
+      await openProfileRoutes(page)
       await page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) }).click()
       await expect(page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })).toBeVisible()
       await expect(nav.getByRole('link', { name: 'Carte' })).toHaveAttribute('aria-current', 'true')
       const routeUrl = page.url()
       await page.getByRole('button', { name: 'Retour' }).click()
-      await expect(page).toHaveURL(/\/profile$/)
+      await expect(page).toHaveURL(/\/profile\?tab=routes$/)
+      await expect(page.getByRole('tab', { name: 'Parcours', exact: true })).toHaveAttribute('aria-selected', 'true')
 
       await page.goto(routeUrl)
       await waitForHydration(page)
@@ -87,10 +98,16 @@ test.describe('as the test account', () => {
     expect((await logo.boundingBox())!.x).toBeLessThan(40)
     const accountBox = (await account.boundingBox())!
     expect(1600 - accountBox.x - accountBox.width).toBeLessThan(40)
-    // Its 40 px touch zone reaches beyond the 32 px button.
-    for (const y of [accountBox.y - 3.5, accountBox.y + accountBox.height + 3.5]) {
+    // Its touch zone is at least 40 px high (the avatar button is 40 px; smaller header buttons reach it with ::after).
+    for (const y of [accountBox.y + accountBox.height / 2 - 19.5, accountBox.y + accountBox.height / 2 + 19.5]) {
       expect(await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('button')?.getAttribute('aria-label'),
         [accountBox.x + accountBox.width / 2, y])).toMatch(/^Mon compte/)
+    }
+    const recordBox = (await page.getByRole('banner').getByRole('link', { name: 'Enregistrer une sortie' }).boundingBox())!
+    expect(recordBox.height).toBeLessThan(40)
+    for (const y of [recordBox.y + recordBox.height / 2 - 19.5, recordBox.y + recordBox.height / 2 + 19.5]) {
+      expect(await page.evaluate(([x, y]) => document.elementFromPoint(x!, y!)?.closest('a')?.getAttribute('href'),
+        [recordBox.x + recordBox.width / 2, y])).toBe('/record')
     }
 
     await page.goto('/profile')
@@ -103,55 +120,69 @@ test.describe('as the test account', () => {
     await page.setViewportSize({ width: 360, height: 740 })
     await page.goto('/profile')
     await waitForHydration(page)
-    // Full labels under the icons, none cut off.
-    for (const name of ['Mes parcours', 'Collections', 'Réalisés', 'Statistiques']) {
-      const tab = page.getByRole('tab', { name: new RegExp(name) })
+    // Full labels, none cut off: the three sections, then created and done routes in the Parcours section.
+    for (const name of ['Statistiques', 'Parcours', 'Collections', 'Mes parcours', 'Réalisés']) {
+      if (name === 'Mes parcours') await page.getByRole('tab', { name: 'Parcours', exact: true }).click()
+      const tab = page.getByRole('tab', { name: name === 'Parcours' ? /^Parcours$/ : new RegExp(name) })
       // The count badge has a label slot too, after the tab's own.
       const label = tab.locator('[data-slot="label"]').first()
       await expect(label).toHaveText(name)
       expect(await label.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
     }
 
-    // The sheet title shows the name; the h1 is only there for screen readers.
+    // The sheet title shows the name (collapsed sheet), and the big h1 of the topo header (#233) wraps rather
+    // than overflowing.
     await page.goto(`/routes/${accountRouteId}`)
     await waitForMap(page)
     await expect(page.locator('aside[data-sheet]')).toContainText(ACCOUNT_ROUTE_NAME)
     const heading = page.getByRole('heading', { name: ACCOUNT_ROUTE_NAME, level: 1 })
-    await expect(heading).toHaveCount(1)
-    expect((await heading.boundingBox())?.width).toBeLessThanOrEqual(1)
+    await expect(heading).toBeVisible()
+    expect(await heading.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
 
-    // No truncated name between the follow bar's buttons.
+    // The follow bar (#235) shows the name on its own line, cut with an ellipsis before the buttons, never under them.
     await page.goto(`/routes/${accountRouteId}/follow`)
     await waitForMap(page)
     await expect(page.getByRole('link', { name: 'Quitter' })).toBeVisible()
     // Exact: the route announcer also holds the name, in the page title.
     const barName = page.getByText(ACCOUNT_ROUTE_NAME, { exact: true })
-    await expect(barName).toBeHidden()
-    await page.setViewportSize({ width: 768, height: 1024 })
     await expect(barName).toBeVisible()
+    const nameBox = (await barName.boundingBox())!
+    const toggleBox = (await page.getByRole('button', { name: 'Lisibilité en extérieur' }).boundingBox())!
+    expect(nameBox.x + nameBox.width).toBeLessThanOrEqual(toggleBox.x)
   })
 })
 
-test('moves the bottom sheet over the map on a phone with its buttons, the keyboard or a drag', async ({ page }) => {
+test('moves the bottom sheet over the map on a phone with a tap or a drag on its header', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await page.goto('/')
   await waitForMap(page)
   const sheet = page.locator('aside[data-sheet]')
-  const collapse = sheet.getByRole('button', { name: 'Réduire le panneau' })
-  const expand = sheet.getByRole('button', { name: 'Agrandir le panneau' })
+  const title = sheet.getByText('2 parcours ici').first()
   // It opens collapsed (#197): only its title stays; the hidden content leaves the keyboard and screen reader order.
+  // Its header has no arrow buttons (#247): the drag handle alone moves it.
   await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
-  await expect(sheet).toContainText('2 parcours dans cette zone')
-  await expect(collapse).toBeDisabled()
+  await expect(sheet).toContainText('2 parcours ici')
+  await expect(sheet.getByRole('button', { name: /panneau/ })).toHaveCount(0)
   await expect(sheet.locator('[inert]')).toHaveCount(1)
 
-  await expand.focus()
-  await page.keyboard.press('Enter')
+  // A tap on the collapsed header opens it at half height; dragging it to the top opens it fully.
+  await title.click()
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
   await expect(sheet.locator('[inert]')).toHaveCount(0)
-  await page.keyboard.press('Enter')
+  // Its height animates: the drag starts once its top edge stops moving.
+  let top = -1
+  await expect(async () => {
+    const y = (await sheet.boundingBox())!.y
+    const settled = Math.abs(y - top) < 1
+    top = y
+    expect(settled).toBe(true)
+  }).toPass({ intervals: [100] })
+  const halfHeader = (await title.boundingBox())!
+  await page.mouse.move(halfHeader.x + 40, halfHeader.y + 5)
+  await page.mouse.down()
+  await page.mouse.move(halfHeader.x + 40, 60, { steps: 10 })
+  await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'full')
-  await expect(expand).toBeDisabled()
 
   // Dragging its header: to the bottom collapses it, then a third of the way up opens it at half height.
   // Once its height animation is over, the full sheet starts right under the floating top bar, still reachable,
@@ -161,7 +192,7 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   const tabBar = (await page.getByRole('navigation', { name: 'Navigation principale' }).boundingBox())!
   const sheetBox = (await sheet.boundingBox())!
   expect(sheetBox.y + sheetBox.height).toBeCloseTo(tabBar.y, 0)
-  const header = (await sheet.getByText('2 parcours dans cette zone').first().boundingBox())!
+  const header = (await sheet.getByText('2 parcours ici').first().boundingBox())!
   const x = header.x + 40
   await page.mouse.move(x, header.y + 5)
   await page.mouse.down()
@@ -175,6 +206,16 @@ test('moves the bottom sheet over the map on a phone with its buttons, the keybo
   await page.mouse.move(x, tabBar.y - 260, { steps: 5 })
   await page.mouse.up()
   await expect(sheet).toHaveAttribute('data-sheet', 'half')
+
+  // A tap on the open header collapses it; from the keyboard, Enter on the header toggles it the same way.
+  await title.click()
+  await expect(sheet).toHaveAttribute('data-sheet', 'collapsed')
+  const headerButton = sheet.getByRole('button', { name: '2 parcours ici' })
+  await expect(headerButton).toHaveAttribute('aria-expanded', 'false')
+  await headerButton.focus()
+  await page.keyboard.press('Enter')
+  await expect(sheet).toHaveAttribute('data-sheet', 'half')
+  await expect(headerButton).toHaveAttribute('aria-expanded', 'true')
 })
 
 // #142: the collapsed sheet's emptied content area kept its padding and drew the search field over the tab bar.
@@ -211,7 +252,7 @@ test('collapses the side panel on a computer and remembers it after a reload', a
   const map = page.locator('[data-map-loaded]')
   const collapse = page.getByRole('button', { name: 'Réduire le panneau' })
   const show = page.getByRole('button', { name: 'Afficher le panneau' })
-  const title = page.getByText('2 parcours dans cette zone').filter({ visible: true })
+  const title = page.getByText('2 parcours ici').filter({ visible: true })
   const width = (await map.boundingBox())!.width
   await expect(collapse).toHaveAttribute('aria-expanded', 'true')
 
@@ -237,7 +278,7 @@ test('collapses the side panel on a computer and remembers it after a reload', a
   await page.reload()
   await waitForMap(page)
   await expect(panel).toBeVisible()
-  await expect(panel).toContainText('2 parcours dans cette zone')
+  await expect(panel).toContainText('2 parcours ici')
 })
 
 test('resizes the side panel with the mouse or the keyboard and remembers its width', async ({ page }) => {
@@ -245,7 +286,7 @@ test('resizes the side panel with the mouse or the keyboard and remembers its wi
   await waitForMap(page)
   const panel = page.locator('aside[data-panel]')
   const edge = page.getByRole('separator', { name: 'Redimensionner le panneau' })
-  await expect(edge).toHaveAttribute('aria-valuenow', '384')
+  await expect(edge).toHaveAttribute('aria-valuenow', '440')
   await expect(edge).toHaveAttribute('aria-valuemin', '320')
   await expect(edge).toHaveAttribute('aria-valuemax', '720')
 
@@ -256,8 +297,8 @@ test('resizes the side panel with the mouse or the keyboard and remembers its wi
   await page.mouse.down()
   await page.mouse.move(x - 200, 300, { steps: 10 })
   await page.mouse.up()
-  await expect(edge).toHaveAttribute('aria-valuenow', '584')
-  expect((await panel.boundingBox())!.width).toBeCloseTo(584, 0)
+  await expect(edge).toHaveAttribute('aria-valuenow', '640')
+  expect((await panel.boundingBox())!.width).toBeCloseTo(640, 0)
   await page.mouse.move(x - 200, 300)
   await page.mouse.down()
   await page.mouse.move(x + 300, 300, { steps: 5 })

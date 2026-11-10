@@ -15,7 +15,7 @@ async function signIn(page: Page, identifier: string, password: string) {
   await page.getByRole('button', { name: 'Se connecter' }).click()
 }
 
-test('welcomes visitors over the relief background', async ({ page, request }) => {
+test('welcomes visitors over the contour lines', async ({ page, request }) => {
   // Served as is: a public/ folder named like the page would redirect /login to /login/.
   expect((await page.goto('/login'))?.url()).toMatch(/\/login$/)
   await expect(page.getByRole('heading', { name: 'sportmap', level: 1 })).toBeVisible()
@@ -25,9 +25,7 @@ test('welcomes visitors over the relief background', async ({ page, request }) =
   await expect(page.locator('input[name="identifier"]')).toHaveAttribute('placeholder', 'Ton pseudo ou ton email')
   // The Licence Ouverte requires the source and its date.
   await expect(page.getByText(/relief IGN RGE ALTI® \(octobre 2026\)/)).toBeVisible()
-  for (const file of ['/img/login-relief.webp', '/img/login-contours.svg']) {
-    expect((await request.get(file)).status(), file).toBe(200)
-  }
+  expect((await request.get('/img/login-contours.svg')).status()).toBe(200)
 })
 
 test('signs in with the username, whatever its case', async ({ page, users }) => {

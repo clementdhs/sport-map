@@ -35,6 +35,10 @@ export interface AccountData {
   liveShares: object[]
   // Settings kept in the account (#145), none until a device saved one
   preferences: { preferences: unknown, updated_at: string } | null
+  // Privacy zones (#254)
+  privacyZones: object[]
+  // The coach's goal (#264), none until the member picked one
+  coachGoal: object | null
 }
 
 export interface AccountArchive {
@@ -48,7 +52,7 @@ export interface AccountArchive {
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 const ARCHIVE_NAMES = [
-  'readme', 'profile', 'avatar', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'gpxFolder',
+  'readme', 'profile', 'avatar', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'privacyZones', 'coachGoal', 'gpxFolder',
   'photosFolder',
 ] as const
 type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
@@ -73,6 +77,8 @@ function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames, a
     [names.routing, t('routing')],
     [names.live, t('live')],
     [names.preferences, t('preferences')],
+    [names.privacyZones, t('privacyZones')],
+    [names.coachGoal, t('coachGoal')],
   ] as const
   const width = Math.max(...rows.map(([path]) => path.length)) + 2
   return `${t('intro', { username: data.profile.username, date: data.exportedAt })}
@@ -128,6 +134,8 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     { path: names.routing, content: json(data.routingUsage) },
     { path: names.live, content: json(data.liveShares) },
     { path: names.preferences, content: json(data.preferences ?? { preferences: {} }) },
+    { path: names.privacyZones, content: json(data.privacyZones) },
+    { path: names.coachGoal, content: json(data.coachGoal) },
   )
   return { files, photos, avatar }
 }

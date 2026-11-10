@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RecordOuting } from '#shared/types/routes'
 import { BEST_EFFORTS_VERSION, type BestEfforts } from '#shared/utils/bestEfforts'
-import { personalRecords, recordBreakers, recordYears } from '#shared/utils/personalRecords'
+import { isRecentRecord, personalRecords, recordBreakers, recordYears } from '#shared/utils/personalRecords'
 
 const runEfforts = (times: BestEfforts['times']): BestEfforts => ({ v: BEST_EFFORTS_VERSION, kind: 'run', times })
 
@@ -105,5 +105,15 @@ describe('recordYears', () => {
   it('lists the years with outings, latest first, in French time', () => {
     expect(recordYears([outing('2025-12-31T23:30:00Z'), outing('2024-05-01T10:00:00Z'), outing('2025-03-01T10:00:00Z')]))
       .toEqual([2026, 2025, 2024])
+  })
+})
+
+describe('isRecentRecord', () => {
+  const now = new Date('2026-11-07T12:00:00Z')
+  it('badges the records of the last 30 days only', () => {
+    expect(isRecentRecord('2026-11-02T08:00:00Z', now)).toBe(true)
+    expect(isRecentRecord('2026-10-09T08:00:00Z', now)).toBe(true)
+    expect(isRecentRecord('2026-10-07T08:00:00Z', now)).toBe(false)
+    expect(isRecentRecord('2026-11-08T08:00:00Z', now)).toBe(false)
   })
 })

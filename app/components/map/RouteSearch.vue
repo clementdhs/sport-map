@@ -41,7 +41,7 @@ function resultsData(results: RouteSummary[]): FeatureCollection<Point> {
     type: 'FeatureCollection',
     features: results.map(route => ({
       type: 'Feature',
-      properties: { id: route.id, name: route.name },
+      properties: { id: route.id, name: route.name, sport: route.sport_type },
       geometry: { type: 'Point', coordinates: route.marker },
     })),
   }
@@ -59,10 +59,10 @@ function labelCluster(button: HTMLElement) {
 function clusterMarker(instance: Map, clusterId: number, count: number, lngLat: LngLat): Marker {
   const button = document.createElement('button')
   button.type = 'button'
-  button.className = 'flex cursor-pointer items-center justify-center rounded-full border-2 border-white text-xs font-bold text-white shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
-  const size = count < 10 ? 28 : count < 50 ? 34 : 40
+  // An ink square with the count, like the numbered waypoints (map-cluster, main.css).
+  button.className = 'map-cluster flex cursor-pointer items-center justify-center rounded-sm text-xs font-bold shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary'
+  const size = count < 10 ? 26 : count < 50 ? 30 : 36
   button.style.width = button.style.height = `${size}px`
-  button.style.backgroundColor = ROUTE_COLOR
   button.textContent = String(count)
   button.dataset.routeCluster = String(count)
   labelCluster(button)
@@ -105,9 +105,8 @@ function showHighlight() {
   if (!highlightMarker) {
     const dot = document.createElement('div')
     // No pointer events: under the mouse, it would end the map hover that shows it.
-    // A ring rather than a dot, so that it stands out from a group below it.
-    dot.className = 'pointer-events-none size-6 rounded-full bg-white shadow-md ring-2 ring-white'
-    dot.style.border = `6px solid ${ROUTE_COLOR}`
+    // A frame rather than a dot, so that the start or group below it still shows (map-highlight, main.css).
+    dot.className = 'map-highlight pointer-events-none size-8 rounded-md shadow-md'
     dot.style.zIndex = '1'
     dot.dataset.routeHighlight = ''
     highlightMarker = new MarkerClass!({ element: dot })
@@ -121,17 +120,18 @@ async function onLoad(instance: Map) {
   popup = new maplibre.Popup({ closeButton: false, closeOnClick: false, offset: 12 })
 
   instance.addSource(SOURCE, { type: 'geojson', data: resultsData(props.results), cluster: true, clusterRadius: 40 })
-  // Starts outside any group; the groups themselves are HTML markers (syncClusters).
+  addMarkerImages(instance, SPORT_MARK_IMAGES)
+  // Starts outside any group, as their sport's waymark (#230); the groups themselves are HTML markers
+  // (syncClusters).
   instance.addLayer({
     id: LAYER,
-    type: 'circle',
+    type: 'symbol',
     source: SOURCE,
     filter: ['!', ['has', 'point_count']],
-    paint: {
-      'circle-radius': 7,
-      'circle-color': ROUTE_COLOR,
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-width': 2,
+    layout: {
+      'icon-image': ['concat', 'sm-sport-', ['get', 'sport']],
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
     },
   })
 

@@ -3,7 +3,7 @@ import type { ProfileInfo } from '#shared/types/routes'
 import type { ProfileUpdate } from '#shared/utils/routes'
 
 // Account settings, reached from the account menu, in sections with their own anchor (#111): profile, account
-// (password, data), appearance and language, default sport, paces per sport, voice guidance.
+// (password, data), security (two-factor authentication), appearance and language, default sport, paces per sport, voice guidance.
 const { t } = useI18n()
 const { maptilerKey } = useRuntimeConfig().public
 const profileUpdateSchemaLocalized = useLocalizedSchema(profileUpdateSchema)
@@ -60,24 +60,31 @@ function onPasswordChanged() {
 const sections = computed(() => [
   { id: 'profile', label: t('settings.sections.profile'), icon: 'i-lucide-user' },
   { id: 'account', label: t('settings.sections.account'), icon: 'i-lucide-key-round' },
+  { id: 'security', label: t('settings.sections.security'), icon: 'i-lucide-shield-check' },
   { id: 'appearance', label: t('settings.sections.appearance'), icon: 'i-lucide-palette' },
   { id: 'sport', label: t('settings.sections.sport'), icon: 'i-lucide-footprints' },
   { id: 'paces', label: t('settings.sections.paces'), icon: 'i-lucide-timer' },
   { id: 'start-area', label: t('settings.sections.startArea'), icon: 'i-lucide-map-pinned' },
+  { id: 'privacy', label: t('settings.sections.privacy'), icon: 'i-lucide-shield' },
   { id: 'voice', label: t('settings.sections.voice'), icon: 'i-lucide-volume-2' },
 ])
 // Under the sticky header, plus the strip of sections on phones.
 const SECTION_CLASS = 'scroll-mt-[calc(var(--ui-header-height)+4rem)] space-y-3 md:scroll-mt-[calc(var(--ui-header-height)+2rem)]'
-const CARD_CLASS = 'space-y-3 rounded-lg border border-default p-4'
+// Topo look (#237): each section a title in the display font, its hint under it, then boxes of the surface; the
+// appearance and pace boxes are ruled rows.
+const CARD_CLASS = 'space-y-3 rounded-lg border border-default bg-default p-4'
+const ROWS_CLASS = 'divide-y divide-default rounded-lg border border-default bg-default px-3.5'
+const TITLE_CLASS = 'text-[1.375rem] leading-tight font-bold'
+const HINT_CLASS = '-mt-2 text-sm text-muted'
 
 const voice = useVoicePrefs()
 </script>
 
 <template>
   <UContainer v-if="profile" class="max-w-4xl space-y-6 py-8">
-    <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-semibold">{{ t('header.settings') }}</h1>
-      <UButton to="/profile" icon="i-lucide-user" :label="t('header.profile')" color="neutral" variant="outline" />
+    <div class="-ms-2.5 flex items-center gap-1">
+      <UButton to="/profile" icon="i-lucide-chevron-left" :aria-label="t('header.profile')" color="neutral" variant="ghost" size="xl" square />
+      <h1 class="text-[2.125rem] leading-none font-bold">{{ t('header.settings') }}</h1>
     </div>
 
     <div class="space-y-6 md:grid md:grid-cols-[11rem_minmax(0,1fr)] md:items-start md:gap-8 md:space-y-0">
@@ -85,7 +92,7 @@ const voice = useVoicePrefs()
 
       <div class="space-y-8">
         <section id="profile" :class="SECTION_CLASS" aria-labelledby="settings-profile-title">
-          <h2 id="settings-profile-title" class="text-base font-semibold">{{ t('settings.sections.profile') }}</h2>
+          <h2 id="settings-profile-title" :class="TITLE_CLASS">{{ t('settings.sections.profile') }}</h2>
           <div :class="CARD_CLASS">
             <i18n-t keypath="settings.profileHint" tag="p" class="text-sm text-muted" scope="global">
               <template #link>
@@ -119,7 +126,7 @@ const voice = useVoicePrefs()
         </section>
 
         <section id="account" :class="SECTION_CLASS" aria-labelledby="settings-account-title">
-          <h2 id="settings-account-title" class="text-base font-semibold">{{ t('settings.sections.account') }}</h2>
+          <h2 id="settings-account-title" :class="TITLE_CLASS">{{ t('settings.sections.account') }}</h2>
           <div :class="CARD_CLASS">
             <h3 class="text-sm font-semibold">{{ t('auth.password') }}</h3>
             <NewPasswordForm :submit-label="t('settings.changePassword')" class="max-w-sm" @done="onPasswordChanged" />
@@ -127,48 +134,63 @@ const voice = useVoicePrefs()
           <AccountData :username="profile.username" />
         </section>
 
-        <section id="appearance" :class="SECTION_CLASS" aria-labelledby="settings-appearance-title">
-          <h2 id="settings-appearance-title" class="text-base font-semibold">{{ t('settings.sections.appearance') }}</h2>
+        <section id="security" :class="SECTION_CLASS" aria-labelledby="settings-security-title">
+          <h2 id="settings-security-title" :class="TITLE_CLASS">{{ t('settings.sections.security') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.mfa.sectionHint') }}</p>
           <div :class="CARD_CLASS">
-            <p class="text-sm text-muted">{{ t('settings.appearanceHint') }}</p>
-            <LanguageSelect />
+            <!-- The factors come from the auth server, read in the browser. -->
+            <ClientOnly>
+              <TwoFactorSettings />
+            </ClientOnly>
+          </div>
+        </section>
+
+        <section id="appearance" :class="SECTION_CLASS" aria-labelledby="settings-appearance-title">
+          <h2 id="settings-appearance-title" :class="TITLE_CLASS">{{ t('settings.sections.appearance') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.appearanceHint') }}</p>
+          <div :class="ROWS_CLASS">
+            <LanguageSelect class="py-3" />
             <ThemeSettings />
             <!-- The demo style, used without a MapTiler key, has no dark version. -->
-            <MapStyleSetting v-if="maptilerKey" />
-          </div>
-          <div :class="CARD_CLASS">
-            <OutdoorReadabilitySetting />
+            <MapStyleSetting v-if="maptilerKey" inline class="py-3" />
+            <OutdoorReadabilitySetting class="py-3" />
           </div>
         </section>
 
         <section id="sport" :class="SECTION_CLASS" aria-labelledby="settings-sport-title">
-          <h2 id="settings-sport-title" class="text-base font-semibold">{{ t('settings.sections.sport') }}</h2>
-          <div :class="CARD_CLASS">
-            <p class="text-sm text-muted">{{ t('settings.defaultSport.hint') }}</p>
-            <DefaultSportSetting />
+          <h2 id="settings-sport-title" :class="TITLE_CLASS">{{ t('settings.sections.sport') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.defaultSport.hint') }}</p>
+          <div :class="ROWS_CLASS">
+            <DefaultSportSetting class="py-3" />
           </div>
         </section>
 
         <section id="paces" :class="SECTION_CLASS" aria-labelledby="settings-paces-title">
-          <h2 id="settings-paces-title" class="text-base font-semibold">{{ t('settings.sections.paces') }}</h2>
-          <div :class="CARD_CLASS">
-            <p class="text-sm text-muted">{{ t('settings.paces.hint') }}</p>
-            <PaceSettings />
-          </div>
+          <h2 id="settings-paces-title" :class="TITLE_CLASS">{{ t('settings.sections.paces') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.paces.hint') }}</p>
+          <PaceSettings />
         </section>
 
         <section id="start-area" :class="SECTION_CLASS" aria-labelledby="settings-start-area-title">
-          <h2 id="settings-start-area-title" class="text-base font-semibold">{{ t('settings.sections.startArea') }}</h2>
+          <h2 id="settings-start-area-title" :class="TITLE_CLASS">{{ t('settings.sections.startArea') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.startArea.hint') }}</p>
           <div :class="CARD_CLASS">
-            <p class="text-sm text-muted">{{ t('settings.startArea.hint') }}</p>
             <StartAreaSettings />
           </div>
         </section>
 
-        <section id="voice" :class="SECTION_CLASS" aria-labelledby="settings-voice-title">
-          <h2 id="settings-voice-title" class="text-base font-semibold">{{ t('settings.sections.voice') }}</h2>
+        <section id="privacy" :class="SECTION_CLASS" aria-labelledby="settings-privacy-title">
+          <h2 id="settings-privacy-title" :class="TITLE_CLASS">{{ t('settings.sections.privacy') }}</h2>
+          <p :class="HINT_CLASS">{{ t('settings.privacy.hint') }}</p>
           <div :class="CARD_CLASS">
-            <p class="text-sm text-muted">{{ t('voice.description') }}</p>
+            <PrivacyZoneSettings />
+          </div>
+        </section>
+
+        <section id="voice" :class="SECTION_CLASS" aria-labelledby="settings-voice-title">
+          <h2 id="settings-voice-title" :class="TITLE_CLASS">{{ t('settings.sections.voice') }}</h2>
+          <p :class="HINT_CLASS">{{ t('voice.description') }}</p>
+          <div :class="CARD_CLASS">
             <!-- Speech support and the saved choices are only known in the browser. -->
             <ClientOnly>
               <VoiceGuideForm :prefs="voice.prefs.value" :supported="voice.supported.value" :background="isNativeApp()" @update="voice.setPrefs" />

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { strFromU8, unzipSync } from 'fflate'
 import { insertRows, storedAvatarFiles, storedPhotoFiles, supabaseAdmin } from '../admin'
 import type { Locator, Page } from '@playwright/test'
-import { ACCOUNT_ROUTE_NAME, expect, test, waitForHydration } from '../fixtures'
+import { ACCOUNT_ROUTE_NAME, expect, openProfileRoutes, test, waitForHydration } from '../fixtures'
 
 test.use({ role: 'account' })
 
@@ -165,8 +165,9 @@ test('edits the profile and the appearance from the settings, reached through th
   await expect(page.getByRole('heading', { name: users.account.displayName, level: 1 })).toBeVisible()
   await expect(page.getByText('Bio mise à jour depuis les paramètres')).toBeVisible()
   // Its own routes, drawn, without "by" on its own profile.
+  await openProfileRoutes(page)
   const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
-  await expect(card.locator('svg path')).toHaveAttribute('d', /^M\d+ \d+L/)
+  await expect(card.getByTestId('route-track')).toHaveAttribute('d', /^M\d+ \d+L/)
   await expect(card).not.toContainText(`par ${users.account.displayName}`)
   await expect(page.getByRole('button', { name: 'Supprimer mon compte' })).toHaveCount(0)
   await expect(page.getByRole('link', { name: 'Paramètres' })).toHaveAttribute('href', '/settings')
@@ -239,46 +240,47 @@ test('sets a profile photo framed and compressed in the settings, shown to the t
   expect(await storedAvatarFiles(userId)).toEqual([])
 })
 
-test('offers ten accent colors in the settings, rendered by the server in a shade readable in both modes', async ({ page, context, baseURL }) => {
-  // A color picked among the four offered before #144 still applies.
-  await context.addCookies([{ name: 'sport-map-accent', value: 'green', url: baseURL }])
+test('offers five terrain accents in the settings, rendered by the server in a light and a dark shade', async ({ page, context, baseURL }) => {
+  // A color picked among the ten offered before #228 becomes the nearest terrain accent (teal: forest green).
+  await context.addCookies([{ name: 'sport-map-accent', value: 'teal', url: baseURL }])
   await page.goto('/settings#appearance')
   await waitForHydration(page)
   const html = page.locator('html')
-  await expect(html).toHaveAttribute('data-accent', 'green')
-  await expect(page.getByRole('group', { name: 'Couleur' }).getByRole('button')).toHaveCount(10)
-  await expect(page.getByRole('button', { name: 'Vert', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'forest')
+  await expect(page.getByRole('group', { name: 'Couleur' }).getByRole('button')).toHaveCount(5)
+  await expect(page.getByRole('button', { name: 'Vert forêt' })).toHaveAttribute('aria-pressed', 'true')
 
   await page.getByRole('button', { name: 'Clair' }).click()
-  await page.getByRole('button', { name: 'Sarcelle' }).click()
-  await expect(page.getByRole('button', { name: 'Sarcelle' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(html).toHaveAttribute('data-accent', 'teal')
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#00786f')
+  await page.getByRole('button', { name: 'Bleu lac' }).click()
+  await expect(page.getByRole('button', { name: 'Bleu lac' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(html).toHaveAttribute('data-accent', 'lake')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#2a6888')
 
-  // No flash: the server renders the accent and its light-mode shade (700 for teal, for white text on buttons).
+  // No flash: the server renders the accent.
   const response = await page.reload()
-  const body = await response!.text()
-  expect(body).toContain('data-accent="teal"')
-  expect(body).toContain('data-accent-shade="700"')
+  expect(await response!.text()).toContain('data-accent="lake"')
   // A click before hydration is lost and the mode never changes.
   await waitForHydration(page)
   const primary = () => page.evaluate(() => {
     const style = getComputedStyle(document.documentElement)
-    return ['--ui-primary', '--ui-color-primary-700', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
+    return ['--ui-primary', '--ui-color-primary-600', '--ui-color-primary-400'].map(name => style.getPropertyValue(name))
   })
-  const [light, shade700] = await primary()
-  expect(light).toBe(shade700)
+  const [light, shade600] = await primary()
+  expect(light).toBe(shade600)
+  expect(shade600).toBe('#2a6888')
 
-  // Dark mode keeps the 400 shade, with dark text on buttons.
+  // Dark mode uses the 400 shade, with ink text on buttons, and so does the browser's theme color.
   await page.getByRole('button', { name: 'Sombre' }).click()
   await expect(html).toHaveClass(/dark/)
   const [dark, , shade400] = await primary()
   expect(dark).toBe(shade400)
+  expect(shade400).toBe('#7fb6d6')
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#7fb6d6')
 })
 
 test('counts a completed route in the profile summary and statistics', async ({ page, users }) => {
   const valueOf = (scope: Locator, label: string) => scope.locator('dt', { hasText: label }).locator('xpath=following-sibling::dd')
-  const outings = valueOf(page.getByRole('tabpanel'), 'Sorties')
+  const outings = valueOf(page.getByTestId('stats-totals'), 'Sorties')
   // The current year's totals at the top of the profile, the member's own and the one the family sees.
   const summaryOutings = valueOf(page.getByTestId('profile-summary'), 'Sorties')
   const emptyStats = page.getByText('Marque des parcours comme faits')
@@ -325,7 +327,7 @@ test('reaches each settings section from its table of contents, on a computer an
   await waitForHydration(page)
   const sections = page.getByRole('navigation', { name: 'Sections des paramètres' })
   const link = (name: string) => sections.getByRole('link', { name })
-  await expect(sections.getByRole('link')).toHaveText(['Profil', 'Compte', 'Apparence et langue', 'Sport par défaut', 'Mes allures', 'Ma zone de départ', 'Guidage vocal'])
+  await expect(sections.getByRole('link')).toHaveText(['Profil', 'Compte', 'Sécurité', 'Apparence et langue', 'Sport par défaut', 'Mes allures', 'Ma zone de départ', 'Confidentialité', 'Guidage vocal'])
   await expect(link('Profil')).toHaveAttribute('aria-current', 'location')
 
   // One click and the section is in sight, with its own URL.

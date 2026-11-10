@@ -39,6 +39,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      coach_goals: {
+        Row: {
+          kind: string
+          race_date: string | null
+          race_distance_m: number | null
+          race_gain_m: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          kind: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          kind?: string
+          race_date?: string | null
+          race_distance_m?: number | null
+          race_gain_m?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coach_goals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_routes: {
         Row: {
           added_at: string
@@ -226,6 +261,73 @@ export type Database = {
         }
         Relationships: []
       }
+      outing_originals: {
+        Row: {
+          outing_id: string
+          track: Json
+        }
+        Insert: {
+          outing_id: string
+          track: Json
+        }
+        Update: {
+          outing_id?: string
+          track?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outing_originals_outing_id_fkey"
+            columns: ["outing_id"]
+            isOneToOne: true
+            referencedRelation: "route_outings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      privacy_zones: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          lat: number
+          lng: number
+          mask_lat: number
+          mask_lng: number
+          owner_id: string
+          radius_m: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          lat: number
+          lng: number
+          mask_lat: number
+          mask_lng: number
+          owner_id: string
+          radius_m: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          lat?: number
+          lng?: number
+          mask_lat?: number
+          mask_lng?: number
+          owner_id?: string
+          radius_m?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "privacy_zones_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -340,6 +442,52 @@ export type Database = {
           },
         ]
       }
+      route_originals: {
+        Row: {
+          distance_m: number
+          editor_state: Json | null
+          elevation_gain_m: number | null
+          elevation_loss_m: number | null
+          elevation_profile: Json | null
+          geom: unknown
+          pois: Json
+          route_id: string
+          way_info: Json | null
+          route_original_geojson: Json | null
+          route_original_thumbnail: Json | null
+        }
+        Insert: {
+          distance_m?: number
+          editor_state?: Json | null
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          elevation_profile?: Json | null
+          geom: unknown
+          pois?: Json
+          route_id: string
+          way_info?: Json | null
+        }
+        Update: {
+          distance_m?: number
+          editor_state?: Json | null
+          elevation_gain_m?: number | null
+          elevation_loss_m?: number | null
+          elevation_profile?: Json | null
+          geom?: unknown
+          pois?: Json
+          route_id?: string
+          way_info?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "route_originals_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: true
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       route_osm_places: {
         Row: {
           places: Json
@@ -372,6 +520,7 @@ export type Database = {
           created_at: string
           distance_m: number
           duration_s: number
+          feeling: string | null
           has_track: boolean | null
           id: string
           moving_s: number
@@ -385,6 +534,7 @@ export type Database = {
           created_at?: string
           distance_m: number
           duration_s: number
+          feeling?: string | null
           has_track?: boolean | null
           id?: string
           moving_s: number
@@ -398,6 +548,7 @@ export type Database = {
           created_at?: string
           distance_m?: number
           duration_s?: number
+          feeling?: string | null
           has_track?: boolean | null
           id?: string
           moving_s?: number
@@ -520,6 +671,8 @@ export type Database = {
           name: string
           owner_id: string
           pois: Json
+          privacy_hidden: boolean
+          privacy_masked: boolean
           rating_avg: number | null
           rating_count: number
           source: Database["public"]["Enums"]["route_source"]
@@ -527,8 +680,10 @@ export type Database = {
           start_point: unknown
           updated_at: string
           way_info: Json | null
+          route_done_count: number | null
           route_geojson: Json | null
           route_preview: Json | null
+          route_quote: Json | null
           route_thumbnail: Json | null
         }
         Insert: {
@@ -547,6 +702,8 @@ export type Database = {
           name: string
           owner_id: string
           pois?: Json
+          privacy_hidden?: boolean
+          privacy_masked?: boolean
           rating_avg?: number | null
           rating_count?: number
           source?: Database["public"]["Enums"]["route_source"]
@@ -571,6 +728,8 @@ export type Database = {
           name?: string
           owner_id?: string
           pois?: Json
+          privacy_hidden?: boolean
+          privacy_masked?: boolean
           rating_avg?: number | null
           rating_count?: number
           source?: Database["public"]["Enums"]["route_source"]
@@ -658,17 +817,42 @@ export type Database = {
       }
       consume_routing_quota: { Args: { daily_limit: number }; Returns: number }
       login_email: { Args: { login_username: string }; Returns: string }
+      mfa_ok: { Args: never; Returns: boolean }
+      route_done_count: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_done_count with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       route_geojson: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {
           error: true
         } & "the function public.route_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
+      route_original_geojson: {
+        Args: { "": Database["public"]["Tables"]["route_originals"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_original_geojson with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_original_thumbnail: {
+        Args: { "": Database["public"]["Tables"]["route_originals"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_original_thumbnail with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
       route_preview: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
         Returns: {
           error: true
         } & "the function public.route_preview with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
+      }
+      route_quote: {
+        Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
+        Returns: {
+          error: true
+        } & "the function public.route_quote with parameter or with a single unnamed json/jsonb parameter, but no matches were found in the schema cache"
       }
       route_thumbnail: {
         Args: { "": Database["public"]["Tables"]["routes"]["Row"] }
@@ -697,6 +881,7 @@ export type Database = {
         Returns: {
           created_at: string
           distance_m: number
+          done_count: number
           elevation_gain_m: number
           id: string
           is_loop: boolean
@@ -706,6 +891,7 @@ export type Database = {
           name: string
           owner_avatar_path: string
           owner_name: string
+          quote: Json
           rating_avg: number
           rating_count: number
           sport_type: Database["public"]["Enums"]["sport_type"]

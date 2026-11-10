@@ -33,8 +33,9 @@ async function onDone() {
 </script>
 
 <template>
-  <UContainer class="flex justify-center py-12">
-    <UPageCard class="w-full max-w-md" :title="t('auth.reset.title')" icon="i-lucide-key-round">
+  <AuthScreen>
+    <AuthCard>
+      <h1 class="text-[1.625rem] leading-tight font-bold">{{ t('auth.reset.title') }}</h1>
       <div v-if="status === 'verifying'" class="flex items-center gap-3">
         <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
         <span>{{ t('auth.reset.verifying') }}</span>
@@ -50,6 +51,6 @@ async function onDone() {
         <UButton to="/forgot-password" :label="t('auth.reset.newLink')" block />
       </div>
       <NewPasswordForm v-else :submit-label="t('auth.reset.submit')" @done="onDone" />
-    </UPageCard>
-  </UContainer>
+    </AuthCard>
+  </AuthScreen>
 </template>

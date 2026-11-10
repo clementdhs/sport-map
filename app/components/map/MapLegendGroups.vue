@@ -100,6 +100,30 @@ function imageBox(sample: Extract<LegendSample, { kind: 'image' }>, width: numbe
                     paint-order="stroke"
                   />
                 </g>
+                <g v-else-if="sample.kind === 'marker'" :transform="`translate(${(sampleWidth(item.samples.length) - sample.drawing.width) / 2} ${(HEIGHT - sample.drawing.height) / 2})`">
+                  <rect
+                    v-for="(shape, j) in sample.drawing.shapes"
+                    :key="j"
+                    :x="shape.x + (shape.strokeWidth ?? 0) / 2"
+                    :y="shape.y + (shape.strokeWidth ?? 0) / 2"
+                    :width="shape.width - (shape.strokeWidth ?? 0)"
+                    :height="shape.height - (shape.strokeWidth ?? 0)"
+                    :rx="shape.radius"
+                    :fill="shape.fill"
+                    :stroke="shape.stroke"
+                    :stroke-width="shape.strokeWidth"
+                  />
+                  <text
+                    v-if="sample.drawing.label"
+                    :x="sample.drawing.width / 2"
+                    :y="sample.drawing.height / 2 + 0.5"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    font-weight="700"
+                    :font-size="sample.drawing.label.size"
+                    :fill="sample.drawing.label.color"
+                  >{{ sample.drawing.label.text }}</text>
+                </g>
                 <image
                   v-else-if="sample.kind === 'image'"
                   :href="sample.image.src"

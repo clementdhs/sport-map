@@ -1,11 +1,11 @@
-"""Draws the sign-in page background (#110): the relief and contour lines of the Écrins massif.
+"""Draws the sign-in page background (#110): the contour lines of the Écrins massif.
 
 Source: IGN RGE ALTI terrain model (Géoplateforme WMS-R, raw float32 elevations), Licence Ouverte 2.0, credited
-on the page. Both files are masks that login.vue tints with the accent color:
-  public/img/login-relief.webp   hillshade, luminance mask (white = shadow), lossy WebP
+on the page. The file is a mask that AuthScreen.vue fills with the signage's contour tone:
   public/img/login-contours.svg  contour lines every 100 m, thicker every 500 m (line art is far lighter as SVG)
+The hillshade drawn under them until #237 is gone: the topo redesign keeps the lines only.
 
-Run once, outside the app: python -m venv .venv && .venv/Scripts/pip install numpy matplotlib pillow, then
+Run once, outside the app: python -m venv .venv && .venv/Scripts/pip install numpy matplotlib, then
 .venv/Scripts/python scripts/login-background.py
 """
 import math
@@ -16,11 +16,9 @@ import numpy as np
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt  # noqa: E402
-from PIL import Image  # noqa: E402
 
 LON, LAT, WIDTH_KM = 6.30, 44.95, 30  # around La Meije and the Barre des Écrins
-SW, SH = 1920, 1280  # elevation grid, 3:2 like both outputs
-RELIEF_WIDTH = 1600
+SW, SH = 1920, 1280  # elevation grid, 3:2
 
 
 def fetch_elevations():
@@ -43,17 +41,6 @@ def blur(a, r):
     k /= k.sum()
     a = np.apply_along_axis(lambda v: np.convolve(np.pad(v, n, mode='edge'), k, 'valid'), 0, a)
     return np.apply_along_axis(lambda v: np.convolve(np.pad(v, n, mode='edge'), k, 'valid'), 1, a)
-
-
-def relief(z):
-    # Smoothed first: the grid has faint horizontal stripes.
-    gy, gx = np.gradient(blur(z, 4), WIDTH_KM * 1000 / SW)
-    slope, aspect = np.arctan(np.hypot(gx, gy)), np.arctan2(-gx, gy)
-    az, alt = np.radians(315), np.radians(45)
-    shade = np.clip(np.sin(alt) * np.cos(slope) + np.cos(alt) * np.sin(slope) * np.cos(az - aspect), 0, 1)
-    shadow = np.clip((0.75 - shade) / 0.75, 0, 1) ** 0.9 * 0.6
-    img = Image.fromarray((shadow * 255).astype(np.uint8)).resize((RELIEF_WIDTH, RELIEF_WIDTH * SH // SW), Image.LANCZOS)
-    img.convert('RGB').save('public/img/login-relief.webp', 'WEBP', quality=55, method=6)
 
 
 def simplify(p, eps):
@@ -90,5 +77,4 @@ if __name__ == '__main__':
     sys.setrecursionlimit(100000)
     os.makedirs('public/img', exist_ok=True)
     elevations = fetch_elevations()
-    relief(elevations)
     contours(elevations)

@@ -23,8 +23,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <UContainer class="flex justify-center py-12">
-    <UPageCard class="w-full max-w-md">
+  <AuthScreen>
+    <AuthCard>
       <template v-if="errorDescription">
         <UAlert
           color="error"
@@ -49,6 +49,6 @@ onMounted(() => {
         <UIcon name="i-lucide-loader-circle" class="size-5 animate-spin" />
         <span>{{ t('auth.confirm.confirming') }}</span>
       </div>
-    </UPageCard>
-  </UContainer>
+    </AuthCard>
+  </AuthScreen>
 </template>

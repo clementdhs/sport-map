@@ -3,6 +3,7 @@
     "account": "Mon compte",
     "accountNamed": "Mon compte ({name})",
     "record": "Enregistrer une sortie",
+    "share": "Partager ma position",
     "create": "Créer un parcours",
     "login": "Connexion",
     "profile": "Mon profil",
@@ -23,15 +24,10 @@
     },
     "accent": "Couleur",
     "accents": {
-      "indigo": "Indigo",
-      "violet": "Violet",
-      "fuchsia": "Fuchsia",
-      "pink": "Rose",
-      "yellow": "Ambre",
-      "lime": "Vert vif",
-      "green": "Vert",
-      "teal": "Sarcelle",
-      "sky": "Bleu ciel",
+      "forest": "Vert forêt",
+      "ochre": "Ocre",
+      "lake": "Bleu lac",
+      "heather": "Bruyère",
       "slate": "Ardoise"
     }
   },
@@ -53,6 +49,16 @@
     "passwordRequired": "Mot de passe requis",
     "passwordMin": "{n} caractères minimum",
     "passwordChanged": "Mot de passe modifié",
+    "mfa": {
+      "title": "Code de vérification",
+      "description": "Ouvre ton appli d'authentification et tape le code à 6 chiffres affiché pour sportmap.",
+      "code": "Code",
+      "codeFormat": "Le code a 6 chiffres",
+      "submit": "Vérifier",
+      "invalidCode": "Code incorrect ou expiré : tape celui que l'appli affiche maintenant.",
+      "tooManyAttempts": "Trop d'essais. Attends quelques minutes avant de réessayer.",
+      "otherAccount": "Changer de compte"
+    },
     "login": {
       "title": "Connexion",
       "submit": "Se connecter",
@@ -106,7 +112,7 @@
     "textFirst": "Les {count} premiers parcours pour « {query} »",
     "textCount": "{count} parcours pour « {query} » | {count} parcours pour « {query} »",
     "zoneNone": "Aucun parcours dans cette zone",
-    "zoneCount": "{count} parcours dans cette zone | {count} parcours dans cette zone",
+    "zoneCount": "{count} parcours ici | {count} parcours ici",
     "limit": {
       "nearest": "Les {count} parcours les plus proches du centre de la carte",
       "recent": "Les {count} parcours les plus récents de la zone",
@@ -127,7 +133,7 @@
       "textFirst": "Tes {count} premiers parcours pour « {query} »",
       "textCount": "{count} de tes parcours pour « {query} » | {count} de tes parcours pour « {query} »",
       "zoneNone": "Aucun de tes parcours dans cette zone",
-      "zoneCount": "{count} de tes parcours dans cette zone | {count} de tes parcours dans cette zone",
+      "zoneCount": "{count} de tes parcours ici | {count} de tes parcours ici",
       "zoneEmptyHint": "Déplace la carte, change les filtres, ou {link}.",
       "showAll": "affiche aussi les parcours de l'équipe",
       "limit": {
@@ -177,7 +183,8 @@
   "routeCard": {
     "private": "Privé",
     "loop": "Boucle",
-    "gain": "D+ {gain} m",
+    "gainUnit": "m D+",
+    "quote": "« {comment} » — {author}",
     "by": "par {name}",
     "reviews": "{count} avis | {count} avis"
   },
@@ -185,7 +192,8 @@
     "cancel": "Annuler",
     "delete": "Supprimer",
     "save": "Enregistrer",
-    "close": "Fermer"
+    "close": "Fermer",
+    "edit": "Modifier"
   },
   "route": {
     "notFound": "Parcours introuvable",
@@ -235,7 +243,23 @@
     },
     "pois": "Points d'intérêt",
     "deleteTitle": "Supprimer ce parcours ?",
-    "deleteDescription": "Il disparaîtra aussi des listes « À faire » et des parcours réalisés des autres utilisateurs. Cette action est définitive."
+    "deleteDescription": "Il disparaîtra aussi des listes « À faire » et des parcours réalisés des autres utilisateurs. Cette action est définitive.",
+    "highPoint": "Point haut",
+    "teamWords": "Les mots de l'équipe",
+    "allReviews": "Tous les avis",
+    "steps": {
+      "title": "Étapes",
+      "end": "Arrivée",
+      "loopEnd": "Retour au départ",
+      "number": "Étape {number}",
+      "at": "Temps de passage estimé : "
+    },
+    "privacy": {
+      "masked": "Départ et arrivée masqués par {name} : la trace, la distance et le dénivelé sont ceux de la partie visible.",
+      "maskedOwner": "Le reste de l'équipe ne voit pas le départ et l'arrivée de ce parcours, qui sont dans une de tes zones de confidentialité.",
+      "hiddenOwner": "Le reste de l'équipe ne voit pas ce parcours : il est entièrement dans tes zones de confidentialité.",
+      "settingsLink": "Mes zones"
+    }
   },
   "reviews": {
     "saveFailed": "Impossible d'enregistrer ton avis",
@@ -345,7 +369,10 @@
     "public": "Visible par l'équipe",
     "publicHint": "Visible par tous les membres de l'équipe. Tes parcours privés y restent cachés.",
     "createAndAdd": "Créer et ajouter",
-    "new": "Nouvelle collection"
+    "new": "Nouvelle collection",
+    "newHint": "Regroupe des parcours : un week-end, un séjour, tes boucles favorites.",
+    "create": "Créer",
+    "createdHint": "Ajoute-lui des parcours avec « Ajouter à une collection » sur leur page."
   },
   "duration": {
     "short": "Durée",
@@ -368,11 +395,19 @@
       "mountain_biking": "Ta vitesse de {value} km/h (Paramètres), plus 1 h par 500 m de dénivelé positif."
     }
   },
+  "signage": {
+    "duration": "Durée estimée : {duration}",
+    "done": "Fait",
+    "doneTimes": "Fait une fois | Fait {count} fois",
+    "here": "Vous êtes ici",
+    "altitude": "alt. {altitude} m"
+  },
   "elevationProfile": {
     "title": "Profil altimétrique",
     "summary": "Profil altimétrique : altitude de {min} à {max} sur {distance}",
     "at": "à {distance}",
-    "grade": "Pente : {grade} %"
+    "grade": "Pente : {grade} %",
+    "range": "de {min} à {max}"
   },
   "flyover": {
     "start": "Survol 3D",
@@ -392,7 +427,13 @@
     "gpxTooShort": "La trace contient moins de 2 points.",
     "gpxOneFile": "Dépose un seul fichier GPX à la fois.",
     "gpxNotGpx": "Seuls les fichiers GPX (.gpx) peuvent être importés.",
-    "overpassBusy": "Le service OpenStreetMap (Overpass) est surchargé, réessaie dans un moment."
+    "overpassBusy": "Le service OpenStreetMap (Overpass) est surchargé, réessaie dans un moment.",
+    "importInvalid": "Ce fichier est illisible ou abîmé.",
+    "importNoTrack": "Ce fichier ne contient aucune sortie.",
+    "importNoTimes": "Ce fichier n'a pas d'heures de passage : c'est un tracé, pas une sortie. Importe-le depuis l'éditeur.",
+    "importTooShort": "La trace de cette sortie contient moins de 2 points.",
+    "importType": "Seuls les fichiers GPX, FIT et TCX sont acceptés.",
+    "importTooLarge": "Fichier trop lourd (20 Mo au plus)."
   },
   "editor": {
     "replaceWithGpx": "Remplacer le tracé en cours par ce fichier GPX ?",
@@ -465,9 +506,10 @@
     "start": "Départ",
     "noStart": "Pas encore de départ.",
     "placeStart": "Clique sur la carte pour placer le départ.",
-    "startPlaced": "Départ placé (point vert sur la carte).",
+    "moveStart": "Clique sur la carte pour déplacer le départ.",
+    "startPlaced": "Départ placé sur la carte.",
     "myPosition": "Ma position",
-    "pickOnMap": "Choisir sur la carte",
+    "pickOnMap": "Déplacer",
     "shape": "Type de parcours",
     "shapes": {
       "loop": "Boucle",
@@ -518,16 +560,19 @@
     "viaFound": "Passe par {name}.",
     "viaFoundEle": "Passe par {name} ({ele} m).",
     "proposals": "Boucles proposées",
+    "outAndBackProposals": "Allers-retours proposés",
     "proposal": "Boucle {n}",
     "outAndBackProposal": "Aller-retour {n}",
-    "summary": "{distance} · D+ {gain} m · ~{duration}",
-    "choose": "Choisir",
-    "chooseLabel": "Choisir la boucle {n}",
+    "summary": "{distance} · {gain} m D+",
+    "choose": "Choisir cette boucle",
+    "chooseOutAndBack": "Choisir cet aller-retour",
     "replaceConfirm": "Remplacer le tracé en cours par cette boucle ?"
   },
   "discover": {
     "title": "Parcours balisés",
     "kind": "Type de parcours",
+    "nearby": "Près de chez toi",
+    "inView": "Dans cette zone",
     "kinds": {
       "foot": "À pied",
       "bicycle": "Vélo",
@@ -682,7 +727,8 @@
       "arrival": "Arrivée estimée",
       "time": "Heure",
       "battery": "Batterie"
-    }
+    },
+    "onRoute": "sur « {name} »"
   },
   "follow": {
     "title": "Suivre « {name} »",
@@ -691,9 +737,6 @@
     "arrived": "Tu es arrivé !",
     "recenter": "Recentrer",
     "done": "Parcouru",
-    "remaining": "Restant",
-    "remainingGain": "D+ restant",
-    "percent": "{percent} % du parcours",
     "accuracy": "Précision GPS : ± {accuracy} m",
     "searchingPosition": "Recherche de ta position…",
     "searchingGps": "Recherche du signal GPS…",
@@ -703,9 +746,24 @@
     "record": "Enregistrer la sortie",
     "finishDescription": "Elle est ajoutée aux passages de ce parcours, marqué comme réalisé.",
     "headingUp": "Orienter la carte dans le sens de la marche",
-    "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement"
+    "noCompass": "Boussole indisponible : la carte tourne seulement pendant le déplacement",
+    "arrival": "Arrivée",
+    "arrivalIn": "Arrivée dans {distance}, environ {duration}",
+    "arrivalAt": "Arrivée dans {distance}",
+    "inProgress": "Suivi en cours",
+    "time": "Temps",
+    "panel": "Progression",
+    "progress": "{done} parcourus sur {total} ({percent} %)"
   },
   "live": {
+    "heading": "En direct",
+    "refreshed": "Les sorties de l'équipe en ce moment · actualisé toutes les {seconds} s",
+    "shareTitle": "Partager ma position",
+    "shareHint": "Lance l'enregistrement de ta sortie : l'équipe te suit, {hours} h au plus.",
+    "shareAction": "Enregistrer",
+    "count": "{title} · {count}",
+    "startedAt": "depuis {time}",
+    "ago": "il y a {ago}",
     "title": "Sorties en cours",
     "intro": "Les membres de l'équipe qui partagent leur position pendant une sortie.",
     "none": "Personne ne partage sa position en ce moment.",
@@ -722,6 +780,7 @@
     "endedDescription": "{name} ne partage plus sa position.",
     "seeAll": "Voir les sorties en cours",
     "banner": "{name} est en sortie",
+    "bannerAll": "Voir tout",
     "bannerLink": "Voir sa position",
     "share": "Partager ma position",
     "confirmTitle": "Partager ta position avec l'équipe ?",
@@ -832,9 +891,11 @@
     "app": {
       "routes": "Parcours",
       "route": "Tracé d'un parcours",
+      "routeDone": "Partie déjà parcourue (suivi)",
       "start": "Départ",
       "end": "Arrivée",
-      "waypoint": "Point de passage (éditeur)",
+      "waypoint": "Point de passage numéroté",
+      "routeStart": "Départ d'un parcours sur la carte, à la couleur de son sport",
       "gps": "Position GPS",
       "position": "Ta position",
       "heading": "Ta position et ta direction",
@@ -896,8 +957,8 @@
     "label": "Navigation principale",
     "map": "Carte",
     "discover": "Découvrir",
-    "new": "Créer ou enregistrer",
-    "live": "En direct",
+    "new": "Enregistrer, partager ou créer",
+    "coach": "Coach",
     "profile": "Profil"
   },
   "mapBar": {
@@ -905,10 +966,10 @@
     "back": "Retour",
     "home": "Accueil",
     "record": "Enregistrer",
+    "share": "Partager",
     "create": "Créer"
   },
   "sheet": {
-    "expand": "Agrandir le panneau",
     "collapse": "Réduire le panneau",
     "show": "Afficher le panneau",
     "resize": "Redimensionner le panneau"
@@ -918,16 +979,23 @@
       "created": "Mes parcours",
       "collections": "Collections",
       "completed": "Réalisés",
-      "stats": "Statistiques"
+      "stats": "Statistiques",
+      "routes": "Parcours"
     },
     "memberSince": "membre depuis le {date}",
     "viewPublic": "Voir mon profil tel que l'équipe le voit",
     "noCreated": "Aucun parcours créé",
     "noCreatedHint": "Trace ton premier parcours ou importe un fichier GPX.",
-    "todoHint": "les parcours que tu veux faire",
+    "myList": "Ma liste",
+    "routeWord": "parcours | parcours",
+    "sharedCollection": "Partagée par lien",
+    "latest": {
+      "title": "Dernières sorties",
+      "date": "Date",
+      "route": "Parcours"
+    },
     "discover": "Découvrir des parcours",
     "privateCollection": "Privée",
-    "noCollections": "Aucune collection",
     "noCollectionsHint": "Regroupe des parcours (un séjour, tes boucles favorites) avec « Ajouter à une collection » sur leur page.",
     "noCompleted": "Aucun parcours réalisé",
     "noCompletedHint": "Sur la page d'un parcours, indique « Je l'ai fait » pour garder l'historique de tes sorties.",
@@ -1082,7 +1150,40 @@
       "sport": "Sport par défaut",
       "paces": "Mes allures",
       "startArea": "Ma zone de départ",
-      "voice": "Guidage vocal"
+      "privacy": "Confidentialité",
+      "voice": "Guidage vocal",
+      "security": "Sécurité"
+    },
+    "mfa": {
+      "sectionHint": "Ce qui protège ton compte si ton mot de passe fuit.",
+      "title": "Double authentification",
+      "on": "Activée",
+      "off": "Désactivée",
+      "hint": "À chaque nouvelle connexion, sportmap demande en plus du mot de passe un code de ton appli d'authentification (Google Authenticator, Aegis, 1Password…). Un mot de passe volé ne suffit plus pour voir tes parcours ni ta position.",
+      "enable": "Activer la double authentification",
+      "scan": "Scanne ce QR code avec ton appli d'authentification.",
+      "qrAlt": "QR code à scanner avec l'appli d'authentification",
+      "secretLabel": "Pas de QR code possible ? Tape cette clé dans l'appli :",
+      "copySecret": "Copier la clé",
+      "secretCopied": "Clé copiée",
+      "firstCode": "Code affiché par l'appli",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "enabled": "Double authentification activée",
+      "added": "Appli de secours ajoutée",
+      "enrollFailed": "Impossible d'activer la double authentification",
+      "loadFailed": "Impossible de lire la double authentification",
+      "factorName": "Appli d'authentification {n}",
+      "addedOn": "Ajoutée le {date}",
+      "addSpare": "Ajouter une appli de secours",
+      "spareHint": "Une seconde appli, sur un autre appareil, évite d'être bloqué si tu perds ton téléphone.",
+      "remove": "Retirer",
+      "removeConfirm": "Retirer cette appli ? Ses codes ne seront plus acceptés.",
+      "removeLastConfirm": "Retirer cette appli ? La double authentification sera désactivée.",
+      "removed": "Appli retirée",
+      "disabled": "Double authentification désactivée",
+      "removeFailed": "Impossible de retirer l'appli",
+      "lostPhone": "Plus aucune appli sous la main ? Demande à la personne qui gère sportmap de retirer ta double authentification, puis réactive-la."
     },
     "profileHint": "Ce que l'équipe voit sur {link} ({username}).",
     "publicProfile": "ton profil",
@@ -1128,6 +1229,29 @@
       "saved": "Zone de départ enregistrée",
       "cleared": "Zone de départ retirée"
     },
+    "privacy": {
+      "hint": "Le départ et l'arrivée de tes parcours et de tes sorties qui sont dans une de ces zones (chez toi, au travail…) restent cachés au reste de l'équipe, sur la carte comme dans l'aperçu des liens partagés : la trace commence à la sortie de la zone, et les distances et le dénivelé montrés aux autres sont ceux de la partie visible. Toi, tu vois tout.",
+      "none": "Aucune zone : l'équipe voit tes traces en entier.",
+      "radius": "Rayon {radius}",
+      "remove": "Retirer la zone {name}",
+      "removeConfirm": "Retirer la zone « {name} » ? Le départ et l'arrivée de tes parcours qui y sont redeviendront visibles pour l'équipe.",
+      "unnamed": "Zone sans nom",
+      "new": "Ajouter une zone",
+      "mapHint": "Cherche une adresse ou touche la carte pour placer le centre de la zone. Le cercle réellement utilisé est légèrement décalé au hasard, pour qu'on ne retrouve pas le centre en croisant plusieurs parcours.",
+      "radiusLabel": "Rayon",
+      "label": "Nom",
+      "labelPlaceholder": "Maison",
+      "optional": "Facultatif",
+      "add": "Ajouter la zone",
+      "added": "Zone ajoutée : tes parcours et sorties sont à jour",
+      "addFailed": "Zone non ajoutée",
+      "removed": "Zone retirée : tes parcours et sorties sont à jour",
+      "removeFailed": "Zone non retirée",
+      "notApplied": "Certains parcours ou sorties n'ont pas pu être mis à jour",
+      "reapplied": "Tes parcours et sorties sont à jour",
+      "retry": "Réessayer",
+      "loadFailed": "Impossible de charger tes zones de confidentialité"
+    },
     "avatar": {
       "title": "Photo de profil",
       "choose": "Choisir une photo",
@@ -1145,6 +1269,16 @@
       "frameHint": "Visible par l'équipe, en rond, à côté de ton nom.",
       "zoom": "Zoom"
     }
+  },
+  "sportChips": {
+    "label": "Sport",
+    "all": "Tous",
+    "running": "Course",
+    "trail": "Trail",
+    "hiking": "Rando",
+    "cycling": "Vélo",
+    "road_cycling": "Vélo route",
+    "mountain_biking": "VTT"
   },
   "sports": {
     "running": "Course sur route",
@@ -1236,10 +1370,18 @@
     "editorMismatch": "L'état de l'éditeur ne correspond pas au tracé",
     "movingExceedsDuration": "Le temps en mouvement dépasse la durée de la sortie",
     "maxPois": "{max} points d'intérêt maximum",
-    "wayInfoMismatch": "Les informations sur les voies ne correspondent pas au tracé"
+    "wayInfoMismatch": "Les informations sur les voies ne correspondent pas au tracé",
+    "raceDateRequired": "Indique la date de la course",
+    "raceDatePast": "La course ne peut pas être déjà passée",
+    "raceDateFar": "Course trop lointaine : 2 ans au plus",
+    "raceDistanceRequired": "Indique la distance",
+    "raceDistanceRange": "Entre 1 et 300 km",
+    "raceGainRange": "Entre 0 et 20 000 m"
   },
   "api": {
     "signInRequired": "Connexion requise",
+    "mfaRequired": "Code de vérification requis",
+    "mfaCheckFailed": "Impossible de vérifier la double authentification",
     "invalidLogin": "Pseudo ou mot de passe incorrect",
     "tooManyLogins": "Trop d'essais de connexion : réessaie dans quelques minutes",
     "loginFailed": "Connexion impossible pour le moment, réessaie plus tard",
@@ -1319,7 +1461,14 @@
     "sendLivePointsFailed": "Impossible d'envoyer ta position",
     "stopLiveShareFailed": "Impossible d'arrêter le partage de position",
     "loadLiveSharesFailed": "Impossible de charger les positions partagées",
-    "invalidRequest": "Requête invalide"
+    "invalidRequest": "Requête invalide",
+    "loadPrivacyZonesFailed": "Impossible de charger tes zones de confidentialité",
+    "savePrivacyZoneFailed": "Impossible d'enregistrer la zone de confidentialité",
+    "tooManyPrivacyZones": "5 zones de confidentialité au maximum",
+    "privacyZoneNotFound": "Zone de confidentialité introuvable",
+    "loadCoachGoalFailed": "Impossible de charger ton objectif",
+    "saveCoachGoalFailed": "Impossible d'enregistrer ton objectif",
+    "saveFeelingFailed": "Impossible d'enregistrer le ressenti"
   },
   "archive": {
     "files": {
@@ -1335,8 +1484,10 @@
       "routing": "calculs.json",
       "live": "partage-position.json",
       "preferences": "reglages.json",
+      "privacyZones": "zones-de-confidentialite.json",
       "gpxFolder": "parcours",
-      "photosFolder": "photos"
+      "photosFolder": "photos",
+      "coachGoal": "objectif-coach.json"
     },
     "readme": {
       "intro": "Données de {username} sur sportmap, exportées le {date}.",
@@ -1353,7 +1504,232 @@
       "routing": "ton nombre de calculs d'itinéraire du jour (limité par personne)",
       "live": "ta position partagée avec l'équipe pendant une sortie en cours (effacée à la fin de la sortie)",
       "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
-      "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels."
+      "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
+      "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.",
+      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+)"
     }
+  },
+  "coachForm": {
+    "title": "Ta forme du moment",
+    "back": "Coach",
+    "details": "Détails",
+    "subtitle": "Calculée sur tes sorties enregistrées et tes parcours marqués comme faits, à pied.",
+    "states": {
+      "learning": "Le coach apprend à te connaître",
+      "recovery": "En récupération",
+      "progress": "En progression",
+      "overload": "En surcharge"
+    },
+    "zones": {
+      "recovery": "Récupération",
+      "progress": "Progression",
+      "overload": "Surcharge"
+    },
+    "gauge": "Forme du moment",
+    "ratioValue": "Rapport entre tes 7 derniers jours et ton fond : × {ratio}",
+    "summary": "7 derniers jours : {load} km-effort, {comparison} ton fond ({baseline} / sem.).",
+    "comparison": {
+      "more": "{percent} % de plus que",
+      "less": "{percent} % de moins que",
+      "same": "autant que"
+    },
+    "advice": {
+      "recovery": "Tu as de la marge pour charger.",
+      "progress": "Continue, sans en rajouter.",
+      "overload": "Lève le pied quelques jours."
+    },
+    "explain": {
+      "recovery": "Tu en fais moins que d'habitude : ton corps récupère. C'est le moment de charger un peu.",
+      "progress": "Tu en fais autant ou un peu plus que d'habitude : c'est ce qui fait progresser. Au-delà de × {high}, le risque de blessure monte : le coach te proposera alors des séances faciles.",
+      "overload": "Tu en fais beaucoup plus que d'habitude : le risque de blessure monte. Le coach te propose des séances faciles, le temps que ton fond rattrape."
+    },
+    "recent": "7 derniers jours",
+    "recentHint": "{distance} et {gain} m de D+",
+    "baseline": "Ton fond",
+    "baselineWeeks": "Moyenne par semaine des 4 semaines d'avant.",
+    "baselineDays": "Moyenne par semaine des {count} jours d'avant : ton historique commence là.",
+    "perWeek": "/ sem.",
+    "unit": "km-effort",
+    "outingLoad": "{load} km-effort",
+    "noRecent": "Aucune sortie ces 7 derniers jours.",
+    "cycling": "Les sorties à vélo ne comptent pas encore : un kilomètre à vélo n'en vaut pas un à pied.",
+    "chart": {
+      "title": "Charge par semaine",
+      "week": "7 jours",
+      "baseline": "Fond",
+      "baselineValue": "fond {load}",
+      "last": "7 j",
+      "range": "Du {start} au {end}",
+      "unitHint": "1 km-effort = 1 km à plat ; 100 m de D+ comptent pour 1 km.",
+      "caption": "Charge des 8 dernières semaines, en km-effort, et le fond de chacune",
+      "period": "Période",
+      "load": "Charge"
+    },
+    "rules": {
+      "title": "Ce que le coach en fait",
+      "current": "ta forme du moment",
+      "recovery": "(moins de × {low}) : tu peux charger, il propose fractionné ou sortie longue.",
+      "progress": "(× {low} à {high}) : il alterne séance clé et endurance.",
+      "overload": "(plus de × {high}) : footing court ou repos, rien d'intense."
+    },
+    "learning": {
+      "title": "Le coach apprend à te connaître",
+      "text": "Il lui faut {count} semaines de sorties pour juger ta forme.",
+      "remaining": "Encore {count} jour. | Encore {count} jours.",
+      "days": "{days} jours sur {total} écoulés, {outings} avec une sortie",
+      "daysAgo": "Il y a {count} jour | Il y a {count} jours",
+      "today": "Aujourd'hui",
+      "verdict": "Avis du coach",
+      "hint": "Enregistre tes sorties avec sportmap, ou marque comme faits les parcours que tu as suivis : chacune compte.",
+      "record": "Enregistrer une sortie"
+    }
+  },
+  "coach": {
+    "title": "Coach"
+  },
+  "coachGoal": {
+    "title": "Ton objectif",
+    "label": "Objectif :",
+    "none": "pas encore choisi",
+    "edit": "Modifier",
+    "choose": "Choisir",
+    "kinds": {
+      "resume": "Reprendre en douceur",
+      "progress": "Progresser",
+      "race": "Préparer une course"
+    },
+    "hints": {
+      "resume": "Séances faciles, volume qui monte lentement",
+      "progress": "Une séance clé une sortie sur deux, de l'endurance entre les deux",
+      "race": "Des sorties longues qui montent vers la distance, et un allègement la dernière semaine"
+    },
+    "race": "course de {distance} le {date}",
+    "raceGain": "course de {distance} et {gain} D+ le {date}",
+    "when": {
+      "today": "aujourd'hui",
+      "past": "passée",
+      "days": "demain | dans {n} jours",
+      "weeks": "dans {n} sem."
+    },
+    "date": "Date",
+    "distance": "Distance (km)",
+    "gain": "D+ (m)",
+    "gainHint": "Facultatif",
+    "save": "Enregistrer",
+    "saved": "Objectif enregistré",
+    "noGoalHint": "Sans objectif, le coach t'aide à progresser."
+  },
+  "coachSession": {
+    "heading": "Séance du jour · {date}",
+    "durations": "Combien de temps as-tu ?",
+    "other": "Autre séance",
+    "kinds": {
+      "rest": "Repos",
+      "raceDay": "Jour de course",
+      "recovery": "Footing de récupération",
+      "endurance": "Sortie en endurance",
+      "long": "Sortie longue",
+      "longHilly": "Sortie longue vallonnée",
+      "shortHills": "Côtes courtes",
+      "longHills": "Côtes longues",
+      "intervals": "Fractionné"
+    },
+    "reasons": {
+      "learning": "Le coach apprend encore à te connaître : une sortie facile, en aisance respiratoire, en attendant.",
+      "overloadRest": "Tes 7 derniers jours dépassent largement ton fond : repos aujourd'hui, la forme se construit aussi en récupérant.",
+      "overloadJog": "Tes 7 derniers jours dépassent ton fond : un footing court et tranquille, pour garder les jambes en mouvement.",
+      "raceDay": "C'est le jour de ta course : rien d'autre au programme. Bonne course !",
+      "taper": "Ta course est demain : on allège pour arriver frais, en endurance tranquille. | Ta course est dans {n} jours : on allège pour arriver frais, en endurance tranquille.",
+      "raceLong": "Ta course est dans {n} jours : la sortie longue monte vers sa distance, toujours en endurance.",
+      "resume": "Tu reprends en douceur : de l'endurance facile, le volume montera petit à petit.",
+      "recovery": "Tu as bien récupéré : c'est le jour pour une séance clé.",
+      "progressKey": "Tu progresses : une séance clé aujourd'hui, de l'endurance à la sortie suivante.",
+      "progressEasy": "Tu progresses : de l'endurance aujourd'hui pour assimiler la séance clé, la prochaine viendra à la sortie suivante."
+    },
+    "blocks": {
+      "label": "Déroulé de la séance",
+      "warmup": "Échauffement",
+      "cooldown": "Retour au calme",
+      "easy": "Endurance",
+      "hilly": "Endurance vallonnée",
+      "recovery": "Footing tranquille",
+      "hills": "{count} × {effort} en côte",
+      "fast": "{count} × {effort} rapide",
+      "hillsDetail": "{count} × {effort} en montée, à effort soutenu, récupération {recovery} en redescendant",
+      "fastDetail": "{count} × {effort} rapide, récupération {recovery} en trottinant",
+      "summary": "Échauffement {warmup}, {reps}, retour au calme {cooldown}"
+    },
+    "distance": "Distance",
+    "gain": "D+",
+    "pace": "Allure EF",
+    "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
+    "paceValue": "{pace}/km",
+    "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout."
+  },
+  "coachReview": {
+    "title": "Bilan de la sortie",
+    "finished": "Sortie terminée · {time}",
+    "stampLine1": "Séance",
+    "stampLine2": "faite",
+    "distance": "Distance",
+    "gain": "D+",
+    "duration": "Durée",
+    "repeats": {
+      "hills": "Ta côte | Tes {n} côtes",
+      "fast": "Ta fraction | Tes {n} fractions"
+    },
+    "spreadTime": "{s} s",
+    "spreadPace": "{s} s/km",
+    "regularity": {
+      "veryRegular": "Très régulier : {spread} d'écart entre la plus rapide et la plus lente.",
+      "regular": "Régulier : {spread} d'écart entre la plus rapide et la plus lente.",
+      "irregular": "Irrégulier : {spread} d'écart entre la plus rapide et la plus lente."
+    },
+    "lastSlowest": "La dernière a coûté un peu plus, c'est normal.",
+    "feelingTitle": "Comment c'était ?",
+    "feelingHint": "Ton ressenti affine le calcul de ta forme.",
+    "feelings": {
+      "easy": "Facile",
+      "ok": "Correct",
+      "hard": "Dur",
+      "very_hard": "Très dur"
+    },
+    "feelingFailed": "Impossible d'enregistrer le ressenti",
+    "tomorrow": "Demain :",
+    "tomorrowSession": "{session}, {duration}",
+    "done": "Terminer",
+    "detach": "Ce n'était pas la séance du jour",
+    "attach": "C'était la séance du jour"
+  },
+  "coachWeather": {
+    "title": "Météo de la séance",
+    "best": "Meilleur créneau :",
+    "range": "{start} – {end}",
+    "hour": "{h} h",
+    "hourMinutes": "{h} h {m}",
+    "noRain": "sans pluie",
+    "fewDrops": "quelques gouttes",
+    "rain": "{mm} mm de pluie",
+    "wind": "vent {speed} km/h",
+    "short": "Plus assez de jour aujourd'hui pour cette séance.",
+    "band": "Prévisions des prochaines heures",
+    "cellRain": "pluie",
+    "cellWind": "vent",
+    "chosen": "créneau retenu"
+  },
+  "outingImport": {
+    "button": "Importer des sorties",
+    "title": "Import des sorties",
+    "progress": "Fichier {done} sur {total}…",
+    "imported": "{count} sortie importée | {count} sorties importées",
+    "duplicates": "{count} déjà présente | {count} déjà présentes",
+    "failed": "{count} fichier non importé | {count} fichiers non importés",
+    "failure": "{file} : {message}",
+    "where": "Elles comptent dans tes statistiques et ta forme, et figurent dans tes parcours faits, en privé."
+  },
+  "coachImport": {
+    "title": "Aller plus vite : importe tes sorties",
+    "text": "Fichiers GPX, FIT ou TCX de ta montre ou d'une autre application. Le coach lit tes 5 dernières semaines.",
+    "choose": "Choisir des fichiers"
   }
 }

@@ -1,13 +1,19 @@
 import type { FeatureCollection, LineString, Point } from 'geojson'
-import type { GeoJSONSource, Map } from 'maplibre-gl'
+import type { ExpressionSpecification, GeoJSONSource, Map } from 'maplibre-gl'
 import type { LngLat } from '#shared/utils/routes'
-import { START_COLOR } from '~/utils/routeLayers'
+import { addMarkerImages } from '~/utils/mapMarkers'
+import { isMapDark, mapColor } from '~/utils/topoStyle'
 
 // Automatic loop proposals (#50), over the editor's layers (its track is hidden meanwhile).
 
-// Categorical slots 1 to 3 of the dataviz palette (validated all-pairs on the light and dark surfaces), one per
-// proposal; the list beside the map names each one, so they read without the colours.
-export const LOOP_COLORS = ['#2a78d6', '#d95926', '#199e70'] as const
+// Categorical slots 1 to 3 of the dataviz palette, one per proposal, each mode's own steps, validated all-pairs on the
+// map's background (light #f7f4ec, dark #141815 since #258, each a little more contrast than before; loops.md). The list beside the map names each one, so they read
+// without the colours.
+export const LOOP_COLORS = [
+  { light: '#2a78d6', dark: '#3987e5' },
+  { light: '#eb6834', dark: '#d95926' },
+  { light: '#1baf7a', dark: '#199e70' },
+] as const
 
 export const VIA_COLOR = '#1f2937'
 
@@ -31,7 +37,7 @@ function loopsData({ loops, highlighted }: LoopLayerData): FeatureCollection<Lin
     ? []
     : [{
         type: 'Feature' as const,
-        properties: { index, color: LOOP_COLORS[index % LOOP_COLORS.length]!, highlighted: index === highlighted, dimmed: highlighted !== null && index !== highlighted },
+        properties: { index, highlighted: index === highlighted, dimmed: highlighted !== null && index !== highlighted },
         geometry: { type: 'LineString' as const, coordinates },
       }])
   return { type: 'FeatureCollection', features: features.sort((a, b) => Number(a.properties.highlighted) - Number(b.properties.highlighted)) }
@@ -47,6 +53,7 @@ function startData(start: LngLat | null, via: LngLat | null): FeatureCollection<
 }
 
 export function addLoopLayers(map: Map) {
+  map.on('style.load', repaintLoops)
   map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, via: null, loops: [], highlighted: null }) })
   map.addSource(START_SOURCE, { type: 'geojson', data: startData(null, null) })
 
@@ -55,14 +62,14 @@ export function addLoopLayers(map: Map) {
     type: 'line',
     source: LOOPS_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': ['case', ['get', 'highlighted'], 9, 7], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
+    paint: { 'line-color': mapColor(map, 'casing'), 'line-width': ['case', ['get', 'highlighted'], 9, 7], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
   })
   map.addLayer({
     id: 'loop-proposals',
     type: 'line',
     source: LOOPS_SOURCE,
     layout: { 'line-cap': 'round', 'line-join': 'round' },
-    paint: { 'line-color': ['get', 'color'], 'line-width': ['case', ['get', 'highlighted'], 6, 4], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
+    paint: { 'line-color': loopColors(map), 'line-width': ['case', ['get', 'highlighted'], 6, 4], 'line-opacity': ['case', ['get', 'dimmed'], 0.5, 1] },
   })
   map.addLayer({
     id: LOOPS_HIT_LAYER,
@@ -79,13 +86,25 @@ export function addLoopLayers(map: Map) {
     paint: { 'circle-radius': 6, 'circle-color': '#ffffff', 'circle-stroke-color': VIA_COLOR, 'circle-stroke-width': 3 },
   })
   // Same look as a route's start.
+  addMarkerImages(map, ['sm-start'])
   map.addLayer({
     id: 'loop-start',
-    type: 'circle',
+    type: 'symbol',
     source: START_SOURCE,
     filter: ['==', ['get', 'kind'], 'start'],
-    paint: { 'circle-radius': 7, 'circle-color': START_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    layout: { 'icon-image': 'sm-start', 'icon-allow-overlap': true, 'icon-ignore-placement': true },
   })
+}
+
+// The colours of the map's mode. Not in APP_MAP_COLORS: switchAppColors swaps colour literals in every app layer,
+// and these are also the way info's and marked routes' colours. A theme change ends with a `style.load`.
+function loopColors(map: Map): ExpressionSpecification {
+  const mode = isMapDark(map) ? 'dark' : 'light'
+  return ['match', ['get', 'index'], 0, LOOP_COLORS[0][mode], 1, LOOP_COLORS[1][mode], LOOP_COLORS[2][mode]]
+}
+
+function repaintLoops(this: void, event: { target: Map }) {
+  if (event.target.getLayer('loop-proposals')) event.target.setPaintProperty('loop-proposals', 'line-color', loopColors(event.target))
 }
 
 export function setLoopLayerData(map: Map, data: LoopLayerData) {

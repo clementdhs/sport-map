@@ -3,10 +3,11 @@ import type { Database } from '#shared/types/database.types'
 import type { RecordOuting } from '#shared/types/routes'
 import { type BestEfforts, bestEfforts, bestEffortsAreFresh } from '#shared/utils/bestEfforts'
 import { type OutingTrackPoint, SPORT_KINDS, type SportKind } from '#shared/utils/routes'
+import type { Feeling } from '#shared/utils/trainingForm'
 
 type Supabase = Awaited<ReturnType<typeof serverSupabaseClient<Database>>>
 
-const OUTING_COLUMNS = 'id, route_id, started_at, duration_s, moving_s, distance_m, has_track, best_efforts, route:routes(name, sport_type, distance_m, elevation_gain_m)'
+const OUTING_COLUMNS = 'id, route_id, started_at, duration_s, moving_s, distance_m, has_track, best_efforts, feeling, route:routes(name, sport_type, distance_m, elevation_gain_m)'
 // Tracks are loaded this many at a time: up to 10,000 points each.
 const TRACKS_PER_REQUEST = 10
 
@@ -39,6 +40,8 @@ export async function ownRecordedOutings(supabase: Supabase, userId: string): Pr
     outing_id: outing.id,
     covered_m: outing.distance_m,
     best_efforts: efforts.get(outing.id) ?? null,
+    // The check constraint keeps it to FEELINGS.
+    feeling: outing.feeling as Feeling | null,
   }))
 }
 
@@ -67,13 +70,15 @@ async function freshBestEfforts(supabase: Supabase, rows: StoredEfforts[]): Prom
 
   for (let i = 0; i < stale.length; i += TRACKS_PER_REQUEST) {
     const chunk = new Map(stale.slice(i, i + TRACKS_PER_REQUEST).map(row => [row.id, row.kind]))
-    const { data, error } = await supabase.from('route_outings').select('id, track').in('id', [...chunk.keys()])
+    // The recorder's full points when the team sees them cut by privacy zones (#254).
+    const { data, error } = await supabase.from('route_outings').select('id, track, original:outing_originals(track)').in('id', [...chunk.keys()])
     if (!data) {
       // The records then miss these outings' best times, until the next load.
       console.error('[freshBestEfforts] tracks', error)
       return efforts
     }
-    await Promise.all(data.map(async ({ id, track }) => {
+    await Promise.all(data.map(async ({ id, track: visible, original }) => {
+      const track = original?.track ?? visible
       if (!Array.isArray(track) || track.length < 2) return
       const computed = bestEfforts(track as unknown as OutingTrackPoint[], chunk.get(id)!)
       efforts.set(id, computed)

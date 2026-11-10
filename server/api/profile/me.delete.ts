@@ -7,6 +7,8 @@ import type { Database } from '#shared/types/database.types'
 export default defineEventHandler(async (event) => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
+  // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
+  await requireMfa(event)
   const { username } = await readLocalizedBody(event, accountDeletionSchema)
 
   const supabase = await serverSupabaseClient(event)

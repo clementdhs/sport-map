@@ -39,3 +39,7 @@ export function yearSummary(outings: StatsOuting[], now = new Date()): ProfileSu
 export function estimateGapMin(movingS: number, estimateMin: number): number {
   return Math.round((movingS / 60 - estimateMin) / 5) * 5 || 0
 }
+
+// Two outings of a member starting within this many seconds are the same one (#268): an imported file is skipped
+// when the member already has it, imported earlier or recorded by the app at the same time as by a watch.
+export const IMPORT_SAME_START_S = 60

@@ -6,7 +6,7 @@ import type { Recording } from '~/utils/recorder'
 import type { TrackProgress } from '~/utils/trackFollower'
 import type { GuideState } from '~/utils/voiceGuide'
 
-const { formatDistance, formatDate } = useFormat()
+const { formatDistance, formatDate, locale } = useFormat()
 
 // Full-screen "follow the route" mode, for the phone: live position on the track, distance and climb
 // left, alert when straying from the track. The outing can be recorded at the same time: it is then listed on
@@ -141,6 +141,31 @@ const liveStats = computed<MeasuredStats>(() => {
   }
 })
 
+// The bottom panel (#235): the covered part on the map and the mini profile, three figures, the arrival sign.
+const doneFraction = computed(() => (progress.value && model.value.totalM ? progress.value.doneM / model.value.totalM : 0))
+const profile = computed(() => {
+  const elevations = model.value.elevations
+  return elevations ? { along: model.value.along, elevations } : null
+})
+const progressLabel = computed(() => t('follow.progress', {
+  done: formatDistance(progress.value?.doneM ?? 0),
+  total: formatDistance(model.value.totalM),
+  percent: percentDone.value,
+}))
+const liveDataPrefs = usePreference('liveData')
+const paces = usePreference('paces')
+// Pace or speed as on the data screen: the member's choice, else pace for running routes.
+const defaultPace = computed(() => SPORT_KINDS[parcours.value!.sport_type] === 'run')
+const pace = computed(() => liveDataPrefs.value.pace ?? defaultPace.value)
+const paceFigure = computed(() => liveValue('averageSpeed', { ...liveStats.value, batteryLevel: null }, pace.value, locale()))
+const doneFigure = computed(() => splitUnit(formatDistance(progress.value?.doneM ?? 0)))
+const remainingMinutes = computed(() => {
+  if (arrived.value) return null
+  const stats = liveStats.value
+  const sport = parcours.value!.sport_type
+  return Math.round(remainingDurationMin(sport, stats.remainingM ?? 0, stats.remainingGainM, stats.averageSpeedMs, paces.value[sport]))
+})
+
 // "Tour" on the data screen: kept with the recording, else with the outing in memory.
 function startLap() {
   if (recording.value) recordLap()
@@ -168,10 +193,11 @@ async function saveOuting() {
   saving.value = true
   try {
     const body: OutingPayload = { ...outingTimes(recording.value!, Date.now()), track: outingTrack(recording.value!) ?? undefined }
-    await $fetch(`/api/routes/${id}/outings`, { method: 'POST', body })
+    const outing = await $fetch<{ id: string }>(`/api/routes/${id}/outings`, { method: 'POST', body })
     stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
-    await navigateTo({ path: `/routes/${id}`, query: { tab: 'outings' } })
+    // The coach's review (#267) for the outings of its form, the route's outings otherwise.
+    await navigateTo(countsForForm(parcours.value!) ? `/coach/bilan/${outing.id}` : { path: `/routes/${id}`, query: { tab: 'outings' } })
   }
   catch (error) {
     toast.add({
@@ -193,57 +219,64 @@ function discardOuting() {
 </script>
 
 <template>
-  <div v-if="parcours" class="flex h-dvh flex-col overflow-hidden">
+  <div v-if="parcours" class="flex h-dvh flex-col overflow-hidden bg-paper">
     <!-- The panel sits below the map, not over it, so the map's attribution stays visible. -->
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
-        <MapRouteFollow v-model:follow="follow" :coordinates="coordinates" :fix="fix" :covered="dataView" :osm-places="parcours.osm_places?.places" />
+        <MapRouteFollow
+          v-model:follow="follow"
+          :coordinates="coordinates"
+          :fix="fix"
+          :covered="dataView"
+          :done-fraction="doneFraction"
+          :osm-places="parcours.osm_places?.places"
+        />
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->
       <LiveData
         v-if="dataView"
-        class="absolute inset-0 z-10 pt-16"
+        class="absolute inset-0 z-10 pt-20"
         mode="follow"
         :stats="liveStats"
-        :default-pace="SPORT_KINDS[parcours.sport_type] === 'run'"
+        :default-pace="defaultPace"
+        :sport="parcours.sport_type"
+        :route-name="parcours.name"
         @lap="startLap"
       />
 
       <!-- Right padding: the map controls stay reachable. -->
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView ? 'pr-3' : 'pr-14'">
-        <div class="pointer-events-auto flex items-center gap-2">
+        <div class="map-float pointer-events-auto flex items-center gap-1 rounded-lg p-1.5">
           <UButton
             :to="`/routes/${parcours.id}`"
             icon="i-lucide-x"
-            :label="t('record.quit')"
+            :aria-label="t('record.quit')"
             color="neutral"
-            variant="solid"
-            class="shadow-md"
+            variant="ghost"
+            size="lg"
           />
-          <!-- No room for it on phones next to the buttons; the page title keeps it. -->
-          <p class="hidden truncate rounded-md bg-default/90 px-2 py-1 text-sm font-medium shadow-md sm:block">{{ parcours.name }}</p>
-          <OutdoorReadabilityToggle class="ml-auto" />
+          <p class="min-w-0 flex-1 leading-tight">
+            <span class="block text-[0.625rem] font-bold tracking-widest text-muted uppercase">{{ t('follow.inProgress') }}</span>
+            <span class="block truncate font-display text-lg font-bold">{{ parcours.name }}</span>
+          </p>
+          <OutdoorReadabilityToggle />
           <VoiceGuideSettings
             :prefs="voice.prefs.value"
             :supported="voice.supported.value"
             :background="background"
             @update="voice.setPrefs"
           />
-          <UButton
-            :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
-            :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
-            :ui="{ label: 'outdoor:max-sm:sr-only' }"
-            color="neutral"
-            variant="solid"
-            class="shrink-0 shadow-md"
-            @click="dataView = !dataView"
-          />
+        </div>
+        <!-- The shadow on a wrapper: the sign's clip-path would cut it off. -->
+        <div v-if="!dataView && !arrived" class="drop-shadow-md">
+          <ArrivalSign :distance="formatDistance(progress ? progress.remainingM : model.totalM)" :minutes="remainingMinutes" />
         </div>
         <UAlert
           v-if="gpsError"
           class="pointer-events-auto"
           color="warning"
+          variant="solid"
           icon="i-lucide-map-pin-off"
           :title="gpsError"
         />
@@ -251,6 +284,7 @@ function discardOuting() {
           v-else-if="offTrack && progress"
           class="pointer-events-auto"
           color="error"
+          variant="solid"
           icon="i-lucide-triangle-alert"
           :title="t('follow.offTrack')"
           :description="t('follow.offTrackDistance', { distance: formatDistance(progress.offTrackM) })"
@@ -259,6 +293,7 @@ function discardOuting() {
           v-else-if="arrived"
           class="pointer-events-auto"
           color="success"
+          variant="solid"
           icon="i-lucide-flag"
           :title="t('follow.arrived')"
         />
@@ -270,70 +305,107 @@ function discardOuting() {
         :label="t('follow.recenter')"
         color="neutral"
         variant="solid"
-        class="absolute right-3 bottom-10 shadow-md"
+        size="lg"
+        class="absolute right-3 bottom-8 shadow-md"
         @click="follow = true"
       />
     </div>
 
-    <div class="shrink-0 space-y-3 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]" aria-live="polite">
-      <div v-if="!dataView" class="grid grid-cols-3 gap-2 text-center">
-        <div>
-          <p class="text-xs text-muted">{{ t('follow.done') }}</p>
-          <p class="font-numbers text-xl font-semibold tabular-nums" data-testid="done">{{ progress ? formatDistance(progress.doneM) : '—' }}</p>
-        </div>
-        <div>
-          <p class="text-xs text-muted">{{ t('follow.remaining') }}</p>
-          <p class="font-numbers text-xl font-semibold tabular-nums" data-testid="remaining">
-            {{ formatDistance(progress ? progress.remainingM : model.totalM) }}
-          </p>
-        </div>
-        <div>
-          <p class="text-xs text-muted">{{ t('follow.remainingGain') }}</p>
-          <p class="font-numbers text-xl font-semibold tabular-nums">
-            {{ progress?.remainingGainM != null ? `${Math.round(progress.remainingGainM)} m` : '—' }}
-          </p>
-        </div>
-      </div>
-      <UProgress :model-value="percentDone" size="sm" :aria-label="t('follow.percent', { percent: percentDone })" />
+    <section
+      class="z-10 shrink-0 space-y-3 rounded-t-[22px] bg-paper px-4 pt-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(29_37_32/0.12)]"
+      :aria-label="t('follow.panel')"
+    >
+      <template v-if="!dataView">
+        <FollowProfile v-if="profile" :along="profile.along" :elevations="profile.elevations" :done-m="progress?.doneM ?? null" :label="progressLabel" />
+        <UProgress v-else :model-value="percentDone" size="sm" :aria-label="progressLabel" />
+        <dl class="grid grid-cols-3 border-y border-accented" aria-live="polite">
+          <div class="min-w-0 py-2">
+            <dt class="live-label">{{ t('follow.done') }}</dt>
+            <dd class="live-figure" data-testid="done">
+              {{ doneFigure[0] }}{{ ' ' }}<span v-if="doneFigure[1]" class="live-unit">{{ doneFigure[1] }}</span>
+            </dd>
+          </div>
+          <div class="min-w-0 border-s border-accented py-2 ps-3">
+            <dt class="live-label">{{ t('follow.time') }}</dt>
+            <!-- Not announced: it changes every second. -->
+            <dd class="live-figure" aria-live="off" :data-testid="recording ? 'recording-elapsed' : undefined">
+              {{ liveStats.elapsedS === null ? '—' : formatStopwatch(liveStats.elapsedS) }}
+            </dd>
+          </div>
+          <div class="min-w-0 border-s border-accented py-2 ps-3">
+            <dt class="live-label">{{ pace ? t('liveData.pace') : t('liveData.speed') }}</dt>
+            <dd class="live-figure">
+              {{ paceFigure.value }}{{ ' ' }}<span v-if="paceFigure.unit" class="live-unit">{{ paceFigure.unit }}</span>
+            </dd>
+          </div>
+        </dl>
+      </template>
 
-      <div v-if="recording" class="flex items-center gap-2">
-        <UIcon
-          :name="paused ? 'i-lucide-pause' : 'i-lucide-circle-dot'"
-          class="size-5 shrink-0"
-          :class="paused ? 'text-muted' : 'text-error'"
-        />
-        <p class="min-w-0 text-sm">
-          <span class="sr-only">{{ paused ? t('record.paused') : t('record.recording') }}</span>
-          <span class="font-numbers text-xl font-semibold tabular-nums" data-testid="recording-elapsed">{{ formatStopwatch(elapsedMs(recording, now) / 1000) }}</span>
-        </p>
-        <UButton
-          class="ml-auto"
-          :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
-          :label="paused ? t('record.resume') : t('record.pause')"
-          color="neutral"
-          variant="outline"
-          @click="togglePause"
-        />
-        <UButton icon="i-lucide-square" :label="t('record.finish')" @click="openFinish" />
-      </div>
-      <div v-else-if="draft" class="space-y-2">
-        <p class="text-sm">
-          {{ t('record.draft', { date: formatDate(new Date(draft.startedAt).toISOString()), distance: formatDistance(draft.distanceM) }) }}
-        </p>
-        <div class="grid grid-cols-2 gap-2">
-          <UButton :label="t('record.discard')" color="neutral" variant="outline" block @click="discardDraft" />
-          <UButton icon="i-lucide-play" :label="t('record.resume')" block @click="resumeDraft" />
+      <template v-if="recording">
+        <div class="flex items-center gap-2">
+          <span class="size-3 shrink-0 rounded-full" :class="paused ? 'bg-(--ui-text-muted)' : 'bg-error'" aria-hidden="true" />
+          <p class="min-w-0 flex-1 truncate text-sm font-semibold">
+            {{ paused ? t('record.paused') : t('record.recording') }}
+            <span v-if="dataView" class="ms-1 font-numbers text-base tabular-nums" data-testid="recording-elapsed">{{ formatStopwatch(elapsedMs(recording, now) / 1000) }}</span>
+          </p>
+          <UButton
+            :icon="dataView ? 'i-lucide-map' : 'i-lucide-chart-column'"
+            :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            color="neutral"
+            variant="outline"
+            size="lg"
+            class="shrink-0 ring-[1.5px] ring-(--ui-border-inverted)"
+            @click="dataView = !dataView"
+          />
         </div>
-      </div>
-      <UButton
-        v-else
-        icon="i-lucide-circle-dot"
-        :label="t('follow.record')"
-        color="neutral"
-        variant="outline"
-        block
-        @click="start"
-      />
+        <div class="grid grid-cols-2 gap-2">
+          <UButton
+            :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
+            :label="paused ? t('record.resume') : t('record.pause')"
+            color="neutral"
+            variant="outline"
+            size="xl"
+            block
+            class="h-14 rounded-lg font-bold ring-[1.5px] ring-(--ui-border-inverted)"
+            @click="togglePause"
+          />
+          <UButton icon="i-lucide-square" :label="t('record.finish')" size="xl" block class="h-14 rounded-lg font-bold" @click="openFinish" />
+        </div>
+      </template>
+      <template v-else>
+        <div v-if="draft" class="space-y-2">
+          <p class="text-sm">
+            {{ t('record.draft', { date: formatDate(new Date(draft.startedAt).toISOString()), distance: formatDistance(draft.distanceM) }) }}
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <UButton :label="t('record.discard')" color="neutral" variant="outline" size="lg" block @click="discardDraft" />
+            <UButton icon="i-lucide-play" :label="t('record.resume')" size="lg" block @click="resumeDraft" />
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <UButton
+            :icon="dataView ? 'i-lucide-map' : 'i-lucide-chart-column'"
+            :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
+            color="neutral"
+            variant="outline"
+            size="xl"
+            class="h-13 shrink-0 rounded-lg ring-[1.5px] ring-(--ui-border-inverted)"
+            @click="dataView = !dataView"
+          />
+          <UButton
+            v-if="!draft"
+            :label="t('follow.record')"
+            size="xl"
+            block
+            class="h-13 min-w-0 flex-1 rounded-lg"
+            @click="start"
+          >
+            <template #leading>
+              <span class="size-3 shrink-0 rounded-full bg-(--sign)" aria-hidden="true" />
+            </template>
+          </UButton>
+        </div>
+      </template>
       <LiveShareControl
         :active="live.active.value"
         :starting="live.starting.value"
@@ -358,7 +430,7 @@ function discardOuting() {
           <UIcon name="i-lucide-sun-dim" class="mr-1 align-text-bottom" />{{ t('follow.keepScreenOn') }}
         </span>
       </p>
-    </div>
+    </section>
 
     <UModal v-model:open="finishOpen" :title="t('record.finishTitle')" :description="t('follow.finishDescription')">
       <template #body>
@@ -386,3 +458,4 @@ function discardOuting() {
     </UModal>
   </div>
 </template>
+

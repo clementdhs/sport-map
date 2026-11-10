@@ -68,11 +68,13 @@ export const AUTH_DIR = 'test/e2e/.auth'
 // New Zealand, with other words in their names.
 export const FAR_AWAY = { place_name: 'Queenstown, Nouvelle-Zélande', center: [168.66, -45.03], bbox: [168.6, -45.08, 168.72, -44.98] }
 
-// A style without any source: the map loads instantly and offline.
+// A style without any source: the map loads instantly and offline. Served for both MapTiler styles; its background
+// has outdoor-v2's layer id, so the topo colours (app/utils/topoStyle.ts, #230) paint it cream or "nuit topo", and a
+// theme change has a colour to apply.
 export const EMPTY_MAP_STYLE = {
   version: 8,
   sources: {},
-  layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#e8efe6' } }],
+  layers: [{ id: 'Background', type: 'background', paint: { 'background-color': '#e8efe6' } }],
 }
 
 // A transparent 1×1 PNG, for raster tiles (Plan IGN basemap).
@@ -259,6 +261,12 @@ export async function waitForMap(page: Page) {
 // and buttons do nothing until then (app/plugins/hydrated.client.ts).
 export async function waitForHydration(page: Page) {
   await expect(page.locator('html[data-hydrated]')).toBeAttached({ timeout: 15_000 })
+}
+
+// The member's own routes on their profile, which opens on its statistics (#236): the Parcours tab, on "Mes parcours".
+export async function openProfileRoutes(page: Page) {
+  await waitForHydration(page)
+  await page.getByRole('tab', { name: 'Parcours', exact: true }).click()
 }
 
 // Moves the editor's map to FAR_AWAY, before drawing a route that will be visible to the family.

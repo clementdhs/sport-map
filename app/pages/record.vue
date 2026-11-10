@@ -23,6 +23,8 @@ const live = useLiveShare(null, fix)
 watch(recording, (current) => {
   if (!current) live.stop()
 })
+// Reached from "Partager ma position" (#262): the share is offered once, as soon as the outing has started.
+const askShare = ref(useRoute().query.share === '1')
 
 function discardDraft() {
   if (window.confirm(t('record.discardDraftConfirm'))) dropDraft()
@@ -42,6 +44,9 @@ const climb = computed(() => {
   return elevationStats(track.value, points.map(p => p.alt!))
 })
 const gainM = computed(() => climb.value?.gain ?? null)
+// The panel's figures (#235), units set apart
+const distanceFigure = computed(() => splitUnit(formatDistance(recording.value?.distanceM ?? 0)))
+const speedFigure = computed(() => (recording.value ? splitUnit(formatSpeed(recording.value.distanceM, recording.value.movingMs / 1000)) : ['—', undefined]))
 
 const follow = ref(true)
 
@@ -134,10 +139,11 @@ async function save() {
   }
   saving.value = true
   try {
-    const { id } = await $fetch<{ id: string }>('/api/recordings', { method: 'POST', body })
+    const { id, outing_id } = await $fetch<{ id: string, outing_id: string }>('/api/recordings', { method: 'POST', body })
     stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
-    await navigateTo(`/routes/${id}`)
+    // The coach's review (#267) for the outings of its form, the route itself otherwise.
+    await navigateTo(countsForForm(form) ? `/coach/bilan/${outing_id}` : `/routes/${id}`)
   }
   catch (error) {
     toast.add({
@@ -159,31 +165,39 @@ function discard() {
 </script>
 
 <template>
-  <div class="flex h-dvh flex-col overflow-hidden">
+  <div class="flex h-dvh flex-col overflow-hidden bg-paper">
     <div class="relative min-h-0 flex-1">
       <ClientOnly>
         <MapRouteFollow v-model:follow="follow" recording :coordinates="track" :fix="fix" :covered="dataView && !!recording" />
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->
-      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-16" mode="record" :stats="liveStats" :default-pace="false" @lap="lap" />
+      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-20" mode="record" :stats="liveStats" :default-pace="false" @lap="lap" />
 
       <!-- Right padding: the map controls stay reachable. -->
       <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView && recording ? 'pr-3' : 'pr-14'">
-        <div class="pointer-events-auto flex items-center gap-2">
-          <UButton to="/" icon="i-lucide-x" :label="t('record.quit')" color="neutral" variant="solid" class="shadow-md" />
-          <!-- Icon only on phones: with the label, the bar overflowed a 360 px screen. -->
-          <UBadge v-if="recording && !paused" icon="i-lucide-circle-dot" :label="t('record.recording')" color="error" variant="solid" :ui="{ label: 'max-sm:sr-only' }" />
-          <UBadge v-else-if="paused" icon="i-lucide-pause" :label="t('record.paused')" color="neutral" variant="solid" :ui="{ label: 'max-sm:sr-only' }" />
+        <div class="map-float pointer-events-auto flex items-center gap-1.5 rounded-lg p-1.5">
+          <UButton to="/" icon="i-lucide-x" :aria-label="t('record.quit')" color="neutral" variant="ghost" size="lg" />
+          <!-- The status in ink with the stopwatch (#235); its words only from sm up: the bar overflowed a 360 px screen. -->
+          <p
+            v-if="recording"
+            class="flex h-10 min-w-0 items-center gap-2 rounded-full bg-inverted px-3 text-sm font-semibold whitespace-nowrap text-inverted"
+          >
+            <span class="size-2.5 shrink-0 rounded-full" :class="paused ? 'bg-(--ui-bg-accented)' : 'bg-error ring-4 ring-error/30'" aria-hidden="true" />
+            <span class="max-sm:sr-only">{{ paused ? t('record.paused') : t('record.recording') }}</span>
+            <span class="font-numbers text-base tabular-nums" data-testid="elapsed">{{ formatStopwatch(elapsedS) }}</span>
+          </p>
+          <p v-else class="min-w-0 flex-1 truncate font-display text-lg font-bold">{{ t('header.record') }}</p>
           <OutdoorReadabilityToggle class="ml-auto" />
           <UButton
             v-if="recording"
-            :icon="dataView ? 'i-lucide-map' : 'i-lucide-gauge'"
+            :icon="dataView ? 'i-lucide-map' : 'i-lucide-chart-column'"
             :label="dataView ? t('liveData.showMap') : t('liveData.showData')"
             :ui="{ label: 'outdoor:max-sm:sr-only' }"
             color="neutral"
-            variant="solid"
-            class="shrink-0 shadow-md"
+            variant="outline"
+            size="lg"
+            class="shrink-0 ring-[1.5px] ring-(--ui-border-inverted)"
             @click="dataView = !dataView"
           />
         </div>
@@ -209,37 +223,43 @@ function discard() {
       />
     </div>
 
-    <div class="shrink-0 space-y-3 border-t border-default bg-default p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+    <section
+      class="z-10 shrink-0 space-y-3 rounded-t-[22px] bg-paper px-4 pt-3.5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(29_37_32/0.12)]"
+      :aria-label="t('header.record')"
+    >
       <template v-if="recording">
-        <div v-if="!dataView" class="grid grid-cols-4 gap-2 text-center" aria-live="off">
-          <div>
-            <p class="text-xs text-muted">{{ t('duration.short') }}</p>
-            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl" data-testid="elapsed">{{ formatStopwatch(elapsedS) }}</p>
+        <dl v-if="!dataView" class="grid grid-cols-3 border-y border-accented" aria-live="off">
+          <div class="min-w-0 py-2">
+            <dt class="live-label">{{ t('route.distance') }}</dt>
+            <dd class="live-figure" data-testid="distance">
+              {{ distanceFigure[0] }}{{ ' ' }}<span v-if="distanceFigure[1]" class="live-unit">{{ distanceFigure[1] }}</span>
+            </dd>
           </div>
-          <div>
-            <p class="text-xs text-muted">{{ t('route.distance') }}</p>
-            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl" data-testid="distance">{{ formatDistance(recording.distanceM) }}</p>
+          <div class="min-w-0 border-s border-accented py-2 ps-3">
+            <dt class="live-label">{{ t('record.speed') }}</dt>
+            <dd class="live-figure">
+              {{ speedFigure[0] }}{{ ' ' }}<span v-if="speedFigure[1]" class="live-unit">{{ speedFigure[1] }}</span>
+            </dd>
           </div>
-          <div>
-            <p class="text-xs text-muted">{{ t('record.speed') }}</p>
-            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl">{{ formatSpeed(recording.distanceM, recording.movingMs / 1000) }}</p>
+          <div class="min-w-0 border-s border-accented py-2 ps-3">
+            <dt class="live-label">{{ t('record.gain') }}</dt>
+            <dd class="live-figure">
+              {{ gainM != null ? Math.round(gainM) : '—' }}{{ ' ' }}<span v-if="gainM != null" class="live-unit">m</span>
+            </dd>
           </div>
-          <div>
-            <p class="text-xs text-muted">{{ t('record.gain') }}</p>
-            <p class="font-numbers text-lg font-semibold whitespace-nowrap tabular-nums sm:text-xl">{{ gainM != null ? `${Math.round(gainM)} m` : '—' }}</p>
-          </div>
-        </div>
+        </dl>
         <div class="grid grid-cols-2 gap-2">
           <UButton
             :icon="paused ? 'i-lucide-play' : 'i-lucide-pause'"
             :label="paused ? t('record.resume') : t('record.pause')"
             color="neutral"
             variant="outline"
-            size="lg"
+            size="xl"
             block
+            class="h-14 rounded-lg font-bold ring-[1.5px] ring-(--ui-border-inverted)"
             @click="togglePause"
           />
-          <UButton icon="i-lucide-square" :label="t('record.finish')" size="lg" block @click="openFinish" />
+          <UButton icon="i-lucide-square" :label="t('record.finish')" size="xl" block class="h-14 rounded-lg font-bold" @click="openFinish" />
         </div>
         <LiveShareControl
           :active="live.active.value"
@@ -247,8 +267,10 @@ function discard() {
           :last-sent-at="live.lastSentAt.value"
           :waiting="live.waiting.value"
           :now="now"
+          :ask="askShare"
           @start="live.start"
           @stop="live.stop"
+          @asked="askShare = false"
         />
       </template>
 
@@ -257,13 +279,17 @@ function discard() {
           {{ t('record.draft', { date: formatDate(new Date(draft.startedAt).toISOString()), distance: formatDistance(draft.distanceM) }) }}
         </p>
         <div class="grid grid-cols-2 gap-2">
-          <UButton :label="t('record.discard')" color="neutral" variant="outline" block @click="discardDraft" />
-          <UButton icon="i-lucide-play" :label="t('record.resume')" block @click="resumeDraft" />
+          <UButton :label="t('record.discard')" color="neutral" variant="outline" size="lg" block @click="discardDraft" />
+          <UButton icon="i-lucide-play" :label="t('record.resume')" size="lg" block @click="resumeDraft" />
         </div>
       </div>
 
       <template v-else>
-        <UButton icon="i-lucide-circle-dot" :label="t('record.start')" size="xl" block @click="start" />
+        <UButton :label="t('record.start')" size="xl" block class="h-14 rounded-lg font-bold" @click="start">
+          <template #leading>
+            <span class="size-3 shrink-0 rounded-full bg-(--sign)" aria-hidden="true" />
+          </template>
+        </UButton>
         <p class="text-sm text-muted">
           {{ background ? t('record.screenOffOk') : t('record.keepOpen') }}
         </p>
@@ -280,7 +306,7 @@ function discard() {
           <UIcon name="i-lucide-sun-dim" class="mr-1 align-text-bottom" />{{ t('record.keepScreenOn') }}
         </span>
       </p>
-    </div>
+    </section>
 
     <UModal v-model:open="finishOpen" :title="t('record.finishTitle')" :description="t('record.finishDescription')">
       <template #body>
@@ -303,3 +329,4 @@ function discard() {
     </UModal>
   </div>
 </template>
+

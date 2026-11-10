@@ -1,46 +1,48 @@
-// Accent colors the user can pick (the Nuxt UI "primary" color, so Tailwind palette names), on top of the
-// light / dark mode, in hue order. No orange (the map tracks) nor red (errors, end marker). `yellow` is shown as
-// « Ambre »: Tailwind's amber, once dark enough for white text, is the orange of the tracks.
-export const ACCENTS = ['indigo', 'violet', 'fuchsia', 'pink', 'yellow', 'lime', 'green', 'teal', 'sky', 'slate'] as const
+// Accent colors the user can pick, on top of the light / dark mode (#228): five "terrain" tones, each a palette
+// defined in main.css (`--color-<accent>-*`) that Nuxt UI uses as its "primary" color. No orange nor rust (the map
+// tracks), no red (errors, end marker). Every palette has its light-mode accent at 600 and its dark-mode accent at
+// 400, both checked against the topo backgrounds by test/unit/accentContrast.test.ts.
+export const ACCENTS = ['forest', 'ochre', 'lake', 'heather', 'slate'] as const
 export type Accent = typeof ACCENTS[number]
 
-// Indigo stands out from the map (forests, water) and from the orange tracks.
-export const DEFAULT_ACCENT: Accent = 'indigo'
+// Forest green, the color of the "Topo + balisage" mockups (#226).
+export const DEFAULT_ACCENT: Accent = 'forest'
 
-// The shade primary uses in light mode: the lightest one where white text on buttons, links on the background and
-// text on a soft (10 %) primary background all pass WCAG AA (test/unit/accentContrast.test.ts). Dark mode keeps
-// Nuxt UI's 400 with dark text.
-export const ACCENT_LIGHT_SHADES: Record<Accent, 600 | 700 | 800> = {
-  indigo: 600,
-  violet: 600,
-  fuchsia: 700,
-  pink: 700,
-  yellow: 800,
-  lime: 800,
-  green: 800,
-  teal: 700,
-  sky: 700,
-  slate: 600,
+export interface AccentShades {
+  light: string
+  dark: string
 }
 
-// That shade as an sRGB hex value, for what CSS can't reach (theme-color meta, swatches).
-export const ACCENT_COLORS: Record<Accent, string> = {
-  indigo: '#4f39f6',
-  violet: '#7f22fe',
-  fuchsia: '#a800b7',
-  pink: '#c6005c',
-  yellow: '#894b00',
-  lime: '#3c6300',
-  green: '#016630',
-  teal: '#00786f',
-  sky: '#0069a8',
-  slate: '#45556c',
+// The 600 (light mode) and 400 (dark mode) shades of each palette in main.css, for what CSS variables can't reach
+// (theme-color meta, swatches). Text on them is white in light mode and the ink in dark mode (--ui-text-inverted).
+export const ACCENT_COLORS: Record<Accent, AccentShades> = {
+  forest: { light: '#2d6a4f', dark: '#6bbf95' },
+  ochre: { light: '#8a5a14', dark: '#d6a452' },
+  lake: { light: '#2a6888', dark: '#7fb6d6' },
+  heather: { light: '#8b3f7a', dark: '#d39ac4' },
+  slate: { light: '#4b5866', dark: '#a2aebb' },
 }
 
-// Icons, link previews and the manifest can't follow the user's choice: they use the default accent, as it was
-// drawn in public/icon.svg (Tailwind 3's indigo 600).
+// The ten Tailwind accents offered before #228, still found in visitors' cookies, mapped to the nearest terrain
+// accent (OKLab distance between their light shades, test/unit/theme.test.ts).
+export const LEGACY_ACCENTS: Record<string, Accent> = {
+  indigo: 'lake',
+  violet: 'heather',
+  fuchsia: 'heather',
+  pink: 'heather',
+  yellow: 'ochre',
+  lime: 'forest',
+  green: 'forest',
+  teal: 'forest',
+  sky: 'lake',
+}
+
+// Icons, link previews and the manifest can't follow the user's choice: they use the color drawn in
+// public/icon.svg (Tailwind 3's indigo 600, the default accent before #228).
 export const BRAND_COLOR = '#4f46e5'
 
 export function toAccent(value: unknown): Accent {
-  return ACCENTS.includes(value as Accent) ? value as Accent : DEFAULT_ACCENT
+  if (ACCENTS.includes(value as Accent)) return value as Accent
+  if (typeof value === 'string' && Object.hasOwn(LEGACY_ACCENTS, value)) return LEGACY_ACCENTS[value]!
+  return DEFAULT_ACCENT
 }

@@ -1619,6 +1619,10 @@
   },
   "coachSession": {
     "heading": "Today's session · {date}",
+    "headingOn": "Planned session · {date}",
+    "days": "Which day?",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
     "durations": "How much time do you have?",
     "other": "Another session",
     "kinds": {
@@ -1662,15 +1666,17 @@
     "pace": "Easy pace",
     "paceTitle": "Your easy pace, the one of your settings",
     "paceValue": "{pace}/km",
-    "restText": "No session today: a walk, some stretching, or nothing at all."
+    "restText": "No session today: a walk, some stretching, or nothing at all.",
+    "ahead": "Planned from your form if you don't go out before then: it will change with your next outings."
   },
   "sessionRoute": {
     "title": "Session route",
     "heading": "Today's session · {duration}",
+    "headingOn": "Session on {date} · {duration}",
     "loading": "The coach is preparing today's session…",
     "loadFailed": "Today's session couldn't be loaded.",
     "retry": "Try again",
-    "nothingToTrace": "No route to generate for this session today.",
+    "nothingToTrace": "No route to generate for this session.",
     "backToCoach": "Back to the coach",
     "generate": "Generate the route",
     "fromHome": "Generate the route from home",
@@ -1733,6 +1739,7 @@
     "rain": "{mm} mm of rain",
     "wind": "wind {speed} km/h",
     "short": "Not enough daylight left today for this session.",
+    "shortDay": "Not enough daylight that day for this session.",
     "band": "Forecast for the next hours",
     "cellRain": "rain",
     "cellWind": "wind",

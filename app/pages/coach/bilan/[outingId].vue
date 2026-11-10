@@ -3,7 +3,7 @@ import type { CoachGoal } from '#shared/types/account'
 import type { MyProfile, OutingDetail, RecordOuting } from '#shared/types/routes'
 import { DEFAULT_PACES } from '#shared/utils/routes'
 import { formEffect, matchesSession, regularity, repeatTimes, tomorrowSession, type RepeatTimes } from '#shared/utils/coachReview'
-import { DEFAULT_SESSION_DURATION, outingDaysBefore, sessionOfTheDay } from '#shared/utils/coachSessions'
+import { coachDays, DEFAULT_SESSION_DURATION, outingDaysBefore, sessionOfTheDay } from '#shared/utils/coachSessions'
 import type { CoachChoice } from '~/utils/coachChoice'
 import type { KeyFigure } from '~/utils/keyFigures'
 import { countsForForm, FEELINGS, type Feeling } from '#shared/utils/trainingForm'
@@ -43,6 +43,8 @@ const today = localDate(new Date())
 // Today's outings only: an older one says nothing about today's session or form.
 const isToday = computed(() => localDate(outing.value.completed_at) === today)
 const choice = ref<CoachChoice>({ minutes: DEFAULT_SESSION_DURATION, other: 0 })
+// Tomorrow's choice when the coach page was set on it (#279), else today's duration
+const tomorrowChoice = ref<CoachChoice | null>(null)
 const others = computed(() => outings.value.filter(o => o.outing_id !== outingId))
 const plan = computed(() => {
   const form = trainingForm(others.value)
@@ -63,6 +65,7 @@ const detached = ref(false)
 const sessionRoute = ref<string | null>(null)
 onMounted(() => {
   choice.value = loadCoachChoice(today)
+  tomorrowChoice.value = savedCoachChoice(coachDays()[1]!)
   sessionRoute.value = sessionRouteOf(today)
   detached.value = isDetached(outingId)
   mounted.value = true
@@ -106,7 +109,8 @@ const regularityText = computed(() => {
 const effect = computed(() => formEffect(outings.value, outing.value))
 const ratioText = (ratio: number) => `× ${formatNumber(ratio, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const tomorrow = computed(() => {
-  const next = tomorrowSession(outings.value, { goal: savedGoal.value ?? null, minutes: choice.value.minutes, easyPace: easyPace.value })
+  const { minutes, other } = tomorrowChoice.value ?? { minutes: choice.value.minutes, other: 0 }
+  const next = tomorrowSession(outings.value, { goal: savedGoal.value ?? null, minutes, easyPace: easyPace.value }, new Date(), other)
   const name = t(`coachSession.kinds.${next.kind}`)
   return next.minutes ? t('coachReview.tomorrowSession', { session: name, duration: formatDuration(next.minutes) }) : name
 })

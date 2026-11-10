@@ -1,11 +1,14 @@
-import { DEFAULT_SESSION_DURATION, SESSION_DURATIONS, type SessionDuration } from '#shared/utils/coachSessions'
+import { COACH_DAYS, coachDays, DEFAULT_SESSION_DURATION, SESSION_DURATIONS, type SessionDuration } from '#shared/utils/coachSessions'
 
 // What the coach page showed today (#267): the duration and the clicks on « Autre séance » of the session of the
 // day (#264), kept in this browser for the day, so the coach page shows them again and the review after an outing
 // finds the same session.
 // And the outings the member said weren't the session of the day. Nothing on the server: the session of the day
 // is worked out again from the outings each time, and a session is only matched with an outing of the same day.
+// Since #279, one choice per day planned (today and the next ones), a list; before, today's alone, an object.
 const CHOICE_KEY = 'sport-map:coach-choice'
+// The day chosen on the coach page (#279), for the route of the session; kept for the day it was chosen on.
+const DAY_KEY = 'sport-map:coach-day'
 const DETACHED_KEY = 'sport-map:coach-detached'
 // The route traced for today's session (#266): an outing on it is the session, whatever its time.
 const SESSION_ROUTE_KEY = 'sport-map:coach-session-route'
@@ -33,17 +36,46 @@ function write(key: string, value: unknown) {
   }
 }
 
-export function saveCoachChoice(choice: CoachChoice, today: string) {
-  write(CHOICE_KEY, { ...choice, date: today })
+type SavedChoice = CoachChoice & { date: string }
+
+function isChoice(value: unknown): value is SavedChoice {
+  const saved = value as SavedChoice | null
+  return typeof saved?.date === 'string' && SESSION_DURATIONS.includes(saved.minutes)
+    && Number.isInteger(saved.other) && saved.other >= 0
 }
 
-// Today's choice, else the session of the day with the default duration.
-export function loadCoachChoice(today: string): CoachChoice {
-  const saved = read<CoachChoice & { date: string }>(CHOICE_KEY)
-  if (saved?.date === today && SESSION_DURATIONS.includes(saved.minutes) && Number.isInteger(saved.other) && saved.other >= 0) {
-    return { minutes: saved.minutes, other: saved.other }
-  }
-  return { minutes: DEFAULT_SESSION_DURATION, other: 0 }
+// The choices kept, past days left out (the object of before #279 read as a list of one).
+function savedChoices(): SavedChoice[] {
+  const raw = read<unknown>(CHOICE_KEY)
+  const today = localDate(new Date())
+  return (Array.isArray(raw) ? raw : [raw]).filter(isChoice).filter(saved => saved.date >= today)
+}
+
+export function saveCoachChoice(choice: CoachChoice, date: string) {
+  const others = savedChoices().filter(saved => saved.date !== date)
+  write(CHOICE_KEY, [{ minutes: choice.minutes, other: choice.other, date }, ...others].slice(0, COACH_DAYS))
+}
+
+// The choice kept for `date` (a French local date), null without one.
+export function savedCoachChoice(date: string): CoachChoice | null {
+  const saved = savedChoices().find(choice => choice.date === date)
+  return saved ? { minutes: saved.minutes, other: saved.other } : null
+}
+
+// The choice kept for `date`, else the session of the day with the default duration.
+export function loadCoachChoice(date: string): CoachChoice {
+  return savedCoachChoice(date) ?? { minutes: DEFAULT_SESSION_DURATION, other: 0 }
+}
+
+export function saveCoachDay(day: string) {
+  write(DAY_KEY, { day, date: localDate(new Date()) })
+}
+
+// The day chosen today on the coach page, today without one (or when it is no longer among the days planned).
+export function loadCoachDay(): string {
+  const days = coachDays()
+  const saved = read<{ day: string, date: string }>(DAY_KEY)
+  return saved && saved.date === days[0] && days.includes(saved.day) ? saved.day : days[0]!
 }
 
 export function isDetached(outingId: string): boolean {

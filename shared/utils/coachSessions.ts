@@ -1,7 +1,7 @@
 import type { CoachGoal } from '../types/account'
 import { daysUntil } from './coachGoal'
 import { localDate } from './outings'
-import { countsForForm, type FormState, type LoadOuting } from './trainingForm'
+import { countsForForm, type FormState, type LoadOuting, trainingForm } from './trainingForm'
 
 // The session of the day (#264): what the coach proposes today from the member's form (trainingForm.ts), their
 // goal (coachGoal.ts) and the time they have. Fixed rules, no plan over weeks: the same inputs give the same
@@ -278,4 +278,40 @@ export function sessionOfTheDay(input: CoachInput, other = 0): SessionChoice {
     raceDays: raceDays ?? null,
     options: options.length,
   }
+}
+
+// The days the coach plans a session for (#279): today and the next ones the forecast covers (Open-Meteo's 4
+// days, `forecastAt`), so the best weather slot follows whichever day is chosen.
+export const COACH_DAYS = 4
+
+// Today and the next COACH_DAYS - 1 days, as French local dates. Counted on the calendar, not in 24 h steps, so a
+// change to or from summer time never skips or repeats a day.
+export function coachDays(now = new Date()): string[] {
+  const today = dayNoon(localDate(now)).getTime()
+  return Array.from({ length: COACH_DAYS }, (_, i) => new Date(today + i * 86_400_000).toISOString().slice(0, 10))
+}
+
+// A moment of `day` (a French local date): midday UTC is that same date in France, summer or winter.
+export function dayNoon(day: string): Date {
+  return new Date(`${day}T12:00:00Z`)
+}
+
+export type DayInput = {
+  goal: CoachGoal | null
+  minutes: SessionDuration
+  easyPace: number
+}
+
+// The session of `day` (a French local date, today or later) if the member doesn't go out before it: the rules of
+// #264 on that day's form, the outings until then counted among the days before.
+export function sessionOn(outings: LoadOuting[], input: DayInput, day: string, other = 0): SessionChoice {
+  const at = dayNoon(day)
+  const form = trainingForm(outings, at)
+  return sessionOfTheDay({
+    ...input,
+    state: form.state,
+    ratio: form.ratio,
+    outingDays: outingDaysBefore(outings, form.historyDays, at),
+    today: day,
+  }, other)
 }

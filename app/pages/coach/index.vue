@@ -25,15 +25,7 @@ const form = computed(() => profile.value ? trainingForm(profile.value.outings) 
 // (none chosen, or an error) the coach aims at progress.
 const { data: savedGoal } = await useFetch<CoachGoal | null>('/api/profile/me/coach-goal')
 const goal = ref<CoachGoal | null>(savedGoal.value ?? null)
-watch(savedGoal, value => { goal.value = value ?? null })
-
-const sessionDate = computed(() => new Date().toLocaleDateString(locale(), {
-  weekday: 'short',
-  day: 'numeric',
-  month: 'short',
-  timeZone: 'Europe/Paris',
-}))
-</script>
+watch(savedGoal, value => { goal.value = value ?? null })</script>
 
 <template>
   <UContainer class="max-w-2xl space-y-5 py-6 sm:py-8">
@@ -49,6 +41,6 @@ const sessionDate = computed(() => new Date().toLocaleDateString(locale(), {
       <h2 class="text-lg font-bold [font-family:var(--font-numbers)]">{{ t('coachGoal.title') }}</h2>
       <CoachGoalForm :goal="goal" @saved="goal = $event" />
     </section>
-    <CoachSessionCard v-if="profile && form" :outings="profile.outings" :form="form" :goal="goal" :date="sessionDate" />
+    <CoachSessionCard v-if="profile && form" :outings="profile.outings" :goal="goal" />
   </UContainer>
 </template>

@@ -69,11 +69,34 @@ test('a member picks a goal, and the time available changes the session', async 
     await page.getByTestId('coach-session-other').click()
     await expect(title).not.toHaveText(first!)
     await expect(title).toHaveText(first === 'Sortie longue' ? 'Sortie en endurance' : 'Sortie longue')
+    const todayTitle = await title.textContent()
 
-    // Kept in the account.
+    // Another day (#279): the session of that day, with the time chosen so far, its own choices kept apart.
+    const days = page.getByTestId('coach-session-days')
+    const tomorrow = days.getByRole('button', { name: 'Demain' })
+    await expect(days.getByRole('button', { name: 'Aujourd\'hui' })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByTestId('coach-session-ahead')).toBeHidden()
+    await tomorrow.click()
+    await expect(tomorrow).toHaveAttribute('aria-pressed', 'true')
+    await expect(session).toHaveAttribute('data-day', (await tomorrow.getAttribute('data-day'))!)
+    await expect(session).toHaveAttribute('data-minutes', '120')
+    await expect(page.getByTestId('coach-session-heading')).toContainText('Séance prévue')
+    await expect(page.getByTestId('coach-session-ahead')).toBeVisible()
+    await durations.getByRole('button', { name: '45 min' }).click()
+    await expect(session).toHaveAttribute('data-minutes', '45')
+    await days.getByRole('button', { name: 'Aujourd\'hui' }).click()
+    await expect(session).toHaveAttribute('data-minutes', '120')
+    await expect(title).toHaveText(todayTitle!)
+    await expect(page.getByTestId('coach-session-heading')).toContainText('Séance du jour')
+
+    // Kept in the account; the day and its duration in this browser.
+    await tomorrow.click()
+    await expect(session).toHaveAttribute('data-minutes', '45')
     await page.reload()
     await waitForHydration(page)
     await expect(goalText).toHaveText('Reprendre en douceur')
+    await expect(tomorrow).toHaveAttribute('aria-pressed', 'true')
+    await expect(session).toHaveAttribute('data-minutes', '45')
   }
   finally {
     expect((await page.request.delete(`/api/routes/${routeId}`)).ok()).toBe(true)

@@ -8,8 +8,8 @@ type Supabase = Awaited<ReturnType<typeof serverSupabaseClient<Database>>>
 // Saves an outing with its own track: the track as a new route of the member, marked as completed with the
 // outing's times, and the outing itself, the first one listed on the route, with its GPS points and their times.
 // Used by /record (POST /api/recordings) and by the import of outings (POST /api/outings/import). Returns the
-// route's id; throws the API error to answer.
-export async function saveRecording(event: H3Event, supabase: Supabase, userId: string, body: RecordingPayload, tag: string): Promise<string> {
+// route's and the outing's ids; throws the API error to answer.
+export async function saveRecording(event: H3Event, supabase: Supabase, userId: string, body: RecordingPayload, tag: string): Promise<{ routeId: string, outingId: string }> {
   const routeBody = { ...body.route, source: 'recorded' as const }
   const { data: route, error, circles } = await insertMaskedRoute(supabase, userId, routeDetailsFromPayload(routeBody), trackFromPayload(routeBody))
   if (error || !route) {
@@ -46,5 +46,5 @@ export async function saveRecording(event: H3Event, supabase: Supabase, userId: 
     await supabase.from('routes').delete().eq('id', route.id)
     throw apiError(event, 500, 'api.saveRecordingFailed')
   }
-  return route.id
+  return { routeId: route.id, outingId: outing.data!.id }
 }

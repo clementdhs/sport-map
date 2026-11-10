@@ -52,7 +52,10 @@ test.describe('recording an outing', () => {
     await expect(dialog.getByLabel('Nom')).toHaveValue('Sortie du 28 septembre 2026')
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
 
-    await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}$/)
+    // The coach's review (#267, coach-review.spec.ts), then the new route.
+    await expect(page).toHaveURL(/\/coach\/bilan\/[0-9a-f-]{36}$/)
+    await page.getByRole('link', { name: 'Terminer' }).click()
+    await expect(page).toHaveURL(/\/routes\/[0-9a-f-]{36}\?tab=outings$/)
     await expect(page.getByRole('heading', { name: 'Sortie du 28 septembre 2026' })).toBeVisible()
     await expect(page.getByText('Enregistré au GPS')).toBeVisible()
     await expect(page.getByText('Privé', { exact: true })).toBeVisible()

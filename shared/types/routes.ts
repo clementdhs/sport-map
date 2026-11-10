@@ -1,6 +1,7 @@
 import type { LineString } from 'geojson'
 import type { BestEfforts } from '../utils/bestEfforts'
 import type { RecordKind } from '../utils/personalRecords'
+import type { Feeling } from '../utils/trainingForm'
 import type { OsmPlace } from '../utils/osmPlaces'
 import type { EditorState, OutingTrackPoint, Poi, WayInfo } from '../utils/routes'
 import type { Tables } from './database.types'
@@ -136,6 +137,8 @@ export type StatsOuting = Pick<RouteListItem, 'sport_type' | 'distance_m' | 'ele
   completed_at: string
   // Only for outings recorded with the GPS
   moving_s: number | null
+  // How the member's own GPS outing felt (#267), the coach's form only: absent elsewhere
+  feeling?: Feeling | null
 }
 
 // An outing of the member's own statistics, with what their records need (#140).

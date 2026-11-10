@@ -193,10 +193,11 @@ async function saveOuting() {
   saving.value = true
   try {
     const body: OutingPayload = { ...outingTimes(recording.value!, Date.now()), track: outingTrack(recording.value!) ?? undefined }
-    await $fetch(`/api/routes/${id}/outings`, { method: 'POST', body })
+    const outing = await $fetch<{ id: string }>(`/api/routes/${id}/outings`, { method: 'POST', body })
     stop()
     toast.add({ title: t('record.saved'), color: 'success', icon: 'i-lucide-check' })
-    await navigateTo({ path: `/routes/${id}`, query: { tab: 'outings' } })
+    // The coach's review (#267) for the outings of its form, the route's outings otherwise.
+    await navigateTo(countsForForm(parcours.value!) ? `/coach/bilan/${outing.id}` : { path: `/routes/${id}`, query: { tab: 'outings' } })
   }
   catch (error) {
     toast.add({

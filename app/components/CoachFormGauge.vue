@@ -5,6 +5,8 @@ import { GAUGE_ZONES, gaugePosition } from '#shared/utils/trainingForm'
 // overload, each one written under its zone so the colour is never the only information.
 const props = defineProps<{
   ratio: number
+  // Where the member stood before an outing (#267, review), drawn as a lighter needle
+  before?: number | null
 }>()
 
 const { t } = useI18n()
@@ -29,6 +31,12 @@ const position = computed(() => gaugePosition(props.ratio))
         <div class="bg-(--form-progress)" />
         <div class="rounded-e-[3px] bg-(--form-overload)" />
       </div>
+      <div
+        v-if="before != null"
+        class="absolute -top-[3px] h-4 w-1 -translate-x-1/2 rounded-[2px] bg-(--ui-border-accented)"
+        :style="{ left: `${gaugePosition(before)}%` }"
+        data-testid="form-gauge-before"
+      />
       <div
         class="absolute -top-[5px] h-5 w-1 -translate-x-1/2 rounded-[2px] bg-inverted ring-2 ring-(--ui-bg)"
         :style="{ left: `${position}%` }"

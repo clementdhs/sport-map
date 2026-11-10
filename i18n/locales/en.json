@@ -1423,7 +1423,8 @@
     "tooManyPrivacyZones": "5 privacy zones at most",
     "privacyZoneNotFound": "Privacy zone not found",
     "loadCoachGoalFailed": "Couldn't load your goal",
-    "saveCoachGoalFailed": "Couldn't save your goal"
+    "saveCoachGoalFailed": "Couldn't save your goal",
+    "saveFeelingFailed": "Couldn't save how it felt"
   },
   "archive": {
     "files": {
@@ -1620,6 +1621,41 @@
     "paceTitle": "Your easy pace, the one of your settings",
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all."
+  },
+  "coachReview": {
+    "title": "Outing review",
+    "finished": "Outing finished · {time}",
+    "stampLine1": "Session",
+    "stampLine2": "done",
+    "distance": "Distance",
+    "gain": "Gain",
+    "duration": "Time",
+    "repeats": {
+      "hills": "Your hill | Your {n} hills",
+      "fast": "Your repeat | Your {n} repeats"
+    },
+    "spreadTime": "{s} s",
+    "spreadPace": "{s} s/km",
+    "regularity": {
+      "veryRegular": "Very even: {spread} between the fastest and the slowest.",
+      "regular": "Even: {spread} between the fastest and the slowest.",
+      "irregular": "Uneven: {spread} between the fastest and the slowest."
+    },
+    "lastSlowest": "The last one cost a little more, that's normal.",
+    "feelingTitle": "How was it?",
+    "feelingHint": "How it felt refines your form.",
+    "feelings": {
+      "easy": "Easy",
+      "ok": "Fine",
+      "hard": "Hard",
+      "very_hard": "Very hard"
+    },
+    "feelingFailed": "Couldn't save how it felt",
+    "tomorrow": "Tomorrow:",
+    "tomorrowSession": "{session}, {duration}",
+    "done": "Done",
+    "detach": "It wasn't the session of the day",
+    "attach": "It was the session of the day"
   },
   "outingImport": {
     "button": "Import outings",

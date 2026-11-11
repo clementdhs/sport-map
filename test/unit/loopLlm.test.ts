@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { retryAfterMs } from '../../server/utils/loopLlm'
+import { LoopLlmError, loopLlmFailure, retryAfterMs } from '../../server/utils/loopLlm'
 
 describe('retryAfterMs', () => {
   it('reads the Retry-After header in seconds', () => {
@@ -17,5 +17,17 @@ describe('retryAfterMs', () => {
 
   it('gives nothing when the provider does not say', () => {
     expect(retryAfterMs(null, 'Service unavailable')).toBeUndefined()
+  })
+})
+
+describe('loopLlmFailure (#304)', () => {
+  it('says the LLM is busy when it still refuses for its rate limit', () => {
+    expect(loopLlmFailure(new LoopLlmError('LLM answered 429', 429, 4755))).toEqual({ status: 503, key: 'api.loopSentenceBusy' })
+  })
+
+  it('keeps the generic failure for other errors of the LLM', () => {
+    expect(loopLlmFailure(new LoopLlmError('LLM answered 500', 500))).toEqual({ status: 502, key: 'api.loopSentenceFailed' })
+    expect(loopLlmFailure(new LoopLlmError('LLM call failed: timeout'))).toEqual({ status: 502, key: 'api.loopSentenceFailed' })
+    expect(loopLlmFailure(new Error('anything'))).toEqual({ status: 502, key: 'api.loopSentenceFailed' })
   })
 })

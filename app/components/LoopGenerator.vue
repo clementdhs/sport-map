@@ -1,15 +1,26 @@
 <script setup lang="ts">
-import type { LoopProposal } from '~/stores/loopGenerator'
+import type { LngLat } from '#shared/utils/routes'
+import type { LoopProposal, LoopSentenceSetting } from '~/stores/loopGenerator'
 
 // Automatic loop panel of the route editor (#50), in the topo look (#234): sport chips, shape, target, climbing and
 // place to go through (#214), start on its yellow square, then the proposals drawn on the map
-// (`useLoopGeneratorStore`), ranked by climbing, one of them picked to be chosen.
+// (`useLoopGeneratorStore`), ranked by climbing, one of them picked to be chosen. A sentence at the top (#216) can
+// fill the settings, which it marks in yellow.
+const props = defineProps<{
+  mapCenter?: LngLat | null
+}>()
 const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 const { t } = useI18n()
 const { formatDistance } = useFormat()
 
 const sportChips = useSportChips()
+
+// The settings the last sentence changed.
+const marked = ref<LoopSentenceSetting[]>([])
+const markClass = (...settings: LoopSentenceSetting[]) => settings.some(setting => marked.value.includes(setting))
+  ? '-m-1.5 rounded-md bg-(--sign)/25 p-1.5 ring-2 ring-(--sign)'
+  : ''
 const estimateDuration = useDurationEstimate()
 const targetItems = computed(() => [
   { label: t('loop.distance'), value: 'distance' },
@@ -99,9 +110,13 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
   <section class="space-y-4" aria-labelledby="loop-title">
     <h2 id="loop-title" class="sr-only">{{ t('loop.title') }}</h2>
 
-    <SportChips v-model="editor.details.sport_type" :items="sportChips" :label="t('filters.sport')" />
+    <LoopSentence :map-center="props.mapCenter" @marked="marked = $event" />
 
-    <div>
+    <div id="loop-setting-sport" :class="markClass('sport')">
+      <SportChips v-model="editor.details.sport_type" :items="sportChips" :label="t('filters.sport')" />
+    </div>
+
+    <div id="loop-setting-target" :class="markClass('target', 'precision', 'shape')">
       <div class="flex items-center justify-between gap-3">
         <UTabs
           v-model="loop.target"
@@ -132,7 +147,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       </div>
     </div>
 
-    <div>
+    <div id="loop-setting-climb" :class="markClass('climb')">
       <p class="mb-1.5 text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('loop.climb') }}</p>
       <UTabs v-model="loop.climb" :items="climbItems" :content="false" size="sm" :aria-label="t('loop.climb')" />
       <p class="mt-2 text-sm text-muted">{{ t('loop.climbHint') }}</p>
@@ -142,7 +157,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <USelect v-model="loop.via" :items="viaItems" class="w-full" />
     </UFormField>
 
-    <LoopStartRow />
+    <LoopStartRow id="loop-setting-start" />
 
     <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? 'text-highlighted' : 'text-muted'" role="status">
       <UIcon

@@ -3,6 +3,7 @@ import { mockNuxtImport, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildSession } from '#shared/utils/coachSessions'
+import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest } from '#shared/utils/routes'
 
@@ -399,5 +400,72 @@ describe('choosing a proposal', () => {
     editor.undo()
     editor.undo()
     expect(editor.waypoints).toEqual([])
+  })
+})
+
+describe('settings from a sentence (#216)', () => {
+  const settings = (fields: Partial<LoopSentenceSettings>): LoopSentenceSettings => ({
+    sport: null, target: null, precision: null, shape: null, climb: null, start: null, ignored: [], ...fields,
+  })
+
+  it('fills the sport, distance, precision, shape and climbing, and says which settings changed', () => {
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    const changed = loop.applySentence(settings({
+      sport: 'hiking', target: { kind: 'distance', km: 15 }, precision: 'range', shape: 'out_and_back', climb: 'hilly',
+    }))
+    expect(editor.details.sport_type).toBe('hiking')
+    expect(loop.target).toBe('distance')
+    expect(loop.distanceKm).toBe(15)
+    expect(loop.precision).toBe('range')
+    expect(loop.shape).toBe('out_and_back')
+    expect(loop.climb).toBe('hilly')
+    expect(changed.sort()).toEqual(['climb', 'precision', 'shape', 'sport', 'target'])
+  })
+
+  it('switches to a duration when the sentence gives one', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.applySentence(settings({ target: { kind: 'duration', min: 45 } }))
+    expect(loop.target).toBe('duration')
+    expect(loop.durationMin).toBe(45)
+  })
+
+  it('leaves the settings the sentence does not mention, and the ones already as asked, unmarked', () => {
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    editor.details.sport_type = 'trail'
+    loop.climb = 'flat'
+    loop.precision = 'range'
+    const changed = loop.applySentence(settings({ target: { kind: 'distance', km: 8 }, climb: 'flat' }))
+    expect(editor.details.sport_type).toBe('trail')
+    expect(loop.precision).toBe('range')
+    expect(loop.shape).toBe('loop')
+    expect(changed).toEqual(['target'])
+  })
+
+  it('clears the proposals of the former settings, so new ones can be asked for', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.setStart(START)
+    const pending = loop.generate()
+    expect(loop.canGenerate).toBe(false)
+    loop.applySentence(settings({ target: { kind: 'distance', km: 6 } }))
+    expect(loop.proposals).toEqual([])
+    expect(loop.canGenerate).toBe(true)
+    await pending
+    expect(loop.proposals).toEqual([])
+  })
+
+  it('keeps the proposals generated right after it', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.setStart(START)
+    loop.applySentence(settings({ sport: 'trail', target: { kind: 'distance', km: 6 }, shape: 'loop' }))
+    await loop.generate()
+    expect(loop.proposals.filter(proposal => proposal.status === 'ready')).toHaveLength(3)
+    expect(loopCalls.every(call => call.sport_type === 'trail' && call.length_m === 6000)).toBe(true)
   })
 })

@@ -32,6 +32,8 @@ export interface AccountData {
   collections: object[]
   reports: object[]
   routingUsage: object[]
+  // Loop sentences read by the LLM (#216), counted per day like the routing.
+  loopSentenceUsage: object[]
   liveShares: object[]
   // Settings kept in the account (#145), none until a device saved one
   preferences: { preferences: unknown, updated_at: string } | null
@@ -52,7 +54,7 @@ export interface AccountArchive {
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 
 const ARCHIVE_NAMES = [
-  'readme', 'profile', 'avatar', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'privacyZones', 'coachGoal', 'gpxFolder',
+  'readme', 'profile', 'avatar', 'routes', 'reviews', 'activity', 'outings', 'collections', 'reports', 'routing', 'live', 'preferences', 'privacyZones', 'coachGoal', 'loopSentences', 'gpxFolder',
   'photosFolder',
 ] as const
 type ArchiveNames = Record<typeof ARCHIVE_NAMES[number], string>
@@ -79,6 +81,7 @@ function readme(data: AccountData, locale: MessageLocale, names: ArchiveNames, a
     [names.preferences, t('preferences')],
     [names.privacyZones, t('privacyZones')],
     [names.coachGoal, t('coachGoal')],
+    [names.loopSentences, t('loopSentences')],
   ] as const
   const width = Math.max(...rows.map(([path]) => path.length)) + 2
   return `${t('intro', { username: data.profile.username, date: data.exportedAt })}
@@ -136,6 +139,7 @@ export function accountArchive(data: AccountData, locale: MessageLocale = DEFAUL
     { path: names.preferences, content: json(data.preferences ?? { preferences: {} }) },
     { path: names.privacyZones, content: json(data.privacyZones) },
     { path: names.coachGoal, content: json(data.coachGoal) },
+    { path: names.loopSentences, content: json(data.loopSentenceUsage) },
   )
   return { files, photos, avatar }
 }

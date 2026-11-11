@@ -1659,7 +1659,8 @@
     "skippedText": "Pas faite : elle n'est pas rattrapée, le coach a recalculé la suite de ta semaine sur tes vraies sorties.",
     "restText": "Pas un de tes jours de sortie.",
     "restSpread": "Le coach n'a pas prévu de sortie ce jour-là : il répartit tes sorties sur la semaine.",
-    "anyway": "Voir une séance quand même"
+    "anyway": "Voir une séance quand même",
+    "tapering": "Affûtage : le volume baisse"
   },
   "coachSession": {
     "heading": "Séance du jour · {date}",
@@ -1810,5 +1811,23 @@
     "title": "Aller plus vite : importe tes sorties",
     "text": "Fichiers GPX, FIT ou TCX de ta montre ou d'une autre application. Le coach lit tes 5 dernières semaines.",
     "choose": "Choisir des fichiers"
+  },
+  "racePhase": {
+    "label": "Préparation de ta course",
+    "names": {
+      "base": "Base",
+      "build": "Développement",
+      "taper": "Affûtage"
+    },
+    "week": "semaine {week} / {weeks}",
+    "untilBuild": "développement dans {n} sem. | développement dans {n} sem.",
+    "hints": {
+      "base": "Endurance et côtes, le volume monte semaine après semaine.",
+      "buildRoad": "Fractionné et sortie longue qui monte vers la distance de la course.",
+      "buildTrail": "Côtes et sortie longue vallonnée qui monte vers la distance de la course.",
+      "taper": "Le volume baisse pour arriver frais le jour de la course."
+    },
+    "countdown": "J-{n}",
+    "daysLeft": "jour avant la course | jours avant la course"
   }
 }

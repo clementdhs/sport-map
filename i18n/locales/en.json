@@ -1659,7 +1659,8 @@
     "skippedText": "Not done: it is not made up for, the coach worked the rest of your week out again from your actual outings.",
     "restText": "Not one of your outing days.",
     "restSpread": "The coach planned no outing that day: it spreads your outings over the week.",
-    "anyway": "Show a session anyway"
+    "anyway": "Show a session anyway",
+    "tapering": "Taper: the volume goes down"
   },
   "coachSession": {
     "heading": "Today's session · {date}",
@@ -1810,5 +1811,23 @@
     "title": "Get there sooner: import your outings",
     "text": "GPX, FIT or TCX files from your watch or another app. The coach reads your last 5 weeks.",
     "choose": "Choose files"
+  },
+  "racePhase": {
+    "label": "Your race preparation",
+    "names": {
+      "base": "Base",
+      "build": "Build",
+      "taper": "Taper"
+    },
+    "week": "week {week} of {weeks}",
+    "untilBuild": "build in {n} week | build in {n} weeks",
+    "hints": {
+      "base": "Easy runs and hills, the volume growing week after week.",
+      "buildRoad": "Intervals and a long run growing towards the race distance.",
+      "buildTrail": "Hills and a hilly long run growing towards the race distance.",
+      "taper": "The volume goes down so you arrive fresh on race day."
+    },
+    "countdown": "D-{n}",
+    "daysLeft": "day to the race | days to the race"
   }
 }

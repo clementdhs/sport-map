@@ -5,6 +5,8 @@ paths:
   - "shared/utils/coachPace.ts"
   - "shared/utils/coachWeek.ts"
   - "shared/utils/coachPlan.ts"
+  - "shared/utils/racePhases.ts"
+  - "test/unit/racePhases.test.ts"
   - "test/unit/coachPlan.test.ts"
   - "test/unit/coachWeek.test.ts"
   - "test/unit/coachPace.test.ts"
@@ -81,6 +83,14 @@ No plan over weeks and no AI: fixed, tested rules on what the member really did 
 - **Today's session** is worked out without today's outings (`beforeToday`), so it stays the same once one is recorded and matches the review (#267), which works it out without the outing; today stays planned (state `done`, session kept). `daySession` gives a day's planned session, else on a rest day the session the rules would give (« Voir une séance quand même »); the route of the session (`useSessionOfTheDay`), the review and its « Demain » (`tomorrowSession`) go through it, with the choices kept per day (`savedCoachChoice`, up to 7).
 - **Card**: `CoachWeekBand` (7 tight columns: weekday, date, a glyph of bars in the form colours, duration or « repos » / « sautée », a green check on done days; chosen day in ink, today ringed, skipped dashed, rest muted; legend and « Recalculée à chaque sortie ») replaces the « Quel jour ? » pills of #279. Past days show what was done (distance, moving time) or skipped, without durations, weather or route; a rest day says why (the member's days or the coach's spread) with « Voir une séance quand même »; the weather slot shows on the forecast's 4 days only. The chosen day is kept for the day (`loadCoachDay`: today or a later day of this week), past days aren't saved. Sunday has no day after it in the band.
 - e2e (`coach-session.spec.ts`): the goal's days are cleared before the duration steps, so the coach spreads 4 outings from today and today is an outing day whatever the weekday; a later planned day and a rest day are looked for in the band and their steps skipped when there is none (Sunday).
+
+## Race preparation (#286)
+
+- `racePhases.ts` (pure, unit-tested): from the race date alone (nothing records when the preparation started), weeks left = `ceil(daysLeft / 7)` from the day looked at: **taper** the last week, the last two from a half marathon (`LONG_RACE_M`, 21 km); **build** the 6 weeks before (`BUILD_WEEKS`); **base** before that, open-ended. Hence « semaine 3 / 6 » for build and taper and « développement dans N sem. » for the base, not « semaine 5 / 10 » of the whole preparation as the issue said. No minimum length (Clem's open point, default): a race too close starts in build or taper. Race-pace sessions left out (open point, default: another issue).
+- **Sessions** (`rule`): base → no intervals among the key sessions (`phaseKeySessions`, short hills when nothing is left); build → the race's own first (intervals and long on the road, hills on a trail: `isTrailRace`, 15 m/km); taper → no `raceLong` (the long run towards the race), the last 7 days keep #264's easy 45 min.
+- **Week's volume**: a taper week (phase of its Monday) aims at 70 % of the usual week (`TAPER_WEEK`), over the lighter-week cycle (`tapering`, the card says « Affûtage : le volume baisse »).
+- **Card** `CoachRacePhase` under the goal line: « Préparation de ta course », phase name and week, what it is about, and « J-38 » with the days left. Hidden without a race ahead.
+- e2e (`coach-session.spec.ts`): the 21 km race in 30 days is in build, with a countdown; hidden once the goal is `resume`.
 
 ## Best weather slot (#265)
 

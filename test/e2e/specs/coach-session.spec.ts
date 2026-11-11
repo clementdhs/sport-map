@@ -54,6 +54,11 @@ test('a member picks a goal, and the time available changes the session', async 
     const week = page.getByTestId('coach-goal-week')
     await expect(week).toHaveText('4 sorties / sem. : mar., jeu., sam., dim.')
     await expect(page.getByTestId('coach-goal')).toContainText('dans 4 sem.')
+    // Its preparation (#286): 4 weeks before a half marathon, building, with the days left
+    const phase = page.getByTestId('coach-race-phase')
+    await expect(phase).toHaveAttribute('data-phase', 'build')
+    await expect(phase).toContainText('Développement')
+    await expect(page.getByTestId('coach-race-countdown')).toContainText(/J-\d+/)
 
     // Easing back in: easy sessions only, whose length follows the time available. The days are cleared, so the
     // coach spreads the outings from today on and today is an outing day whatever the weekday (#285).
@@ -65,6 +70,7 @@ test('a member picks a goal, and the time available changes the session', async 
     await expect(dialog).toBeHidden()
     await expect(goalText).toHaveText('Reprendre en douceur')
     await expect(week).toHaveText('4 sorties / sem.')
+    await expect(phase).toBeHidden()
 
     const session = page.getByTestId('coach-session')
     const durations = page.getByTestId('coach-session-durations')

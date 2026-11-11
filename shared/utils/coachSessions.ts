@@ -3,6 +3,7 @@ import { daysUntil } from './coachGoal'
 import { localDate } from './outings'
 import { countsForForm, type FormState, type LoadOuting, trainingForm } from './trainingForm'
 import { weekSessionCap, weekVolume } from './coachWeek'
+import { phaseKeySessions, racePhase } from './racePhases'
 
 // The session of the day (#264): what the coach proposes today from the member's form (trainingForm.ts), their
 // goal (coachGoal.ts) and the time they have. Fixed rules, no plan over weeks: the same inputs give the same
@@ -284,9 +285,13 @@ function rule(input: CoachInput): Rule {
   // Getting ready for a race (past races aside)
   const ahead = race && raceDays !== null && raceDays > 0 ? raceDays : undefined
 
+  // The race's preparation (#286): no long run growing towards the race once tapering.
+  const phase = racePhase(goal, input.today)
+  const raceLong = race && ahead && phase?.name !== 'taper'
+
   // The member's long run day (#285), given the time for one: the race's long run when getting ready for one.
   if (input.longRunDay && minutes >= LONG_RUN_MINUTES && !input.afterHard) {
-    if (race && ahead) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
+    if (race && ahead && raceLong) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
     return { reason: 'longRunDay', options: [{ kind: 'long', minutes }] }
   }
 
@@ -300,10 +305,10 @@ function rule(input: CoachInput): Rule {
   const key = state === 'recovery' || input.outingDays % 2 === 0
   if (!key) return { reason: 'progressEasy', options: easy }
   // With time for it, the long run that grows towards the race.
-  if (race && ahead && minutes >= 90) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
+  if (race && ahead && raceLong && minutes >= 90) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
   return {
     reason: state === 'recovery' ? 'recovery' : 'progressKey',
-    options: KEY_BY_DURATION[minutes].map(kind => ({ kind, minutes })),
+    options: phaseKeySessions(KEY_BY_DURATION[minutes], phase, goal).map(kind => ({ kind, minutes })),
     raceDays: ahead,
   }
 }

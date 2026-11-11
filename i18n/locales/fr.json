@@ -533,6 +533,10 @@
       "hilly": "Costaud"
     },
     "climbHint": "Les propositions sont classées de la plus proche à la plus éloignée de ce choix.",
+    "paths": "Préférer les chemins",
+    "pathsHint": "Moins de bitume : les boucles passent davantage par les sentiers, la plus riche en chemin en premier.",
+    "pathShare": "{share} % de chemin",
+    "fewPaths": "Peu de chemins autour de ce départ : les boucles restent surtout sur route.",
     "via": "Passer par",
     "vias": {
       "none": "Aucun lieu imposé",
@@ -598,6 +602,7 @@
     "approximate": "± 20 %",
     "loop": "Boucle",
     "place": "Lieu : {name}",
+    "paths": "Sur du chemin",
     "start": "Départ : {start}",
     "startPlaced": "point posé",
     "startLocated": "ma position",
@@ -616,7 +621,7 @@
       "duration": "« {text} » : la durée va de 10 min à 10 h, je ne l'ai pas reprise.",
       "via": "« {text} » : une boucle ne passe que par un lieu nommé, celui-ci est laissé de côté.",
       "gain": "« {text} » : je ne sais pas encore viser un dénivelé en mètres, choisis plat, vallonné ou costaud.",
-      "paths": "« {text} » : je ne sais pas encore préférer les chemins, la boucle se fait sans."
+      "paths": "« {text} » : le vélo de route reste sur la route, la boucle se fait sans chemins."
     }
   },
   "discover": {

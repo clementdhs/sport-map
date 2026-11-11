@@ -298,6 +298,8 @@ export const routingLoopSchema = z.object({
   // The bearing of a place the member named but the loop only heads for (#293: a massif, a place out of reach), in
   // degrees from north; ignored with a via.
   heading: z.number().min(-180).max(360).optional(),
+  // Routed on a profile that takes more paths (#295, `loopProfile`); ignored for road cycling.
+  prefer_paths: z.boolean().default(false),
 })
 
 export type RoutingLoopRequest = z.input<typeof routingLoopSchema>

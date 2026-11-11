@@ -113,7 +113,7 @@ async function mockExternalServices(page: Page) {
   // Fake loops: a square from the start, as long as asked (21 points), climbing 50 m on its first side; each seed
   // turns it a quarter, so proposals differ.
   await page.route('**/api/routing/loop', async (route) => {
-    const { start: [lng, lat], length_m, seed } = route.request().postDataJSON() as { start: [number, number], length_m: number, seed: number }
+    const { start: [lng, lat], length_m, seed, prefer_paths } = route.request().postDataJSON() as { start: [number, number], length_m: number, seed: number, prefer_paths?: boolean }
     // 111 195 m per degree of latitude, as on turf's sphere: the editor measures 8,00 km for 8000 m.
     const sideDeg = length_m / 4 / 111_195
     const turn = ([x, y]: [number, number]): [number, number] => [y, -x]
@@ -132,7 +132,10 @@ async function mockExternalServices(page: Page) {
     }
     coordinates.push([lng, lat])
     const elevations = coordinates.map((_, i) => 100 + Math.min(i, 5) * 10)
-    await route.fulfill({ json: { coordinates, elevations, quota_remaining: 299 } })
+    // Paths asked for (#295): the first 5, 10 or 15 of the 20 edges are paths (25, 50 or 75 %), by seed.
+    const pathEdges = 5 * (seed % 3 + 1)
+    const way_info = prefer_paths ? { surface: [], waytype: [[0, pathEdges, 4], [pathEdges, 20, 2]], sac_scale: [], mtb_scale: [] } : undefined
+    await route.fulfill({ json: { coordinates, elevations, ...(way_info ? { way_info } : {}), quota_remaining: 299 } })
   })
 }
 

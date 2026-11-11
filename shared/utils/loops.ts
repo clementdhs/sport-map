@@ -2,7 +2,7 @@ import { bearing, destination, distance, lineString, nearestPointOnLine } from '
 import { type OsmPlace, toOsmPlace, type OverpassElement } from './osmPlaces'
 import {
   estimateDurationMin, type LngLat, type LngLatEle, LOOP_MAX_M, LOOP_MIN_M, type LoopPrecision, type LoopShape,
-  type SportType, trackDistances, type WayInfo, type WayRange,
+  ROUTING_PROFILES, SPORT_KINDS, type SportType, trackDistances, type WayInfo, type WayRange,
 } from './routes'
 
 // Automatic loops (#50): OpenRouteService round trips only aim at the length they are given. Detours around
@@ -88,15 +88,17 @@ export function typicalGainPerKm(sport: SportType, climb: LoopClimb): number {
 // Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
 type RankedProposal = { status: string, distanceM: number, gainM: number | null }
 
-// Proposals by score, lowest first; the missing ones last, in their order.
-function rankBy<T extends RankedProposal>(proposals: T[], score: (perKm: number) => number): T[] {
-  return proposals.map((proposal, index) => ({
-    proposal,
-    index,
-    score: proposal.status === 'ready' ? score(gainPerKm(proposal.distanceM, proposal.gainM)) : Number.POSITIVE_INFINITY,
-  }))
+// Items by score, lowest first, ties in their order.
+function sortByScore<T>(items: T[], score: (item: T) => number): T[] {
+  return items.map((item, index) => ({ item, index, score: score(item) }))
     .sort((a, b) => a.score - b.score || a.index - b.index)
-    .map(({ proposal }) => proposal)
+    .map(({ item }) => item)
+}
+
+// Proposals by score of their gain per km, lowest first; the missing ones last, in their order.
+function rankBy<T extends RankedProposal>(proposals: T[], score: (perKm: number) => number): T[] {
+  return sortByScore(proposals, proposal =>
+    proposal.status === 'ready' ? score(gainPerKm(proposal.distanceM, proposal.gainM)) : Number.POSITIVE_INFINITY)
 }
 
 // Proposals in the order of the climbing asked for: the flattest first for a flat outing, the hilliest for a
@@ -110,6 +112,37 @@ export function rankByClimb<T extends RankedProposal>(proposals: T[], sport: Spo
 // Proposals closest first to a gain per km (m), e.g. a planned session's gain over its distance.
 export function rankByGain<T extends RankedProposal>(proposals: T[], targetPerKmM: number): T[] {
   return rankBy(proposals, perKm => Math.abs(perKm - targetPerKmM))
+}
+
+// Preferring paths (#295). OpenRouteService has no option to avoid tarmac: the loops go on a profile that takes
+// more paths (hiking for runs, mountain bike for rides), then are ranked by their share of path. Road cycling keeps
+// its road profile, so it isn't offered.
+export function canPreferPaths(sport: SportType): boolean {
+  return sport !== 'road_cycling'
+}
+
+export function loopProfile(sport: SportType, preferPaths: boolean): string {
+  if (!preferPaths || !canPreferPaths(sport)) return ROUTING_PROFILES[sport]
+  return SPORT_KINDS[sport] === 'ride' ? 'cycling-mountain' : 'foot-hiking'
+}
+
+// Under this share of path for every proposal, the panel says the option changed little (in town).
+export const FEW_PATHS_SHARE = 0.1
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+type PathRankedProposal = { status: string, pathShare: number | null }
+
+// Proposals with the most path first, by tenths so that close ones keep their order (the climbing's); those
+// without way info, then the failed ones, last.
+export function rankByPaths<T extends PathRankedProposal>(proposals: T[]): T[] {
+  return sortByScore(proposals, ({ status, pathShare }) =>
+    status !== 'ready' ? 2 : pathShare === null ? 1 : -Math.round(pathShare * 10))
+}
+
+// Whether the proposals whose ways are known came back with hardly any path, though the member asked for paths.
+export function fewPaths(proposals: PathRankedProposal[]): boolean {
+  const known = proposals.filter(({ status, pathShare }) => status === 'ready' && pathShare !== null)
+  return known.length > 0 && known.every(({ pathShare }) => pathShare! < FEW_PATHS_SHARE)
 }
 
 // Paths wind: a point this far as the crow flies is about PATH_DETOUR times as far along paths.

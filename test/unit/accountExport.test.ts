@@ -30,6 +30,7 @@ const data: AccountData = {
   collections: [],
   reports: [],
   routingUsage: [{ day: '2026-09-29', count: 12 }],
+  loopSentenceUsage: [{ day: '2026-11-11', count: 3 }],
   liveShares: [{ started_at: '2026-10-04T08:00:00Z', points: [{ fixed_at: '2026-10-04T08:00:30Z', lng: 3.06, lat: 50.63 }] }],
   preferences: { preferences: { basemap: 'ignPlan', map3d: true }, updated_at: '2026-10-18T09:00:00Z' },
   privacyZones: [{ label: 'Maison', lng: 3.06, lat: 50.63, radius_m: 500 }],
@@ -49,6 +50,7 @@ describe('accountArchive', () => {
     expect(JSON.parse(file('objectif-coach.json')!)).toEqual(data.coachGoal)
     expect(JSON.parse(file('passages.json')!)).toEqual(data.outings)
     expect(JSON.parse(file('calculs.json')!)).toEqual(data.routingUsage)
+    expect(JSON.parse(file('phrases-boucle.json')!)).toEqual(data.loopSentenceUsage)
     expect(JSON.parse(file('partage-position.json')!)).toEqual(data.liveShares)
     expect(JSON.parse(file('reglages.json')!)).toEqual(data.preferences)
     expect(file('LISEZMOI.txt')).toMatch(/^reglages\.json +tes réglages gardés dans ton compte/m)

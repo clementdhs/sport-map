@@ -194,7 +194,8 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
           <div v-if="week" class="mt-2.5 space-y-1" data-testid="coach-week" :data-target="Math.round(week.target)" :data-lighter="week.lighter">
             <p class="flex flex-wrap justify-between gap-x-2 text-xs text-toned">
               <span class="font-numbers tabular-nums" data-testid="coach-week-text">{{ weekText }}</span>
-              <span v-if="week.lighter" class="font-semibold">{{ t('coachWeek.lighter') }}</span>
+              <span v-if="week.tapering" class="font-semibold">{{ t('coachWeek.tapering') }}</span>
+              <span v-else-if="week.lighter" class="font-semibold">{{ t('coachWeek.lighter') }}</span>
               <span v-else-if="week.done >= week.target">{{ t('coachWeek.reached') }}</span>
             </p>
             <div

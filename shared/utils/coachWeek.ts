@@ -2,6 +2,7 @@ import type { CoachGoal } from '../types/account'
 import { DEFAULT_OUTINGS_PER_WEEK } from './coachGoal'
 import { localDate } from './outings'
 import { countsForForm, type LoadOuting, outingLoad, trainingForm } from './trainingForm'
+import { racePhase, TAPER_WEEK } from './racePhases'
 
 // The week's volume (#284): how much the member is aiming for this calendar week (Monday to Sunday, French local
 // dates), in km-effort, so their load grows week after week with a lighter one now and then. Nothing is stored:
@@ -42,6 +43,8 @@ export type WeekVolume = {
   // The same before `day`, what the day's session is sized against
   doneBefore: number
   lighter: boolean
+  // The race's taper (#286): the volume going down
+  tapering: boolean
   // The outings still to come this week from `day` on, that day included: the member's days left, else the
   // outings a week less the days already run, at least 1
   outingsLeft: number
@@ -60,7 +63,9 @@ export function weekVolume(outings: LoadOuting[], goal: CoachGoal | null, day: s
   // The weeks of history before this one: every 4th week is lighter.
   const lighter = Math.floor(before.historyDays / 7) % LIGHTER_EVERY === LIGHTER_EVERY - 1
   const growth = goal?.kind === 'resume' ? RESUME_WEEK_GROWTH : WEEK_GROWTH
-  const target = weekly * (lighter ? LIGHTER_WEEK : growth)
+  // Tapering for a race (#286): the volume goes down, whatever the cycle of lighter weeks
+  const tapering = racePhase(goal, start)?.name === 'taper'
+  const target = weekly * (tapering ? TAPER_WEEK : lighter ? LIGHTER_WEEK : growth)
 
   let done = 0
   let doneBefore = 0
@@ -82,7 +87,7 @@ export function weekVolume(outings: LoadOuting[], goal: CoachGoal | null, day: s
     ? Math.max(1, days.filter(d => d >= isoWeekday(day)).length)
     : Math.max(1, (goal?.outings_per_week ?? DEFAULT_OUTINGS_PER_WEEK) - runDays.size)
 
-  return { start, end, target, done, doneBefore, lighter, outingsLeft }
+  return { start, end, target, done, doneBefore, lighter: lighter && !tapering, tapering, outingsLeft }
 }
 
 // The most the day's session may weigh to keep the week on target (km-effort): its share of what is left, a bit

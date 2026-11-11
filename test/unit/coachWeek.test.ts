@@ -79,7 +79,7 @@ describe('weekVolume', () => {
 })
 
 describe('weekSessionCap', () => {
-  const week = { start: MONDAY, end: '2026-11-15', target: 30, done: 0, doneBefore: 12, lighter: false, outingsLeft: 3 }
+  const week = { start: MONDAY, end: '2026-11-15', target: 30, done: 0, doneBefore: 12, lighter: false, tapering: false, outingsLeft: 3 }
 
   it('gives the session a bit more than its share of what is left, never more than what is left', () => {
     expect(weekSessionCap(week)).toBeCloseTo(9)

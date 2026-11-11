@@ -36,6 +36,7 @@ watch(savedGoal, value => { goal.value = value ?? null })</script>
       <h1 class="text-[2.5rem] leading-none font-bold">{{ t('coach.title') }}</h1>
     </div>
     <CoachGoalLine v-if="form?.state !== 'learning'" :goal="goal" @saved="goal = $event" />
+    <CoachRacePhase :goal="goal" />
     <CoachFormCard v-if="profile" :outings="profile.outings" />
     <section v-if="form?.state === 'learning'" class="space-y-2.5" data-testid="coach-goal-start">
       <h2 class="text-lg font-bold [font-family:var(--font-numbers)]">{{ t('coachGoal.title') }}</h2>

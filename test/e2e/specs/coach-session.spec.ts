@@ -54,6 +54,9 @@ test('a member picks a goal, and the time available changes the session', async 
     await expect(durations.getByRole('button', { name: '1 h', exact: true })).toHaveAttribute('aria-pressed', 'true')
     await expect(session).toHaveAttribute('data-minutes', '60')
     await expect(page.getByTestId('coach-session-title')).toHaveText('Sortie en endurance')
+    // The 50 km outings leave room for an hour (#281), and the easy pace says where it comes from.
+    await expect(page.getByTestId('coach-session-capped')).toBeHidden()
+    await expect(page.getByTestId('coach-session-pace-source').getByRole('link', { name: 'La régler' })).toHaveAttribute('href', '/settings#paces')
     const hourDistance = await page.getByTestId('coach-session-distance').textContent()
 
     await durations.getByRole('button', { name: '30 min' }).click()

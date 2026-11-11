@@ -238,6 +238,8 @@ describe('sessionOn', () => {
       ratio: form.ratio,
       outingDays: outingDaysBefore(outings, form.historyDays, NOW),
       today: '2026-11-09',
+      weekly: form.weekly,
+      longest: form.longest,
     })
     expect(sessionOn(outings, input, '2026-11-09')).toEqual(today)
   })
@@ -252,6 +254,8 @@ describe('sessionOn', () => {
       ratio: later.ratio,
       outingDays: outingDaysBefore(outings, later.historyDays, new Date('2026-11-12T12:00:00Z')),
       today: '2026-11-12',
+      weekly: later.weekly,
+      longest: later.longest,
     }))
   })
 

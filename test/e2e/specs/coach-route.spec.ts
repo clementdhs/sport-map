@@ -26,7 +26,8 @@ test('generates the route of the session from home and follows it', async ({ pag
     await expect(page.getByRole('tab', { name: 'Séance' })).toHaveAttribute('aria-selected', 'true')
     const panel = page.getByTestId('session-route')
     await expect(panel.getByTestId('session-route-title')).toHaveText('Sortie en endurance')
-    await expect(panel).toContainText('Séance du jour · 1 h')
+    // No outing yet: the session is kept to half an hour (#281), whatever the hour chosen
+    await expect(panel).toContainText('Séance du jour · 30 min')
 
     // Three loops from the position, the best one on top with its figures and duration, the others under it.
     await expect(panel.getByTestId('session-route-distance')).toHaveText(/km$/)

@@ -1532,7 +1532,7 @@
       "same": "as much as"
     },
     "advice": {
-      "recovery": "You have room to train more.",
+      "recovery": "You have room to do a little more, without going much beyond your recent outings.",
       "progress": "Keep going, without adding more.",
       "overload": "Ease off for a few days."
     },
@@ -1664,7 +1664,14 @@
     "distance": "Distance",
     "gain": "Gain",
     "pace": "Easy pace",
-    "paceTitle": "Your easy pace, the one of your settings",
+    "paceTitle": "Easy pace: the one you can talk at while running",
+    "paceSource": {
+      "settings": "Easy pace from your settings.",
+      "outings": "Easy pace estimated from your latest outings, a little slower than them.",
+      "default": "Default easy pace, until you have a few outings."
+    },
+    "paceSettings": "Set it",
+    "capped": "Shortened so as not to go over {load} km-effort at once, based on your longest outing of the last 30 days and your usual week.",
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all.",
     "ahead": "Planned from your form if you don't go out before then: it will change with your next outings."

@@ -16,7 +16,8 @@ export default defineConfig({
     include: ['test/llm/**/*.llm.test.ts'],
     environment: 'node',
     env: loadEnv('', process.cwd(), 'NUXT_LOOP_LLM_'),
-    testTimeout: 30_000,
+    // Waits for the provider's rate limit included (`maxWaitMs`).
+    testTimeout: 180_000,
     fileParallelism: false,
   },
 })

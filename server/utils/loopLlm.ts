@@ -11,10 +11,25 @@ export interface LoopLlmOptions {
   // The provider's own endpoint when empty.
   url?: string
   timeoutMs?: number
+  // How long rate-limited calls may wait in all for the provider's window to reopen (Groq's free tier: 8,000
+  // tokens a minute, about 5 sentences); 0 never waits.
+  maxWaitMs?: number
+}
+
+// When to ask again after a 429: the Retry-After header (seconds), else Groq's "try again in 1m2.5s" / "330ms".
+export function retryAfterMs(header: string | null, text: string): number | undefined {
+  const seconds = Number(header)
+  if (header && Number.isFinite(seconds)) return seconds * 1000
+  const match = /try again in (?:(\d+)m)?([\d.]+)(ms|s)/i.exec(text)
+  if (!match) return undefined
+  const minutes = Number(match[1] ?? 0)
+  const value = Number(match[2])
+  return minutes * 60_000 + (match[3] === 'ms' ? value : value * 1000)
 }
 
 export class LoopLlmError extends Error {
-  constructor(message: string, readonly status?: number) {
+  // After a 429, when the provider says when to ask again.
+  constructor(message: string, readonly status?: number, readonly retryAfterMs?: number) {
     super(message)
   }
 }
@@ -40,7 +55,10 @@ const chatCompletions = (defaultUrl: string, extra: Record<string, unknown> = {}
     }),
     signal,
   })
-  if (!response.ok) throw new LoopLlmError(`LLM answered ${response.status}: ${(await response.text()).slice(0, 300)}`, response.status)
+  if (!response.ok) {
+    const text = await response.text()
+    throw new LoopLlmError(`LLM answered ${response.status}: ${text.slice(0, 300)}`, response.status, retryAfterMs(response.headers.get('retry-after'), text))
+  }
   const body = await response.json() as { choices?: { message?: { content?: string } }[] }
   const content = body.choices?.[0]?.message?.content
   if (!content) throw new LoopLlmError('LLM answered without content')
@@ -61,11 +79,18 @@ const ADAPTERS: Record<string, Adapter> = {
 export async function askLoopLlm(sentence: string, options: LoopLlmOptions): Promise<unknown> {
   const adapter = ADAPTERS[options.provider]
   if (!adapter) throw new LoopLlmError(`Unknown LLM provider ${options.provider}`)
-  try {
-    return await adapter(sentence, options, AbortSignal.timeout(options.timeoutMs ?? 15_000))
-  }
-  catch (error) {
-    if (error instanceof LoopLlmError) throw error
-    throw new LoopLlmError(`LLM call failed: ${(error as Error).message}`)
+  let waitLeftMs = options.maxWaitMs ?? 0
+  for (;;) {
+    try {
+      return await adapter(sentence, options, AbortSignal.timeout(options.timeoutMs ?? 15_000))
+    }
+    catch (error) {
+      if (!(error instanceof LoopLlmError)) throw new LoopLlmError(`LLM call failed: ${(error as Error).message}`)
+      // A little after the window reopens; a wait past what is left gives up at once.
+      const waitMs = error.status === 429 && error.retryAfterMs !== undefined ? error.retryAfterMs + 200 : Infinity
+      if (waitMs > waitLeftMs) throw error
+      waitLeftMs -= waitMs
+      await new Promise(resolve => setTimeout(resolve, waitMs))
+    }
   }
 }

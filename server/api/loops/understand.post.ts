@@ -15,7 +15,7 @@ export default defineEventHandler(async (event): Promise<LoopSentenceResponse> =
   const remaining = await consumeLoopSentenceQuota(event)
   let answer: unknown
   try {
-    answer = await askLoopLlm(sentence, { provider: loopLlmProvider, key: loopLlmKey, model: loopLlmModel, url: loopLlmUrl })
+    answer = await askLoopLlm(sentence, { provider: loopLlmProvider, key: loopLlmKey, model: loopLlmModel, url: loopLlmUrl, maxWaitMs: 3000 })
   }
   catch (error) {
     console.error('[POST /api/loops/understand]', (error as Error).message)

@@ -155,14 +155,14 @@ describe('pickNamedPlace', () => {
 
   it('goes through the river when it is within reach', () => {
     const river = place({ name: 'L\'Isère', kind: 'river', distanceM: 1200 })
-    expect(pickNamedPlace('Isère', [river], reachM)).toEqual({ role: 'via', place: river })
+    expect(pickNamedPlace('Isère', [river], grenoble, reachM)).toEqual({ role: 'via', place: river })
   })
 
   it('heads for a massif without trying to reach it, even when a lake or village shares its name', () => {
     const massif = place({ name: 'Massif de la Chartreuse', kind: 'massif', distanceM: 19000, coordinates: at(19000, 10) })
     const lake = place({ name: 'Lac Chartreuse', kind: 'lake', distanceM: 2000 })
     const village = place({ name: 'Le Sappey-en-Chartreuse', kind: 'village', distanceM: 8000 })
-    const choice = pickNamedPlace('la Chartreuse', [village, lake, massif], reachM)
+    const choice = pickNamedPlace('la Chartreuse', [village, lake, massif], grenoble, reachM)
     expect(choice?.role).toBe('heading')
     expect(choice?.place).toEqual(massif)
     expect(choice?.role === 'heading' && Math.abs(choice.bearingDeg - 10)).toBeLessThan(1)
@@ -170,7 +170,7 @@ describe('pickNamedPlace', () => {
 
   it('heads for a river out of reach', () => {
     const river = place({ name: 'Le Drac', kind: 'river', distanceM: 9000, coordinates: at(9000, -90) })
-    const choice = pickNamedPlace('Drac', [river], reachM)
+    const choice = pickNamedPlace('Drac', [river], grenoble, reachM)
     expect(choice?.role).toBe('heading')
     expect(choice?.role === 'heading' && Math.abs(choice.bearingDeg + 90)).toBeLessThan(1)
   })
@@ -178,29 +178,29 @@ describe('pickNamedPlace', () => {
   it('takes the nearest of places of the same kind and name', () => {
     const far = place({ id: 'w1', name: 'Isère', kind: 'river', distanceM: 2500 })
     const near = place({ id: 'w2', name: 'Isère', kind: 'river', distanceM: 800 })
-    expect(pickNamedPlace('Isère', [far, near], reachM)?.place).toEqual(near)
+    expect(pickNamedPlace('Isère', [far, near], grenoble, reachM)?.place).toEqual(near)
   })
 
   it('takes the kind said with the name', () => {
     const massif = place({ name: 'Massif de la Chartreuse', kind: 'massif', distanceM: 19000 })
     const lake = place({ name: 'Lac Chartreuse', kind: 'lake', distanceM: 2000 })
-    expect(pickNamedPlace('lac Chartreuse', [massif, lake], reachM)).toEqual({ role: 'via', place: lake })
+    expect(pickNamedPlace('lac Chartreuse', [massif, lake], grenoble, reachM)).toEqual({ role: 'via', place: lake })
   })
 
   it('prefers the place of that very name to one that only contains it', () => {
     const village = place({ name: 'Le Sappey-en-Chartreuse', kind: 'village', distanceM: 2000 })
     const peak = place({ name: 'Chartreuse', kind: 'peak', distanceM: 2900 })
-    expect(pickNamedPlace('Chartreuse', [village, peak], reachM)?.place).toEqual(peak)
+    expect(pickNamedPlace('Chartreuse', [village, peak], grenoble, reachM)?.place).toEqual(peak)
   })
 
   it('still heads for a place that only contains the name when none has it exactly', () => {
     const village = place({ name: 'Saint-Pierre-de-Chartreuse', kind: 'village', distanceM: 20000 })
-    expect(pickNamedPlace('Chartreuse', [village], reachM)?.role).toBe('heading')
+    expect(pickNamedPlace('Chartreuse', [village], grenoble, reachM)?.role).toBe('heading')
   })
 
   it('finds nothing without places, or for a place said by its kind only', () => {
-    expect(pickNamedPlace('Isère', [], reachM)).toBeNull()
-    expect(pickNamedPlace('le lac', [place({ name: 'Lac Achard', kind: 'lake', distanceM: 1000 })], reachM)).toBeNull()
+    expect(pickNamedPlace('Isère', [], grenoble, reachM)).toBeNull()
+    expect(pickNamedPlace('le lac', [place({ name: 'Lac Achard', kind: 'lake', distanceM: 1000 })], grenoble, reachM)).toBeNull()
   })
 })
 

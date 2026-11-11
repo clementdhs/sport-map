@@ -179,21 +179,30 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.place).toBeNull()
   })
 
-  it('reports the gain in metres and the paths it cannot use yet, with their words', () => {
+  it('reports the gain in metres it cannot use yet, with its words', () => {
     const settings = loopSettingsFromUnderstanding(understanding({
       sport: 'cycling',
       elevation_gain: { meters: 600, text: 'environ 600 mètres de dénivelé' },
-      prefer_paths: { text: 'sur du chemin' },
     }))
     expect(settings?.sport).toBe('cycling')
-    expect(settings?.ignored).toEqual([
-      { kind: 'gain', text: 'environ 600 mètres de dénivelé' },
-      { kind: 'paths', text: 'sur du chemin' },
-    ])
+    expect(settings?.ignored).toEqual([{ kind: 'gain', text: 'environ 600 mètres de dénivelé' }])
+  })
+
+  it('prefers paths when the sentence asks for them (#295)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ sport: 'running', prefer_paths: { text: 'sur du chemin' } }))
+    expect(settings?.paths).toBe(true)
+    expect(settings?.ignored).toEqual([])
+    expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5 }))?.paths).toBeNull()
+  })
+
+  it('quotes the paths back for a road ride, which has no such option', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ sport: 'road_cycling', prefer_paths: { text: 'hors route' } }))
+    expect(settings?.paths).toBeNull()
+    expect(settings?.ignored).toEqual([{ kind: 'paths', text: 'hors route' }])
   })
 
   it('cuts the words it quotes to a short excerpt', () => {
-    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 5, prefer_paths: { text: 'x'.repeat(500) } }))
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 5, elevation_gain: { meters: 600, text: 'x'.repeat(500) } }))
     expect(settings?.ignored[0]!.text.length).toBeLessThanOrEqual(80)
   })
 
@@ -201,9 +210,13 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ understood: false, distance_km: 5 }))).toBeNull()
   })
 
+  it('fills the paths alone', () => {
+    expect(loopSettingsFromUnderstanding(understanding({ prefer_paths: { text: 'sur du chemin' } }))?.paths).toBe(true)
+  })
+
   it('gives nothing when no setting could be filled', () => {
     expect(loopSettingsFromUnderstanding(nothing)).toBeNull()
     expect(loopSettingsFromUnderstanding(understanding({ approximate: true }))).toBeNull()
-    expect(loopSettingsFromUnderstanding(understanding({ prefer_paths: { text: 'sur du chemin' } }))).toBeNull()
+    expect(loopSettingsFromUnderstanding(understanding({ elevation_gain: { meters: 600, text: '600 m' } }))).toBeNull()
   })
 })

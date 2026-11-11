@@ -106,13 +106,14 @@ describe('loopSettingsFromUnderstanding', () => {
       climb: 'flat',
       start: { kind: 'my_point' },
       place: null,
+      paths: null,
       ignored: [],
     })
   })
 
   it('leaves out what the sentence does not say, so the panel keeps its settings', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 12 }))
-    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, ignored: [] })
+    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, paths: null, ignored: [] })
   })
 
   it('takes a duration when no distance is given', () => {

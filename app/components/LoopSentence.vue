@@ -34,11 +34,28 @@ const startName = ref('')
 let waitingForStart = false
 let request = 0
 
+// Dictating the sentence (#296): the words go after what is typed, to be read and corrected before Enter.
+const dictation = useDictation()
+let typedBeforeDictation = ''
+
+function toggleDictation() {
+  if (dictation.listening.value) {
+    dictation.stop()
+    return
+  }
+  typedBeforeDictation = phrase.value
+  dictation.start(dictationLanguage(locale.value), (said) => {
+    phrase.value = withDictation(typedBeforeDictation, said, LOOP_SENTENCE_MAX_LENGTH)
+  })
+}
+
 const examples = computed(() => [t('loopSentence.examples.hike'), t('loopSentence.examples.run')])
 
 async function submit() {
   const sentence = phrase.value.trim()
-  if (!sentence || loading.value) return
+  // Never while the dictation still writes into the field: what is sent must be what the member read.
+  if (!sentence || loading.value || dictation.listening.value) return
+  dictation.error.value = null
   const current = ++request
   loading.value = true
   failure.value = null
@@ -208,16 +225,33 @@ const chips = computed(() => {
         v-model="phrase"
         rows="2"
         :maxlength="LOOP_SENTENCE_MAX_LENGTH"
-        :placeholder="t('loopSentence.placeholder')"
+        :placeholder="dictation.listening.value ? t('loopSentence.listening') : t('loopSentence.placeholder')"
+        :readonly="dictation.listening.value"
         enterkeyhint="go"
         class="min-w-0 flex-1 resize-none bg-transparent py-0.5 text-base/snug text-highlighted outline-none placeholder:text-dimmed"
         @keydown.enter.exact="onEnter"
       />
+      <UTooltip v-if="dictation.supported.value" :text="t('loopSentence.dictationHint')" :ui="{ content: 'h-auto max-w-64 py-1.5', text: 'whitespace-normal' }">
+        <UButton
+          :icon="dictation.listening.value ? 'i-lucide-square' : 'i-lucide-mic'"
+          :aria-label="dictation.listening.value ? t('loopSentence.stopDictation') : t('loopSentence.dictate')"
+          :aria-pressed="dictation.listening.value"
+          :disabled="loading"
+          :color="dictation.listening.value ? 'primary' : 'neutral'"
+          :variant="dictation.listening.value ? 'solid' : 'ghost'"
+          size="lg"
+          square
+          class="shrink-0"
+          :class="{ 'animate-pulse': dictation.listening.value }"
+          data-testid="loop-sentence-mic"
+          @click="toggleDictation()"
+        />
+      </UTooltip>
       <UButton
         icon="i-lucide-arrow-right"
         :aria-label="t('loopSentence.submit')"
         :loading="loading"
-        :disabled="!phrase.trim()"
+        :disabled="!phrase.trim() || dictation.listening.value"
         size="lg"
         square
         class="shrink-0"
@@ -225,7 +259,13 @@ const chips = computed(() => {
       />
     </div>
 
-    <div v-if="!phrase && !loading && !settings && !failure" class="flex flex-wrap gap-1.5">
+    <p v-if="dictation.listening.value" role="status" class="text-sm font-medium text-muted">{{ t('loopSentence.listening') }}</p>
+    <p v-else-if="dictation.error.value" role="alert" class="flex items-start gap-2 text-sm text-muted" data-testid="loop-sentence-dictation-error">
+      <UIcon name="i-lucide-mic-off" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>{{ t(`loopSentence.dictationErrors.${dictation.error.value}`) }}</span>
+    </p>
+
+    <div v-if="!phrase && !loading && !settings && !failure && !dictation.listening.value" class="flex flex-wrap gap-1.5">
       <UButton
         v-for="example in examples"
         :key="example"

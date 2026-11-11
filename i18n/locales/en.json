@@ -580,6 +580,15 @@
     "label": "Describe your outing",
     "placeholder": "E.g. 5 km run along the river from my spot",
     "submit": "Read my sentence",
+    "dictate": "Dictate my sentence",
+    "stopDictation": "Stop dictating",
+    "listening": "Listening…",
+    "dictationHint": "Dictate my sentence. The sound is transcribed by the browser's or phone's speech recognition (Google in Chrome).",
+    "dictationErrors": {
+      "denied": "Microphone blocked: allow it in the browser or phone settings to dictate your sentence.",
+      "noSpeech": "I didn't hear anything, try again.",
+      "failed": "Dictation didn't work, type your sentence."
+    },
     "reading": "Reading your sentence…",
     "understood": "Understood",
     "examples": {

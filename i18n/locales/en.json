@@ -543,6 +543,10 @@
       "hilly": "Hilly"
     },
     "climbHint": "Suggestions are sorted from the closest to the furthest from this choice.",
+    "paths": "Prefer paths",
+    "pathsHint": "Less tarmac: loops take more trails, the one with the most path first.",
+    "pathShare": "{share}% path",
+    "fewPaths": "Few paths around this start: the loops stay mostly on roads.",
     "via": "Go through",
     "vias": {
       "none": "No set place",
@@ -609,6 +613,7 @@
     "approximate": "± 20 %",
     "loop": "Loop",
     "place": "Place: {name}",
+    "paths": "On paths",
     "start": "Start: {start}",
     "startPlaced": "point placed",
     "startLocated": "my position",
@@ -627,7 +632,7 @@
       "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
       "via": "\"{text}\": a loop goes through one named place only, this one is left out.",
       "gain": "\"{text}\": a gain to aim at goes from 100 to 3,000 m, with a distance or alone (not with a duration), I left it out.",
-      "paths": "\"{text}\": I can't prefer paths yet, the loop goes without."
+      "paths": "\"{text}\": a road ride stays on roads, the loop goes without paths."
     }
   },
   "discover": {
@@ -1538,6 +1543,7 @@
     "saveFeelingFailed": "Couldn't save how it felt",
     "loopSentenceUnavailable": "Describing a loop in a sentence is not available right now",
     "loopSentenceFailed": "I couldn't read your sentence right now",
+    "loopSentenceBusy": "Many requests right now, try again in a minute",
     "loopSentenceNotUnderstood": "I didn't understand your sentence",
     "loopSentenceQuota": "Limit of {limit} sentences a day reached"
   },

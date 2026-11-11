@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
-  climbOf, gainShortfall, isOnTarget, LOOP_GAIN_M, loopGainRange, loopLengthForGain, rankByTotalGain, isShortestThrough, isViaInReach, LOOP_TOLERANCES, type LoopClimb, loopCorner, loopLengthForDuration, loopRoutePoints,
-  loopViaPlaces, loopViaQuery, loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain,
+  canPreferPaths, climbOf, fewPaths, gainShortfall, isOnTarget, isShortestThrough, isViaInReach, LOOP_GAIN_M, LOOP_TOLERANCES, type LoopClimb,
+  loopCorner, loopGainRange, loopLengthForDuration, loopLengthForGain, loopProfile, loopRoutePoints, loopViaPlaces, loopViaQuery,
+  loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain, rankByPaths, rankByTotalGain,
   seedBearing, typicalGainPerKm, viaSearchRadius,
 } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
-import { type LngLat, type LngLatEle, trackDistances, type WayInfo } from '#shared/utils/routes'
+import { type LngLat, type LngLatEle, ROUTING_PROFILES, SPORT_TYPES, trackDistances, type WayInfo } from '#shared/utils/routes'
 
 // A square loop from Annecy, a point every 100 m, sides of `sideM` meters.
 function squareLoop(sideM: number): LngLat[] {
@@ -371,5 +372,53 @@ describe('a gain in metres (#294)', () => {
 
   it('says nothing without a ready proposal', () => {
     expect(gainShortfall([{ status: 'failed', distanceM: 0, gainM: null }], 600)).toBeNull()
+  })
+})
+
+describe('preferring paths (#295)', () => {
+  it('routes runs on the hiking profile and rides on the mountain bike one', () => {
+    expect(loopProfile('running', true)).toBe('foot-hiking')
+    expect(loopProfile('cycling', true)).toBe('cycling-mountain')
+    expect(loopProfile('hiking', true)).toBe('foot-hiking')
+    expect(loopProfile('trail', true)).toBe('foot-hiking')
+    expect(loopProfile('mountain_biking', true)).toBe('cycling-mountain')
+  })
+
+  it('keeps the profile of the sport without the option', () => {
+    for (const sport of SPORT_TYPES) expect(loopProfile(sport, false)).toBe(ROUTING_PROFILES[sport])
+  })
+
+  it('offers no paths to road cycling, which keeps its road profile', () => {
+    expect(canPreferPaths('road_cycling')).toBe(false)
+    expect(loopProfile('road_cycling', true)).toBe('cycling-road')
+    expect(SPORT_TYPES.filter(canPreferPaths)).toEqual(SPORT_TYPES.filter(sport => sport !== 'road_cycling'))
+  })
+
+  const proposals = [
+    { id: 'failed', status: 'failed', pathShare: null },
+    { id: 'road', status: 'ready', pathShare: 0.05 },
+    { id: 'unknown', status: 'ready', pathShare: null },
+    { id: 'paths', status: 'ready', pathShare: 0.62 },
+    { id: 'mixed', status: 'ready', pathShare: 0.3 },
+  ]
+
+  it('ranks the proposals with the most path first, those without way info and the failed ones last', () => {
+    expect(rankByPaths(proposals).map(({ id }) => id)).toEqual(['paths', 'mixed', 'road', 'unknown', 'failed'])
+  })
+
+  it('keeps the order of proposals within the same tenth of path', () => {
+    const close = [
+      { id: 'first', status: 'ready', pathShare: 0.41 },
+      { id: 'second', status: 'ready', pathShare: 0.44 },
+      { id: 'more', status: 'ready', pathShare: 0.56 },
+    ]
+    expect(rankByPaths(close).map(({ id }) => id)).toEqual(['more', 'first', 'second'])
+  })
+
+  it('says when no ready proposal has much path', () => {
+    expect(fewPaths([{ status: 'ready', pathShare: 0.02 }, { status: 'ready', pathShare: null }, { status: 'failed', pathShare: null }])).toBe(true)
+    expect(fewPaths(proposals)).toBe(false)
+    expect(fewPaths([{ status: 'failed', pathShare: null }])).toBe(false)
+    expect(fewPaths([])).toBe(false)
   })
 })

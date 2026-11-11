@@ -18,6 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const loop = useLoopGeneratorStore()
+const editor = useRouteEditorStore()
 const { t, locale } = useI18n()
 const { maptilerKey } = useRuntimeConfig().public
 const { locate } = useCurrentPosition()
@@ -169,6 +170,7 @@ const SETTING_IDS: Record<LoopSentenceSetting | 'start', string> = {
   shape: 'loop-setting-target',
   climb: 'loop-setting-climb',
   via: 'loop-setting-via',
+  paths: 'loop-setting-paths',
   start: 'loop-setting-start',
 }
 
@@ -211,6 +213,7 @@ const chips = computed(() => {
   if (understood.shape) list.push({ setting: 'shape', label: t(understood.shape === 'out_and_back' ? 'loop.outAndBack' : 'loopSentence.loop') })
   if (understood.climb) list.push({ setting: 'climb', label: t(`loop.climbs.${understood.climb}`) })
   if (understood.place) list.push({ setting: 'via', label: t('loopSentence.place', { name: understood.place.name }) })
+  if (understood.paths && canPreferPaths(editor.details.sport_type)) list.push({ setting: 'paths', label: t('loopSentence.paths') })
   if (startLabel.value) {
     const warn = startState.value === 'missing' || startState.value === 'notFound'
     list.push({ setting: 'start', label: t('loopSentence.start', { start: startLabel.value }), warn })

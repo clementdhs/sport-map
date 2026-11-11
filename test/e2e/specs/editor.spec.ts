@@ -316,6 +316,35 @@ test('aims at a gain in metres, the length deduced from it, and says when the te
   await expect(panel.getByText(/^Environ .+ avec ~600 m de D\+\.$/)).toBeVisible()
 })
 
+test('prefers paths, ranking the loops by their share of path, and keeps road rides on the road (#295)', async ({ page }) => {
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+
+  const requests: { prefer_paths?: boolean }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  await panel.getByRole('switch', { name: /Préférer les chemins/ }).click()
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  const proposals = panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')
+  await expect(proposals).toHaveCount(3)
+  // The fixtures give 25, 50 and 75 % of path by seed: the most first.
+  await expect(proposals.nth(0)).toContainText('75 % de chemin')
+  await expect(proposals.nth(1)).toContainText('50 % de chemin')
+  await expect(proposals.nth(2)).toContainText('25 % de chemin')
+  expect(requests).toHaveLength(3)
+  expect(requests.every(request => request.prefer_paths === true)).toBe(true)
+
+  // Road cycling has no paths to prefer.
+  await panel.getByRole('group', { name: 'Sport', exact: true }).getByRole('button', { name: 'Vélo route', exact: true }).click()
+  await expect(panel.getByRole('switch', { name: /Préférer les chemins/ })).toHaveCount(0)
+})
+
 test('goes through a named river, heads for a named massif and goes without an unknown place (#293)', async ({ page }) => {
   // OpenStreetMap around the start: a river about 1.2 km east, a massif's centre 20 km north, nothing else.
   let start: [number, number] = [0, 0]
@@ -389,7 +418,8 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
         climb: 'hilly',
         start: { kind: 'my_point' },
         place: { name: 'Isère', text: 'le long de l\'Isère' },
-        ignored: [{ kind: 'paths', text: 'sur du chemin' }],
+        paths: true,
+        ignored: [],
       },
       quota_remaining: 29,
     },
@@ -418,10 +448,11 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
 
   const understood = panel.getByTestId('loop-sentence-understood')
   await expect(understood).toContainText('Compris')
-  for (const chip of ['Rando', '6 km', 'Aller-retour', 'Costaud', 'Lieu : Isère', 'Départ : point posé']) {
+  for (const chip of ['Rando', '6 km', 'Aller-retour', 'Costaud', 'Lieu : Isère', 'Sur du chemin', 'Départ : point posé']) {
     await expect(understood.getByRole('button', { name: chip })).toBeVisible()
   }
-  await expect(panel.getByText('« sur du chemin » : je ne sais pas encore préférer les chemins')).toBeVisible()
+  // Paths are a setting since #295.
+  await expect(panel.getByRole('switch', { name: /Préférer les chemins/ })).toBeChecked()
   // The named place fills « Passer par » (#293); OpenStreetMap (simulated as empty here) decides its role.
   await expect(panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })).toHaveValue('Isère')
   const proposals = panel.getByRole('list', { name: 'Allers-retours proposés' }).getByRole('listitem')

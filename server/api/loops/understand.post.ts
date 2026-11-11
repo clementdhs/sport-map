@@ -4,6 +4,10 @@ import type { LoopSentenceResponse } from '#shared/types/loopSentence'
 // A loop described in one sentence (#216): the LLM gets the sentence alone (no position, no identity) and can only
 // fill the loop panel's settings, its answer checked again by `loopUnderstandingSchema`. Places come back as names,
 // never coordinates: the browser looks them up. Each sentence counts in the member's daily quota.
+// Groq's rate limit reopens within seconds (« try again in 4.7s »): worth waiting rather than failing (#304), the
+// field showing « Je lis ta phrase… » meanwhile.
+const LOOP_LLM_MAX_WAIT_MS = 10_000
+
 export default defineEventHandler(async (event): Promise<LoopSentenceResponse> => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
@@ -15,11 +19,12 @@ export default defineEventHandler(async (event): Promise<LoopSentenceResponse> =
   const remaining = await consumeLoopSentenceQuota(event)
   let answer: unknown
   try {
-    answer = await askLoopLlm(sentence, { provider: loopLlmProvider, key: loopLlmKey, model: loopLlmModel, url: loopLlmUrl, maxWaitMs: 3000 })
+    answer = await askLoopLlm(sentence, { provider: loopLlmProvider, key: loopLlmKey, model: loopLlmModel, url: loopLlmUrl, maxWaitMs: LOOP_LLM_MAX_WAIT_MS })
   }
   catch (error) {
     console.error('[POST /api/loops/understand]', (error as Error).message)
-    throw apiError(event, 502, 'api.loopSentenceFailed')
+    const { status, key } = loopLlmFailure(error)
+    throw apiError(event, status, key)
   }
 
   const understanding = loopUnderstandingSchema.safeParse(answer)

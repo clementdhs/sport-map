@@ -18,7 +18,7 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   },
   {
     sentence: 'Footing de 5 km autour de l\'Isère à partir de mon point de départ sur du chemin',
-    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, place: 'Isère', ignored: ['paths'] },
+    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, place: 'Isère', paths: true },
   },
   {
     sentence: 'Tour de vélo avec environ 600 mètres de dénivelé en direction de la Chartreuse depuis mon point',
@@ -49,7 +49,7 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   { sentence: 'footting 5 km depui mon poin', expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' } } },
   { sentence: 'cinq kilomètres de course à pied', expected: { sport: 'running', target: { kind: 'distance', km: 5 } } },
   { sentence: 'depuis chez moi 45 minutes de footing tranquille', expected: { sport: 'running', target: { kind: 'duration', min: 45 }, start: { kind: 'my_point' } } },
-  { sentence: 'rando sur du chemin 10 km', expected: { sport: 'hiking', target: { kind: 'distance', km: 10 }, ignored: ['paths'] } },
+  { sentence: 'rando sur du chemin 10 km', expected: { sport: 'hiking', target: { kind: 'distance', km: 10 }, paths: true } },
   // English
   { sentence: '5 km run from my spot', expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' } } },
   { sentence: 'Hilly 20 km bike ride', expected: { sport: 'cycling', target: { kind: 'distance', km: 20 }, climb: 'hilly' } },
@@ -65,6 +65,11 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   { sentence: 'Rando avec 1000 m de dénivelé positif', expected: { sport: 'hiking', target: null, gain: 1000, climb: null } },
   { sentence: 'Trail qui fait 800 de D+', expected: { sport: 'trail', target: null, gain: 800, climb: null } },
   { sentence: 'Road bike ride with about 1200 m of climbing', expected: { sport: 'road_cycling', target: null, gain: 1200, climb: null } },
+  // Paths (#295): a setting, except for a road ride; roads asked for are not paths
+  { sentence: 'VTT de 20 km hors route', expected: { sport: 'mountain_biking', target: { kind: 'distance', km: 20 }, paths: true } },
+  { sentence: '8 km trail run, off-road as much as possible', expected: { sport: 'trail', target: { kind: 'distance', km: 8 }, paths: true } },
+  { sentence: 'Footing de 10 km sur route', expected: { sport: 'running', target: { kind: 'distance', km: 10 }, paths: null } },
+  { sentence: 'Vélo de route 40 km par des chemins', expected: { sport: 'road_cycling', target: { kind: 'distance', km: 40 }, paths: null, ignored: ['paths'] } },
   // Not an outing, injections
   { sentence: 'Un truc sympa pas trop loin', expected: null },
   { sentence: 'Quelle est la capitale de la France ?', expected: null },

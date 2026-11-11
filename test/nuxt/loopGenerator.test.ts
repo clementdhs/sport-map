@@ -6,7 +6,7 @@ import { buildSession } from '#shared/utils/coachSessions'
 import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { NamedPlace } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
-import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest } from '#shared/utils/routes'
+import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest, WayInfo } from '#shared/utils/routes'
 
 const START: LngLat = [6.12, 45.9]
 
@@ -37,6 +37,12 @@ const climbBySeed = new Map<number, number>()
 // Seeds whose loop goes over hills of 400 m at 7 % (#266): 4 points up, 4 down, 2 flat, all along.
 const hillySeeds = new Set<number>()
 const hilly = (i: number) => 100 + [0, 7, 14, 21, 28, 21, 14, 7, 0, 0][i % 10]!
+// Share of path by seed (#295): the loop's first edges are paths, the others roads; no way info otherwise.
+const pathBySeed = new Map<number, number>()
+function wayInfo(pointCount: number, share: number): WayInfo {
+  const pathEdges = Math.round(share * (pointCount - 1))
+  return { surface: [], waytype: [[0, pathEdges, 4], [pathEdges, pointCount - 1, 2]], sac_scale: [], mtb_scale: [] }
+}
 let routingQuota: number | null = null
 registerEndpoint('/api/routing/loop', {
   method: 'POST',
@@ -52,7 +58,9 @@ registerEndpoint('/api/routing/loop', {
     }
     const loop = squareLoop(body.start, body.length_m, climbBySeed.get(body.seed))
     if (hillySeeds.has(body.seed)) loop.elevations = loop.coordinates.map((_, i) => hilly(i))
-    return { ...loop, quota_remaining: routingQuota ?? 299 }
+    const share = pathBySeed.get(body.seed)
+    const way = share === undefined ? {} : { way_info: wayInfo(loop.coordinates.length, share) }
+    return { ...loop, ...way, quota_remaining: routingQuota ?? 299 }
   },
 })
 
@@ -79,6 +87,7 @@ beforeEach(() => {
   offTargetSeeds.clear()
   climbBySeed.clear()
   hillySeeds.clear()
+  pathBySeed.clear()
   searchLoopViaMock.mockReset()
   searchNamedPlacesMock.mockReset()
   routingQuota = null
@@ -276,6 +285,48 @@ describe('proposals', () => {
     loop.gainM = 3000
     expect(loop.gainTargetM).toBe(1500)
     expect(loop.targetM).toBe(100_000)
+  })
+
+  it('asks for paths and ranks the proposals with the most path first, each with its share (#295)', async () => {
+    pathBySeed.set(0, 0.2).set(1, 0.7).set(2, 0.45)
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.preferPaths = true
+    await loop.generate()
+    expect(loopCalls.every(call => call.prefer_paths === true)).toBe(true)
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([1, 2, 0])
+    expect(loop.proposals[0]!.pathShare).toBeCloseTo(0.7, 1)
+  })
+
+  it('clears the proposals when the option changes the profile, ranks them again when it does not (#295)', async () => {
+    pathBySeed.set(0, 0.2).set(1, 0.7).set(2, 0.45)
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    // Running: foot-walking, foot-hiking with paths.
+    await loop.generate()
+    loop.preferPaths = true
+    expect(loop.proposals).toEqual([])
+
+    // Hiking is on foot-hiking either way: ranking again costs no request.
+    editor.details.sport_type = 'hiking'
+    loop.preferPaths = false
+    await loop.generate()
+    loop.preferPaths = true
+    await nextTick()
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([1, 2, 0])
+    expect(loopCalls).toHaveLength(6)
+  })
+
+  it('never asks road rides for paths (#295)', async () => {
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    editor.details.sport_type = 'road_cycling'
+    loop.setStart(START)
+    loop.preferPaths = true
+    expect(loop.pathsActive).toBe(false)
+    await loop.generate()
+    expect(loopCalls.some(call => call.prefer_paths)).toBe(false)
   })
 
   it('goes through the highest peak in reach, searched once (#214)', async () => {
@@ -521,7 +572,7 @@ describe('choosing a proposal', () => {
 
 describe('settings from a sentence (#216)', () => {
   const settings = (fields: Partial<LoopSentenceSettings>): LoopSentenceSettings => ({
-    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, gain: null, ignored: [], ...fields,
+    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, paths: null, gain: null, ignored: [], ...fields,
   })
 
   it('fills the sport, distance, precision, shape and climbing, and says which settings changed', () => {
@@ -538,6 +589,25 @@ describe('settings from a sentence (#216)', () => {
     expect(loop.shape).toBe('out_and_back')
     expect(loop.climb).toBe('hilly')
     expect(changed.sort()).toEqual(['climb', 'precision', 'shape', 'sport', 'target'])
+  })
+
+  it('prefers paths when the sentence asks for them (#295)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    expect(loop.applySentence(settings({ paths: true }))).toEqual(['paths'])
+    expect(loop.preferPaths).toBe(true)
+    // Not said: left as it is.
+    expect(loop.applySentence(settings({ climb: 'flat' }))).toEqual(['climb'])
+    expect(loop.preferPaths).toBe(true)
+  })
+
+  it('leaves the paths off for a road ride, which has no such option (#295)', () => {
+    const editor = useRouteEditorStore()
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    editor.details.sport_type = 'road_cycling'
+    expect(loop.applySentence(settings({ paths: true }))).toEqual([])
+    expect(loop.preferPaths).toBe(false)
   })
 
   it('switches to a duration when the sentence gives one', () => {

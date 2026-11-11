@@ -9,6 +9,10 @@ import {
   outingDaysBefore,
   raceLongRunKm,
   SESSION_DURATIONS,
+  CAP_MIN_MINUTES,
+  UNKNOWN_CAP_MINUTES,
+  sessionCap,
+  sessionLoad,
   sessionOfTheDay,
   TAPER_MAX_MINUTES,
 } from '#shared/utils/coachSessions'
@@ -18,7 +22,7 @@ const TODAY = '2026-11-09'
 const NOW = new Date('2026-11-09T10:00:00Z')
 
 function input(extra: Partial<CoachInput> = {}): CoachInput {
-  return { state: 'progress', ratio: 1.1, goal: null, minutes: 60, outingDays: 10, easyPace: 6, today: TODAY, ...extra }
+  return { state: 'progress', ratio: 1.1, goal: null, minutes: 60, outingDays: 10, easyPace: 6, today: TODAY, weekly: 100, longest: 30, ...extra }
 }
 
 const race = (date: string, km = 30, gain: number | null = null): CoachGoal => ({
@@ -210,6 +214,69 @@ describe('sessionOfTheDay', () => {
     it('forgets a past race', () => {
       expect(sessionOfTheDay(input({ goal: race('2026-11-01'), outingDays: 2 })).reason).toBe('progressKey')
     })
+  })
+})
+
+describe('cap from the usual week (#281)', () => {
+  // A member easing back in: about 5 km-effort a week, a 6.4 km outing with 60 m of gain recently
+  const small = { weekly: 5, longest: 7 }
+
+  it('keeps to half an hour while the outings say nothing (new member, back from a long break)', () => {
+    const unknown = { weekly: null, longest: 0 }
+    expect(sessionCap(input(unknown))).toBe(UNKNOWN_CAP_MINUTES / 6)
+    const choice = sessionOfTheDay(input({ state: 'learning', ratio: null, minutes: 120, ...unknown }))
+    expect(choice.plan).toMatchObject({ kind: 'endurance', minutes: UNKNOWN_CAP_MINUTES })
+    expect(choice.cap).toBe(5)
+  })
+
+  it('leaves a recovery jog as long as its slower pace allows', () => {
+    // Cap 4 km-effort: 26.4 min at 6.6 min/km
+    const { plan } = sessionOfTheDay(input({ state: 'overload', ratio: 1.6, weekly: 8, longest: 2 }))
+    expect(plan).toMatchObject({ kind: 'recovery', minutes: 25 })
+  })
+
+  it('is the larger of half the week and the longest recent outing plus 10 %, less when easing back in', () => {
+    expect(sessionCap(input({ weekly: 30, longest: 8 }))).toBe(15)
+    expect(sessionCap(input({ weekly: 10, longest: 8 }))).toBeCloseTo(8.8)
+    expect(sessionCap(input({ ...small, goal: { kind: 'resume', race_date: null, race_distance_m: null, race_gain_m: null } }))).toBe(7)
+  })
+
+  it('never goes under 20 minutes of easy run', () => {
+    expect(sessionCap(input({ weekly: 1, longest: 0 }))).toBeCloseTo(CAP_MIN_MINUTES / 6)
+    expect(sessionCap(input({ weekly: null, longest: 1 }))).toBeCloseTo(CAP_MIN_MINUTES / 6)
+    const { plan } = sessionOfTheDay(input({ state: 'learning', ratio: null, weekly: 1, longest: 0 }))
+    expect(plan).toMatchObject({ kind: 'endurance', minutes: CAP_MIN_MINUTES })
+  })
+
+  it('shortens an endurance run to the cap, by 5 minutes', () => {
+    const resume: CoachGoal = { kind: 'resume', race_date: null, race_distance_m: null, race_gain_m: null }
+    const choice = sessionOfTheDay(input({ state: 'recovery', ratio: 0, goal: resume, ...small }))
+    // 7 km-effort at 6 min/km: 42 min
+    expect(choice.plan).toMatchObject({ kind: 'endurance', minutes: 40 })
+    expect(choice.cap).toBe(7)
+    expect(sessionLoad(choice.plan)).toBeLessThanOrEqual(7)
+  })
+
+  it('leaves a session under the cap as it is', () => {
+    const choice = sessionOfTheDay(input({ weekly: 60, longest: 15 }))
+    expect(choice.cap).toBeNull()
+    expect(choice.plan.minutes).toBe(60)
+  })
+
+  it('shortens key sessions, then turns them into endurance, and walks only through different ones', () => {
+    for (const other of [0, 1, 2]) {
+      const choice = sessionOfTheDay(input({ state: 'recovery', ratio: 0, ...small }), other)
+      expect(sessionLoad(choice.plan)).toBeLessThanOrEqual(sessionCap(input(small))! + 0.05)
+    }
+    const kinds = new Set([0, 1, 2].map(other => sessionOfTheDay(input({ state: 'recovery', ratio: 0, weekly: 1, longest: 2 }), other).plan.kind))
+    expect([...kinds]).toEqual(['endurance'])
+    expect(sessionOfTheDay(input({ state: 'recovery', ratio: 0, weekly: 1, longest: 2 })).options).toBe(1)
+  })
+
+  it('turns a long run too short for one into endurance', () => {
+    const { plan } = sessionOfTheDay(input({ state: 'recovery', ratio: 0, minutes: 120, weekly: 10, longest: 8 }))
+    expect(plan.kind).toBe('endurance')
+    expect(plan.minutes).toBeLessThan(60)
   })
 })
 

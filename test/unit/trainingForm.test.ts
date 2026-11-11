@@ -147,6 +147,27 @@ describe('trainingForm', () => {
   })
 })
 
+describe('usual week and longest outing (#281)', () => {
+  it('is the baseline once the history is long enough', () => {
+    const form = trainingForm(steady(35), NOW)
+    expect(form.weekly).toBe(form.baseline)
+  })
+
+  it('averages the history while learning, from a week on', () => {
+    // 10 km on days 0, 4, 8 and 12: 40 km over 13 days
+    expect(trainingForm(steady(13, 4), NOW).weekly).toBeCloseTo((40 / 13) * 7)
+    expect(trainingForm([outing(0), outing(3)], NOW).weekly).toBeNull()
+    expect(trainingForm([], NOW).weekly).toBeNull()
+  })
+
+  it('keeps the heaviest day of the last 30 days', () => {
+    const form = trainingForm([outing(1, 6, 60), outing(1, 2), outing(10, 7), outing(30, 20)], NOW)
+    // 6 km + 60 m and 2 km the same day
+    expect(form.longest).toBeCloseTo(8.6)
+    expect(trainingForm([], NOW).longest).toBe(0)
+  })
+})
+
 describe('formWeeks', () => {
   it('gives 8 windows of 7 days, the latest being the form of the moment', () => {
     const outings = steady(70)

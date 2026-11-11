@@ -1,8 +1,7 @@
 import type { CoachGoal } from '#shared/types/account'
-import type { MyProfile } from '#shared/types/routes'
-import { DEFAULT_PACES } from '#shared/utils/routes'
+import type { MyProfile, RecordOuting } from '#shared/types/routes'
+import { coachPace } from '#shared/utils/coachPace'
 import { DEFAULT_SESSION_DURATION, type SessionChoice, sessionOn } from '#shared/utils/coachSessions'
-import type { LoadOuting } from '#shared/utils/trainingForm'
 import type { CoachChoice } from '~/utils/coachChoice'
 
 // The coach's session of the day (#264) away from the coach page, for the route of the session (#266): from the
@@ -12,7 +11,7 @@ import type { CoachChoice } from '~/utils/coachChoice'
 export function useSessionOfTheDay() {
   const paces = usePreference('paces')
   const status = ref<'idle' | 'loading' | 'ready' | 'failed'>('idle')
-  const outings = shallowRef<LoadOuting[]>([])
+  const outings = shallowRef<RecordOuting[]>([])
   const goal = shallowRef<CoachGoal | null>(null)
   // The session's day, a French local date: read again on each load, the coach page may have changed it
   const day = ref(localDate(new Date()))
@@ -43,7 +42,7 @@ export function useSessionOfTheDay() {
     return sessionOn(outings.value, {
       goal: goal.value,
       minutes: coachChoice.value.minutes,
-      easyPace: paces.value.running ?? DEFAULT_PACES.running,
+      easyPace: coachPace(outings.value, paces.value.running).pace,
     }, day.value, coachChoice.value.other)
   })
 

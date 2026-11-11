@@ -24,6 +24,8 @@ export const MIN_HISTORY_DAYS = 21
 export const RECOVERY_BELOW = 0.8
 export const OVERLOAD_ABOVE = 1.5
 export const CHART_WEEKS = 8
+// The days the longest recent outing is looked for in
+export const LONGEST_DAYS = 30
 
 const DAY_MS = 86_400_000
 const toUtc = (date: string) => Date.parse(`${date}T12:00:00Z`)
@@ -51,6 +53,11 @@ export type FormWindow = {
   baselineDays: number
   // Days from the start of the member's history to `end`, both included (0 without outings)
   historyDays: number
+  // The member's usual week (km-effort) the coach sizes sessions on (#281): the baseline, or while learning the
+  // weekly average of the history so far once it covers a week; null before
+  weekly: number | null
+  // The heaviest day (km-effort) of the LONGEST_DAYS ending on `end`, 0 without outings (#281)
+  longest: number
 }
 
 export type FormSummary<T extends LoadOuting = LoadOuting> = FormWindow & {
@@ -102,22 +109,28 @@ function historyStart({ agos }: DailyLoads, endAgo: number): number {
 function windowAt(daily: DailyLoads, today: string, endAgo: number): FormWindow {
   let load = 0
   let baselineLoad = 0
+  let longest = 0
   for (let ago = endAgo; ago < endAgo + RECENT_DAYS + BASELINE_DAYS; ago++) {
     const day = daily.loads.get(ago) ?? 0
     if (ago < endAgo + RECENT_DAYS) load += day
     else baselineLoad += day
+    if (ago < endAgo + LONGEST_DAYS) longest = Math.max(longest, day)
   }
   const first = historyStart(daily, endAgo)
   const historyDays = first < 0 ? 0 : first - endAgo + 1
   const baselineDays = Math.max(0, Math.min(BASELINE_DAYS, historyDays - RECENT_DAYS))
   const endMs = toUtc(today) - endAgo * DAY_MS
+  const baseline = historyDays >= MIN_HISTORY_DAYS ? (baselineLoad / baselineDays) * 7 : null
   return {
     end: fromUtc(endMs),
     start: fromUtc(endMs - (RECENT_DAYS - 1) * DAY_MS),
     load,
-    baseline: historyDays >= MIN_HISTORY_DAYS ? (baselineLoad / baselineDays) * 7 : null,
+    baseline,
     baselineDays,
     historyDays,
+    // While learning the whole history is inside the 35 days summed
+    weekly: baseline ?? (historyDays >= RECENT_DAYS ? ((load + baselineLoad) / historyDays) * 7 : null),
+    longest,
   }
 }
 

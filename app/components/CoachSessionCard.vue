@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CoachGoal } from '#shared/types/account'
-import { DEFAULT_PACES } from '#shared/utils/routes'
+import { coachPace, type PaceOuting } from '#shared/utils/coachPace'
 import {
   coachDays,
   dayNoon,
@@ -17,7 +17,7 @@ import type { LoadOuting } from '#shared/utils/trainingForm'
 // choices are kept in this browser for each day (coachChoice.ts): the same inputs give the same session all day.
 // Another day than today (#279) gets the session of that day's form if the member doesn't go out before it.
 const props = defineProps<{
-  outings: LoadOuting[]
+  outings: (LoadOuting & PaceOuting)[]
   goal: CoachGoal | null
 }>()
 
@@ -72,16 +72,20 @@ function dayLabel(date: string, i: number) {
 }
 const date = computed(() => dayDate(day.value, { weekday: 'short', day: 'numeric', month: 'short' }))
 
-// Runs are planned at the member's running pace (#146), the default one without a setting.
-const easyPace = computed(() => paces.value.running ?? DEFAULT_PACES.running)
+// Runs are planned at the member's running pace (#146), else one from their latest runs, else the default (#281).
+const easyPace = computed(() => coachPace(props.outings, paces.value.running))
 // The rules on the chosen day's form: today's, or a later day's if the member doesn't go out before it.
-const choice = computed(() => sessionOn(props.outings, { goal: props.goal, minutes: minutes.value, easyPace: easyPace.value }, day.value, other.value))
+const choice = computed(() => sessionOn(props.outings, { goal: props.goal, minutes: minutes.value, easyPace: easyPace.value.pace }, day.value, other.value))
 const plan = computed(() => choice.value.plan)
 
 const reason = computed(() => {
   const { reason, raceDays } = choice.value
   return t(`coachSession.reasons.${reason}`, { n: raceDays ?? 0 }, raceDays ?? 1)
 })
+// Shortened to what the member's recent outings allow (#281)
+const capText = computed(() => choice.value.cap === null
+  ? ''
+  : t('coachSession.capped', { load: formatNumber(choice.value.cap, { maximumFractionDigits: 0 }) }))
 
 // The bars of the outline: their width is their time, their height and colour the effort (the form's colours:
 // easy blue, rolling green, effort orange).
@@ -107,7 +111,7 @@ function traceSession() {
 
 const distance = computed(() => `${formatNumber(plan.value.distanceM / 1000, { maximumFractionDigits: 1 })} km`)
 const gain = computed(() => `${formatNumber(plan.value.gainM)} m`)
-const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSetting('running', easyPace.value) }))
+const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSetting('running', easyPace.value.pace) }))
 </script>
 
 <template>
@@ -132,6 +136,9 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
           </div>
           <p class="mt-1.5 text-sm text-toned" data-testid="coach-session-reason">
             {{ reason }}
+          </p>
+          <p v-if="capText" class="mt-1 text-sm text-toned" data-testid="coach-session-capped">
+            {{ capText }}
           </p>
           <p v-if="!isToday" class="mt-1 text-xs text-muted" data-testid="coach-session-ahead">
             {{ t('coachSession.ahead') }}
@@ -164,11 +171,15 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
               <dt class="text-[11px] tracking-[0.06em] text-muted uppercase">{{ t('coachSession.gain') }}</dt>
               <dd class="font-numbers text-xl font-bold">{{ gain }}</dd>
             </div>
-            <div class="px-2 py-1.5" :title="t('coachSession.paceTitle')">
+            <div class="px-2 py-1.5" :title="t('coachSession.paceTitle')" data-testid="coach-session-pace" :data-source="easyPace.source">
               <dt class="text-[11px] tracking-[0.06em] text-muted uppercase">{{ t('coachSession.pace') }}</dt>
               <dd class="font-numbers text-xl font-bold">{{ pace }}</dd>
             </div>
           </dl>
+          <p class="text-xs text-muted" data-testid="coach-session-pace-source">
+            {{ t(`coachSession.paceSource.${easyPace.source}`) }}
+            <ULink to="/settings#paces" class="text-primary">{{ t('coachSession.paceSettings') }}</ULink>
+          </p>
         </template>
         <p v-else-if="plan.kind === 'rest'" class="text-sm text-toned">
           {{ t('coachSession.restText') }}

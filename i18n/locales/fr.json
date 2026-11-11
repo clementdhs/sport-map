@@ -1532,7 +1532,7 @@
       "same": "autant que"
     },
     "advice": {
-      "recovery": "Tu as de la marge pour charger.",
+      "recovery": "Tu as de la marge pour en faire un peu plus, sans dépasser de beaucoup tes sorties récentes.",
       "progress": "Continue, sans en rajouter.",
       "overload": "Lève le pied quelques jours."
     },
@@ -1664,7 +1664,14 @@
     "distance": "Distance",
     "gain": "D+",
     "pace": "Allure EF",
-    "paceTitle": "Allure d'endurance fondamentale, celle de tes réglages",
+    "paceTitle": "Allure d'endurance fondamentale : celle où tu peux parler en courant",
+    "paceSource": {
+      "settings": "Allure EF de tes réglages.",
+      "outings": "Allure EF estimée d'après tes dernières sorties, un peu plus lente qu'elles.",
+      "default": "Allure EF par défaut, en attendant quelques sorties."
+    },
+    "paceSettings": "La régler",
+    "capped": "Raccourcie pour ne pas dépasser {load} km-effort d'un coup : d'après ta plus longue sortie des 30 derniers jours et ta semaine habituelle.",
     "paceValue": "{pace}/km",
     "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout.",
     "ahead": "Prévue d'après ta forme si tu ne sors pas d'ici là : elle bougera avec tes prochaines sorties."

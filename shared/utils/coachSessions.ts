@@ -37,6 +37,20 @@ export const TAPER_DAYS = 7
 export const TAPER_MAX_MINUTES = 45
 // A trail race: at least this gain per km. Its long runs are hilly.
 export const TRAIL_GAIN_PER_KM = 15
+// The most a session weighs (km-effort, #281), whatever the time available: the larger of a share of the member's
+// usual week and of their longest outing of the last 30 days plus 10 % (a single outing much longer than the
+// recent ones is what injures runners), both lower when easing back in. Never under CAP_MIN_MINUTES of easy run.
+export const CAP_SHARE = 0.5
+export const RESUME_CAP_SHARE = 0.4
+export const CAP_LONGEST = 1.1
+export const RESUME_CAP_LONGEST = 1
+export const CAP_MIN_MINUTES = 20
+// Without any outing in the history nor in the last 30 days (a new member, or back from a long break), sessions
+// are kept to half an hour of easy run until the outings say more.
+export const UNKNOWN_CAP_MINUTES = 30
+// The shortest session with repeats, and the shortest long run: below, a capped one turns into endurance.
+const MIN_REPEATS_MINUTES = 30
+const MIN_LONG_MINUTES = 60
 
 // Gain per km of the terrain the session asks for (m/km): rolling for the hilly long run, the race's own when it
 // has more, nearly flat otherwise.
@@ -94,9 +108,11 @@ export type SessionChoice = {
   raceDays: number | null
   // How many sessions "Autre séance" walks through (1: the button is hidden)
   options: number
+  // Shortened to the cap (#281): the load in km-effort it was not to go over
+  cap: number | null
 }
 
-type Option = { kind: SessionKind, minutes: number, gainPerKm?: number }
+type Option = { kind: SessionKind, minutes: number, gainPerKm?: number, capped?: boolean }
 
 const round = (value: number, step: number) => Math.round(value / step) * step
 
@@ -209,6 +225,10 @@ export type CoachInput = {
   easyPace: number
   // French local date of today
   today: string
+  // The member's usual week and longest recent day in km-effort (trainingForm's `weekly` and `longest`); both
+  // unknown (null, 0): UNKNOWN_CAP_MINUTES
+  weekly: number | null
+  longest: number
 }
 
 // A race's long run, which grows towards the race's distance: half of it 7 weeks before or more, all of it two
@@ -267,16 +287,64 @@ function rule(input: CoachInput): Rule {
   }
 }
 
+// A session's load in km-effort, like the form's (trainingForm.ts).
+export function sessionLoad(plan: Pick<SessionPlan, 'distanceM' | 'gainM'>): number {
+  return plan.distanceM / 1000 + plan.gainM / 100
+}
+
+// The most a session may weigh (km-effort).
+export function sessionCap(input: Pick<CoachInput, 'weekly' | 'longest' | 'goal' | 'easyPace'>): number {
+  if (input.weekly === null && !input.longest) return UNKNOWN_CAP_MINUTES / input.easyPace
+  const resume = input.goal?.kind === 'resume'
+  return Math.max(
+    CAP_MIN_MINUTES / input.easyPace,
+    (input.weekly ?? 0) * (resume ? RESUME_CAP_SHARE : CAP_SHARE),
+    input.longest * (resume ? RESUME_CAP_LONGEST : CAP_LONGEST),
+  )
+}
+
+const isRepeats = (kind: SessionKind) => kind === 'shortHills' || kind === 'longHills' || kind === 'intervals'
+
+// The option shortened to weigh `cap` at most: repeats lose time down to MIN_REPEATS_MINUTES, then turn into an
+// endurance run; runs are cut to the cap (5 min steps, CAP_MIN_MINUTES at least), a long run too short to be one
+// becoming endurance.
+function capOption(option: Option, cap: number, easyPace: number): Option {
+  if (!option.minutes) return option
+  const load = (o: Option) => sessionLoad(buildSession(o.kind, o.minutes, easyPace, o.gainPerKm))
+  if (load(option) <= cap) return option
+  if (isRepeats(option.kind)) {
+    for (let minutes = option.minutes - 5; minutes >= MIN_REPEATS_MINUTES; minutes -= 5) {
+      if (load({ ...option, minutes }) <= cap) return { ...option, minutes, capped: true }
+    }
+  }
+  // A run's load is its time at its pace, whatever the terrain: the easy pace, a little slower for a recovery jog.
+  const pace = option.kind === 'recovery' ? easyPace * RECOVERY_PACE : easyPace
+  const minutes = Math.min(option.minutes, Math.max(CAP_MIN_MINUTES, Math.floor((cap * pace) / 5) * 5))
+  const run = option.kind === 'recovery' || ((option.kind === 'long' || option.kind === 'longHilly') && minutes >= MIN_LONG_MINUTES)
+  return run
+    ? { ...option, minutes, capped: true }
+    : { kind: 'endurance', minutes, capped: true }
+}
+
 // The session of the day. `other` counts the clicks on "Autre séance".
 export function sessionOfTheDay(input: CoachInput, other = 0): SessionChoice {
-  const { reason, options, raceDays } = rule(input)
+  const rules = rule(input)
+  const cap = sessionCap(input)
+  // Capping can make two sessions the same (both turned into endurance): "Autre séance" only walks through
+  // different ones.
+  const options: Option[] = []
+  for (const option of rules.options) {
+    const capped = capOption(option, cap, input.easyPace)
+    if (!options.some(o => o.kind === capped.kind && o.minutes === capped.minutes)) options.push(capped)
+  }
   // The pick moves on each day (days since 1970) among the sessions allowed.
   const option = options[(daysUntil(input.today, '1970-01-01') + other) % options.length]!
   return {
     plan: buildSession(option.kind, option.minutes, input.easyPace, option.gainPerKm),
-    reason,
-    raceDays: raceDays ?? null,
+    reason: rules.reason,
+    raceDays: rules.raceDays ?? null,
     options: options.length,
+    cap: option.capped ? cap : null,
   }
 }
 
@@ -313,5 +381,7 @@ export function sessionOn(outings: LoadOuting[], input: DayInput, day: string, o
     ratio: form.ratio,
     outingDays: outingDaysBefore(outings, form.historyDays, at),
     today: day,
+    weekly: form.weekly,
+    longest: form.longest,
   }, other)
 }

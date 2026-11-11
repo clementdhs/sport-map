@@ -17,10 +17,12 @@ const { formatDistance, formatNumber } = useFormat()
 
 const sportChips = useSportChips()
 
-// The settings the last sentence changed.
+// The settings the last sentence changed, marked in yellow. Drawn by shadows around the block (a 6 px tint then a
+// 2 px edge), which take no room: margins or padding would move the panel, and the negative margins of #216 made a
+// marked block run into the next one (#308). The panel's 16 px gaps leave room for them.
 const marked = ref<LoopSentenceSetting[]>([])
 const markClass = (...settings: LoopSentenceSetting[]) => settings.some(setting => marked.value.includes(setting))
-  ? '-m-1.5 rounded-md bg-(--sign)/25 p-1.5 ring-2 ring-(--sign)'
+  ? 'rounded-xs bg-(--sign)/25 shadow-[0_0_0_6px_color-mix(in_srgb,var(--sign)_25%,transparent),0_0_0_8px_var(--sign)]'
   : ''
 const estimateDuration = useDurationEstimate()
 const targetItems = computed(() => [

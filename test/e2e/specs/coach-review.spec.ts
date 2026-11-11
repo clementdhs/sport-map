@@ -25,7 +25,9 @@ test('a recorded outing is the session of the day, its feeling weighs on the for
   const recorded: string[] = []
 
   try {
-    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo)
+    // All before this week's Monday, so the week's volume (#284) leaves the whole time chosen whatever the day
+    const sinceMonday = (new Date().getDay() + 6) % 7
+    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo + sinceMonday)
     // No goal set: coach-session.spec.ts, run after this one on the same account on CI, starts without any.
 
     // The recorder times fixes with Date.now(): a fake clock, half an hour ago so the outing ends before now.

@@ -21,7 +21,9 @@ test('a member picks a goal, and the time available changes the session', async 
   })).json() as { id: string }
 
   try {
-    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo)
+    // All before this week's Monday, so the week's volume (#284) leaves the whole time chosen whatever the day
+    const sinceMonday = (new Date().getDay() + 6) % 7
+    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo + sinceMonday)
 
     await page.goto('/coach')
     await waitForHydration(page)
@@ -67,6 +69,8 @@ test('a member picks a goal, and the time available changes the session', async 
     await expect(page.getByTestId('coach-session-title')).toHaveText('Sortie en endurance')
     // The 50 km outings leave room for an hour (#281), and the easy pace says where it comes from.
     await expect(page.getByTestId('coach-session-capped')).toBeHidden()
+    // The week's volume (#284), aimed on the usual week of those outings
+    await expect(page.getByTestId('coach-week-text')).toHaveText(/^Cette semaine : \d+ \/ \d+ km-effort$/)
     await expect(page.getByTestId('coach-session-pace-source').getByRole('link', { name: 'La régler' })).toHaveAttribute('href', '/settings#paces')
     const hourDistance = await page.getByTestId('coach-session-distance').textContent()
 

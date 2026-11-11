@@ -208,7 +208,7 @@ const chips = computed(() => {
     })
   }
   // A gain (#294), with the distance or alone.
-  if (understood.gain !== null) list.push({ setting: 'gain', label: t('loopSentence.gain', { gain: understood.gain }) })
+  if (understood.gain) list.push({ setting: 'gain', label: t('loopSentence.gain', { gain: understood.gain }) })
   if (understood.precision) list.push({ setting: 'precision', label: t('loopSentence.approximate') })
   if (understood.shape) list.push({ setting: 'shape', label: t(understood.shape === 'out_and_back' ? 'loop.outAndBack' : 'loopSentence.loop') })
   if (understood.climb) list.push({ setting: 'climb', label: t(`loop.climbs.${understood.climb}`) })

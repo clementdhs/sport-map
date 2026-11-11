@@ -645,6 +645,15 @@ describe('settings from a sentence (#216)', () => {
     expect(loop.proposals).toEqual([])
   })
 
+  it('keeps its target when the answer has no gain field (#294)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    const { gain: _, ...withoutGain } = settings({ climb: 'hilly' })
+    loop.applySentence(withoutGain as LoopSentenceSettings)
+    expect(loop.target).toBe('distance')
+    expect(loop.climb).toBe('hilly')
+  })
+
   it('fills a gain alone, the length then deduced from it (#294)', () => {
     const loop = useLoopGeneratorStore()
     loop.show()

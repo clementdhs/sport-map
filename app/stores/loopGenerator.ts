@@ -336,7 +336,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     set('sport', editor.details.sport_type, settings.sport, (value) => { editor.details.sport_type = value })
     // A gain (#294) goes with the sentence's distance, or alone: the length then comes from it.
     const asked = settings.target
-    const gain = settings.gain
+    // Absent from an answer that predates it: no gain.
+    const gain = settings.gain ?? null
     if (asked || gain !== null) {
       const kind: LoopTarget = gain !== null ? 'gain' : asked!.kind
       const withDistance = asked?.kind === 'distance'

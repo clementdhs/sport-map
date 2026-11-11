@@ -419,6 +419,7 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
         start: { kind: 'my_point' },
         place: { name: 'Isère', text: 'le long de l\'Isère' },
         paths: true,
+        gain: null,
         ignored: [],
       },
       quota_remaining: 29,

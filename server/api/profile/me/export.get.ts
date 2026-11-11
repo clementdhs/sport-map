@@ -46,7 +46,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
       .order('fixed_at', { referencedTable: 'live_positions' }),
     supabase.from('user_preferences').select('preferences, updated_at').eq('user_id', user.sub).maybeSingle(),
     supabase.from('privacy_zones').select('label, lng, lat, radius_m, mask_lng, mask_lat, created_at').eq('owner_id', user.sub).order('created_at'),
-    supabase.from('coach_goals').select('kind, race_date, race_distance_m, race_gain_m, updated_at').eq('user_id', user.sub).maybeSingle(),
+    supabase.from('coach_goals').select('kind, race_date, race_distance_m, race_gain_m, outings_per_week, preferred_days, long_run_day, updated_at').eq('user_id', user.sub).maybeSingle(),
   ])
   const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal].find(result => result.error)
   if (failed || !profile.data || !routes.data) {

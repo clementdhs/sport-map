@@ -1374,7 +1374,10 @@
     "raceDateFar": "Race too far ahead: 2 years at most",
     "raceDistanceRequired": "Enter the distance",
     "raceDistanceRange": "Between 1 and 300 km",
-    "raceGainRange": "Between 0 and 20,000 m"
+    "raceGainRange": "Between 0 and 20,000 m",
+    "outingsPerWeekRange": "Between 2 and 6 outings",
+    "preferredDaysCount": "Pick as many days as outings, or none",
+    "longRunDay": "Pick one of your outing days"
   },
   "api": {
     "signInRequired": "Sign-in required",
@@ -1504,7 +1507,7 @@
       "preferences": "your settings kept in your account (basemap, 3D view, map orientation, home filter, “Data” screen, voice guidance)",
       "privacyZones": "your privacy zones (place, radius, and the randomly moved centre that cuts tracks): the start and end of your routes and outings inside them stay hidden from the team",
       "json": "The .json files are structured text (JSON), readable by most software.",
-      "coachGoal": "the goal you gave the coach: ease back in, progress, or get ready for a race (its date, distance and gain)"
+      "coachGoal": "the goal you gave the coach: ease back in, progress, or get ready for a race (its date, distance and gain), with your outings a week, your outing days and the long run's"
     }
   },
   "coachForm": {
@@ -1615,7 +1618,15 @@
     "gainHint": "Optional",
     "save": "Save",
     "saved": "Goal saved",
-    "noGoalHint": "Without a goal, the coach helps you progress."
+    "noGoalHint": "Without a goal, the coach helps you progress.",
+    "outingsPerWeek": "How many outings a week?",
+    "days": "Which days?",
+    "daysHint": "Optional: as many days as outings",
+    "longRunDay": "Long run day",
+    "longRunDayHint": "Optional",
+    "noLongRunDay": "No preference",
+    "week": "{n} outing a week | {n} outings a week",
+    "weekDays": "{week}: {days}"
   },
   "coachSession": {
     "heading": "Today's session · {date}",

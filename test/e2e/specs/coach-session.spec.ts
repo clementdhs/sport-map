@@ -37,9 +37,20 @@ test('a member picks a goal, and the time available changes the session', async 
     await dialog.getByLabel('Date').fill(date)
     await dialog.getByLabel('Distance (km)').fill('21')
     await dialog.getByLabel('D+ (m)').fill('300')
+    // The member's week (#283): 4 outings, whose days must be as many, the long run on one of them.
+    await dialog.getByTestId('coach-goal-outings').getByRole('button', { name: '4', exact: true }).click()
+    const dayPills = dialog.getByTestId('coach-goal-days')
+    for (const day of ['mar.', 'jeu.', 'dim.']) await dayPills.getByRole('button', { name: day }).click()
+    await dialog.getByRole('button', { name: 'Enregistrer' }).click()
+    await expect(dialog).toContainText('Choisis autant de jours que de sorties, ou aucun')
+    await dayPills.getByRole('button', { name: 'sam.' }).click()
+    await expect(dialog.getByTestId('coach-goal-long-run').getByRole('button', { name: 'lun.' })).toHaveCount(0)
+    await dialog.getByTestId('coach-goal-long-run').getByRole('button', { name: 'dim.' }).click()
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
     await expect(dialog).toBeHidden()
     await expect(goalText).toContainText('course de 21 km et 300 m D+')
+    const week = page.getByTestId('coach-goal-week')
+    await expect(week).toHaveText('4 sorties / sem. : mar., jeu., sam., dim.')
     await expect(page.getByTestId('coach-goal')).toContainText('dans 4 sem.')
 
     // Easing back in: easy sessions only, whose length follows the time available.
@@ -98,6 +109,7 @@ test('a member picks a goal, and the time available changes the session', async 
     await page.reload()
     await waitForHydration(page)
     await expect(goalText).toHaveText('Reprendre en douceur')
+    await expect(week).toHaveText('4 sorties / sem. : mar., jeu., sam., dim.')
     await expect(tomorrow).toHaveAttribute('aria-pressed', 'true')
     await expect(session).toHaveAttribute('data-minutes', '45')
   }

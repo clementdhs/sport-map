@@ -1527,6 +1527,7 @@
     "saveFeelingFailed": "Impossible d'enregistrer le ressenti",
     "loopSentenceUnavailable": "La description en une phrase n'est pas disponible pour le moment",
     "loopSentenceFailed": "Je n'ai pas pu lire ta phrase pour le moment",
+    "loopSentenceBusy": "Beaucoup de demandes en ce moment, réessaie dans une minute",
     "loopSentenceNotUnderstood": "Je n'ai pas compris ta phrase",
     "loopSentenceQuota": "Limite de {limit} phrases par jour atteinte"
   },

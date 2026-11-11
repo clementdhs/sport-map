@@ -34,6 +34,20 @@ export class LoopLlmError extends Error {
   }
 }
 
+// What the member is told when the LLM fails (#304): still rate-limited after waiting means the shared quota is
+// spent for now (Groq's free tier, about 5 sentences a minute for the whole app), not that the sentence is at fault.
+export interface LoopLlmFailure {
+  status: number
+  key: string
+}
+
+// A named return type: an inline one would hide the next export from the auto-import scanner.
+export function loopLlmFailure(error: unknown): LoopLlmFailure {
+  return error instanceof LoopLlmError && error.status === 429
+    ? { status: 503, key: 'api.loopSentenceBusy' }
+    : { status: 502, key: 'api.loopSentenceFailed' }
+}
+
 type Adapter = (sentence: string, options: LoopLlmOptions, signal: AbortSignal) => Promise<unknown>
 
 // OpenAI-compatible chat completions with a strict JSON schema: Groq, and any provider speaking the same API

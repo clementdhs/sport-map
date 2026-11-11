@@ -1527,6 +1527,7 @@
     "saveFeelingFailed": "Couldn't save how it felt",
     "loopSentenceUnavailable": "Describing a loop in a sentence is not available right now",
     "loopSentenceFailed": "I couldn't read your sentence right now",
+    "loopSentenceBusy": "Many requests right now, try again in a minute",
     "loopSentenceNotUnderstood": "I didn't understand your sentence",
     "loopSentenceQuota": "Limit of {limit} sentences a day reached"
   },

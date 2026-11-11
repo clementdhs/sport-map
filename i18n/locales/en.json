@@ -1628,6 +1628,12 @@
     "week": "{n} outing a week | {n} outings a week",
     "weekDays": "{week}: {days}"
   },
+  "coachWeek": {
+    "label": "Volume of the week",
+    "line": "This week: {done} / {target} km-effort",
+    "lighter": "Lighter week",
+    "reached": "Week's target reached"
+  },
   "coachSession": {
     "heading": "Today's session · {date}",
     "headingOn": "Planned session · {date}",
@@ -1682,6 +1688,7 @@
       "default": "Default easy pace, until you have a few outings."
     },
     "paceSettings": "Set it",
+    "cappedWeek": "Shortened to keep your week on target.",
     "capped": "Shortened so as not to go over {load} km-effort at once, based on your longest outing of the last 30 days and your usual week.",
     "paceValue": "{pace}/km",
     "restText": "No session today: a walk, some stretching, or nothing at all.",

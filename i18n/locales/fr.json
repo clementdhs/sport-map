@@ -1628,6 +1628,12 @@
     "week": "{n} sortie / sem. | {n} sorties / sem.",
     "weekDays": "{week} : {days}"
   },
+  "coachWeek": {
+    "label": "Volume de la semaine",
+    "line": "Cette semaine : {done} / {target} km-effort",
+    "lighter": "Semaine allégée",
+    "reached": "Objectif de la semaine atteint"
+  },
   "coachSession": {
     "heading": "Séance du jour · {date}",
     "headingOn": "Séance prévue · {date}",
@@ -1682,6 +1688,7 @@
       "default": "Allure EF par défaut, en attendant quelques sorties."
     },
     "paceSettings": "La régler",
+    "cappedWeek": "Raccourcie pour rester dans l'objectif de ta semaine.",
     "capped": "Raccourcie pour ne pas dépasser {load} km-effort d'un coup : d'après ta plus longue sortie des 30 derniers jours et ta semaine habituelle.",
     "paceValue": "{pace}/km",
     "restText": "Pas de séance aujourd'hui : marche, étirements ou rien du tout.",

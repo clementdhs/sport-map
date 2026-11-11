@@ -3,6 +3,8 @@ paths:
   - "shared/utils/trainingForm.ts"
   - "shared/utils/coachSessions.ts"
   - "shared/utils/coachPace.ts"
+  - "shared/utils/coachWeek.ts"
+  - "test/unit/coachWeek.test.ts"
   - "test/unit/coachPace.test.ts"
   - "shared/utils/coachGoal.ts"
   - "shared/utils/coachReview.ts"
@@ -62,6 +64,13 @@ No plan over weeks and no AI: fixed, tested rules on what the member really did 
 - **Cap** (`sessionCap`, `capOption` in `coachSessions.ts`): no session weighs more (km-effort, `sessionLoad`) than the larger of half the member's usual week (`CAP_SHARE`) and their heaviest day of the last 30 days × 1.1 (`CAP_LONGEST`; 40 % and × 1 with the `resume` goal), never under 20 min of easy run. The 30-day rule follows the running-injury finding that a single outing much longer than the recent ones is what hurts; half the week alone cut a member with one outing a week to 20 min. The usual week is `trainingForm`'s `weekly`: the baseline, or while learning the history's weekly average once it covers 7 days; `longest` is its heaviest day. Both unknown (a new member, or back after more than 30 days without outings): 30 min of easy run at most (`UNKNOWN_CAP_MINUTES`). A recovery jog is cut at its own slower pace.
 - Capping repeats removes time in 5 min steps down to 30 min, then turns the session into endurance; runs are cut to the cap (5 min steps), a long run under an hour becoming endurance. Options made equal by the cap are merged, so « Autre séance » can disappear. `SessionChoice.cap` (the load not to go over) shows a sentence under the reason (`coach-session-capped`); the `DurationSign` shows the capped minutes.
 - **Easy pace** (`coachPace.ts`): the member's running pace setting first (#146), else the median km-effort pace of their 5 latest runs (road and trail, GPS moving time, 2 km at least, 8 weeks, 3–12 min/km) slowed by 15 % (`EASY_PACE_FACTOR`: most runners run their outings faster than easy), 2 runs at least, else `DEFAULT_PACES.running`. The card says which (`coach-session-pace-source`, link to `/settings#paces`). The coach page, the route of the session and the review all go through it; the review's session on the outings before the reviewed one, its « Demain » with it. Distance is the GPS one when known, with the route's gain in proportion (an outing stopped on the way).
+
+## Week's volume (#284)
+
+- `coachWeek.ts` (pure, unit-tested): calendar weeks, Monday to Sunday (French local dates; Clem's open point, chosen to match the member's days of #283 and the visible week of #285). The **target** only depends on the outings before the week's Monday, so it stays the same all week: the 4 full weeks before it (the baseline of `trainingForm` on the week's Sunday, which only counts days before the week), else while learning the history's weekly average until the Sunday before (`weekly`); × 1.1 (`WEEK_GROWTH`), × 1.05 easing back in, × 0.7 every 4th week of the history (`floor(historyDays / 7) % 4 === 3` as of that Sunday, so a member back from a long break starts the cycle again). None while the usual week is unknown (under 7 days of history before Monday).
+- **Session**: `sessionOn` passes `weekSessionCap(week)` as `weekCap`: what is left of the target (the week's outings before the day) ÷ the outings left × 1.5 (`SESSION_SHARE`, key sessions and the long run are bigger), never more than what is left; it only shortens the recent-outings cap of #281 further, never under 20 min, so a week already done still gets 20 min of easy run. Outings left: the member's days from the day on when chosen (#283), else their outings a week (3 without a goal) less the days already run, 1 at least. `SessionChoice.capBy` (`recent` | `week`) picks the sentence.
+- **Card**: under the reason, « Cette semaine : 12 / 18 km-effort » (`coach-week`, the chosen day's week, its outings until that day) with a `role="meter"` bar in `--form-progress`, « Semaine allégée » or « Objectif de la semaine atteint » on the right.
+- e2e: `coach-session.spec.ts` and `coach-review.spec.ts` date their 50 km outings before this week's Monday (`sinceMonday`), so the week leaves the whole time chosen whatever day CI runs.
 
 ## Best weather slot (#265)
 

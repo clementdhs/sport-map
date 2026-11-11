@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CoachGoal } from '#shared/types/account'
 import { coachPace, type PaceOuting } from '#shared/utils/coachPace'
+import { weekVolume } from '#shared/utils/coachWeek'
 import {
   coachDays,
   dayNoon,
@@ -83,9 +84,19 @@ const reason = computed(() => {
   return t(`coachSession.reasons.${reason}`, { n: raceDays ?? 0 }, raceDays ?? 1)
 })
 // Shortened to what the member's recent outings allow (#281)
-const capText = computed(() => choice.value.cap === null
-  ? ''
-  : t('coachSession.capped', { load: formatNumber(choice.value.cap, { maximumFractionDigits: 0 }) }))
+const capText = computed(() => {
+  const { cap, capBy } = choice.value
+  if (cap === null) return ''
+  return capBy === 'week'
+    ? t('coachSession.cappedWeek')
+    : t('coachSession.capped', { load: formatNumber(cap, { maximumFractionDigits: 0 }) })
+})
+
+// The volume of the chosen day's week (#284): done so far against the target, a lighter week now and then.
+const week = computed(() => weekVolume(props.outings, props.goal, day.value))
+const km = (value: number) => formatNumber(value, { maximumFractionDigits: 0 })
+const weekText = computed(() => week.value && t('coachWeek.line', { done: km(week.value.done), target: km(week.value.target) }))
+const weekShare = computed(() => week.value && week.value.target > 0 ? Math.min(100, (week.value.done / week.value.target) * 100) : 0)
 
 // The bars of the outline: their width is their time, their height and colour the effort (the form's colours:
 // easy blue, rolling green, effort orange).
@@ -140,6 +151,24 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
           <p v-if="capText" class="mt-1 text-sm text-toned" data-testid="coach-session-capped">
             {{ capText }}
           </p>
+          <div v-if="week" class="mt-2.5 space-y-1" data-testid="coach-week" :data-target="Math.round(week.target)" :data-lighter="week.lighter">
+            <p class="flex flex-wrap justify-between gap-x-2 text-xs text-toned">
+              <span class="font-numbers tabular-nums" data-testid="coach-week-text">{{ weekText }}</span>
+              <span v-if="week.lighter" class="font-semibold">{{ t('coachWeek.lighter') }}</span>
+              <span v-else-if="week.done >= week.target">{{ t('coachWeek.reached') }}</span>
+            </p>
+            <div
+              class="h-1.5 overflow-hidden rounded-full bg-elevated"
+              role="meter"
+              :aria-label="t('coachWeek.label')"
+              aria-valuemin="0"
+              :aria-valuemax="Math.round(week.target)"
+              :aria-valuenow="Math.round(week.done)"
+              :aria-valuetext="weekText ?? ''"
+            >
+              <div class="h-full rounded-full bg-(--form-progress)" :style="{ width: `${weekShare}%` }" />
+            </div>
+          </div>
           <p v-if="!isToday" class="mt-1 text-xs text-muted" data-testid="coach-session-ahead">
             {{ t('coachSession.ahead') }}
           </p>

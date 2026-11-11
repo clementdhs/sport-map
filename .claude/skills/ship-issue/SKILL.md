@@ -12,6 +12,16 @@ One issue, one branch, one pull request. Claude pushes the branch and opens the 
 1. `git fetch -q`, then `git switch -c <N>-<slug> origin/main` (slug: 2 to 4 English words, kebab-case).
 2. In a worktree created by the app (`.claude/worktrees/…`, branch `claude/…`) or when another session works in parallel, read [worktrees.md](worktrees.md) first: setup, shared local Supabase, ports.
 
+## 0b. Tests first (before any implementation)
+
+The tests are written from the issue, not from the code, so that they check what the code should do rather than what it does.
+
+1. **Acceptance criteria.** If the issue has none, write 3 to 6 short, checkable criteria (in French) and post them as a comment on the issue (`gh issue comment N --body-file <file>`), then show them to Clem in one message; don't wait for an answer to continue, but adjust if Clem corrects them.
+2. **Pure logic** (`shared/utils/`, `app/utils/`, business rules: coach, paces, stats, difficulty, durations…): write the unit tests in `test/unit/` first, one `it()` per rule, named after the expected behaviour. Run them and check they fail for the right reason (missing export or wrong value, not a typo), then commit them alone: `Add failing tests for <feature> (#N)`.
+3. **Bug fix**: always a test that reproduces the bug first (unit test when the bug is in pure logic, else Nuxt or e2e), seen failing, committed before the fix.
+4. **UI, map, layout**: no test first; iterate in the browser, then add the e2e or `test/nuxt` test that covers the acceptance criteria of the main flow.
+5. Then implement until those tests pass, **without changing them**. If a test written in this step turns out to be wrong, fix it in its own commit and say why in the PR.
+
 ## 1. Checks
 
 1. `npm run typecheck`, keeping only the errors: `npm run typecheck 2>&1 | Select-String 'error TS'`.
@@ -26,7 +36,7 @@ One issue, one branch, one pull request. Claude pushes the branch and opens the 
 
 1. **Commit.** Write the message to a file in the scratchpad and run `git commit -F <file>`; piping a here-string to `git commit -F -` fails in PowerShell. Short title, a body explaining the why, `Closes #N`, then the attribution line.
 2. **Push.** `git push -u origin <branch>`.
-3. **Open the PR.** Copy `.github/pull_request_template.md` to the scratchpad and fill every section from `npm run pr:impact` and the checks: short, « aucun » rather than a deleted section, the attribution line at the end. Then `gh pr create --base main --title "<English title>" --body-file <file>` (gh ignores the template when given a body file). Use the commit's title: depending on the repository's squash setting, main gets one or the other.
+3. **Open the PR.** Copy `.github/pull_request_template.md` to the scratchpad and fill every section from `npm run pr:impact` and the checks: short, « aucun » rather than a deleted section, the attribution line at the end. In the tests section, list the names of the new tests (Clem reviews what the system does through them) and flag every existing test whose expectation was changed or removed, with the reason. Then `gh pr create --base main --title "<English title>" --body-file <file>` (gh ignores the template when given a body file). Use the commit's title: depending on the repository's squash setting, main gets one or the other.
 4. **Branch CI.** The push triggers it (the workflow has no `pull_request` trigger, which would double the runs). In the desktop app, bind the PR with the `ccd_pr` tools (`get_status`, then `bind_pr` if it doesn't report the PR) and wait for its CI events instead of polling. Elsewhere: `gh run list --branch <branch> --limit 1`, then `gh run watch <id> --exit-status`. The conclusion must be exactly `success` (`gh run view <id> --json conclusion`: `gh run view` exits 0 even on failure). On failure, fix, commit and push to the same branch. A branch that only touches `.md` files or `.claude/` gets no run (`paths-ignore`): say so in the summary instead of waiting.
 5. **Summary in French**: the PR link, what changed, tests run, review findings, what was left out, what Clem has to do. Ask for the go to merge.
 6. **Notify.** `PushNotification` (load it with ToolSearch): "PR #M prête (issue #N) : j'attends ton go pour merger", plus the issue title. Clem often walks away during the checks.

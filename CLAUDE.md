@@ -42,5 +42,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - `npm run db:start` then `npm run test:e2e`: Playwright on the production build against the local Supabase (Docker); `E2E_SKIP_BUILD=1` reuses an existing `npm run build`. One spec per feature in `test/e2e/specs/`, run on 2 workers locally (1 on CI), each with its own users (`.claude/rules/e2e.md`). Test users and data are recreated by `test/e2e/global-setup.ts`; map style and `/api/routing/segment` are mocked in `test/e2e/fixtures.ts`. Never point e2e tests at the hosted project.
 
 ## Testing
+- Targeted test-first (details in the `ship-issue` skill): business rules in `shared/utils/` / `app/utils/` get their failing unit tests written and committed before the code; a bug fix starts with a test that reproduces it; UI and map code is tested after iterating.
+- Tests come from the issue's acceptance criteria, not from the implementation. Never change or remove an existing test's expectation to make code pass without flagging it in the PR, with the reason.
 - New logic in `shared/` or `app/utils/` gets unit tests; editor/store behaviour gets a `test/nuxt` test; user-facing flows get an e2e test.
 - Maps: wait for `[data-map-loaded]` before interacting with a map in e2e tests.

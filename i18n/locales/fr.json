@@ -570,6 +570,15 @@
     "label": "Décris ta sortie",
     "placeholder": "Ex. footing de 5 km autour de l'Isère depuis mon point",
     "submit": "Comprendre ma phrase",
+    "dictate": "Dicter ma phrase",
+    "stopDictation": "Arrêter la dictée",
+    "listening": "Je t'écoute…",
+    "dictationHint": "Dicter ma phrase. Le son est transcrit par la reconnaissance vocale du navigateur ou du téléphone (Google dans Chrome).",
+    "dictationErrors": {
+      "denied": "Micro refusé : autorise-le dans les réglages du navigateur ou du téléphone pour dicter ta phrase.",
+      "noSpeech": "Je n'ai rien entendu, réessaie.",
+      "failed": "La dictée n'a pas marché, écris ta phrase."
+    },
     "reading": "Je lis ta phrase…",
     "understood": "Compris",
     "examples": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dictationErrorOf, dictationLanguage, transcriptOf, withDictation } from '~/utils/dictation'
+import { dictationErrorOf, dictationLanguage, nativeDictationErrorOf, transcriptOf, withDictation } from '~/utils/dictation'
 
 describe('dictationLanguage', () => {
   it('listens in French when the interface is in French', () => {
@@ -56,5 +56,21 @@ describe('dictationErrorOf', () => {
   it('reports any other error as a failure', () => {
     expect(dictationErrorOf('network')).toBe('failed')
     expect(dictationErrorOf('audio-capture')).toBe('failed')
+  })
+})
+
+describe('nativeDictationErrorOf', () => {
+  it('reads a refused microphone in the Android app as denied', () => {
+    expect(nativeDictationErrorOf('Missing permission')).toBe('denied')
+    expect(nativeDictationErrorOf('Insufficient permissions')).toBe('denied')
+  })
+
+  it('says nothing was heard when Android caught no words', () => {
+    expect(nativeDictationErrorOf('No match')).toBe('noSpeech')
+    expect(nativeDictationErrorOf('No speech input')).toBe('noSpeech')
+  })
+
+  it('reports any other Android error as a failure', () => {
+    expect(nativeDictationErrorOf('Network error')).toBe('failed')
   })
 })

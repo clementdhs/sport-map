@@ -351,6 +351,69 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
   await expect(panel.getByRole('button', { name: 'Proposer des boucles' })).toBeEnabled()
 })
 
+test('dictates the sentence into the field, to be read before sending (#296)', async ({ page }) => {
+  // The browser's speech recognition is simulated: it hears `window.heard`, or fails with `window.dictationError`.
+  await page.addInitScript(() => {
+    const scope = window as unknown as Record<string, unknown>
+    delete scope.SpeechRecognition
+    scope.webkitSpeechRecognition = class {
+      lang = ''
+      onresult: ((event: object) => void) | null = null
+      onerror: ((event: object) => void) | null = null
+      onend: (() => void) | null = null
+      start() {
+        scope.dictationLang = this.lang
+        setTimeout(() => {
+          const error = scope.dictationError as string | undefined
+          if (error) this.onerror?.({ error })
+          else this.onresult?.({ results: [[{ transcript: scope.heard as string }]] })
+          this.onend?.()
+        }, 50)
+      }
+
+      stop() {}
+      abort() {}
+    }
+  })
+  const sentences: string[] = []
+  await page.route('**/api/loops/understand', async (route) => {
+    sentences.push((route.request().postDataJSON() as { sentence: string }).sentence)
+    await route.fulfill({ status: 422, json: { statusCode: 422, statusMessage: 'Je n\'ai pas compris ta phrase' } })
+  })
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const field = panel.getByRole('textbox', { name: 'Décris ta sortie' })
+  const mic = panel.getByRole('button', { name: 'Dicter ma phrase' })
+
+  await page.evaluate(() => { (window as unknown as Record<string, unknown>).heard = 'boucle de 10 km' })
+  await mic.click()
+  await expect(field).toHaveValue('boucle de 10 km')
+  expect(await page.evaluate(() => (window as unknown as Record<string, unknown>).dictationLang)).toBe('fr-FR')
+  // Never sent on its own: the member reads it, corrects it, then sends.
+  expect(sentences).toEqual([])
+  await page.evaluate(() => { (window as unknown as Record<string, unknown>).heard = 'depuis mon point' })
+  await mic.click()
+  await expect(field).toHaveValue('boucle de 10 km depuis mon point')
+  await field.press('Enter')
+  await expect.poll(() => sentences).toEqual(['boucle de 10 km depuis mon point'])
+
+  // A refused microphone is said next to the field, which stays as it was.
+  await page.evaluate(() => { (window as unknown as Record<string, unknown>).dictationError = 'not-allowed' })
+  await mic.click()
+  await expect(panel.getByTestId('loop-sentence-dictation-error')).toContainText('Micro refusé')
+  await expect(field).toHaveValue('boucle de 10 km depuis mon point')
+
+  // No speech recognition (Firefox): no button.
+  await page.addInitScript(() => {
+    delete (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+  })
+  await page.reload()
+  await waitForMap(page)
+  await expect(panel.getByRole('textbox', { name: 'Décris ta sortie' })).toBeVisible()
+  await expect(panel.getByTestId('loop-sentence-mic')).toHaveCount(0)
+})
+
 test('shares the start between the modes and remembers the last one', async ({ page }) => {
   await page.goto('/routes/create')
   await waitForMap(page)

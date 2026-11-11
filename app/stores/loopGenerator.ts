@@ -1,17 +1,19 @@
 import type { FetchError } from 'ofetch'
 import type { SessionPlan } from '#shared/utils/coachSessions'
 import type { Climb } from '#shared/utils/slopes'
-import type { LoopClimb, LoopViaType } from '#shared/utils/loops'
+import type { LoopClimb, LoopViaType, NamedPlace, NamedPlaceChoice } from '#shared/utils/loops'
 import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, LoopPrecision, LoopShape, RoutingLoopRequest, RoutingLoopResponse, WayInfo } from '#shared/utils/routes'
 
 export type LoopTarget = 'distance' | 'duration'
-export type LoopVia = 'none' | LoopViaType
+// 'named': a place the member names (#293), gone through or headed for.
+export type LoopVia = 'none' | LoopViaType | 'named'
 // The settings a sentence can fill (#216), marked in the panel once it did.
-export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb'
-// The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer.
-export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed'
+export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb' | 'via'
+// The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer,
+// 'vague' for a named place said by its kind only (« le lac »), not looked for (#293).
+export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed' | 'vague'
 
 export interface LoopProposal {
   seed: number
@@ -54,7 +56,11 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const via = ref<LoopVia>('none')
   const viaStatus = ref<LoopViaStatus>('idle')
   const viaPlace = ref<OsmPlace | null>(null)
-  // How far the place was looked for (m).
+  // The place named (#293) and what OpenStreetMap made of it: gone through, or only headed for.
+  const viaName = ref('')
+  const namedChoice = ref<NamedPlaceChoice | null>(null)
+  let namedSearch: { key: string, places: NamedPlace[] } | null = null
+  // How far the peak or water point was looked for (m).
   const viaRadiusM = ref(0)
   // The last Overpass answer: "Autres propositions" doesn't ask again.
   let viaSearch: { key: string, places: OsmPlace[] } | null = null
@@ -87,6 +93,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     highlighted.value = null
     viaStatus.value = 'idle'
     viaPlace.value = null
+    namedChoice.value = null
   }
 
   // The highlighted proposal stays highlighted where it moves.
@@ -120,6 +127,35 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     viaStatus.value = place ? 'found' : 'none'
     return place
   }
+
+  // A named place (#293), searched around the start as far as a loop can head for; gone through when in reach.
+  async function findNamed(name: string, from: LngLat, current: number): Promise<NamedPlaceChoice | null> {
+    if (!namedPlaceCore(name)) {
+      viaStatus.value = 'vague'
+      return null
+    }
+    const reachM = viaSearchRadius(targetM.value, LOOP_TOLERANCES[precision.value])
+    const key = `${name}:${from.join(',')}`
+    viaStatus.value = 'searching'
+    let places: NamedPlace[]
+    try {
+      places = namedSearch?.key === key ? namedSearch.places : await searchNamedPlaces(name, from)
+      namedSearch = { key, places }
+    }
+    catch {
+      if (current === generation) viaStatus.value = 'failed'
+      return null
+    }
+    if (current !== generation) return null
+    const choice = pickNamedPlace(name, places, from, reachM)
+    namedChoice.value = choice
+    viaStatus.value = choice ? 'found' : 'none'
+    return choice
+  }
+
+  // The point the proposals go through, drawn on the map: a peak, a water point or a named place in reach.
+  const viaPoint = computed<LngLat | null>(() => viaPlace.value?.coordinates
+    ?? (namedChoice.value?.role === 'via' ? namedChoice.value.place.coordinates : null))
 
   // The start is shared with the hand-drawn mode (#215): the track's start when there is one.
   function show() {
@@ -171,7 +207,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   // Proposals routed for another sport, or of another shape, would mislead.
   // Synchronous: a change made just before generate() mustn't clear the new proposals.
-  watch([() => editor.details.sport_type, shape, via], () => {
+  watch([() => editor.details.sport_type, shape, via, viaName], () => {
     // The session mode has no sport to pick: saving its route resets the editor's.
     if (!forSession.value) clearProposals()
   }, { flush: 'sync' })
@@ -191,8 +227,12 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     const from = start.value
     // A session's loops keep to its distance, with none of the loop mode's options.
     const plan = forSession.value ? session.value : null
-    const place = plan || via.value === 'none' ? null : await findVia(via.value, from, current)
+    const name = viaName.value.trim()
+    const kind = plan ? 'none' : via.value
+    const place = kind === 'peak' || kind === 'water' ? await findVia(kind, from, current) : null
+    const named = kind === 'named' && name ? await findNamed(name, from, current) : null
     if (current !== generation) return
+    const through = place?.coordinates ?? (named?.role === 'via' ? named.place.coordinates : undefined)
     const firstSeed = Math.floor(Math.random() * (1_000_000 - LOOP_PROPOSALS))
     const body: Omit<RoutingLoopRequest, 'seed'> = {
       start: from,
@@ -201,7 +241,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       sport_type: plan ? 'running' : editor.details.sport_type,
       shape: plan ? 'loop' : shape.value,
       precision: plan ? 'precise' : precision.value,
-      ...(place ? { via: place.coordinates } : {}),
+      ...(through ? { via: through } : {}),
+      ...(named?.role === 'heading' ? { heading: named.bearingDeg } : {}),
     }
     const hill = plan ? sessionHill(plan) : null
     proposals.value = Array.from({ length: LOOP_PROPOSALS }, (_, i): LoopProposal => ({
@@ -268,6 +309,12 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     set('precision', precision.value, settings.precision, (value) => { precision.value = value })
     set('shape', shape.value, settings.shape, (value) => { shape.value = value })
     set('climb', climb.value, settings.climb, (value) => { climb.value = value })
+    const place = settings.place
+    if (place && (via.value !== 'named' || viaName.value !== place.name)) {
+      via.value = 'named'
+      viaName.value = place.name
+      changed.push('via')
+    }
     // Proposals of other settings, even still loading, would block the sentence's own and mislead.
     if (changed.length) clearProposals()
     return changed
@@ -297,7 +344,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   return {
     open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
-    viaRadiusM, proposals, highlighted, settledCount,
+    viaName, namedChoice, viaPoint, viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
     show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose, applySentence,
   }

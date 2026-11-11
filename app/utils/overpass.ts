@@ -2,7 +2,7 @@ import type { FetchError } from 'ofetch'
 import { type Bbox, OSM_ROUTE_TAGS, type OsmRoute, type OsmRouteKind, type OverpassRelation, toOsmRoute } from '#shared/utils/osmRoutes'
 import { type OsmPlace, osmPlacesFrom, osmPlacesQuery, type OverpassElement } from '#shared/utils/osmPlaces'
 import type { LngLat } from '#shared/utils/routes'
-import { loopViaPlaces, loopViaQuery, type LoopViaType } from '#shared/utils/loops'
+import { loopViaPlaces, loopViaQuery, type LoopViaType, type NamedOverpassElement, type NamedPlace, namedPlaceQuery, namedPlacesFrom } from '#shared/utils/loops'
 import { LocalizedError } from '~/utils/localizedError'
 
 // The Overpass API (#69), queried from the browser: it allows 2 queries at a time per IP address, and the server
@@ -94,6 +94,13 @@ export async function searchOsmRoutes(bbox: Bbox, kind: OsmRouteKind, signal?: A
 // The peaks or drinking water points around a loop's start (#214); the loop store keeps the last search.
 export async function searchLoopVia(type: LoopViaType, start: LngLat, radiusM: number, signal?: AbortSignal): Promise<OsmPlace[]> {
   return loopViaPlaces(await queryOverpass<OverpassElement>(loopViaQuery(type, start, radiusM, QUERY_TIMEOUT_S), signal))
+}
+
+// The places of that name around a loop's start (#293): none for a place said by its kind only (« le lac »).
+export async function searchNamedPlaces(name: string, start: LngLat, signal?: AbortSignal): Promise<NamedPlace[]> {
+  const query = namedPlaceQuery(name, start, QUERY_TIMEOUT_S)
+  if (!query) return []
+  return namedPlacesFrom(await queryOverpass<NamedOverpassElement>(query, signal), start)
 }
 
 // The useful places near a route's track (#52). Not cached: the route page saves them with the route.

@@ -5,18 +5,19 @@ import type { LoopTry } from '#shared/utils/loops'
 // One proposal of automatic loop (#50): asked again with a corrected length until it is within the tolerance,
 // each OpenRouteService call counting in the user's routing quota. Only the accepted loop gets measured elevations
 // (#176), which don't count in the quota. A loop through a place and an out and back (#214) are routed through
-// points placed by `loopRoutePoints` instead of an ORS round trip; an out and back only on its way out.
+// points placed by `loopRoutePoints` instead of an ORS round trip; an out and back only on its way out. Towards a
+// named place out of reach (#293), the browser only sends its bearing.
 export default defineEventHandler(async (event): Promise<RoutingLoopResponse> => {
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const { start, length_m, sport_type, seed, shape, precision, via } = await readLocalizedBody(event, routingLoopSchema)
+  const { start, length_m, sport_type, seed, shape, precision, via, heading } = await readLocalizedBody(event, routingLoopSchema)
   if (via && !isViaInReach(start, via)) throw apiError(event, 422, 'api.loopViaTooFar')
   const tolerance = LOOP_TOLERANCES[precision]
   const offTarget = shape === 'out_and_back' ? 'api.outAndBackOffTarget' : 'api.loopOffTarget'
 
   async function propose(requestedM: number) {
-    const route = loopRoutePoints(shape, start, requestedM, seed, via)
+    const route = loopRoutePoints(shape, start, requestedM, seed, via, heading)
     if (!route) return roundTrip(event, start, requestedM, sport_type, seed)
     const leg = await routeThrough(event, route.points, route.radiuses, sport_type)
     return shape === 'out_and_back' ? { ...leg, lengthM: 2 * leg.lengthM } : leg

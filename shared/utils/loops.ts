@@ -1,4 +1,4 @@
-import { bearing, destination, distance } from '@turf/turf'
+import { bearing, destination, distance, lineString, nearestPointOnLine } from '@turf/turf'
 import { type OsmPlace, toOsmPlace, type OverpassElement } from './osmPlaces'
 import {
   estimateDurationMin, type LngLat, type LngLatEle, LOOP_MAX_M, LOOP_MIN_M, type LoopPrecision, type LoopShape,
@@ -159,9 +159,21 @@ type RoutedPoints = { points: LngLat[], radiuses: number[] }
 
 // What OpenRouteService routes for a loop through a place or an out and back (#214), aiming at lengthM along
 // paths, with each point's snapping radius; null for a plain loop, which is an ORS round trip. An out and back is
-// routed on the way out only, to its far end.
-export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number, seed: number, via?: LngLat): RoutedPoints | null {
+// routed on the way out only, to its far end. Towards a bearing (#293: a massif, a place out of reach), a loop goes
+// first through a point a third of its perimeter away that way, an out and back ends that way; a place to go
+// through wins over a bearing.
+export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number, seed: number, via?: LngLat, headingDeg?: number): RoutedPoints | null {
   const crowM = lengthM / PATH_DETOUR
+  if (!via && headingDeg !== undefined) {
+    if (shape === 'out_and_back') {
+      return { points: [start, move(start, crowM / 2, headingDeg + VIA_SPREAD[seed % VIA_SPREAD.length]!)], radiuses: [START_RADIUS_M, -1] }
+    }
+    const towards = move(start, crowM / 3, headingDeg)
+    return {
+      points: [start, towards, loopCorner(start, towards, crowM, seedAngle(seed)), start],
+      radiuses: [START_RADIUS_M, -1, -1, START_RADIUS_M],
+    }
+  }
   if (shape === 'loop') {
     if (!via) return null
     // Already the shortest loop through the place: its third corner would be the start itself.
@@ -250,6 +262,162 @@ export function pickLoopVia(type: LoopViaType, places: OsmPlace[], start: LngLat
   const score = ({ place, distanceM }: typeof inReach[number]) =>
     type === 'peak' ? -place.ele! : Math.abs(distanceM - radiusM / 2)
   return inReach.sort((a, b) => score(a) - score(b))[0]?.place ?? null
+}
+
+// A place the member names (#293): « autour de l'Isère », « en direction de la Chartreuse ». Overpass looks for it
+// around the start, not in all of France (« Isère » is the river, not the département), and what it is decides
+// its role: a river, lake, peak or village in reach is gone through at its point nearest to the start; a massif,
+// or anything out of reach, only gives the loop its direction.
+export const NAMED_PLACE_KINDS = ['massif', 'river', 'lake', 'peak', 'village'] as const
+export type NamedPlaceKind = typeof NAMED_PLACE_KINDS[number]
+// Wide enough to head for a massif whatever the length: a 100 km loop reaches about 38 km away.
+export const NAMED_PLACE_SEARCH_M = 30_000
+
+export interface NamedPlace {
+  id: string
+  name: string
+  kind: NamedPlaceKind
+  // The point nearest to the start of a river or a lake drawn as a line, else the place's node or centre
+  coordinates: LngLat
+  distanceM: number
+}
+
+export type NamedPlaceChoice = { role: 'via', place: NamedPlace } | { role: 'heading', place: NamedPlace, bearingDeg: number }
+
+// Lines come with their geometry (`out geom`): a river's nearest point is on its line.
+export type NamedOverpassElement = OverpassElement & { geometry?: { lat: number, lon: number }[] }
+
+const ARTICLES = new Set(['l', 'le', 'la', 'les', 'd', 'de', 'du', 'des', 'the', 'of'])
+// Words that only say what kind of place it is, with the kind they hint at (null: none in particular).
+const GENERIC_WORDS: Record<string, NamedPlaceKind | null> = {
+  lac: 'lake', lake: 'lake', etang: 'lake', barrage: 'lake', retenue: 'lake',
+  massif: 'massif', chaine: 'massif', range: 'massif', mountains: 'massif', parc: null, naturel: null, regional: null,
+  riviere: 'river', fleuve: 'river', river: 'river', ruisseau: 'river', torrent: 'river', canal: 'river',
+  mont: 'peak', pic: 'peak', sommet: 'peak', mount: 'peak', peak: 'peak',
+  village: 'village', ville: 'village', town: 'village',
+}
+
+// Words of a name without accents, case, quotes and brackets: « l'Isère » is « l », « isere ». Hyphens stay in their
+// word: « Sappey-en-Chartreuse » is one.
+function nameWords(name: string): string[] {
+  return name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[’`]/g, '\'')
+    .split(/[\s'"()[\]{},;:.!?«»]+/)
+    .filter(Boolean)
+}
+
+// The name's own words, without articles and generic words: what two names of one place have in common
+// (« Massif de la Chartreuse » and « la Chartreuse » are both « chartreuse »). Empty for « le lac ».
+export function namedPlaceCore(name: string): string {
+  return nameWords(name).filter(word => !ARTICLES.has(word) && !(word in GENERIC_WORDS)).join(' ')
+}
+
+// The core's words, hyphenated ones split and without their articles: « Saint-Pierre-de-Chartreuse » is the
+// « Saint Pierre de Chartreuse » typed with spaces.
+function coreWords(name: string): string[] {
+  return namedPlaceCore(name).split(/[\s-]+/).filter(word => word && !ARTICLES.has(word))
+}
+
+// True when the words follow one another in the place's name: « chartreuse » is in « Sappey-en-Chartreuse », « ain »
+// isn't in « Saint-Égrève ».
+function containsWords(words: string[], part: string[]): boolean {
+  return words.some((_, i) => part.every((word, j) => words[i + j] === word))
+}
+
+// The kind a generic word said with the name gives (« lac de Paladru »), else null.
+export function namedPlaceKindHint(name: string): NamedPlaceKind | null {
+  for (const word of nameWords(name)) {
+    const kind = GENERIC_WORDS[word]
+    if (kind) return kind
+  }
+  return null
+}
+
+const ACCENTED: Record<string, string> = { a: 'aàâä', e: 'eéèêë', i: 'iîï', o: 'oôö', u: 'uùûü', c: 'cç', y: 'yÿ' }
+
+// The core as an Overpass regex, written as an Overpass string: `,i` only folds ASCII, so accented letters list
+// their capitals; words in order with anything between them (« dent crolles » matches « Dent de Crolles »).
+function namePattern(core: string): string {
+  const letter = (char: string) => {
+    const variants = ACCENTED[char]
+    if (!variants) return char.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
+    return `(${[...variants, ...variants.toUpperCase()].join('|')})`
+  }
+  return core.split(' ').map(word => [...word].map(letter).join('')).join('.*').replace(/\\/g, '\\\\')
+}
+
+// A box NAMED_PLACE_SEARCH_M away from the start on each side (Overpass takes south, west, north, east): `around`
+// that far, with a name regex, was cut by the timeout on a busy instance, a box answered. Lines (rivers, lakes
+// drawn as ways) come with their geometry, the rest with their centre: a massif's boundary is too big to download.
+// Never the administrative boundaries: « Isère » would be the département. Null for a place said by its kind only.
+export function namedPlaceQuery(name: string, start: LngLat, timeoutS: number): string | null {
+  const core = namedPlaceCore(name)
+  if (!core) return null
+  const [, south] = move(start, NAMED_PLACE_SEARCH_M, 180)
+  const [, north] = move(start, NAMED_PLACE_SEARCH_M, 0)
+  const [west] = move(start, NAMED_PLACE_SEARCH_M, -90)
+  const [east] = move(start, NAMED_PLACE_SEARCH_M, 90)
+  const filter = `["name"~"${namePattern(core)}",i]`
+  return `[out:json][timeout:${timeoutS}][bbox:${south},${west},${north},${east}];`
+    + `(way["waterway"~"^(river|stream|canal)$"]${filter};way["natural"="water"]${filter};);out tags geom;`
+    + `(node["natural"="peak"]${filter};nwr["natural"="mountain_range"]${filter};relation["natural"="water"]${filter};`
+    + `nwr["place"~"^(region|city|town|village|hamlet)$"]${filter};relation["boundary"="protected_area"]${filter};);out tags center;`
+}
+
+// What a place found is for a loop, or null when it is none of the kinds a loop can head for.
+export function namedPlaceKind(tags: Record<string, string>): NamedPlaceKind | null {
+  if (tags.place === 'region' || tags.natural === 'mountain_range' || tags.boundary === 'protected_area') return 'massif'
+  if (['river', 'stream', 'canal'].includes(tags.waterway ?? '')) return 'river'
+  if (tags.natural === 'water') return 'lake'
+  if (tags.natural === 'peak') return 'peak'
+  if (['city', 'town', 'village', 'hamlet'].includes(tags.place ?? '')) return 'village'
+  return null
+}
+
+export function namedPlacesFrom(elements: NamedOverpassElement[], start: LngLat): NamedPlace[] {
+  const places: NamedPlace[] = []
+  for (const element of elements) {
+    const tags = element.tags ?? {}
+    const kind = namedPlaceKind(tags)
+    const name = tags.name?.trim()
+    if (!kind || !name) continue
+    const line = (element.geometry ?? []).map(({ lon, lat }): LngLat => [lon, lat])
+    let coordinates: LngLat
+    if (line.length >= 2) {
+      const [lng, lat] = nearestPointOnLine(lineString(line), start).geometry.coordinates
+      coordinates = [round6(lng!), round6(lat!)]
+    }
+    else {
+      const lat = element.lat ?? element.center?.lat ?? line[0]?.[1]
+      const lon = element.lon ?? element.center?.lon ?? line[0]?.[0]
+      if (lat === undefined || lon === undefined) continue
+      coordinates = [round6(lon), round6(lat)]
+    }
+    places.push({ id: `${element.type[0]}${element.id}`, name, kind, coordinates, distanceM: Math.round(metres(start, coordinates)) })
+  }
+  return places
+}
+
+// A massif before a river of the same name, a river before a lake, a lake before a peak, a village last.
+const KIND_RANK: Record<NamedPlaceKind, number> = { massif: 0, river: 1, lake: 2, peak: 3, village: 4 }
+
+// The place meant, and its role. Among the places of that very name (else those containing it), of the kind said
+// with it when there are some: the most significant kind, then the nearest. Gone through when it is a river, lake,
+// peak or village within reachM, else only headed for. Null when none matches.
+export function pickNamedPlace(name: string, places: NamedPlace[], start: LngLat, reachM: number): NamedPlaceChoice | null {
+  const core = namedPlaceCore(name)
+  if (!core) return null
+  const asked = coreWords(name)
+  const named = places.map(found => ({ found, words: coreWords(found.name) }))
+  const matching = named.filter(({ words }) => containsWords(words, asked)).map(({ found, words }) => ({ found, exact: words.length === asked.length }))
+  const exact = matching.filter(match => match.exact).map(({ found }) => found)
+  let candidates = exact.length ? exact : matching.map(({ found }) => found)
+  const hint = namedPlaceKindHint(name)
+  if (hint && candidates.some(found => found.kind === hint)) candidates = candidates.filter(found => found.kind === hint)
+  const best = [...candidates].sort((a, b) => KIND_RANK[a.kind] - KIND_RANK[b.kind] || a.distanceM - b.distanceM)[0]
+  if (!best) return null
+  if (best.kind !== 'massif' && best.distanceM <= reachM) return { role: 'via', place: best }
+  return { role: 'heading', place: best, bearingDeg: Math.round(bearing(start, best.coordinates) * 10) / 10 }
 }
 
 // Indices of the waypoints that split a loop into segments of about the same length, first and last point

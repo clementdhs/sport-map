@@ -206,6 +206,15 @@ describe('pickNamedPlace', () => {
     expect(pickNamedPlace('Chartreuse', [village], grenoble, reachM)?.role).toBe('heading')
   })
 
+  it('matches a hyphenated name typed with spaces', () => {
+    const village = place({ name: 'Saint-Pierre-de-Chartreuse', kind: 'village', distanceM: 2000 })
+    expect(pickNamedPlace('Saint Pierre de Chartreuse', [village], grenoble, reachM)).toEqual({ role: 'via', place: village })
+  })
+
+  it('matches whole words only', () => {
+    expect(pickNamedPlace('l\'Ain', [place({ name: 'Saint-Égrève', kind: 'village', distanceM: 2000 })], grenoble, reachM)).toBeNull()
+  })
+
   it('finds nothing without places, or for a place said by its kind only', () => {
     expect(pickNamedPlace('Isère', [], grenoble, reachM)).toBeNull()
     expect(pickNamedPlace('le lac', [place({ name: 'Lac Achard', kind: 'lake', distanceM: 1000 })], grenoble, reachM)).toBeNull()

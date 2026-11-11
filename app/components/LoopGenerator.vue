@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LngLat } from '#shared/utils/routes'
+import type { NamedPlaceKind } from '#shared/utils/loops'
 import type { LoopProposal, LoopSentenceSetting } from '~/stores/loopGenerator'
 
 // Automatic loop panel of the route editor (#50), in the topo look (#234): sport chips, shape, target, climbing and
@@ -12,7 +13,7 @@ const props = defineProps<{
 const editor = useRouteEditorStore()
 const loop = useLoopGeneratorStore()
 const { t } = useI18n()
-const { formatDistance } = useFormat()
+const { formatDistance, formatNumber } = useFormat()
 
 const sportChips = useSportChips()
 
@@ -28,7 +29,15 @@ const targetItems = computed(() => [
 ])
 
 const climbItems = computed(() => LOOP_CLIMBS.map(value => ({ label: t(`loop.climbs.${value}`), value })))
-const viaItems = computed(() => (['none', ...LOOP_VIA_TYPES] as const).map(value => ({ label: t(`loop.vias.${value}`), value })))
+const viaItems = computed(() => (['none', ...LOOP_VIA_TYPES, 'named'] as const).map(value => ({ label: t(`loop.vias.${value}`), value })))
+// A named place (#293) by its kind.
+const NAMED_ICONS: Record<NamedPlaceKind, string> = {
+  massif: 'i-lucide-mountain-snow',
+  river: 'i-lucide-waves',
+  lake: 'i-lucide-droplets',
+  peak: 'i-lucide-mountain',
+  village: 'i-lucide-house',
+}
 const range = computed({
   get: () => loop.precision === 'range',
   set: (value: boolean) => { loop.precision = value ? 'range' : 'precise' },
@@ -49,9 +58,34 @@ const targetHint = computed(() => {
     : t('loop.distanceWithGain', { distance: formatDistance(loop.targetM), gain })
 })
 
+// What came of the search for a named place (#293): « Passe par l'Isère, à 1,2 km ».
+const namedMessage = computed(() => {
+  const name = loop.viaName.trim()
+  switch (loop.viaStatus) {
+    case 'searching': return t('loop.namedSearching', { name })
+    case 'none': return t('loop.namedNone', { name, radius: `${formatNumber(NAMED_PLACE_SEARCH_M / 1000)} km` })
+    case 'vague': return t('loop.namedVague', { name })
+    case 'failed': return t('loop.namedFailed')
+    case 'found': {
+      const { role, place } = loop.namedChoice!
+      const distance = formatDistance(place.distanceM)
+      return t(role === 'via' ? 'loop.namedVia' : 'loop.namedHeading', { name: place.name, distance })
+    }
+    default: return null
+  }
+})
+const viaIcon = computed(() => {
+  if (loop.viaStatus === 'searching') return 'i-lucide-loader-circle'
+  if (loop.via !== 'named') return OSM_PLACE_ICONS[loop.via === 'peak' ? 'peak' : 'water']
+  const choice = loop.namedChoice
+  if (!choice) return 'i-lucide-map-pin-off'
+  return choice.role === 'heading' ? 'i-lucide-compass' : NAMED_ICONS[choice.place.kind]
+})
+
 // What came of the search for a place to go through.
 const viaMessage = computed(() => {
   if (loop.via === 'none') return null
+  if (loop.via === 'named') return namedMessage.value
   const type = loop.via
   const radius = formatDistance(loop.viaRadiusM)
   switch (loop.viaStatus) {
@@ -153,15 +187,27 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <p class="mt-2 text-sm text-muted">{{ t('loop.climbHint') }}</p>
     </div>
 
-    <UFormField :label="t('loop.via')" :ui="{ label: 'text-[0.6875rem] font-bold tracking-wider text-muted uppercase' }">
-      <USelect v-model="loop.via" :items="viaItems" class="w-full" />
-    </UFormField>
+    <div id="loop-setting-via" :class="markClass('via')">
+      <UFormField :label="t('loop.via')" :ui="{ label: 'text-[0.6875rem] font-bold tracking-wider text-muted uppercase' }">
+        <USelect v-model="loop.via" :items="viaItems" class="w-full" />
+      </UFormField>
+      <UInput
+        v-if="loop.via === 'named'"
+        v-model="loop.viaName"
+        :placeholder="t('loop.namedPlaceholder')"
+        :aria-label="t('loop.namedLabel')"
+        icon="i-lucide-search"
+        maxlength="200"
+        class="mt-2 w-full"
+      />
+      <p v-if="loop.via === 'named'" class="mt-2 text-sm text-muted">{{ t('loop.namedHint') }}</p>
+    </div>
 
     <LoopStartRow id="loop-setting-start" />
 
     <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? 'text-highlighted' : 'text-muted'" role="status">
       <UIcon
-        :name="loop.viaStatus === 'searching' ? 'i-lucide-loader-circle' : OSM_PLACE_ICONS[loop.via === 'peak' ? 'peak' : 'water']"
+        :name="viaIcon"
         class="mt-0.5 size-4 shrink-0"
         :class="{ 'animate-spin': loop.viaStatus === 'searching' }"
         aria-hidden="true"

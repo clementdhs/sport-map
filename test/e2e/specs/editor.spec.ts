@@ -284,6 +284,65 @@ test('generates an out and back of a rough length through the highest peak (#214
   await expect(page.locator('p.text-3xl')).toHaveText(/^10,0\d km$/)
 })
 
+test('goes through a named river, heads for a named massif and goes without an unknown place (#293)', async ({ page }) => {
+  // OpenStreetMap around the start: a river about 1.2 km east, a massif's centre 20 km north, nothing else.
+  let start: [number, number] = [0, 0]
+  await page.route('**/api/interpreter', async (route) => {
+    const query = new URLSearchParams(route.request().postData() ?? '').get('data') ?? ''
+    const [lng, lat] = start
+    const elements = query.includes('(e|é|è|ê|ë|E|É|È|Ê|Ë)r') && query.includes('waterway')
+      ? [{ type: 'way', id: 7, tags: { waterway: 'river', name: 'L\'Isère' }, geometry: [{ lat: lat - 0.05, lon: lng + 0.015 }, { lat: lat + 0.05, lon: lng + 0.015 }] }]
+      : query.includes('h(a|à|â|ä|A|À|Â|Ä)rtr')
+        ? [{ type: 'relation', id: 3, center: { lat: lat + 0.18, lon: lng }, tags: { boundary: 'natural', place: 'region', name: 'Massif de la Chartreuse' } }]
+        : []
+    await route.fulfill({ json: { elements } })
+  })
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+  start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
+
+  const requests: { via?: [number, number], heading?: number }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  await panel.getByRole('combobox', { name: 'Passer par' }).click()
+  await page.getByRole('option', { name: 'Un lieu que je nomme' }).click()
+  const place = panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })
+  await place.fill('l\'Isère')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^Passage : L'Isère, à 1,\d+ km\.$/)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(requests).toHaveLength(3)
+  for (const request of requests) {
+    expect(request.via?.[0]).toBeCloseTo(start[0] + 0.015, 4)
+    expect(request.heading).toBeUndefined()
+  }
+
+  // Changing the place clears the proposals.
+  requests.length = 0
+  await place.fill('la Chartreuse')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^Direction : Massif de la Chartreuse, à 20(,\d+)? km\./)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(requests).toHaveLength(3)
+  for (const request of requests) {
+    expect(request.via).toBeUndefined()
+    expect(Math.abs(request.heading!)).toBeLessThan(1)
+  }
+
+  requests.length = 0
+  await place.fill('Atlantide')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^« Atlantide » introuvable à moins de 30 km du départ/)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(requests.every(request => !request.via && request.heading === undefined)).toBe(true)
+})
+
 test('fills the loop settings from a sentence, then generates (#216)', async ({ page }) => {
   // The LLM is the server's: its reading is simulated here, as the routing is.
   const sentences: string[] = []
@@ -297,11 +356,14 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
         shape: 'out_and_back',
         climb: 'hilly',
         start: { kind: 'my_point' },
+        place: { name: 'Isère', text: 'le long de l\'Isère' },
         ignored: [{ kind: 'paths', text: 'sur du chemin' }],
       },
       quota_remaining: 29,
     },
   }
+  // No river of that name around the test start: the proposals go without it.
+  await page.route('**/api/interpreter', route => route.fulfill({ json: { elements: [] } }))
   await page.route('**/api/loops/understand', async (route) => {
     sentences.push((route.request().postDataJSON() as { sentence: string }).sentence)
     await route.fulfill(answer)
@@ -324,10 +386,12 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
 
   const understood = panel.getByTestId('loop-sentence-understood')
   await expect(understood).toContainText('Compris')
-  for (const chip of ['Rando', '6 km', 'Aller-retour', 'Costaud', 'Départ : point posé']) {
+  for (const chip of ['Rando', '6 km', 'Aller-retour', 'Costaud', 'Lieu : Isère', 'Départ : point posé']) {
     await expect(understood.getByRole('button', { name: chip })).toBeVisible()
   }
   await expect(panel.getByText('« sur du chemin » : je ne sais pas encore préférer les chemins')).toBeVisible()
+  // The named place fills « Passer par » (#293); OpenStreetMap (simulated as empty here) decides its role.
+  await expect(panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })).toHaveValue('Isère')
   const proposals = panel.getByRole('list', { name: 'Allers-retours proposés' }).getByRole('listitem')
   await expect(proposals).toHaveCount(3)
   expect(sentences).toEqual(['Rando costaud de 6 km en aller-retour depuis mon point sur du chemin'])

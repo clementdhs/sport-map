@@ -82,9 +82,15 @@ describe('namedPlaceKind', () => {
 })
 
 describe('namedPlaceQuery', () => {
-  it('searches around the start, latitude first, as far as NAMED_PLACE_SEARCH_M', () => {
+  it('searches a box around the start, south and west first, NAMED_PLACE_SEARCH_M away on each side', () => {
     const query = namedPlaceQuery('l\'Isère', grenoble, 25)!
-    expect(query).toContain(`(around:${NAMED_PLACE_SEARCH_M},45.1885,5.7245)`)
+    // A box rather than `around`: Overpass answers it in time, `around` that far was cut by the timeout.
+    const [south, west, north, east] = /\[bbox:([^\]]+)\]/.exec(query)![1]!.split(',').map(Number) as [number, number, number, number]
+    expect((south + north) / 2).toBeCloseTo(grenoble[1], 3)
+    expect((west + east) / 2).toBeCloseTo(grenoble[0], 3)
+    expect(metres([grenoble[0], south], grenoble)).toBeCloseTo(NAMED_PLACE_SEARCH_M, -2)
+    expect(metres([east, grenoble[1]], grenoble)).toBeCloseTo(NAMED_PLACE_SEARCH_M, -2)
+    expect(query).not.toContain('around')
     expect(query).toContain('[timeout:25]')
   })
 

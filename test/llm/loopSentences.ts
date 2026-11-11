@@ -2,26 +2,27 @@ import type { LoopSentenceIgnored, LoopSentenceSettings } from '#shared/utils/lo
 
 // Reference sentences of the loop panel (#216), with what the panel should be filled with: run by hand against the
 // real LLM (`npm run test:loop-sentences`) when the prompt, the schema, the model or the provider change, to compare
-// them on the same ground. `settings` lists only what matters for the sentence (null: left as it is); `ignored`, the
-// kinds of what must be reported as left out; `null` for a sentence that must not be understood.
+// them on the same ground. `settings` lists only what matters for the sentence (null: left as it is); `place`, the
+// place to go through or head for, compared by `namedPlaceCore` (« l'Isère » is « Isère »; absent: none); `ignored`,
+// the kinds of what must be reported as left out; `null` for a sentence that must not be understood.
 export interface LoopSentenceCase {
   sentence: string
-  expected: (Partial<Omit<LoopSentenceSettings, 'ignored'>> & { ignored?: LoopSentenceIgnored['kind'][] }) | null
+  expected: (Partial<Omit<LoopSentenceSettings, 'ignored' | 'place'>> & { place?: string, ignored?: LoopSentenceIgnored['kind'][] }) | null
 }
 
 export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   // The issue's examples
   {
     sentence: 'Footing de 5 km autour de l\'Isère à partir de mon point de départ',
-    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, ignored: ['via'] },
+    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, place: 'Isère' },
   },
   {
     sentence: 'Footing de 5 km autour de l\'Isère à partir de mon point de départ sur du chemin',
-    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, ignored: ['via', 'paths'] },
+    expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' }, place: 'Isère', ignored: ['paths'] },
   },
   {
     sentence: 'Tour de vélo avec environ 600 mètres de dénivelé en direction de la Chartreuse depuis mon point',
-    expected: { sport: 'cycling', target: null, start: { kind: 'my_point' }, ignored: ['via', 'gain'] },
+    expected: { sport: 'cycling', target: null, start: { kind: 'my_point' }, place: 'Chartreuse', ignored: ['gain'] },
   },
   // Distances, durations, approximations
   { sentence: 'Boucle de 10 km depuis chez moi', expected: { target: { kind: 'distance', km: 10 }, shape: 'loop', start: { kind: 'my_point' } } },
@@ -53,7 +54,12 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   { sentence: '5 km run from my spot', expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' } } },
   { sentence: 'Hilly 20 km bike ride', expected: { sport: 'cycling', target: { kind: 'distance', km: 20 }, climb: 'hilly' } },
   { sentence: 'Flat out and back run of about 10k', expected: { sport: 'running', target: { kind: 'distance', km: 10 }, precision: 'range', shape: 'out_and_back', climb: 'flat' } },
-  { sentence: 'Two hour hike with 800 m of climbing towards the lake', expected: { sport: 'hiking', target: { kind: 'duration', min: 120 }, ignored: ['via', 'gain'] } },
+  { sentence: 'Two hour hike with 800 m of climbing towards the lake', expected: { sport: 'hiking', target: { kind: 'duration', min: 120 }, place: 'lake', ignored: ['gain'] } },
+  // Named places (#293): the first one fills the place, its role left to OpenStreetMap
+  { sentence: 'Footing de 8 km le long du Drac', expected: { sport: 'running', target: { kind: 'distance', km: 8 }, place: 'Drac' } },
+  { sentence: 'Rando de 12 km par le lac de Paladru', expected: { sport: 'hiking', target: { kind: 'distance', km: 12 }, place: 'Paladru' } },
+  { sentence: 'Sortie vélo de route de 50 km vers le Vercors au départ de Voiron', expected: { sport: 'road_cycling', target: { kind: 'distance', km: 50 }, start: { kind: 'place', name: 'Voiron' }, place: 'Vercors' } },
+  { sentence: 'Trail de 15 km par la Bastille et le Mont Rachais', expected: { sport: 'trail', target: { kind: 'distance', km: 15 }, place: 'Bastille', ignored: ['via'] } },
   // Not an outing, injections
   { sentence: 'Un truc sympa pas trop loin', expected: null },
   { sentence: 'Quelle est la capitale de la France ?', expected: null },

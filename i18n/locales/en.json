@@ -537,8 +537,18 @@
     "vias": {
       "none": "No set place",
       "peak": "The highest peak in reach",
-      "water": "A drinking water point"
+      "water": "A drinking water point",
+      "named": "A place I name"
     },
+    "namedLabel": "Place to go through or head for",
+    "namedPlaceholder": "E.g. the Isère, Lake Paladru, the Chartreuse",
+    "namedHint": "Looked for in OpenStreetMap around the start: a river, lake, peak or village in reach is gone through, a massif or a place further away only gives the direction.",
+    "namedSearching": "Looking for \"{name}\" around the start…",
+    "namedNone": "\"{name}\" not found within {radius} of the start: the proposals go without it.",
+    "namedVague": "\"{name}\": which one? Give its name, e.g. \"Lake Paladru\". The proposals go without it.",
+    "namedFailed": "OpenStreetMap isn't answering: the proposals go through no place.",
+    "namedVia": "Through {name}, {distance} away.",
+    "namedHeading": "Towards {name}, {distance} away. The loop heads that way without trying to reach it.",
     "viaSearching": {
       "peak": "Looking for a peak within {radius}…",
       "water": "Looking for a water point within {radius}…"
@@ -587,6 +597,7 @@
     },
     "approximate": "± 20 %",
     "loop": "Loop",
+    "place": "Place: {name}",
     "start": "Start: {start}",
     "startPlaced": "point placed",
     "startLocated": "my position",
@@ -603,7 +614,7 @@
     "ignored": {
       "distance": "\"{text}\": the distance goes from 1 to 100 km, I left it out.",
       "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
-      "via": "\"{text}\": I can't go through a named place yet, the loop goes without it.",
+      "via": "\"{text}\": a loop goes through one named place only, this one is left out.",
       "gain": "\"{text}\": I can't aim at a gain in metres yet, pick flat, rolling or tough.",
       "paths": "\"{text}\": I can't prefer paths yet, the loop goes without."
     }

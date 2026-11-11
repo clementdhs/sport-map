@@ -167,6 +167,7 @@ const SETTING_IDS: Record<LoopSentenceSetting | 'start', string> = {
   precision: 'loop-setting-target',
   shape: 'loop-setting-target',
   climb: 'loop-setting-climb',
+  via: 'loop-setting-via',
   start: 'loop-setting-start',
 }
 
@@ -206,6 +207,7 @@ const chips = computed(() => {
   if (understood.precision) list.push({ setting: 'precision', label: t('loopSentence.approximate') })
   if (understood.shape) list.push({ setting: 'shape', label: t(understood.shape === 'out_and_back' ? 'loop.outAndBack' : 'loopSentence.loop') })
   if (understood.climb) list.push({ setting: 'climb', label: t(`loop.climbs.${understood.climb}`) })
+  if (understood.place) list.push({ setting: 'via', label: t('loopSentence.place', { name: understood.place.name }) })
   if (startLabel.value) {
     const warn = startState.value === 'missing' || startState.value === 'notFound'
     list.push({ setting: 'start', label: t('loopSentence.start', { start: startLabel.value }), warn })

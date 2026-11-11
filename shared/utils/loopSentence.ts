@@ -34,7 +34,8 @@ export const loopUnderstandingSchema = z.object({
   shape: z.enum(LOOP_SHAPES).nullable(),
   climb: z.enum(LOOP_CLIMBS).nullable(),
   start: z.object({ kind: z.enum(['my_point', 'place']), name: z.string().max(200).nullable() }).nullable(),
-  // Named places to go through or head towards (#293), gain in metres (#294), paths (#295): not settings yet.
+  // Named places to go through or head towards (#293: the first one is a setting), gain in metres (#294), paths
+  // (#295): not settings yet.
   places: z.array(z.object({ name: z.string().max(200), hint: z.string().max(200), text: quote })).max(10),
   elevation_gain: z.object({ meters: z.number(), text: quote }).nullable(),
   prefer_paths: z.object({ text: quote }).nullable(),
@@ -91,6 +92,11 @@ export const LOOP_SENTENCE_PROMPT = `You read one sentence in which a member of 
 
 export type LoopSentenceTarget = { kind: 'distance', km: number } | { kind: 'duration', min: number }
 export type LoopSentenceStart = { kind: 'my_point' } | { kind: 'place', name: string }
+// A place to go through or head towards (#293): its role is OpenStreetMap's to decide (pickNamedPlace), not the LLM's.
+export interface LoopSentencePlace {
+  name: string
+  text: string
+}
 // Parts of the sentence the panel has no setting for (yet), quoted back to the member.
 export interface LoopSentenceIgnored {
   kind: 'distance' | 'duration' | 'via' | 'gain' | 'paths'
@@ -105,6 +111,7 @@ export interface LoopSentenceSettings {
   shape: LoopShape | null
   climb: LoopClimb | null
   start: LoopSentenceStart | null
+  place: LoopSentencePlace | null
   ignored: LoopSentenceIgnored[]
 }
 
@@ -135,7 +142,10 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
     ? { kind: 'my_point' }
     : understanding.start?.kind === 'place' && name ? { kind: 'place', name } : null
 
-  for (const place of understanding.places) ignored.push({ kind: 'via', text: short(place.text || place.name) })
+  // One place per loop: the others are quoted back.
+  const [first, ...others] = understanding.places.filter(place => place.name.trim())
+  const place: LoopSentencePlace | null = first ? { name: first.name.trim(), text: short(first.text || first.name) } : null
+  for (const other of others) ignored.push({ kind: 'via', text: short(other.text || other.name) })
   if (understanding.elevation_gain) ignored.push({ kind: 'gain', text: short(understanding.elevation_gain.text) })
   if (understanding.prefer_paths) ignored.push({ kind: 'paths', text: short(understanding.prefer_paths.text) })
 
@@ -147,8 +157,9 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
     shape: understanding.shape,
     climb: understanding.climb,
     start,
+    place,
     ignored,
   }
-  const filled = settings.sport || settings.target || settings.shape || settings.climb || settings.start
+  const filled = settings.sport || settings.target || settings.shape || settings.climb || settings.start || settings.place
   return filled ? settings : null
 }

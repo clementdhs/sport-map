@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loopSettingsFromUnderstanding, loopUnderstandingSchema } from '#shared/utils/loopSentence'
+import { namedPlaceCore } from '#shared/utils/loops'
 import { askLoopLlm } from '../../server/utils/loopLlm'
 import { LOOP_SENTENCE_CASES } from './loopSentences'
 
@@ -27,8 +28,9 @@ describe.skipIf(!options.key)(`reference sentences (${options.provider}, ${optio
         return
       }
       expect(settings).not.toBeNull()
-      const { ignored, ...fields } = expected
+      const { ignored, place, ...fields } = expected
       expect(settings).toMatchObject(fields)
+      expect(settings!.place && namedPlaceCore(settings!.place.name)).toBe(place === undefined ? null : namedPlaceCore(place))
       expect(settings!.ignored.map(part => part.kind).sort()).toEqual([...(ignored ?? [])].sort())
     })
   }

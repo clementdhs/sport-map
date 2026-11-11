@@ -46,6 +46,15 @@ export default defineNuxtConfig({
     // Routing requests per user and per day (NUXT_ROUTING_DAILY_LIMIT): the free OpenRouteService quota is
     // 2,000 a day for the whole app.
     routingDailyLimit: 300,
+    // Loop described in a sentence (#216), read by an LLM: provider (NUXT_LOOP_LLM_PROVIDER, adapters in
+    // server/utils/loopLlm.ts), its key (NUXT_LOOP_LLM_KEY, the feature answers 503 without one), model and
+    // endpoint (NUXT_LOOP_LLM_URL, the provider's own when empty). Groq's free tier is about 1,000 requests a day
+    // for the whole app, hence the per-member limit (NUXT_LOOP_SENTENCE_DAILY_LIMIT).
+    loopLlmProvider: 'groq',
+    loopLlmKey: '',
+    loopLlmModel: 'openai/gpt-oss-120b',
+    loopLlmUrl: '',
+    loopSentenceDailyLimit: 30,
     // Weather forecast API (free, no key). The e2e tests point it at a local fake.
     openMeteoUrl: 'https://api.open-meteo.com/v1/forecast',
     // Elevations of tracks imported without any (#71): the IGN's in France (NUXT_IGN_ALTIMETRY_URL), Open-Meteo's

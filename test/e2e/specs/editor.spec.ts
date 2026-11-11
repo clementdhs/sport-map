@@ -284,6 +284,73 @@ test('generates an out and back of a rough length through the highest peak (#214
   await expect(page.locator('p.text-3xl')).toHaveText(/^10,0\d km$/)
 })
 
+test('fills the loop settings from a sentence, then generates (#216)', async ({ page }) => {
+  // The LLM is the server's: its reading is simulated here, as the routing is.
+  const sentences: string[] = []
+  let answer: { status: number, json: object } = {
+    status: 200,
+    json: {
+      settings: {
+        sport: 'hiking',
+        target: { kind: 'distance', km: 6 },
+        precision: null,
+        shape: 'out_and_back',
+        climb: 'hilly',
+        start: { kind: 'my_point' },
+        ignored: [{ kind: 'paths', text: 'sur du chemin' }],
+      },
+      quota_remaining: 29,
+    },
+  }
+  await page.route('**/api/loops/understand', async (route) => {
+    sentences.push((route.request().postDataJSON() as { sentence: string }).sentence)
+    await route.fulfill(answer)
+  })
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+
+  const requests: { length_m: number, sport_type: string, shape: string }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  const field = panel.getByRole('textbox', { name: 'Décris ta sortie' })
+  await field.fill('Rando costaud de 6 km en aller-retour depuis mon point sur du chemin')
+  await field.press('Enter')
+
+  const understood = panel.getByTestId('loop-sentence-understood')
+  await expect(understood).toContainText('Compris')
+  for (const chip of ['Rando', '6 km', 'Aller-retour', 'Costaud', 'Départ : point posé']) {
+    await expect(understood.getByRole('button', { name: chip })).toBeVisible()
+  }
+  await expect(panel.getByText('« sur du chemin » : je ne sais pas encore préférer les chemins')).toBeVisible()
+  const proposals = panel.getByRole('list', { name: 'Allers-retours proposés' }).getByRole('listitem')
+  await expect(proposals).toHaveCount(3)
+  expect(sentences).toEqual(['Rando costaud de 6 km en aller-retour depuis mon point sur du chemin'])
+  expect(requests).toHaveLength(3)
+  for (const request of requests) expect(request).toMatchObject({ length_m: 6000, sport_type: 'hiking', shape: 'out_and_back' })
+  // The sentence stays, and the settings it filled stay the member's to change.
+  await expect(field).toHaveValue(/^Rando costaud/)
+  await expect(panel.getByRole('tab', { name: 'Costaud' })).toHaveAttribute('aria-selected', 'true')
+  await panel.getByRole('tab', { name: 'Plat' }).click()
+  await expect(panel.getByRole('tab', { name: 'Plat' })).toHaveAttribute('aria-selected', 'true')
+  await panel.getByRole('switch', { name: /Aller-retour/ }).click()
+  await expect(panel.getByRole('button', { name: 'Proposer des boucles' })).toBeEnabled()
+
+  // Not understood: said, and the panel stays as it is.
+  answer = { status: 422, json: { statusCode: 422, statusMessage: 'Je n\'ai pas compris ta phrase' } }
+  await field.fill('Un truc sympa pas trop loin')
+  await panel.getByRole('button', { name: 'Comprendre ma phrase' }).click()
+  await expect(panel.getByRole('alert')).toContainText('Je n\'ai pas compris ta phrase.')
+  await expect(understood).toBeHidden()
+  await expect(panel.getByRole('tab', { name: 'Plat' })).toHaveAttribute('aria-selected', 'true')
+  await expect(panel.getByRole('button', { name: 'Proposer des boucles' })).toBeEnabled()
+})
+
 test('shares the start between the modes and remembers the last one', async ({ page }) => {
   await page.goto('/routes/create')
   await waitForMap(page)

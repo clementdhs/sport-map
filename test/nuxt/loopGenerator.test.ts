@@ -446,6 +446,19 @@ describe('settings from a sentence (#216)', () => {
     expect(changed).toEqual(['target'])
   })
 
+  it('clears the proposals of the former settings, so new ones can be asked for', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.setStart(START)
+    const pending = loop.generate()
+    expect(loop.canGenerate).toBe(false)
+    loop.applySentence(settings({ target: { kind: 'distance', km: 6 } }))
+    expect(loop.proposals).toEqual([])
+    expect(loop.canGenerate).toBe(true)
+    await pending
+    expect(loop.proposals).toEqual([])
+  })
+
   it('keeps the proposals generated right after it', async () => {
     const loop = useLoopGeneratorStore()
     loop.show()

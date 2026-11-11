@@ -2,11 +2,14 @@ import type { FetchError } from 'ofetch'
 import type { SessionPlan } from '#shared/utils/coachSessions'
 import type { Climb } from '#shared/utils/slopes'
 import type { LoopClimb, LoopViaType } from '#shared/utils/loops'
+import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, LoopPrecision, LoopShape, RoutingLoopRequest, RoutingLoopResponse, WayInfo } from '#shared/utils/routes'
 
 export type LoopTarget = 'distance' | 'duration'
 export type LoopVia = 'none' | LoopViaType
+// The settings a sentence can fill (#216), marked in the panel once it did.
+export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb'
 // The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer.
 export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed'
 
@@ -242,6 +245,34 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     settledCount.value++
   }
 
+  // A sentence fills the settings it mentions (#216), the others staying as they are; gives those it changed.
+  function applySentence(settings: LoopSentenceSettings): LoopSentenceSetting[] {
+    const changed: LoopSentenceSetting[] = []
+    const set = <T>(key: LoopSentenceSetting, current: T, next: T | null, apply: (value: T) => void) => {
+      if (next === null || next === current) return
+      apply(next)
+      changed.push(key)
+    }
+    set('sport', editor.details.sport_type, settings.sport, (value) => { editor.details.sport_type = value })
+    const asked = settings.target
+    if (asked) {
+      const sameTarget = target.value === asked.kind
+        && (asked.kind === 'distance' ? distanceKm.value === asked.km : durationMin.value === asked.min)
+      if (!sameTarget) {
+        target.value = asked.kind
+        if (asked.kind === 'distance') distanceKm.value = asked.km
+        else durationMin.value = asked.min
+        changed.push('target')
+      }
+    }
+    set('precision', precision.value, settings.precision, (value) => { precision.value = value })
+    set('shape', shape.value, settings.shape, (value) => { shape.value = value })
+    set('climb', climb.value, settings.climb, (value) => { climb.value = value })
+    // Proposals of other settings, even still loading, would block the sentence's own and mislead.
+    if (changed.length) clearProposals()
+    return changed
+  }
+
   // Replaces the editor's track (undo brings it back).
   function choose(index: number) {
     const proposal = proposals.value[index]
@@ -268,6 +299,6 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
     viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
-    show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose,
+    show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose, applySentence,
   }
 })

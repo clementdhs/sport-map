@@ -10,7 +10,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
   if (!user) throw apiError(event, 401, 'api.signInRequired')
   const supabase = await serverSupabaseClient(event)
 
-  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal] = await Promise.all([
+  const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal, loopSentenceUsage] = await Promise.all([
     supabase.from('profiles').select('username, display_name, bio, created_at, avatar_path').eq('id', user.sub).single(),
     supabase
       .from('routes')
@@ -47,8 +47,9 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     supabase.from('user_preferences').select('preferences, updated_at').eq('user_id', user.sub).maybeSingle(),
     supabase.from('privacy_zones').select('label, lng, lat, radius_m, mask_lng, mask_lat, created_at').eq('owner_id', user.sub).order('created_at'),
     supabase.from('coach_goals').select('kind, race_date, race_distance_m, race_gain_m, outings_per_week, preferred_days, long_run_day, updated_at').eq('user_id', user.sub).maybeSingle(),
+    supabase.from('loop_sentence_usage').select('day, count').eq('user_id', user.sub),
   ])
-  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal].find(result => result.error)
+  const failed = [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal, loopSentenceUsage].find(result => result.error)
   if (failed || !profile.data || !routes.data) {
     console.error('[GET /api/profile/me/export]', failed?.error)
     throw apiError(event, 500, 'api.exportFailed')
@@ -93,6 +94,7 @@ export default defineEventHandler(async (event): Promise<AccountExport> => {
     preferences: preferences.data,
     privacyZones: privacyZones.data!,
     coachGoal: coachGoal.data,
+    loopSentenceUsage: loopSentenceUsage.data!,
   }, getRequestLocale(event))
 
   // Signed with the caller's session: storage policies let owners read their route photos, and members the

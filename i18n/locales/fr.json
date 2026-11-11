@@ -566,6 +566,39 @@
     "chooseOutAndBack": "Choisir cet aller-retour",
     "replaceConfirm": "Remplacer le tracé en cours par cette boucle ?"
   },
+  "loopSentence": {
+    "label": "Décris ta sortie",
+    "placeholder": "Ex. footing de 5 km autour de l'Isère depuis mon point",
+    "submit": "Comprendre ma phrase",
+    "reading": "Je lis ta phrase…",
+    "understood": "Compris",
+    "examples": {
+      "hike": "Rando costaud de 15 km",
+      "run": "Footing d'environ 45 min depuis chez moi"
+    },
+    "approximate": "± 20 %",
+    "loop": "Boucle",
+    "start": "Départ : {start}",
+    "startPlaced": "point posé",
+    "startLocated": "ma position",
+    "startLooking": "recherche…",
+    "startToPlace": "à placer",
+    "startMissing": "Où est « mon point » ?",
+    "startMissingHint": "Aucun départ posé et la position n'est pas disponible.",
+    "startNotFound": "Je ne trouve pas « {name} ».",
+    "startNotFoundHint": "Place le départ toi-même, la boucle suivra.",
+    "placeOnMap": "Placer sur la carte",
+    "notUnderstood": "Je n'ai pas compris ta phrase.",
+    "notUnderstoodHint": "Essaie par exemple « boucle de 10 km depuis chez moi », ou règle ta boucle ci-dessous.",
+    "failedHint": "Règle ta boucle ci-dessous.",
+    "ignored": {
+      "distance": "« {text} » : la distance va de 1 à 100 km, je ne l'ai pas reprise.",
+      "duration": "« {text} » : la durée va de 10 min à 10 h, je ne l'ai pas reprise.",
+      "via": "« {text} » : je ne sais pas encore passer par un lieu nommé, la boucle se fait sans.",
+      "gain": "« {text} » : je ne sais pas encore viser un dénivelé en mètres, choisis plat, vallonné ou costaud.",
+      "paths": "« {text} » : je ne sais pas encore préférer les chemins, la boucle se fait sans."
+    }
+  },
   "discover": {
     "title": "Parcours balisés",
     "kind": "Type de parcours",
@@ -1377,7 +1410,9 @@
     "raceGainRange": "Entre 0 et 20 000 m",
     "outingsPerWeekRange": "Entre 2 et 6 sorties",
     "preferredDaysCount": "Choisis autant de jours que de sorties, ou aucun",
-    "longRunDay": "Choisis un de tes jours de sortie"
+    "longRunDay": "Choisis un de tes jours de sortie",
+    "loopSentenceRequired": "Décris ta sortie",
+    "loopSentenceTooLong": "Phrase trop longue"
   },
   "api": {
     "signInRequired": "Connexion requise",
@@ -1469,7 +1504,11 @@
     "privacyZoneNotFound": "Zone de confidentialité introuvable",
     "loadCoachGoalFailed": "Impossible de charger ton objectif",
     "saveCoachGoalFailed": "Impossible d'enregistrer ton objectif",
-    "saveFeelingFailed": "Impossible d'enregistrer le ressenti"
+    "saveFeelingFailed": "Impossible d'enregistrer le ressenti",
+    "loopSentenceUnavailable": "La description en une phrase n'est pas disponible pour le moment",
+    "loopSentenceFailed": "Je n'ai pas pu lire ta phrase pour le moment",
+    "loopSentenceNotUnderstood": "Je n'ai pas compris ta phrase",
+    "loopSentenceQuota": "Limite de {limit} phrases par jour atteinte"
   },
   "archive": {
     "files": {
@@ -1488,7 +1527,8 @@
       "privacyZones": "zones-de-confidentialite.json",
       "gpxFolder": "parcours",
       "photosFolder": "photos",
-      "coachGoal": "objectif-coach.json"
+      "coachGoal": "objectif-coach.json",
+      "loopSentences": "phrases-boucle.json"
     },
     "readme": {
       "intro": "Données de {username} sur sportmap, exportées le {date}.",
@@ -1507,7 +1547,8 @@
       "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
       "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.",
-      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+), avec tes sorties par semaine, tes jours de sortie et celui de la sortie longue"
+      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+), avec tes sorties par semaine, tes jours de sortie et celui de la sortie longue",
+      "loopSentences": "ton nombre de boucles décrites en une phrase par jour (limité par personne)"
     }
   },
   "coachForm": {

@@ -63,7 +63,7 @@ describe('accountArchive', () => {
     const english = accountArchive(data, 'en')
     expect(english.files.map(entry => entry.path)).toEqual([
       'README.txt', 'profile.json', 'routes.json', 'reviews.json', 'activity.json', 'outings.json', 'collections.json', 'reports.json',
-      'routing.json', 'location-sharing.json', 'settings.json', 'privacy-zones.json', 'coach-goal.json',
+      'routing.json', 'location-sharing.json', 'settings.json', 'privacy-zones.json', 'coach-goal.json', 'loop-sentences.json',
       'routes/tour-du-lac-aaaaaaaa.gpx', 'routes/tour-du-lac-bbbbbbbb.gpx',
     ])
     const readme = english.files[0]!.content

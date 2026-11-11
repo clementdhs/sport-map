@@ -271,7 +271,7 @@ async function onSubmit() {
     />
 
     <SessionRoute v-if="mode === 'session'" />
-    <LoopGenerator v-else-if="loop.open" />
+    <LoopGenerator v-else-if="loop.open" :map-center="mapView?.center" />
 
     <template v-else>
       <!-- The sport comes first: it decides how the segments are routed. -->

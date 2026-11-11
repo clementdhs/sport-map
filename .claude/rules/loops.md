@@ -11,6 +11,12 @@ paths:
   - "app/utils/createMode.ts"
   - "app/components/RouteEditorWorkspace.vue"
   - "app/utils/overpass.ts"
+  - "app/components/LoopSentence.vue"
+  - "shared/utils/loopSentence.ts"
+  - "server/api/loops/understand.post.ts"
+  - "server/utils/loopLlm.ts"
+  - "server/utils/loopSentenceQuota.ts"
+  - "test/llm/**"
 ---
 
 # Automatic loops (#50)
@@ -42,3 +48,12 @@ From the canvas's "Créer — boucle automatique" boards. The mode bar is a segm
 - A third mode of the panel on the create page, « Séance » (`?mode=session`, `loop.showSession()`): the store's `forSession` with the coach's `session` plan (`setSession`, set by `SessionRoute.vue`; the coach's rules in `coach.md`). `targetM` is the session's distance, the requests plain loops (`loop`, `precise`, no `via`) whatever the loop mode's options, the sport `running`; each ready proposal carries its `climbs` (`sessionClimbs`, hill repeats only) and the proposals are ranked by `rankForSession` instead of `rankByClimb`. A new session clears them (`flush: 'sync'`); the editor's sport doesn't in this mode (saving the route resets the editor's details). `show()`, `hide()` and `leave()` forget the session; `leave()` also `fromCoach`.
 - `picked` (the highlighted ready proposal, else the first one ready once every answer is in) lives in the store since #266, shared by both panels and synced to `highlighted` for the map.
 - The map draws the picked loop's climbs (`climbs` in `setLoopLayerData`, `loop-climbs` layer above the loops, repainted on `style.load`) and its label marker (`RouteEditor.vue`).
+
+# Loop described in a sentence (#216)
+
+- "Décris ta sortie" at the top of the loop mode (`LoopSentence.vue`, not in the session mode, whose distance is the coach's): Enter (or the arrow) sends the sentence alone to `POST /api/loops/understand` (signed in, `consumeLoopSentenceQuota`: `consume_loop_sentence_quota`, `loop_sentence_usage`, `NUXT_LOOP_SENTENCE_DAILY_LIMIT` 30 a day, 429 with `LOOP_SENTENCE_QUOTA_REASON`; counted before the LLM call). No key (`NUXT_LOOP_LLM_KEY`): 503 `api.loopSentenceUnavailable`. LLM down: 502; answer invalid or nothing usable: 422 `api.loopSentenceNotUnderstood`, shown as "Je n'ai pas compris ta phrase." with the manual settings untouched. No fallback parser (the issue's choice).
+- Provider-independent: prompt (`LOOP_SENTENCE_PROMPT`), strict JSON schema (`LOOP_SENTENCE_JSON_SCHEMA`: every property required, `additionalProperties: false`, nullable as type unions or `anyOf` with null) and conversion (`loopSettingsFromUnderstanding`) in `shared/utils/loopSentence.ts`; `server/utils/loopLlm.ts` has one adapter per `NUXT_LOOP_LLM_PROVIDER` (`groq`, default, `openai/gpt-oss-120b` with `reasoning_effort: 'low'` and `include_reasoning: false`; `openai`, or any OpenAI-compatible endpoint through `NUXT_LOOP_LLM_URL`). The answer is checked again by `loopUnderstandingSchema` (unknown fields dropped). The LLM never gives coordinates, only names.
+- The sentence fills only what it mentions (`loop.applySentence`, which returns the settings it changed, marked in yellow until the next sentence; chips under "Compris" scroll to their setting): sport (the editor's), distance (rounded to the km, 1–100) or duration (5 min, 10–600; out of range: reported, not filled), "environ" → ± 20 % (only with a target), shape, climbing. Named places to go through (#293), a gain in metres (#294) and paths (#295) are quoted back as "not yet" lines (`ignored`).
+- Start: "mon point" (or none said) = the start already placed, else the device's position (`useCurrentPosition`'s `onFailed`); a named start is geocoded with MapTiler (`limit: 1`, `proximity` = the map's centre), only then. Not found or no position: "Départ : à placer" and a box with "Ma position" / "Placer sur la carte"; the loops follow once the start is placed. Then `generate()` when `canGenerate`.
+- Reference sentences: `test/llm/loopSentences.ts` (about 30, FR and EN, expected settings), run against the real LLM by hand with `npm run test:loop-sentences` (`vitest.llm.config.ts`, reads `NUXT_LOOP_LLM_*` from `.env`, skipped without a key, never in CI) after changing the prompt, schema, model or provider.
+- e2e: `editor.spec.ts` mocks `**/api/loops/understand` in the test.

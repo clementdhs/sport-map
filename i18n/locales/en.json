@@ -566,6 +566,39 @@
     "chooseOutAndBack": "Choose this out and back",
     "replaceConfirm": "Replace the current track with this loop?"
   },
+  "loopSentence": {
+    "label": "Describe your outing",
+    "placeholder": "E.g. 5 km run along the river from my spot",
+    "submit": "Read my sentence",
+    "reading": "Reading your sentence…",
+    "understood": "Understood",
+    "examples": {
+      "hike": "Tough 15 km hike",
+      "run": "Run of about 45 min from home"
+    },
+    "approximate": "± 20 %",
+    "loop": "Loop",
+    "start": "Start: {start}",
+    "startPlaced": "point placed",
+    "startLocated": "my position",
+    "startLooking": "looking…",
+    "startToPlace": "to place",
+    "startMissing": "Where is \"my spot\"?",
+    "startMissingHint": "No start placed and the position is not available.",
+    "startNotFound": "I can't find \"{name}\".",
+    "startNotFoundHint": "Place the start yourself, the loop will follow.",
+    "placeOnMap": "Place on the map",
+    "notUnderstood": "I didn't understand your sentence.",
+    "notUnderstoodHint": "Try for instance \"10 km loop from home\", or set your loop below.",
+    "failedHint": "Set your loop below.",
+    "ignored": {
+      "distance": "\"{text}\": the distance goes from 1 to 100 km, I left it out.",
+      "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
+      "via": "\"{text}\": I can't go through a named place yet, the loop goes without it.",
+      "gain": "\"{text}\": I can't aim at a gain in metres yet, pick flat, rolling or tough.",
+      "paths": "\"{text}\": I can't prefer paths yet, the loop goes without."
+    }
+  },
   "discover": {
     "title": "Marked routes",
     "kind": "Route type",
@@ -1377,7 +1410,9 @@
     "raceGainRange": "Between 0 and 20,000 m",
     "outingsPerWeekRange": "Between 2 and 6 outings",
     "preferredDaysCount": "Pick as many days as outings, or none",
-    "longRunDay": "Pick one of your outing days"
+    "longRunDay": "Pick one of your outing days",
+    "loopSentenceRequired": "Describe your outing",
+    "loopSentenceTooLong": "Sentence too long"
   },
   "api": {
     "signInRequired": "Sign-in required",
@@ -1469,7 +1504,11 @@
     "privacyZoneNotFound": "Privacy zone not found",
     "loadCoachGoalFailed": "Couldn't load your goal",
     "saveCoachGoalFailed": "Couldn't save your goal",
-    "saveFeelingFailed": "Couldn't save how it felt"
+    "saveFeelingFailed": "Couldn't save how it felt",
+    "loopSentenceUnavailable": "Describing a loop in a sentence is not available right now",
+    "loopSentenceFailed": "I couldn't read your sentence right now",
+    "loopSentenceNotUnderstood": "I didn't understand your sentence",
+    "loopSentenceQuota": "Limit of {limit} sentences a day reached"
   },
   "archive": {
     "files": {
@@ -1488,7 +1527,8 @@
       "privacyZones": "privacy-zones.json",
       "gpxFolder": "routes",
       "photosFolder": "photos",
-      "coachGoal": "coach-goal.json"
+      "coachGoal": "coach-goal.json",
+      "loopSentences": "loop-sentences.json"
     },
     "readme": {
       "intro": "Data of {username} on sportmap, exported on {date}.",
@@ -1507,7 +1547,8 @@
       "preferences": "your settings kept in your account (basemap, 3D view, map orientation, home filter, “Data” screen, voice guidance)",
       "privacyZones": "your privacy zones (place, radius, and the randomly moved centre that cuts tracks): the start and end of your routes and outings inside them stay hidden from the team",
       "json": "The .json files are structured text (JSON), readable by most software.",
-      "coachGoal": "the goal you gave the coach: ease back in, progress, or get ready for a race (its date, distance and gain), with your outings a week, your outing days and the long run's"
+      "coachGoal": "the goal you gave the coach: ease back in, progress, or get ready for a race (its date, distance and gain), with your outings a week, your outing days and the long run's",
+      "loopSentences": "your number of loops described in a sentence per day (limited per person)"
     }
   },
   "coachForm": {

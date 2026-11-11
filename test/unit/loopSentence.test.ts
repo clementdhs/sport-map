@@ -162,7 +162,7 @@ describe('loopSettingsFromUnderstanding', () => {
   it('reports the other places, since a loop goes through one named place only', () => {
     const settings = loopSettingsFromUnderstanding(understanding({
       places: [
-        { name: 'Isère', hint: 'autour de', text: 'autour de l'Isère' },
+        { name: 'Isère', hint: 'autour de', text: 'autour de l\'Isère' },
         { name: 'Bastille', hint: 'par', text: 'par la Bastille' },
       ],
     }))
@@ -171,7 +171,7 @@ describe('loopSettingsFromUnderstanding', () => {
   })
 
   it('fills a place alone: the loop can be generated from it', () => {
-    expect(loopSettingsFromUnderstanding(understanding({ places: [{ name: 'Isère', hint: 'le long de', text: 'le long de l'Isère' }] })))
+    expect(loopSettingsFromUnderstanding(understanding({ places: [{ name: 'Isère', hint: 'le long de', text: 'le long de l\'Isère' }] })))
       .not.toBeNull()
   })
 

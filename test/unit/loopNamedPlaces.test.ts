@@ -108,7 +108,9 @@ describe('namedPlaceQuery', () => {
   it('escapes what would break the query', () => {
     const query = namedPlaceQuery('Lac "bleu" (haut)', grenoble, 25)!
     expect(query).not.toContain('"bleu"')
-    expect(query).toContain('\\\\(')
+    // Brackets and quotes are dropped from the name; what is left of the regex syntax is escaped, twice: once for
+    // the regex, once for the Overpass string.
+    expect(namedPlaceQuery('A+B', grenoble, 25)).toContain('(a|à|â|ä|A|À|Â|Ä)\\\\+b')
   })
 
   it('gives no query for a place said by its kind only', () => {

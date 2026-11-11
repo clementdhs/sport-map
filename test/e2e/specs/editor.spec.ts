@@ -307,7 +307,7 @@ test('aims at a gain in metres, the length deduced from it, and says when the te
   const proposals = panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')
   await expect(proposals).toHaveCount(3)
   // The fixtures' squares climb 50 m only: said rather than forced.
-  await expect(panel.getByTestId('loop-gain-missed')).toContainText('Aucune proposition n'approche 600 m de D+ : le terrain est trop plat')
+  await expect(panel.getByTestId('loop-gain-missed')).toContainText("Aucune proposition n'approche 600 m de D+ : le terrain est trop plat")
   await expect(proposals.first()).toContainText('m D+')
   expect(requests.map(request => request.length_m)).toEqual([32_000, 32_000, 32_000])
 

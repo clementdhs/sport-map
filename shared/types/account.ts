@@ -42,6 +42,11 @@ export type CoachGoal = {
   race_date: string | null
   race_distance_m: number | null
   race_gain_m: number | null
+  // The member's week (#283): outings a week (2 to 6), the days they run (ISO weekdays, 1 = Monday, sorted; none
+  // or as many as outings) and the day of the long run
+  outings_per_week: number
+  preferred_days: number[]
+  long_run_day: number | null
 }
 
 // GET /api/profile/me/coach-weather (#265): the hourly forecast of the next days where the member runs, for the

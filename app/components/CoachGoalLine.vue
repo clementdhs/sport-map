@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { CoachGoal } from '#shared/types/account'
-import { daysUntil } from '#shared/utils/coachGoal'
+import { daysUntil, weekdayName } from '#shared/utils/coachGoal'
 
-// The coach's goal at the top of the coach page (#264, mockup 1), with "Modifier" opening the goal form.
+// The coach's goal at the top of the coach page (#264, mockup 1) and the member's week (#283), with "Modifier"
+// opening the goal form.
 const props = defineProps<{
   goal: CoachGoal | null
 }>()
@@ -11,7 +12,7 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const { formatNumber, formatShortDate } = useFormat()
+const { formatNumber, formatShortDate, locale } = useFormat()
 const open = ref(false)
 
 const text = computed(() => {
@@ -36,6 +37,15 @@ const when = computed(() => {
   return t('coachGoal.when.weeks', { n: Math.round(days / 7) })
 })
 
+// « 3 sorties / sem. : mar., jeu., dim. »
+const week = computed(() => {
+  const goal = props.goal
+  if (!goal) return null
+  const week = t('coachGoal.week', { n: goal.outings_per_week }, goal.outings_per_week)
+  if (!goal.preferred_days.length) return week
+  return t('coachGoal.weekDays', { week, days: goal.preferred_days.map(day => weekdayName(day, locale())).join(', ') })
+})
+
 function saved(goal: CoachGoal) {
   open.value = false
   emit('saved', goal)
@@ -47,7 +57,7 @@ function saved(goal: CoachGoal) {
     <p class="flex min-w-0 items-center gap-2">
       <UIcon name="i-lucide-flag" class="size-4.5 shrink-0" />
       <span>
-        {{ t('coachGoal.label') }} <strong data-testid="coach-goal-text">{{ text }}</strong><template v-if="when"> · {{ when }}</template>
+        {{ t('coachGoal.label') }} <strong data-testid="coach-goal-text">{{ text }}</strong><template v-if="when"> · {{ when }}</template><template v-if="week"> · <span data-testid="coach-goal-week">{{ week }}</span></template>
       </span>
     </p>
     <UModal v-model:open="open" :title="t('coachGoal.title')">

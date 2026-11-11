@@ -1374,7 +1374,10 @@
     "raceDateFar": "Course trop lointaine : 2 ans au plus",
     "raceDistanceRequired": "Indique la distance",
     "raceDistanceRange": "Entre 1 et 300 km",
-    "raceGainRange": "Entre 0 et 20 000 m"
+    "raceGainRange": "Entre 0 et 20 000 m",
+    "outingsPerWeekRange": "Entre 2 et 6 sorties",
+    "preferredDaysCount": "Choisis autant de jours que de sorties, ou aucun",
+    "longRunDay": "Choisis un de tes jours de sortie"
   },
   "api": {
     "signInRequired": "Connexion requise",
@@ -1504,7 +1507,7 @@
       "preferences": "tes réglages gardés dans ton compte (fond de carte, vue 3D, orientation de la carte, filtre de l'accueil, écran « Données », guidage vocal)",
       "privacyZones": "tes zones de confidentialité (lieu, rayon, et le centre décalé au hasard qui coupe les traces) : le départ et l'arrivée de tes parcours et sorties qui y sont restent cachés à l'équipe",
       "json": "Les fichiers .json sont du texte structuré (JSON), lisible par la plupart des logiciels.",
-      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+)"
+      "coachGoal": "l'objectif que tu as donné au coach : reprendre en douceur, progresser, ou préparer une course (sa date, sa distance et son D+), avec tes sorties par semaine, tes jours de sortie et celui de la sortie longue"
     }
   },
   "coachForm": {
@@ -1615,7 +1618,15 @@
     "gainHint": "Facultatif",
     "save": "Enregistrer",
     "saved": "Objectif enregistré",
-    "noGoalHint": "Sans objectif, le coach t'aide à progresser."
+    "noGoalHint": "Sans objectif, le coach t'aide à progresser.",
+    "outingsPerWeek": "Combien de sorties par semaine ?",
+    "days": "Quels jours ?",
+    "daysHint": "Facultatif : autant de jours que de sorties",
+    "longRunDay": "Jour de la sortie longue",
+    "longRunDayHint": "Facultatif",
+    "noLongRunDay": "Pas de préférence",
+    "week": "{n} sortie / sem. | {n} sorties / sem.",
+    "weekDays": "{week} : {days}"
   },
   "coachSession": {
     "heading": "Séance du jour · {date}",

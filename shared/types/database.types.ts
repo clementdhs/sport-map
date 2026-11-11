@@ -42,6 +42,9 @@ export type Database = {
       coach_goals: {
         Row: {
           kind: string
+          long_run_day: number | null
+          outings_per_week: number
+          preferred_days: number[]
           race_date: string | null
           race_distance_m: number | null
           race_gain_m: number | null
@@ -50,6 +53,9 @@ export type Database = {
         }
         Insert: {
           kind: string
+          long_run_day?: number | null
+          outings_per_week?: number
+          preferred_days?: number[]
           race_date?: string | null
           race_distance_m?: number | null
           race_gain_m?: number | null
@@ -58,6 +64,9 @@ export type Database = {
         }
         Update: {
           kind?: string
+          long_run_day?: number | null
+          outings_per_week?: number
+          preferred_days?: number[]
           race_date?: string | null
           race_distance_m?: number | null
           race_gain_m?: number | null

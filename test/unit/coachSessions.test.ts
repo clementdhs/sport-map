@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CoachGoal } from '#shared/types/account'
-import { coachGoalRow, coachGoalSchema, daysUntil, parseCoachGoal } from '#shared/utils/coachGoal'
+import { coachGoalRow, coachGoalSchema, daysUntil, parseCoachGoal, weekdayName } from '#shared/utils/coachGoal'
 import {
   buildSession,
   type CoachInput,
@@ -313,7 +313,9 @@ describe('coach goal', () => {
     const date = new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10)
     const parsed = coachGoalSchema.safeParse({ kind: 'race', race_date: date, race_distance_m: 30_000, race_gain_m: 1200 })
     expect(parsed.success).toBe(true)
-    expect(coachGoalRow(parsed.data!)).toEqual({ kind: 'race', race_date: date, race_distance_m: 30_000, race_gain_m: 1200 })
+    expect(coachGoalRow(parsed.data!)).toEqual({
+      kind: 'race', race_date: date, race_distance_m: 30_000, race_gain_m: 1200, outings_per_week: 3, preferred_days: [], long_run_day: null,
+    })
   })
 
   it('refuses a race in the past or without its distance', () => {
@@ -324,7 +326,44 @@ describe('coach goal', () => {
   })
 
   it('clears the race fields of the other goals', () => {
-    expect(coachGoalRow({ kind: 'resume' })).toEqual({ kind: 'resume', race_date: null, race_distance_m: null, race_gain_m: null })
+    expect(coachGoalRow(coachGoalSchema.parse({ kind: 'resume' }))).toEqual({
+      kind: 'resume', race_date: null, race_distance_m: null, race_gain_m: null, outings_per_week: 3, preferred_days: [], long_run_day: null,
+    })
+  })
+
+  describe('the member’s week (#283)', () => {
+    const goal = (week: object) => coachGoalSchema.safeParse({ kind: 'progress', ...week })
+    const issue = (week: object) => goal(week).error?.issues[0]?.message
+
+    it('takes 2 to 6 outings a week, 3 by default', () => {
+      expect(goal({}).data?.outings_per_week).toBe(3)
+      expect(goal({ outings_per_week: 6 }).success).toBe(true)
+      expect(issue({ outings_per_week: 1 })).toBe('validation.outingsPerWeekRange')
+      expect(issue({ outings_per_week: 7 })).toBe('validation.outingsPerWeekRange')
+    })
+
+    it('takes no days or as many as outings', () => {
+      expect(goal({ outings_per_week: 3, preferred_days: [2, 4, 7] }).success).toBe(true)
+      expect(issue({ outings_per_week: 3, preferred_days: [2, 4] })).toBe('validation.preferredDaysCount')
+      expect(issue({ outings_per_week: 2, preferred_days: [2, 2] })).toBe('validation.preferredDaysCount')
+      expect(goal({ outings_per_week: 2, preferred_days: [0, 8] }).success).toBe(false)
+    })
+
+    it('puts the long run on one of the days, any day without them', () => {
+      expect(goal({ outings_per_week: 3, preferred_days: [2, 4, 7], long_run_day: 7 }).success).toBe(true)
+      expect(issue({ outings_per_week: 3, preferred_days: [2, 4, 7], long_run_day: 6 })).toBe('validation.longRunDay')
+      expect(goal({ long_run_day: 6 }).success).toBe(true)
+    })
+
+    it('saves the days sorted', () => {
+      const parsed = coachGoalSchema.parse({ kind: 'progress', outings_per_week: 3, preferred_days: [7, 2, 4], long_run_day: 7 })
+      expect(coachGoalRow(parsed)).toMatchObject({ outings_per_week: 3, preferred_days: [2, 4, 7], long_run_day: 7 })
+    })
+
+    it('names the days in the language', () => {
+      expect(weekdayName(1, 'fr-FR')).toBe('lun.')
+      expect(weekdayName(7, 'en-GB')).toBe('Sun')
+    })
   })
 
   it('ignores a goal the app does not know', () => {

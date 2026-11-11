@@ -1,7 +1,8 @@
 import type { CoachGoal } from '#shared/types/account'
 import type { MyProfile, RecordOuting } from '#shared/types/routes'
 import { coachPace } from '#shared/utils/coachPace'
-import { DEFAULT_SESSION_DURATION, type SessionChoice, sessionOn } from '#shared/utils/coachSessions'
+import { daySession, defaultMinutes } from '#shared/utils/coachPlan'
+import type { SessionChoice } from '#shared/utils/coachSessions'
 import type { CoachChoice } from '~/utils/coachChoice'
 
 // The coach's session of the day (#264) away from the coach page, for the route of the session (#266): from the
@@ -15,13 +16,14 @@ export function useSessionOfTheDay() {
   const goal = shallowRef<CoachGoal | null>(null)
   // The session's day, a French local date: read again on each load, the coach page may have changed it
   const day = ref(localDate(new Date()))
-  const coachChoice = ref<CoachChoice>({ minutes: DEFAULT_SESSION_DURATION, other: 0 })
+  // The choice kept for the day, null until the member picks one (the plan's default then)
+  const coachChoice = ref<CoachChoice | null>(null)
 
   async function load() {
     if (status.value === 'loading' || status.value === 'ready') return
     status.value = 'loading'
     day.value = loadCoachDay()
-    coachChoice.value = loadCoachChoice(day.value)
+    coachChoice.value = savedCoachChoice(day.value)
     try {
       const [profile, savedGoal] = await Promise.all([
         $fetch<MyProfile>('/api/profile/me'),
@@ -37,20 +39,22 @@ export function useSessionOfTheDay() {
     }
   }
 
+  // The day's session in the week plan (#285), as the coach page shows it
   const choice = computed<SessionChoice | null>(() => {
     if (status.value !== 'ready') return null
-    return sessionOn(outings.value, {
+    return daySession(outings.value, {
       goal: goal.value,
-      minutes: coachChoice.value.minutes,
       easyPace: coachPace(outings.value, paces.value.running).pace,
-    }, day.value, coachChoice.value.other)
+      choiceOf: date => (date === day.value ? coachChoice.value : savedCoachChoice(date)),
+    }, day.value)
   })
 
   // « Autre séance », kept for the coach page and the review like a click there.
   function other() {
-    coachChoice.value = { ...coachChoice.value, other: coachChoice.value.other + 1 }
+    const minutes = coachChoice.value?.minutes ?? defaultMinutes(goal.value, day.value)
+    coachChoice.value = { minutes, other: (coachChoice.value?.other ?? 0) + 1 }
     saveCoachChoice(coachChoice.value, day.value)
   }
 
-  return { status, choice, minutes: computed(() => coachChoice.value.minutes), day, load, other }
+  return { status, choice, minutes: computed(() => choice.value?.plan.minutes ?? defaultMinutes(goal.value, day.value)), day, load, other }
 }

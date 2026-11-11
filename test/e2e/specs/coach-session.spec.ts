@@ -55,12 +55,16 @@ test('a member picks a goal, and the time available changes the session', async 
     await expect(week).toHaveText('4 sorties / sem. : mar., jeu., sam., dim.')
     await expect(page.getByTestId('coach-goal')).toContainText('dans 4 sem.')
 
-    // Easing back in: easy sessions only, whose length follows the time available.
+    // Easing back in: easy sessions only, whose length follows the time available. The days are cleared, so the
+    // coach spreads the outings from today on and today is an outing day whatever the weekday (#285).
     await page.getByTestId('coach-goal-edit').click()
     await dialog.getByRole('button', { name: /Reprendre en douceur/ }).click()
+    for (const day of ['mar.', 'jeu.', 'sam.', 'dim.']) await dayPills.getByRole('button', { name: day }).click()
+    await dialog.getByTestId('coach-goal-long-run').getByRole('button', { name: 'Pas de préférence' }).click()
     await dialog.getByRole('button', { name: 'Enregistrer' }).click()
     await expect(dialog).toBeHidden()
     await expect(goalText).toHaveText('Reprendre en douceur')
+    await expect(week).toHaveText('4 sorties / sem.')
 
     const session = page.getByTestId('coach-session')
     const durations = page.getByTestId('coach-session-durations')
@@ -89,33 +93,49 @@ test('a member picks a goal, and the time available changes the session', async 
     await expect(title).toHaveText(first === 'Sortie longue' ? 'Sortie en endurance' : 'Sortie longue')
     const todayTitle = await title.textContent()
 
-    // Another day (#279): the session of that day, with the time chosen so far, its own choices kept apart.
-    const days = page.getByTestId('coach-session-days')
-    const tomorrow = days.getByRole('button', { name: 'Demain' })
-    await expect(days.getByRole('button', { name: 'Aujourd\'hui' })).toHaveAttribute('aria-pressed', 'true')
+    // The week (#285): today ringed and chosen, an outing day to come shows its own session, its choices kept apart.
+    const band = page.getByTestId('coach-week-band')
+    await expect(band.getByRole('button')).toHaveCount(7)
+    const today = band.locator('button[data-today]')
+    await expect(today).toHaveAttribute('aria-pressed', 'true')
     await expect(page.getByTestId('coach-session-ahead')).toBeHidden()
-    await tomorrow.click()
-    await expect(tomorrow).toHaveAttribute('aria-pressed', 'true')
-    await expect(session).toHaveAttribute('data-day', (await tomorrow.getAttribute('data-day'))!)
-    await expect(session).toHaveAttribute('data-minutes', '120')
-    await expect(page.getByTestId('coach-session-heading')).toContainText('Séance prévue')
-    await expect(page.getByTestId('coach-session-ahead')).toBeVisible()
-    await durations.getByRole('button', { name: '45 min' }).click()
-    await expect(session).toHaveAttribute('data-minutes', '45')
-    await days.getByRole('button', { name: 'Aujourd\'hui' }).click()
-    await expect(session).toHaveAttribute('data-minutes', '120')
-    await expect(title).toHaveText(todayTitle!)
-    await expect(page.getByTestId('coach-session-heading')).toContainText('Séance du jour')
+    const later = band.locator('button[data-state="planned"]:not([data-today])').first()
+    // On Sunday the week has no day left.
+    if (await later.count()) {
+      const laterDay = (await later.getAttribute('data-day'))!
+      await later.click()
+      await expect(later).toHaveAttribute('aria-pressed', 'true')
+      await expect(session).toHaveAttribute('data-day', laterDay)
+      await expect(session).toHaveAttribute('data-minutes', '60')
+      await expect(page.getByTestId('coach-session-heading')).toContainText('Séance prévue')
+      await expect(page.getByTestId('coach-session-ahead')).toBeVisible()
+      await durations.getByRole('button', { name: '45 min' }).click()
+      await expect(session).toHaveAttribute('data-minutes', '45')
+      await today.click()
+      await expect(session).toHaveAttribute('data-minutes', '120')
+      await expect(title).toHaveText(todayTitle!)
+      await expect(page.getByTestId('coach-session-heading')).toContainText('Séance du jour')
 
-    // Kept in the account; the day and its duration in this browser.
-    await tomorrow.click()
-    await expect(session).toHaveAttribute('data-minutes', '45')
-    await page.reload()
-    await waitForHydration(page)
-    await expect(goalText).toHaveText('Reprendre en douceur')
-    await expect(week).toHaveText('4 sorties / sem. : mar., jeu., sam., dim.')
-    await expect(tomorrow).toHaveAttribute('aria-pressed', 'true')
-    await expect(session).toHaveAttribute('data-minutes', '45')
+      // Kept in the account; the day and its duration in this browser.
+      await later.click()
+      await expect(session).toHaveAttribute('data-minutes', '45')
+      await page.reload()
+      await waitForHydration(page)
+      await expect(goalText).toHaveText('Reprendre en douceur')
+      await expect(week).toHaveText('4 sorties / sem.')
+      await expect(later).toHaveAttribute('aria-pressed', 'true')
+      await expect(session).toHaveAttribute('data-minutes', '45')
+    }
+
+    // A rest day says so, and still shows a session when asked.
+    const rest = band.locator('button[data-state="rest"]:not([data-past])').first()
+    if (await rest.count()) {
+      await rest.click()
+      await expect(page.getByTestId('coach-session-title')).toHaveText('Repos')
+      await expect(session).not.toHaveAttribute('data-minutes')
+      await page.getByTestId('coach-session-anyway').click()
+      await expect(session).toHaveAttribute('data-minutes', /\d+/)
+    }
   }
   finally {
     expect((await page.request.delete(`/api/routes/${routeId}`)).ok()).toBe(true)

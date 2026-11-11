@@ -1,7 +1,8 @@
 import * as z from 'zod'
 import { type LngLat, type OutingTrackPoint, smoothByDistance, trackDistances } from './routes'
 import { climbs } from './slopes'
-import { coachDays, type DayInput, type SessionPlan, sessionOn } from './coachSessions'
+import { daySession, type PlanInput, type PlanOuting } from './coachPlan'
+import { coachDays, type SessionPlan } from './coachSessions'
 import { type FormState, FEELINGS, type LoadOuting, trainingForm } from './trainingForm'
 
 // The coach's review after an outing (#267, mockup 4): whether it was the session of the day, the time of each
@@ -159,8 +160,9 @@ export function formEffect<T extends LoadOuting>(outings: T[], outing: T, now = 
   return { before: before.ratio, after: after.ratio, state: after.state }
 }
 
-// Tomorrow's session of the day if the member doesn't go out again today: the rules of #264 on tomorrow's form,
-// with today's outing among the days before, and `other` clicks on « Autre séance » chosen for it (#279).
-export function tomorrowSession(outings: LoadOuting[], input: DayInput, now = new Date(), other = 0): SessionPlan {
-  return sessionOn(outings, input, coachDays(now)[1]!, other).plan
+// Tomorrow's session if the member doesn't go out again today: the one the week plan (#285) puts there, with
+// today's outing among the days before and the choices kept for the days (#279), else on a rest day the session
+// the rules would give.
+export function tomorrowSession(outings: PlanOuting[], input: PlanInput, now = new Date()): SessionPlan {
+  return daySession(outings, input, coachDays(now)[1]!, now).plan
 }

@@ -3,8 +3,7 @@ import type { CoachGoal } from '#shared/types/account'
 import type { MyProfile, OutingDetail, RecordOuting } from '#shared/types/routes'
 import { coachPace } from '#shared/utils/coachPace'
 import { formEffect, matchesSession, regularity, repeatTimes, tomorrowSession, type RepeatTimes } from '#shared/utils/coachReview'
-import { coachDays, DEFAULT_SESSION_DURATION, sessionOn } from '#shared/utils/coachSessions'
-import type { CoachChoice } from '~/utils/coachChoice'
+import { daySession } from '#shared/utils/coachPlan'
 import type { KeyFigure } from '~/utils/keyFigures'
 import { countsForForm, FEELINGS, type Feeling } from '#shared/utils/trainingForm'
 
@@ -43,23 +42,21 @@ const easyPace = computed(() => coachPace(others.value, paces.value.running).pac
 const today = localDate(new Date())
 // Today's outings only: an older one says nothing about today's session or form.
 const isToday = computed(() => localDate(outing.value.completed_at) === today)
-const choice = ref<CoachChoice>({ minutes: DEFAULT_SESSION_DURATION, other: 0 })
-// Tomorrow's choice when the coach page was set on it (#279), else today's duration
-const tomorrowChoice = ref<CoachChoice | null>(null)
 const others = computed(() => outings.value.filter(o => o.outing_id !== outingId))
-const plan = computed(() => sessionOn(others.value, {
-  goal: savedGoal.value ?? null,
-  minutes: choice.value.minutes,
-  easyPace: easyPace.value,
-}, today, choice.value.other).plan)
-
-// Only on the client: whether it was the session depends on this browser's choice and detached outings.
+// Only on the client: whether it was the session depends on this browser's choices and detached outings.
 const mounted = ref(false)
+// The durations and « Autre séance » clicks kept for each day of the week (#279, #285), once mounted
+const choiceOf = (date: string) => (mounted.value ? savedCoachChoice(date) : null)
+// Today's session in the week plan (#285), as the coach page showed it before this outing
+const plan = computed(() => daySession(others.value, {
+  goal: savedGoal.value ?? null,
+  easyPace: easyPace.value,
+  choiceOf,
+}, today).plan)
+
 const detached = ref(false)
 const sessionRoute = ref<string | null>(null)
 onMounted(() => {
-  choice.value = loadCoachChoice(today)
-  tomorrowChoice.value = savedCoachChoice(coachDays()[1]!)
   sessionRoute.value = sessionRouteOf(today)
   detached.value = isDetached(outingId)
   mounted.value = true
@@ -103,10 +100,9 @@ const regularityText = computed(() => {
 const effect = computed(() => formEffect(outings.value, outing.value))
 const ratioText = (ratio: number) => `× ${formatNumber(ratio, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const tomorrow = computed(() => {
-  const { minutes, other } = tomorrowChoice.value ?? { minutes: choice.value.minutes, other: 0 }
   // With this outing among the runs, as the coach page will show tomorrow
   const pace = coachPace(outings.value, paces.value.running).pace
-  const next = tomorrowSession(outings.value, { goal: savedGoal.value ?? null, minutes, easyPace: pace }, new Date(), other)
+  const next = tomorrowSession(outings.value, { goal: savedGoal.value ?? null, easyPace: pace, choiceOf }, new Date())
   const name = t(`coachSession.kinds.${next.kind}`)
   return next.minutes ? t('coachReview.tomorrowSession', { session: name, duration: formatDuration(next.minutes) }) : name
 })

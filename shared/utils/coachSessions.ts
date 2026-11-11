@@ -33,6 +33,8 @@ const KEY_BY_DURATION: Record<SessionDuration, SessionKind[]> = {
 // Overload: a short jog, or rest when the last 7 days are over twice the baseline.
 export const REST_ABOVE = 2
 export const OVERLOAD_MAX_MINUTES = 30
+// A long run takes an hour and a half at least: the default duration of the member's long run day (#285).
+export const LONG_RUN_MINUTES = 90
 // The last week before a race: easy outings of 45 min at most.
 export const TAPER_DAYS = 7
 export const TAPER_MAX_MINUTES = 45
@@ -100,7 +102,7 @@ export type SessionPlan = {
 // Why the coach picked it: the sentence under the title.
 export type SessionReason =
   | 'learning' | 'overloadRest' | 'overloadJog' | 'raceDay' | 'taper' | 'raceLong' | 'resume' | 'recovery'
-  | 'progressKey' | 'progressEasy'
+  | 'progressKey' | 'progressEasy' | 'longRunDay' | 'afterHard'
 
 export type SessionChoice = {
   plan: SessionPlan
@@ -234,6 +236,10 @@ export type CoachInput = {
   longest: number
   // The most the week's target leaves for this session (weekSessionCap, #284), null without a target
   weekCap?: number | null
+  // The member's long run day (#283, #285): the long run, given the time for it
+  longRunDay?: boolean
+  // The day before has a demanding session planned (#285): never two in a row
+  afterHard?: boolean
 }
 
 // A race's long run, which grows towards the race's distance: half of it 7 weeks before or more, all of it two
@@ -275,15 +281,25 @@ function rule(input: CoachInput): Rule {
       : { reason: 'overloadJog', options: [{ kind: 'recovery', minutes: Math.min(minutes, OVERLOAD_MAX_MINUTES) }] }
   }
 
-  if (goal?.kind === 'resume') {
-    return { reason: 'resume', options: minutes >= 90 ? [{ kind: 'long', minutes }, ...easy] : easy }
+  // Getting ready for a race (past races aside)
+  const ahead = race && raceDays !== null && raceDays > 0 ? raceDays : undefined
+
+  // The member's long run day (#285), given the time for one: the race's long run when getting ready for one.
+  if (input.longRunDay && minutes >= LONG_RUN_MINUTES && !input.afterHard) {
+    if (race && ahead) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
+    return { reason: 'longRunDay', options: [{ kind: 'long', minutes }] }
   }
 
+  if (goal?.kind === 'resume') {
+    return { reason: 'resume', options: minutes >= LONG_RUN_MINUTES ? [{ kind: 'long', minutes }, ...easy] : easy }
+  }
+
+  // Never two demanding sessions in a row (#285).
+  if (input.afterHard) return { reason: 'afterHard', options: easy }
   // Recovery: rested enough for a key session. Progress: one key session out of two outing days.
   const key = state === 'recovery' || input.outingDays % 2 === 0
   if (!key) return { reason: 'progressEasy', options: easy }
-  // Getting ready for a race (past races aside): with time for it, the long run that grows towards the race.
-  const ahead = race && raceDays !== null && raceDays > 0 ? raceDays : undefined
+  // With time for it, the long run that grows towards the race.
   if (race && ahead && minutes >= 90) return { reason: 'raceLong', options: [raceLongRun(race, ahead, input)], raceDays: ahead }
   return {
     reason: state === 'recovery' ? 'recovery' : 'progressKey',
@@ -379,20 +395,41 @@ export type DayInput = {
   easyPace: number
 }
 
+// What the week plan (#285, coachPlan.ts) knows about a day that the outings alone don't: the sessions it plans
+// before it this week, whether the day before is a demanding one, and whether it is the member's long run day.
+export type DayContext = {
+  // Outing days the plan puts before this one this week, counted like outings for the alternation
+  plannedBefore: number
+  // Their load (km-effort), counted in the week's volume like outings done
+  plannedLoad: number
+  // This day and the planned ones after it
+  outingsLeft: number
+  afterHard: boolean
+  longRunDay: boolean
+}
+
 // The session of `day` (a French local date, today or later) if the member doesn't go out before it: the rules of
-// #264 on that day's form, the outings until then counted among the days before.
-export function sessionOn(outings: LoadOuting[], input: DayInput, day: string, other = 0): SessionChoice {
+// #264 on that day's form, the outings until then counted among the days before, and with the week plan's
+// `context` (#285) the sessions it plans before it.
+export function sessionOn(outings: LoadOuting[], input: DayInput, day: string, other = 0, context?: DayContext): SessionChoice {
   const at = dayNoon(day)
   const form = trainingForm(outings, at)
   const week = weekVolume(outings, input.goal, day)
+  const weekCap = !week
+    ? null
+    : weekSessionCap(context
+      ? { ...week, doneBefore: week.doneBefore + context.plannedLoad, outingsLeft: Math.max(1, context.outingsLeft) }
+      : week)
   return sessionOfTheDay({
     ...input,
     state: form.state,
     ratio: form.ratio,
-    outingDays: outingDaysBefore(outings, form.historyDays, at),
+    outingDays: outingDaysBefore(outings, form.historyDays, at) + (context?.plannedBefore ?? 0),
     today: day,
     weekly: form.weekly,
     longest: form.longest,
-    weekCap: week ? weekSessionCap(week) : null,
+    weekCap,
+    longRunDay: context?.longRunDay,
+    afterHard: context?.afterHard,
   }, other)
 }

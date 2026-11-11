@@ -1632,14 +1632,38 @@
     "label": "Volume of the week",
     "line": "This week: {done} / {target} km-effort",
     "lighter": "Lighter week",
-    "reached": "Week's target reached"
+    "reached": "Week's target reached",
+    "title": "Your week",
+    "range": "{start} – {end}",
+    "pick": "Pick a day of the week",
+    "legend": {
+      "label": "Legend",
+      "done": "Done",
+      "skipped": "Skipped",
+      "today": "Today",
+      "key": "Key session"
+    },
+    "short": {
+      "skipped": "skipped",
+      "rest": "rest"
+    },
+    "recomputed": "Worked out again after each outing: a skipped session is not made up for, the rest of the week moves.",
+    "headingPast": "{date}",
+    "titles": {
+      "done": "Outing done",
+      "skipped": "Session skipped",
+      "rest": "Rest"
+    },
+    "doneText": "{distance} in {duration}. It counts in your week.",
+    "doneDistance": "{distance}. It counts in your week.",
+    "skippedText": "Not done: it is not made up for, the coach worked the rest of your week out again from your actual outings.",
+    "restText": "Not one of your outing days.",
+    "restSpread": "The coach planned no outing that day: it spreads your outings over the week.",
+    "anyway": "Show a session anyway"
   },
   "coachSession": {
     "heading": "Today's session · {date}",
     "headingOn": "Planned session · {date}",
-    "days": "Which day?",
-    "today": "Today",
-    "tomorrow": "Tomorrow",
     "durations": "How much time do you have?",
     "other": "Another session",
     "kinds": {
@@ -1663,7 +1687,9 @@
       "resume": "You're easing back in: easy endurance, the volume will go up little by little.",
       "recovery": "You've recovered well: it's the day for a key session.",
       "progressKey": "You're progressing: a key session today, endurance on the next outing.",
-      "progressEasy": "You're progressing: endurance today to absorb the key session, the next one comes on the following outing."
+      "progressEasy": "You're progressing: endurance today to absorb the key session, the next one comes on the following outing.",
+      "longRunDay": "It's your long run day: at an easy pace, not chasing speed.",
+      "afterHard": "Key session the day before: an easy run today to take it in."
     },
     "blocks": {
       "label": "Session outline",

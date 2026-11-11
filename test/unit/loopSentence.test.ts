@@ -196,6 +196,11 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(settings).toMatchObject({ target: { kind: 'distance', km: 40 }, gain: 600 })
   })
 
+  it('drops the climbing level when a gain is given, which replaces it (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ climb: 'hilly', elevation_gain: { meters: 600, text: '600 m de D+' } }))
+    expect(settings).toMatchObject({ climb: null, gain: 600 })
+  })
+
   it('reports a gain given with a duration, which it cannot combine (#294)', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ duration_min: 120, elevation_gain: { meters: 800, text: '800 m of climbing' } }))
     expect(settings).toMatchObject({ target: { kind: 'duration', min: 120 }, gain: null, ignored: [{ kind: 'gain', text: '800 m of climbing' }] })

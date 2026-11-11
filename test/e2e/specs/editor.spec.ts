@@ -284,6 +284,38 @@ test('generates an out and back of a rough length through the highest peak (#214
   await expect(page.locator('p.text-3xl')).toHaveText(/^10,0\d km$/)
 })
 
+test('aims at a gain in metres, the length deduced from it, and says when the terrain is too flat (#294)', async ({ page }) => {
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+
+  await panel.getByRole('group', { name: 'Sport' }).getByRole('button', { name: 'Vélo', exact: true }).click()
+  await panel.getByRole('tab', { name: 'D+' }).click()
+  // 600 m on a bike: a hilly ride of 32 km; the climbing levels give way to the gain.
+  await expect(panel.getByText(/^Environ 32,00 km et .+ pour ~600 m de D\+\.$/)).toBeVisible()
+  await expect(panel.getByRole('tab', { name: 'Costaud' })).toHaveCount(0)
+
+  const requests: { length_m: number }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  const proposals = panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')
+  await expect(proposals).toHaveCount(3)
+  // The fixtures' squares climb 50 m only: said rather than forced.
+  await expect(panel.getByTestId('loop-gain-missed')).toContainText('Aucune proposition n'approche 600 m de D+ : le terrain est trop plat')
+  await expect(proposals.first()).toContainText('m D+')
+  expect(requests.map(request => request.length_m)).toEqual([32_000, 32_000, 32_000])
+
+  // The distance kept too: the length is the distance's again.
+  await panel.getByRole('switch', { name: /Fixer aussi la distance/ }).click()
+  await expect(panel.getByText(/^Environ .+ avec ~600 m de D\+\.$/)).toBeVisible()
+})
+
 test('goes through a named river, heads for a named massif and goes without an unknown place (#293)', async ({ page }) => {
   // OpenStreetMap around the start: a river about 1.2 km east, a massif's centre 20 km north, nothing else.
   let start: [number, number] = [0, 0]

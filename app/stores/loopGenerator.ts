@@ -6,11 +6,13 @@ import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, LoopPrecision, LoopShape, RoutingLoopRequest, RoutingLoopResponse, WayInfo } from '#shared/utils/routes'
 
-export type LoopTarget = 'distance' | 'duration'
+// 'gain': a gain in metres (#294), the length deduced from it unless `gainWithDistance` keeps the distance too.
+export type LoopTarget = 'distance' | 'duration' | 'gain'
 // 'named': a place the member names (#293), gone through or headed for.
 export type LoopVia = 'none' | LoopViaType | 'named'
 // The settings a sentence can fill (#216), marked in the panel once it did.
-export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb' | 'via'
+// 'gain' (#294) only names its chip: the gain is set in the target's row, marked as 'target'.
+export type LoopSentenceSetting = 'sport' | 'target' | 'gain' | 'precision' | 'shape' | 'climb' | 'via'
 // The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer,
 // 'vague' for a named place said by its kind only (« le lac »), not looked for (#293).
 export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed' | 'vague'
@@ -49,6 +51,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const target = ref<LoopTarget>('distance')
   const distanceKm = ref(10)
   const durationMin = ref(60)
+  const gainM = ref(600)
+  const gainWithDistance = ref(false)
   // Options of #214: out and back, wider tolerance, climbing (ranks the proposals), a place to go through.
   const shape = ref<LoopShape>('loop')
   const precision = ref<LoopPrecision>('precise')
@@ -77,10 +81,18 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   // The distance asked for: a duration is turned into a distance at the member's pace (#146), climbing as much as
   // the chosen climbing usually does (#214).
   const gainPerKmM = computed(() => typicalGainPerKm(editor.details.sport_type, climb.value))
+  // The gain aimed at (#294), within what the sport's loops can climb (the slider's range narrows with the sport).
+  const aimsAtGain = computed(() => !forSession.value && target.value === 'gain')
+  const gainTargetM = computed(() => {
+    const { min, max } = loopGainRange(editor.details.sport_type)
+    return Math.min(Math.max(gainM.value, min), max)
+  })
   const targetM = computed(() => forSession.value
     ? Math.round(session.value?.distanceM ?? 0)
-    : target.value === 'distance'
+    : target.value === 'distance' || (target.value === 'gain' && gainWithDistance.value)
     ? Math.round(distanceKm.value * 1000)
+    : target.value === 'gain'
+    ? loopLengthForGain(editor.details.sport_type, gainTargetM.value)
     : loopLengthForDuration(editor.details.sport_type, durationMin.value, preferences.values.paces[editor.details.sport_type], gainPerKmM.value))
   const targetInRange = computed(() => targetM.value >= LOOP_MIN_M && targetM.value <= LOOP_MAX_M)
   const generating = computed(() => ranking.value || viaStatus.value === 'searching' || proposals.value.some(proposal => proposal.status === 'loading'))
@@ -101,6 +113,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     const seed = highlighted.value === null ? null : proposals.value[highlighted.value]?.seed
     proposals.value = forSession.value && session.value
       ? rankForSession(proposals.value, session.value)
+      : aimsAtGain.value
+      ? rankByTotalGain(proposals.value, gainTargetM.value)
       : rankByClimb(proposals.value, editor.details.sport_type, climb.value)
     const index = proposals.value.findIndex(proposal => proposal.seed === seed)
     highlighted.value = index < 0 ? null : index
@@ -212,8 +226,11 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     if (!forSession.value) clearProposals()
   }, { flush: 'sync' })
   watch(session, clearProposals, { flush: 'sync' })
-  // Ranking again costs no request.
-  watch(climb, () => {
+  // When no proposal comes near the gain asked for (#294): the terrain around the start doesn't allow it.
+  const gainMissed = computed(() => aimsAtGain.value && !generating.value ? gainShortfall(proposals.value, gainTargetM.value) : null)
+
+  // Ranking again costs no request, by climbing or by the gain asked for (#294).
+  watch([climb, target, gainTargetM], () => {
     if (!forSession.value && proposals.value.length && !generating.value) rank()
   })
 
@@ -295,14 +312,24 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       changed.push(key)
     }
     set('sport', editor.details.sport_type, settings.sport, (value) => { editor.details.sport_type = value })
+    // A gain (#294) goes with the sentence's distance, or alone: the length then comes from it.
     const asked = settings.target
-    if (asked) {
-      const sameTarget = target.value === asked.kind
-        && (asked.kind === 'distance' ? distanceKm.value === asked.km : durationMin.value === asked.min)
-      if (!sameTarget) {
-        target.value = asked.kind
-        if (asked.kind === 'distance') distanceKm.value = asked.km
-        else durationMin.value = asked.min
+    const gain = settings.gain
+    if (asked || gain !== null) {
+      const kind: LoopTarget = gain !== null ? 'gain' : asked!.kind
+      const withDistance = asked?.kind === 'distance'
+      const same = target.value === kind
+        && (kind !== 'gain' || (gainM.value === gain && gainWithDistance.value === withDistance))
+        && (asked?.kind !== 'distance' || distanceKm.value === asked.km)
+        && (asked?.kind !== 'duration' || durationMin.value === asked.min)
+      if (!same) {
+        target.value = kind
+        if (asked?.kind === 'distance') distanceKm.value = asked.km
+        if (asked?.kind === 'duration') durationMin.value = asked.min
+        if (gain !== null) {
+          gainM.value = gain
+          gainWithDistance.value = withDistance
+        }
         changed.push('target')
       }
     }
@@ -343,7 +370,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   })
 
   return {
-    open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
+    open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, gainM, gainWithDistance,
+    aimsAtGain, gainTargetM, gainMissed, shape, precision, climb, via, viaStatus, viaPlace,
     viaName, namedChoice, viaPoint, viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
     show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose, applySentence,

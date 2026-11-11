@@ -89,11 +89,11 @@ export function typicalGainPerKm(sport: SportType, climb: LoopClimb): number {
 type RankedProposal = { status: string, distanceM: number, gainM: number | null }
 
 // Proposals by score, lowest first; the missing ones last, in their order.
-function rankBy<T extends RankedProposal>(proposals: T[], score: (perKm: number) => number): T[] {
+function rankBy<T extends RankedProposal>(proposals: T[], score: (perKm: number, proposal: T) => number): T[] {
   return proposals.map((proposal, index) => ({
     proposal,
     index,
-    score: proposal.status === 'ready' ? score(gainPerKm(proposal.distanceM, proposal.gainM)) : Number.POSITIVE_INFINITY,
+    score: proposal.status === 'ready' ? score(gainPerKm(proposal.distanceM, proposal.gainM), proposal) : Number.POSITIVE_INFINITY,
   }))
     .sort((a, b) => a.score - b.score || a.index - b.index)
     .map(({ proposal }) => proposal)
@@ -110,6 +110,55 @@ export function rankByClimb<T extends RankedProposal>(proposals: T[], sport: Spo
 // Proposals closest first to a gain per km (m), e.g. a planned session's gain over its distance.
 export function rankByGain<T extends RankedProposal>(proposals: T[], targetPerKmM: number): T[] {
   return rankBy(proposals, perKm => Math.abs(perKm - targetPerKmM))
+}
+
+// A gain in metres to aim at (#294), « environ 600 m de D+ »: the slider's range, narrowed per sport by
+// loopGainRange.
+export const LOOP_GAIN_M = { min: 100, max: 3000, step: 50 } as const
+// A proposal within this share of the gain asked for is close enough; when none is, the terrain is said to fit.
+export const GAIN_TOLERANCE = 0.25
+
+// Without a distance, the length a gain asks for: ORS can't aim at a gain, so the loop is as long as a hilly outing
+// of the sport needs to climb that much (600 m on a bike: 32 km), the proposals then ranked by their gain.
+export function loopLengthForGain(sport: SportType, gainM: number): number {
+  const lengthM = gainM / typicalGainPerKm(sport, 'hilly') * 1000
+  return Math.round(Math.min(Math.max(lengthM, LOOP_MIN_M), LOOP_MAX_M))
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface GainRange {
+  min: number
+  max: number
+  step: number
+}
+
+// The gains the slider offers for a sport: up to what a hilly loop of 100 km climbs (1850 m on a bike, 1500 m on a
+// road bike, 2500 m on foot).
+export function loopGainRange(sport: SportType): GainRange {
+  const { min, max, step } = LOOP_GAIN_M
+  const reachable = Math.floor(typicalGainPerKm(sport, 'hilly') * LOOP_MAX_M / 1000 / step) * step
+  return { min, max: Math.min(max, reachable), step }
+}
+
+// Proposals closest first to a gain in metres, whatever their length.
+export function rankByTotalGain<T extends RankedProposal>(proposals: T[], targetGainM: number): T[] {
+  return rankBy(proposals, (_, proposal) => Math.abs((proposal.gainM ?? 0) - targetGainM))
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface GainShortfall {
+  direction: 'low' | 'high'
+  closestM: number
+}
+
+// When no ready proposal comes within GAIN_TOLERANCE of the gain asked for: whether the terrain is too flat or
+// climbs too much around the start, and the closest gain; null otherwise.
+export function gainShortfall(proposals: RankedProposal[], targetGainM: number): GainShortfall | null {
+  const gains = proposals.filter(proposal => proposal.status === 'ready').map(proposal => proposal.gainM ?? 0)
+  if (!gains.length) return null
+  const closestM = gains.reduce((best, gain) => Math.abs(gain - targetGainM) < Math.abs(best - targetGainM) ? gain : best)
+  if (Math.abs(closestM - targetGainM) <= targetGainM * GAIN_TOLERANCE) return null
+  return { direction: closestM < targetGainM ? 'low' : 'high', closestM: Math.round(closestM) }
 }
 
 // Paths wind: a point this far as the crow flies is about PATH_DETOUR times as far along paths.

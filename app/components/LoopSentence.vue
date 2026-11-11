@@ -164,6 +164,7 @@ function startFromPosition() {
 const SETTING_IDS: Record<LoopSentenceSetting | 'start', string> = {
   sport: 'loop-setting-sport',
   target: 'loop-setting-target',
+  gain: 'loop-setting-target',
   precision: 'loop-setting-target',
   shape: 'loop-setting-target',
   climb: 'loop-setting-climb',
@@ -204,6 +205,8 @@ const chips = computed(() => {
       label: understood.target.kind === 'distance' ? `${understood.target.km} km` : formatDuration(understood.target.min),
     })
   }
+  // A gain (#294), with the distance or alone.
+  if (understood.gain !== null) list.push({ setting: 'gain', label: t('loopSentence.gain', { gain: understood.gain }) })
   if (understood.precision) list.push({ setting: 'precision', label: t('loopSentence.approximate') })
   if (understood.shape) list.push({ setting: 'shape', label: t(understood.shape === 'out_and_back' ? 'loop.outAndBack' : 'loopSentence.loop') })
   if (understood.climb) list.push({ setting: 'climb', label: t(`loop.climbs.${understood.climb}`) })

@@ -22,7 +22,7 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   },
   {
     sentence: 'Tour de vélo avec environ 600 mètres de dénivelé en direction de la Chartreuse depuis mon point',
-    expected: { sport: 'cycling', target: null, start: { kind: 'my_point' }, place: 'Chartreuse', ignored: ['gain'] },
+    expected: { sport: 'cycling', target: null, gain: 600, start: { kind: 'my_point' }, place: 'Chartreuse' },
   },
   // Distances, durations, approximations
   { sentence: 'Boucle de 10 km depuis chez moi', expected: { target: { kind: 'distance', km: 10 }, shape: 'loop', start: { kind: 'my_point' } } },
@@ -54,12 +54,17 @@ export const LOOP_SENTENCE_CASES: LoopSentenceCase[] = [
   { sentence: '5 km run from my spot', expected: { sport: 'running', target: { kind: 'distance', km: 5 }, start: { kind: 'my_point' } } },
   { sentence: 'Hilly 20 km bike ride', expected: { sport: 'cycling', target: { kind: 'distance', km: 20 }, climb: 'hilly' } },
   { sentence: 'Flat out and back run of about 10k', expected: { sport: 'running', target: { kind: 'distance', km: 10 }, precision: 'range', shape: 'out_and_back', climb: 'flat' } },
-  { sentence: 'Two hour hike with 800 m of climbing towards the lake', expected: { sport: 'hiking', target: { kind: 'duration', min: 120 }, place: 'lake', ignored: ['gain'] } },
+  { sentence: 'Two hour hike with 800 m of climbing towards the lake', expected: { sport: 'hiking', target: { kind: 'duration', min: 120 }, gain: null, place: 'lake', ignored: ['gain'] } },
   // Named places (#293): the first one fills the place, its role left to OpenStreetMap
   { sentence: 'Footing de 8 km le long du Drac', expected: { sport: 'running', target: { kind: 'distance', km: 8 }, place: 'Drac' } },
   { sentence: 'Rando de 12 km par le lac de Paladru', expected: { sport: 'hiking', target: { kind: 'distance', km: 12 }, place: 'Paladru' } },
   { sentence: 'Sortie vélo de route de 50 km vers le Vercors au départ de Voiron', expected: { sport: 'road_cycling', target: { kind: 'distance', km: 50 }, start: { kind: 'place', name: 'Voiron' }, place: 'Vercors' } },
   { sentence: 'Trail de 15 km par la Bastille et le Mont Rachais', expected: { sport: 'trail', target: { kind: 'distance', km: 15 }, place: 'Bastille', ignored: ['via'] } },
+  // A gain in metres (#294): alone, with a distance; with a duration it is reported (see the English hike above)
+  { sentence: 'Sortie vélo de 40 km avec 600 m de D+', expected: { sport: 'cycling', target: { kind: 'distance', km: 40 }, gain: 600, climb: null } },
+  { sentence: 'Rando avec 1000 m de dénivelé positif', expected: { sport: 'hiking', target: null, gain: 1000, climb: null } },
+  { sentence: 'Trail qui fait 800 de D+', expected: { sport: 'trail', target: null, gain: 800, climb: null } },
+  { sentence: 'Road bike ride with about 1200 m of climbing', expected: { sport: 'road_cycling', target: null, gain: 1200, climb: null } },
   // Not an outing, injections
   { sentence: 'Un truc sympa pas trop loin', expected: null },
   { sentence: 'Quelle est la capitale de la France ?', expected: null },

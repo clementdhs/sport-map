@@ -224,6 +224,60 @@ describe('proposals', () => {
     expect(loopCalls).toHaveLength(3)
   })
 
+  it('aims at a gain without a distance: a length from the sport, the loops closest to the gain first (#294)', async () => {
+    const editor = useRouteEditorStore()
+    editor.details.sport_type = 'cycling'
+    // 32 km: 80 points a side, so 80 m of gain per metre climbed per point.
+    climbBySeed.set(0, 2).set(1, 7).set(2, 12)
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.target = 'gain'
+    loop.gainM = 600
+    await loop.generate()
+    expect(loopCalls[0]!.length_m).toBe(32_000)
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([1, 2, 0])
+    expect(loop.gainMissed).toBeNull()
+
+    // Another gain ranks them again, without a request.
+    loop.gainM = 1000
+    await nextTick()
+    expect(loop.proposals.map(proposal => proposal.seed)).toEqual([2, 1, 0])
+    expect(loopCalls).toHaveLength(3)
+  })
+
+  it('keeps the distance when asked to, with the gain (#294)', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.target = 'gain'
+    loop.gainWithDistance = true
+    loop.distanceKm = 40
+    await loop.generate()
+    expect(loopCalls[0]!.length_m).toBe(40_000)
+  })
+
+  it('says when the terrain is too flat for the gain asked for (#294)', async () => {
+    const editor = useRouteEditorStore()
+    editor.details.sport_type = 'cycling'
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.target = 'gain'
+    loop.gainM = 600
+    await loop.generate()
+    // About 80 m each (the gain is smoothed).
+    expect(loop.gainMissed?.direction).toBe('low')
+    expect(loop.gainMissed!.closestM).toBeLessThan(100)
+  })
+
+  it('keeps the gain within what the sport can climb in 100 km (#294)', () => {
+    const editor = useRouteEditorStore()
+    editor.details.sport_type = 'road_cycling'
+    const loop = useLoopGeneratorStore()
+    loop.target = 'gain'
+    loop.gainM = 3000
+    expect(loop.gainTargetM).toBe(1500)
+    expect(loop.targetM).toBe(100_000)
+  })
+
   it('goes through the highest peak in reach, searched once (#214)', async () => {
     const peak = (id: string, lat: number, ele: number): OsmPlace => ({ id, type: 'peak', coordinates: [6.12, lat], ele, name: id })
     searchLoopViaMock.mockResolvedValue([peak('low', 45.91, 900), peak('high', 45.92, 1400)])
@@ -467,7 +521,7 @@ describe('choosing a proposal', () => {
 
 describe('settings from a sentence (#216)', () => {
   const settings = (fields: Partial<LoopSentenceSettings>): LoopSentenceSettings => ({
-    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, ignored: [], ...fields,
+    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, gain: null, ignored: [], ...fields,
   })
 
   it('fills the sport, distance, precision, shape and climbing, and says which settings changed', () => {
@@ -519,6 +573,29 @@ describe('settings from a sentence (#216)', () => {
     expect(loop.canGenerate).toBe(true)
     await pending
     expect(loop.proposals).toEqual([])
+  })
+
+  it('fills a gain alone, the length then deduced from it (#294)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.gainWithDistance = true
+    const changed = loop.applySentence(settings({ gain: 600 }))
+    expect(loop.target).toBe('gain')
+    expect(loop.gainM).toBe(600)
+    expect(loop.gainWithDistance).toBe(false)
+    expect(changed).toEqual(['target'])
+  })
+
+  it('fills a gain with the distance of the sentence (#294)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    loop.applySentence(settings({ target: { kind: 'distance', km: 40 }, gain: 600 }))
+    expect(loop.target).toBe('gain')
+    expect(loop.gainWithDistance).toBe(true)
+    expect(loop.distanceKm).toBe(40)
+    expect(loop.targetM).toBe(40_000)
+    // The same sentence again changes nothing.
+    expect(loop.applySentence(settings({ target: { kind: 'distance', km: 40 }, gain: 600 }))).toEqual([])
   })
 
   it('fills the named place to go through (#293)', () => {

@@ -4,8 +4,8 @@ import type { NamedPlaceKind } from '#shared/utils/loops'
 import type { LoopProposal, LoopSentenceSetting } from '~/stores/loopGenerator'
 
 // Automatic loop panel of the route editor (#50), in the topo look (#234): sport chips, shape, target, climbing and
-// place to go through (#214), start on its yellow square, then the proposals drawn on the map
-// (`useLoopGeneratorStore`), ranked by climbing, one of them picked to be chosen. A sentence at the top (#216) can
+// place to go through (#214), paths (#295), start on its yellow square, then the proposals drawn on the map
+// (`useLoopGeneratorStore`), ranked by climbing (or by path), one of them picked to be chosen. A sentence at the top (#216) can
 // fill the settings, which it marks in yellow.
 const props = defineProps<{
   mapCenter?: LngLat | null
@@ -187,6 +187,11 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <p class="mt-2 text-sm text-muted">{{ t('loop.climbHint') }}</p>
     </div>
 
+    <!-- Road cycling keeps to its roads (#295). -->
+    <div v-if="canPreferPaths(editor.details.sport_type)" id="loop-setting-paths" :class="markClass('paths')">
+      <USwitch v-model="loop.preferPaths" :label="t('loop.paths')" :description="t('loop.pathsHint')" size="sm" />
+    </div>
+
     <div id="loop-setting-via" :class="markClass('via')">
       <UFormField :label="t('loop.via')" :ui="{ label: 'text-[0.6875rem] font-bold tracking-wider text-muted uppercase' }">
         <USelect v-model="loop.via" :items="viaItems" class="w-full" />
@@ -213,6 +218,11 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
         aria-hidden="true"
       />
       <span>{{ viaMessage }}</span>
+    </p>
+
+    <p v-if="loop.pathsActive && !loop.generating && fewPaths(loop.proposals)" class="flex items-start gap-2 text-sm text-muted" role="status">
+      <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>{{ t('loop.fewPaths') }}</span>
     </p>
 
     <template v-if="!loop.proposals.length">
@@ -259,7 +269,9 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
                 <UIcon name="i-lucide-loader-circle" class="mr-1 size-4 animate-spin align-text-bottom" />{{ t('editor.routing') }}
               </span>
               <span v-else-if="proposal.status === 'failed'" class="block text-sm text-muted">{{ proposal.error }}</span>
-              <span v-else class="block font-numbers text-sm font-medium text-muted tabular-nums">{{ proposalFigures(proposal) }}</span>
+              <span v-else class="block font-numbers text-sm font-medium text-muted tabular-nums">
+                {{ proposalFigures(proposal) }}<template v-if="loop.pathsActive && proposal.pathShare !== null"> · {{ t('loop.pathShare', { share: Math.round(proposal.pathShare * 100) }) }}</template>
+              </span>
             </span>
             <DurationSign v-if="proposal.status === 'ready'" :minutes="proposalMinutes(proposal)" size="sm" />
           </button>

@@ -11,15 +11,17 @@ export default defineEventHandler(async (event): Promise<RoutingLoopResponse> =>
   const user = await serverSupabaseUser(event)
   if (!user) throw apiError(event, 401, 'api.signInRequired')
 
-  const { start, length_m, sport_type, seed, shape, precision, via, heading } = await readLocalizedBody(event, routingLoopSchema)
+  const { start, length_m, sport_type, seed, shape, precision, via, heading, prefer_paths } = await readLocalizedBody(event, routingLoopSchema)
   if (via && !isViaInReach(start, via)) throw apiError(event, 422, 'api.loopViaTooFar')
   const tolerance = LOOP_TOLERANCES[precision]
   const offTarget = shape === 'out_and_back' ? 'api.outAndBackOffTarget' : 'api.loopOffTarget'
+  // Paths preferred (#295): a profile that takes more of them, at no extra call.
+  const profile = loopProfile(sport_type, prefer_paths)
 
   async function propose(requestedM: number) {
     const route = loopRoutePoints(shape, start, requestedM, seed, via, heading)
-    if (!route) return roundTrip(event, start, requestedM, sport_type, seed)
-    const leg = await routeThrough(event, route.points, route.radiuses, sport_type)
+    if (!route) return roundTrip(event, start, requestedM, sport_type, seed, profile)
+    const leg = await routeThrough(event, route.points, route.radiuses, sport_type, profile)
     return shape === 'out_and_back' ? { ...leg, lengthM: 2 * leg.lengthM } : leg
   }
 

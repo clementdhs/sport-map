@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { WayInfo } from '#shared/utils/routes'
 import {
   classGradient, classShares, DIFFICULTY_CLASSES, difficultyClass, difficultyRuns, difficultyScale, hasDifficulty,
-  joinWayInfo, reverseWayInfo, sliceWayInfo, SURFACE_CLASSES, surfaceClass, surfaceRuns,
+  joinWayInfo, pathShare, reverseWayInfo, sliceWayInfo, SURFACE_CLASSES, surfaceClass, surfaceRuns,
 } from '#shared/utils/wayInfo'
 
 const [PAVED, UNPAVED, TRAIL, UNKNOWN] = [0, 1, 2, 3]
@@ -106,5 +106,26 @@ describe('editing way info', () => {
       .toEqual([[0, 2, 3], [2, 4, 11], [6, 8, 11]])
     expect(joinWayInfo([{ info, offset: 0 }, { info: part, offset: 4 }])!.surface).toEqual([[0, 2, 3], [2, 6, 11]])
     expect(joinWayInfo([{ info: null, offset: 0 }])).toBeNull()
+  })
+})
+
+describe('pathShare (#295)', () => {
+  // Five edges of 100 m: asphalt road, gravel track, path without a surface tag, footway without one, asphalt.
+  const along = [0, 100, 200, 300, 400, 500]
+  const info: WayInfo = {
+    surface: [[0, 1, 3], [1, 2, 8], [4, 5, 3]],
+    waytype: [[0, 1, 2], [1, 2, 5], [2, 3, 4], [3, 4, 7], [4, 5, 3]],
+    sac_scale: [],
+    mtb_scale: [],
+  }
+
+  it('gives the share of the length on unpaved ways and trails, unknown ways counting as not paths', () => {
+    // Gravel track and path: 200 m out of 500.
+    expect(pathShare(info, along)).toBeCloseTo(0.4)
+  })
+
+  it('gives nothing without way info', () => {
+    expect(pathShare(null, along)).toBeNull()
+    expect(pathShare(info, [0])).toBeNull()
   })
 })

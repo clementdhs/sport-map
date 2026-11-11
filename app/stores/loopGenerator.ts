@@ -10,7 +10,7 @@ export type LoopTarget = 'distance' | 'duration'
 // 'named': a place the member names (#293), gone through or headed for.
 export type LoopVia = 'none' | LoopViaType | 'named'
 // The settings a sentence can fill (#216), marked in the panel once it did.
-export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb' | 'via'
+export type LoopSentenceSetting = 'sport' | 'target' | 'precision' | 'shape' | 'climb' | 'via' | 'paths'
 // The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer,
 // 'vague' for a named place said by its kind only (« le lac »), not looked for (#293).
 export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed' | 'vague'
@@ -23,6 +23,8 @@ export interface LoopProposal {
   wayInfo: WayInfo | null
   distanceM: number
   gainM: number | null
+  // Share of the length on unpaved ways and trails (#295), null without way info
+  pathShare: number | null
   // In the session mode (#266), the climbs fit for the session's hill repeats (none for other sessions)
   climbs: Climb[] | null
   // Why no loop came back, in the user's language
@@ -54,6 +56,9 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const precision = ref<LoopPrecision>('precise')
   const climb = ref<LoopClimb>('rolling')
   const via = ref<LoopVia>('none')
+  // Paths rather than tarmac (#295): a profile that takes more paths, and the proposals ranked by their share of it.
+  const preferPaths = ref(false)
+  const pathsActive = computed(() => preferPaths.value && canPreferPaths(editor.details.sport_type))
   const viaStatus = ref<LoopViaStatus>('idle')
   const viaPlace = ref<OsmPlace | null>(null)
   // The place named (#293) and what OpenStreetMap made of it: gone through, or only headed for.
@@ -101,6 +106,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     const seed = highlighted.value === null ? null : proposals.value[highlighted.value]?.seed
     proposals.value = forSession.value && session.value
       ? rankForSession(proposals.value, session.value)
+      : pathsActive.value
+      ? rankByPaths(rankByClimb(proposals.value, editor.details.sport_type, climb.value))
       : rankByClimb(proposals.value, editor.details.sport_type, climb.value)
     const index = proposals.value.findIndex(proposal => proposal.seed === seed)
     highlighted.value = index < 0 ? null : index
@@ -212,6 +219,14 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     if (!forSession.value) clearProposals()
   }, { flush: 'sync' })
   watch(session, clearProposals, { flush: 'sync' })
+  // Paths (#295): proposals of another profile would mislead; on the same profile (hiking, mountain bike), ranking
+  // again is enough.
+  watch(preferPaths, (now, before) => {
+    if (forSession.value) return
+    const sport = editor.details.sport_type
+    if (loopProfile(sport, now) !== loopProfile(sport, before)) clearProposals()
+    else if (proposals.value.length && !generating.value) rank()
+  }, { flush: 'sync' })
   // Ranking again costs no request.
   watch(climb, () => {
     if (!forSession.value && proposals.value.length && !generating.value) rank()
@@ -243,6 +258,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       precision: plan ? 'precise' : precision.value,
       ...(through ? { via: through } : {}),
       ...(named?.role === 'heading' ? { heading: named.bearingDeg } : {}),
+      ...(!plan && pathsActive.value ? { prefer_paths: true } : {}),
     }
     const hill = plan ? sessionHill(plan) : null
     proposals.value = Array.from({ length: LOOP_PROPOSALS }, (_, i): LoopProposal => ({
@@ -253,6 +269,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       wayInfo: null,
       distanceM: 0,
       gainM: null,
+      pathShare: null,
       climbs: null,
       error: null,
     }))
@@ -261,12 +278,14 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
         const result = await $fetch<RoutingLoopResponse>('/api/routing/loop', { method: 'POST', body: { ...body, seed } })
         if (current !== generation) return
         editor.routingQuotaRemaining = result.quota_remaining
+        const along = trackDistances(result.coordinates)
         Object.assign(proposals.value[i]!, {
           status: 'ready',
           coordinates: result.coordinates,
           elevations: result.elevations,
           wayInfo: result.way_info ?? null,
-          distanceM: trackDistances(result.coordinates).at(-1) ?? 0,
+          distanceM: along.at(-1) ?? 0,
+          pathShare: pathShare(result.way_info ?? null, along),
           gainM: elevationStats(result.coordinates, result.elevations).gain,
           climbs: hill && result.elevations ? sessionClimbs(result.coordinates, result.elevations, hill) : null,
         })
@@ -315,6 +334,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       viaName.value = place.name
       changed.push('via')
     }
+    // Not for a road ride (the editor's sport when the sentence names none): the option is hidden.
+    if (canPreferPaths(editor.details.sport_type)) set('paths', preferPaths.value, settings.paths, (value) => { preferPaths.value = value })
     // Proposals of other settings, even still loading, would block the sentence's own and mislead.
     if (changed.length) clearProposals()
     return changed
@@ -344,6 +365,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   return {
     open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, shape, precision, climb, via, viaStatus, viaPlace,
+    preferPaths, pathsActive,
     viaName, namedChoice, viaPoint, viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
     show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose, applySentence,

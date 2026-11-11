@@ -533,6 +533,10 @@
       "hilly": "Hilly"
     },
     "climbHint": "Suggestions are sorted from the closest to the furthest from this choice.",
+    "paths": "Prefer paths",
+    "pathsHint": "Less tarmac: loops take more trails, the one with the most path first.",
+    "pathShare": "{share}% path",
+    "fewPaths": "Few paths around this start: the loops stay mostly on roads.",
     "via": "Go through",
     "vias": {
       "none": "No set place",
@@ -598,6 +602,7 @@
     "approximate": "± 20 %",
     "loop": "Loop",
     "place": "Place: {name}",
+    "paths": "On paths",
     "start": "Start: {start}",
     "startPlaced": "point placed",
     "startLocated": "my position",
@@ -616,7 +621,7 @@
       "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
       "via": "\"{text}\": a loop goes through one named place only, this one is left out.",
       "gain": "\"{text}\": I can't aim at a gain in metres yet, pick flat, rolling or tough.",
-      "paths": "\"{text}\": I can't prefer paths yet, the loop goes without."
+      "paths": "\"{text}\": a road ride stays on roads, the loop goes without paths."
     }
   },
   "discover": {

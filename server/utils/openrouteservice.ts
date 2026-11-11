@@ -67,8 +67,7 @@ function toWayInfo(extras: OrsExtras | undefined, profile: string): WayInfo | nu
 
 type OrsFeature = { geometry: { coordinates: LngLatEle[] }, properties?: { extras?: OrsExtras, summary?: { distance?: number } } }
 
-async function directions(event: H3Event, sport: SportType, body: Record<string, unknown>) {
-  const profile = ROUTING_PROFILES[sport]
+async function directions(event: H3Event, sport: SportType, body: Record<string, unknown>, profile = ROUTING_PROFILES[sport]) {
   const result = await orsPost<{ features: OrsFeature[] }>(
     event,
     `/v2/directions/${profile}/geojson`,
@@ -96,15 +95,16 @@ export async function routeAlongPaths(event: H3Event, from: LngLat, to: LngLat, 
 // asked length on test loops.
 const LOOP_POINTS = 3
 
-// A loop from the start of about lengthM (#50), the seed picking its direction.
-export async function roundTrip(event: H3Event, start: LngLat, lengthM: number, sport: SportType, seed: number): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
-  return directions(event, sport, { coordinates: [start], options: { round_trip: { length: lengthM, points: LOOP_POINTS, seed } } })
+// A loop from the start of about lengthM (#50), the seed picking its direction; `profile` replaces the sport's to
+// prefer paths (#295, `loopProfile`).
+export async function roundTrip(event: H3Event, start: LngLat, lengthM: number, sport: SportType, seed: number, profile?: string): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
+  return directions(event, sport, { coordinates: [start], options: { round_trip: { length: lengthM, points: LOOP_POINTS, seed } } }, profile)
 }
 
 // A route through these points (#214: a loop through a place, the way out of an out and back), each snapped to the
 // paths within its radius (m, -1 for the largest).
-export async function routeThrough(event: H3Event, points: LngLat[], radiuses: number[], sport: SportType): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
-  return directions(event, sport, { coordinates: points, radiuses })
+export async function routeThrough(event: H3Event, points: LngLat[], radiuses: number[], sport: SportType, profile?: string): Promise<{ points: LngLatEle[], wayInfo: WayInfo | null, lengthM: number }> {
+  return directions(event, sport, { coordinates: points, radiuses }, profile)
 }
 
 const round6 = (value: number) => Math.round(value * 1e6) / 1e6

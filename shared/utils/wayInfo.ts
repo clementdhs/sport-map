@@ -124,6 +124,15 @@ export function classShares(runs: ClassRun[]): ClassShare[] {
   return [...meters].filter(([, m]) => m > 0).sort(([a], [b]) => a - b).map(([cls, m]) => ({ cls, share: m / totalM }))
 }
 
+// The share of the track's length on unpaved ways and trails (#295), unknown ways counting as not paths; null
+// without way info.
+export function pathShare(info: WayInfo | null, along: number[]): number | null {
+  if (!info) return null
+  const shares = classShares(surfaceRuns(info, along))
+  if (!shares.length) return null
+  return shares.filter(({ cls }) => cls === UNPAVED || cls === TRAIL).reduce((sum, { share }) => sum + share, 0)
+}
+
 export function classGradient(runs: ClassRun[], colors: readonly { color: string }[], totalM: number): unknown[] {
   const stretches = runs.map(run => ({ startM: run.startM, color: colors[run.cls]!.color }))
   return lineGradient(stretches, totalM, colors.at(-1)!.color)

@@ -4,6 +4,8 @@ paths:
   - "shared/utils/coachSessions.ts"
   - "shared/utils/coachPace.ts"
   - "shared/utils/coachWeek.ts"
+  - "shared/utils/coachPlan.ts"
+  - "test/unit/coachPlan.test.ts"
   - "test/unit/coachWeek.test.ts"
   - "test/unit/coachPace.test.ts"
   - "shared/utils/coachGoal.ts"
@@ -71,6 +73,14 @@ No plan over weeks and no AI: fixed, tested rules on what the member really did 
 - **Session**: `sessionOn` passes `weekSessionCap(week)` as `weekCap`: what is left of the target (the week's outings before the day) ÷ the outings left × 1.5 (`SESSION_SHARE`, key sessions and the long run are bigger), never more than what is left; it only shortens the recent-outings cap of #281 further, never under 20 min, so a week already done still gets 20 min of easy run. Outings left: the member's days from the day on when chosen (#283), else their outings a week (3 without a goal) less the days already run, 1 at least. `SessionChoice.capBy` (`recent` | `week`) picks the sentence.
 - **Card**: under the reason, « Cette semaine : 12 / 18 km-effort » (`coach-week`, the chosen day's week, its outings until that day) with a `role="meter"` bar in `--form-progress`, « Semaine allégée » or « Objectif de la semaine atteint » on the right.
 - e2e: `coach-session.spec.ts` and `coach-review.spec.ts` date their 50 km outings before this week's Monday (`sinceMonday`), so the week leaves the whole time chosen whatever day CI runs.
+
+## The visible week (#285)
+
+- `coachPlan.ts` (pure, unit-tested), mockup 7 « Ta semaine » on the canvas: `weekPlan(outings, { goal, easyPace, choiceOf }, day, now)` gives the 7 days of `day`'s calendar week. Past days: `done` (an outing counted in the form), `skipped` (one of the member's days of #283 without any), else `rest`. Days to come: the member's days from today on, else their outings a week less the days already run (today counting once run), spread as evenly as can be over the days left, today first (`spread`); the others `rest`. Never fixed: worked out again from the outings each time, a skipped session is not made up for.
+- Each outing day gets `sessionOn` with a `DayContext`: the sessions planned before it this week count like outings for the alternation (`plannedBefore`) and like load done for the week's volume (`plannedLoad`, `outingsLeft` from it on), `afterHard` when the day before has a key session (rule: endurance, reason `afterHard`: never two demanding days in a row), `longRunDay` on the member's long run day (rule, after overload and learning: the long run, or the race's long run, when the time is 90 min or more, reason `longRunDay`). The long run day starts at 90 min (`defaultMinutes`, `LONG_RUN_MINUTES`) until the member picks a duration. « One key session per 3 outings » of the issue is left to the alternation plus `afterHard`.
+- **Today's session** is worked out without today's outings (`beforeToday`), so it stays the same once one is recorded and matches the review (#267), which works it out without the outing; today stays planned (state `done`, session kept). `daySession` gives a day's planned session, else on a rest day the session the rules would give (« Voir une séance quand même »); the route of the session (`useSessionOfTheDay`), the review and its « Demain » (`tomorrowSession`) go through it, with the choices kept per day (`savedCoachChoice`, up to 7).
+- **Card**: `CoachWeekBand` (7 tight columns: weekday, date, a glyph of bars in the form colours, duration or « repos » / « sautée », a green check on done days; chosen day in ink, today ringed, skipped dashed, rest muted; legend and « Recalculée à chaque sortie ») replaces the « Quel jour ? » pills of #279. Past days show what was done (distance, moving time) or skipped, without durations, weather or route; a rest day says why (the member's days or the coach's spread) with « Voir une séance quand même »; the weather slot shows on the forecast's 4 days only. The chosen day is kept for the day (`loadCoachDay`: today or a later day of this week), past days aren't saved. Sunday has no day after it in the band.
+- e2e (`coach-session.spec.ts`): the goal's days are cleared before the duration steps, so the coach spreads 4 outings from today and today is an outing day whatever the weekday; a later planned day and a rest day are looked for in the band and their steps skipped when there is none (Sunday).
 
 ## Best weather slot (#265)
 

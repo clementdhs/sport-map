@@ -1632,14 +1632,38 @@
     "label": "Volume de la semaine",
     "line": "Cette semaine : {done} / {target} km-effort",
     "lighter": "Semaine allégée",
-    "reached": "Objectif de la semaine atteint"
+    "reached": "Objectif de la semaine atteint",
+    "title": "Ta semaine",
+    "range": "{start} – {end}",
+    "pick": "Choisir un jour de la semaine",
+    "legend": {
+      "label": "Légende",
+      "done": "Fait",
+      "skipped": "Sautée",
+      "today": "Aujourd'hui",
+      "key": "Séance clé"
+    },
+    "short": {
+      "skipped": "sautée",
+      "rest": "repos"
+    },
+    "recomputed": "Recalculée à chaque sortie : une séance sautée n'est pas rattrapée, la suite se décale.",
+    "headingPast": "{date}",
+    "titles": {
+      "done": "Sortie faite",
+      "skipped": "Séance sautée",
+      "rest": "Repos"
+    },
+    "doneText": "{distance} en {duration}. Elle compte dans ta semaine.",
+    "doneDistance": "{distance}. Elle compte dans ta semaine.",
+    "skippedText": "Pas faite : elle n'est pas rattrapée, le coach a recalculé la suite de ta semaine sur tes vraies sorties.",
+    "restText": "Pas un de tes jours de sortie.",
+    "restSpread": "Le coach n'a pas prévu de sortie ce jour-là : il répartit tes sorties sur la semaine.",
+    "anyway": "Voir une séance quand même"
   },
   "coachSession": {
     "heading": "Séance du jour · {date}",
     "headingOn": "Séance prévue · {date}",
-    "days": "Quel jour ?",
-    "today": "Aujourd'hui",
-    "tomorrow": "Demain",
     "durations": "Combien de temps as-tu ?",
     "other": "Autre séance",
     "kinds": {
@@ -1663,7 +1687,9 @@
       "resume": "Tu reprends en douceur : de l'endurance facile, le volume montera petit à petit.",
       "recovery": "Tu as bien récupéré : c'est le jour pour une séance clé.",
       "progressKey": "Tu progresses : une séance clé aujourd'hui, de l'endurance à la sortie suivante.",
-      "progressEasy": "Tu progresses : de l'endurance aujourd'hui pour assimiler la séance clé, la prochaine viendra à la sortie suivante."
+      "progressEasy": "Tu progresses : de l'endurance aujourd'hui pour assimiler la séance clé, la prochaine viendra à la sortie suivante.",
+      "longRunDay": "C'est ton jour de sortie longue : en endurance, sans chercher la vitesse.",
+      "afterHard": "Séance clé la veille : de l'endurance aujourd'hui pour l'assimiler."
     },
     "blocks": {
       "label": "Déroulé de la séance",

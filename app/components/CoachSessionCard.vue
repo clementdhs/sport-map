@@ -2,21 +2,23 @@
 import type { CoachGoal } from '#shared/types/account'
 import { coachPace, type PaceOuting } from '#shared/utils/coachPace'
 import { weekVolume } from '#shared/utils/coachWeek'
+import { defaultMinutes, weekPlan } from '#shared/utils/coachPlan'
 import {
   coachDays,
   dayNoon,
-  DEFAULT_SESSION_DURATION,
   SESSION_DURATIONS,
   sessionOn,
   type BlockKind,
   type SessionDuration,
 } from '#shared/utils/coachSessions'
 import type { LoadOuting } from '#shared/utils/trainingForm'
+import type { CoachChoice } from '~/utils/coachChoice'
 
 // "Séance du jour" on the coach page (#264, mockup 1): the session the rules pick from the form, the goal and the
-// time available, its blocks, distance, gain and easy pace, the day and duration pickers and "Autre séance". The
-// choices are kept in this browser for each day (coachChoice.ts): the same inputs give the same session all day.
-// Another day than today (#279) gets the session of that day's form if the member doesn't go out before it.
+// time available, its blocks, distance, gain and easy pace, the duration picker and "Autre séance". The choices
+// are kept in this browser for each day (coachChoice.ts): the same inputs give the same session all day.
+// Since #285 (mockup 7) the day is picked on « Ta semaine », the week plan: a past day shows what was done or
+// skipped, a rest day says so and can still show a session, an outing day its planned session.
 const props = defineProps<{
   outings: (LoadOuting & PaceOuting)[]
   goal: CoachGoal | null
@@ -26,65 +28,93 @@ const { t } = useI18n()
 const { formatNumber, locale } = useFormat()
 const paces = usePreference('paces')
 
-// Today and the next days the forecast covers (#279), today first
-const days = coachDays()
-const day = ref(days[0]!)
-const minutes = ref<SessionDuration>(DEFAULT_SESSION_DURATION)
-// Clicks on "Autre séance", back to the session of the day with each duration
-const other = ref(0)
-watch(minutes, () => { other.value = 0 })
-
-// The choice kept for a day, else the duration shown so far: switching days keeps the time the member has.
-// Nothing is saved meanwhile, so the day's « Autre séance » isn't written over by the reset in between.
-let restoring = false
-async function restore(date: string) {
-  restoring = true
-  const saved = savedCoachChoice(date)
-  if (saved) minutes.value = saved.minutes
-  // After the reset of « Autre séance » that changing the duration triggers
-  await nextTick()
-  other.value = saved?.other ?? 0
-  await nextTick()
-  restoring = false
-}
-
-// Kept in this browser for each day (#267): shown again on the next visit, and the review after that day's outing
-// looks for this same session. Restored once mounted, so the server's render (today, 60 min) hydrates as is.
-onMounted(async () => {
-  day.value = loadCoachDay()
-  await restore(day.value)
-  watch(day, async (value) => {
-    saveCoachDay(value)
-    await restore(value)
-  })
-  watch([minutes, other], () => {
-    if (!restoring) saveCoachChoice({ minutes: minutes.value, other: other.value }, day.value)
-  })
-})
-
-const isToday = computed(() => day.value === days[0])
-function dayDate(date: string, options: Intl.DateTimeFormatOptions) {
-  return dayNoon(date).toLocaleDateString(locale(), { ...options, timeZone: 'Europe/Paris' })
-}
-function dayLabel(date: string, i: number) {
-  if (i === 0) return t('coachSession.today')
-  if (i === 1) return t('coachSession.tomorrow')
-  return dayDate(date, { weekday: 'short', day: 'numeric' })
-}
-const date = computed(() => dayDate(day.value, { weekday: 'short', day: 'numeric', month: 'short' }))
+const today = localDate(new Date())
+// The days the weather slot covers (#279): today and the next ones of the forecast
+const forecastDays = coachDays()
+// The day shown, today until the member picks another on the week
+const day = ref(today)
+// The durations and « Autre séance » clicks chosen for the days of the week, kept in this browser (#267, #279):
+// read once mounted, so the server's render (today, the default duration) hydrates as is.
+const choices = ref<Record<string, CoachChoice>>({})
+// A rest day's session, shown when the member asks for it anyway
+const anyway = ref(false)
 
 // Runs are planned at the member's running pace (#146), else one from their latest runs, else the default (#281).
 const easyPace = computed(() => coachPace(props.outings, paces.value.running))
-// The rules on the chosen day's form: today's, or a later day's if the member doesn't go out before it.
-const choice = computed(() => sessionOn(props.outings, { goal: props.goal, minutes: minutes.value, easyPace: easyPace.value.pace }, day.value, other.value))
-const plan = computed(() => choice.value.plan)
+// The week (#285): what was done on the past days and the session planned on each outing day left
+const days = computed(() => weekPlan(props.outings, {
+  goal: props.goal,
+  easyPace: easyPace.value.pace,
+  choiceOf: date => choices.value[date] ?? null,
+}, today))
+const shown = computed(() => days.value.find(d => d.date === day.value) ?? days.value.find(d => d.today)!)
+
+const minutes = computed(() => choices.value[day.value]?.minutes ?? defaultMinutes(props.goal, day.value))
+const other = computed(() => choices.value[day.value]?.other ?? 0)
+// Kept in this browser for the day: shown again on the next visit, and the review after that day's outing and the
+// route of the session look for this same session. A new duration starts « Autre séance » over.
+function choose(choice: CoachChoice) {
+  choices.value = { ...choices.value, [day.value]: choice }
+  saveCoachChoice(choice, day.value)
+}
+function pickMinutes(value: SessionDuration) {
+  choose({ minutes: value, other: 0 })
+}
+function nextSession() {
+  choose({ minutes: minutes.value, other: other.value + 1 })
+}
+
+onMounted(() => {
+  const kept: Record<string, CoachChoice> = {}
+  for (const { date } of days.value) {
+    const saved = date >= today ? savedCoachChoice(date) : null
+    if (saved) kept[date] = saved
+  }
+  choices.value = kept
+  day.value = loadCoachDay()
+})
+
+function select(date: string) {
+  day.value = date
+  anyway.value = false
+  // Only days to come are kept for the route of the session.
+  if (date >= today) saveCoachDay(date)
+}
+
+const isToday = computed(() => day.value === today)
+const date = computed(() => dayNoon(day.value).toLocaleDateString(locale(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' }))
+
+// The session shown: the one planned that day, or on a rest day to come the session of the day if asked for.
+const choice = computed(() => {
+  if (shown.value.session) return shown.value.session
+  if (shown.value.past || !anyway.value) return null
+  return sessionOn(props.outings, { goal: props.goal, minutes: minutes.value, easyPace: easyPace.value.pace }, day.value, other.value)
+})
+const plan = computed(() => choice.value?.plan ?? { kind: 'rest' as const, minutes: 0, blocks: [], reps: null, distanceM: 0, gainM: 0, easyPace: easyPace.value.pace })
+const forecast = computed(() => forecastDays.includes(day.value))
+
+// What a day without a session shows: what was done, skipped, or a rest day
+const dayTitle = computed(() => t(`coachWeek.titles.${shown.value.state === 'planned' ? 'rest' : shown.value.state}`))
+const dayText = computed(() => {
+  const d = shown.value
+  if (d.state === 'done') {
+    const distance = `${formatNumber(d.distanceM / 1000, { maximumFractionDigits: 1 })} km`
+    return d.movingS
+      ? t('coachWeek.doneText', { distance, duration: formatDuration(Math.round(d.movingS / 60)) })
+      : t('coachWeek.doneDistance', { distance })
+  }
+  if (d.state === 'skipped') return t('coachWeek.skippedText')
+  return t(props.goal?.preferred_days.length ? 'coachWeek.restText' : 'coachWeek.restSpread')
+})
 
 const reason = computed(() => {
+  if (!choice.value) return ''
   const { reason, raceDays } = choice.value
   return t(`coachSession.reasons.${reason}`, { n: raceDays ?? 0 }, raceDays ?? 1)
 })
 // Shortened to what the member's recent outings allow (#281)
 const capText = computed(() => {
+  if (!choice.value) return ''
   const { cap, capBy } = choice.value
   if (cap === null) return ''
   return capBy === 'week'
@@ -127,27 +157,37 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
 
 <template>
   <div class="space-y-4">
+    <CoachWeekBand :days="days" :selected="day" @select="select" />
     <section
       class="overflow-hidden rounded-lg border-2 border-(--ui-text-highlighted) bg-default"
       data-testid="coach-session"
-      :data-kind="plan.kind"
-      :data-minutes="plan.minutes"
+      :data-kind="choice ? plan.kind : null"
+      :data-minutes="choice ? plan.minutes : null"
       :data-day="day"
+      :data-state="shown.state"
     >
       <h2 class="bg-inverted px-4 py-2 text-xs font-bold tracking-[0.08em] text-inverted uppercase [font-family:var(--font-numbers)]" data-testid="coach-session-heading">
-        {{ t(isToday ? 'coachSession.heading' : 'coachSession.headingOn', { date }) }}
+        {{ t(isToday ? 'coachSession.heading' : shown.past ? 'coachWeek.headingPast' : 'coachSession.headingOn', { date }) }}
       </h2>
       <div class="space-y-3 p-4">
         <div>
           <div class="flex items-start justify-between gap-3">
             <p class="font-display text-[1.75rem] leading-tight font-bold text-highlighted" data-testid="coach-session-title">
-              {{ t(`coachSession.kinds.${plan.kind}`) }}
+              {{ choice ? t(`coachSession.kinds.${plan.kind}`) : dayTitle }}
             </p>
-            <DurationSign v-if="plan.minutes" :minutes="plan.minutes" class="mt-0.5" />
+            <DurationSign v-if="choice && plan.minutes" :minutes="plan.minutes" class="mt-0.5" />
           </div>
           <p class="mt-1.5 text-sm text-toned" data-testid="coach-session-reason">
-            {{ reason }}
+            {{ choice ? reason : dayText }}
           </p>
+          <UButton
+            v-if="!choice && !shown.past"
+            :label="t('coachWeek.anyway')"
+            variant="link"
+            class="mt-1 px-0 font-semibold"
+            data-testid="coach-session-anyway"
+            @click="anyway = true"
+          />
           <p v-if="capText" class="mt-1 text-sm text-toned" data-testid="coach-session-capped">
             {{ capText }}
           </p>
@@ -169,7 +209,7 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
               <div class="h-full rounded-full bg-(--form-progress)" :style="{ width: `${weekShare}%` }" />
             </div>
           </div>
-          <p v-if="!isToday" class="mt-1 text-xs text-muted" data-testid="coach-session-ahead">
+          <p v-if="!isToday && choice && !shown.past" class="mt-1 text-xs text-muted" data-testid="coach-session-ahead">
             {{ t('coachSession.ahead') }}
           </p>
         </div>
@@ -210,33 +250,13 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
             <ULink to="/settings#paces" class="text-primary">{{ t('coachSession.paceSettings') }}</ULink>
           </p>
         </template>
-        <p v-else-if="plan.kind === 'rest'" class="text-sm text-toned">
+        <p v-else-if="choice && plan.kind === 'rest'" class="text-sm text-toned">
           {{ t('coachSession.restText') }}
         </p>
       </div>
     </section>
 
-    <fieldset>
-      <legend class="mb-2 font-semibold [font-family:var(--font-numbers)]">{{ t('coachSession.days') }}</legend>
-      <div class="flex flex-wrap gap-1.5" data-testid="coach-session-days">
-        <button
-          v-for="(option, i) in days"
-          :key="option"
-          type="button"
-          class="min-h-11 rounded-full border-[1.5px] px-3.5 font-semibold transition-colors"
-          :class="day === option
-            ? 'border-(--ui-text-highlighted) bg-inverted text-inverted'
-            : 'border-accented bg-default text-highlighted hover:bg-elevated/50'"
-          :aria-pressed="day === option"
-          :data-day="option"
-          @click="day = option"
-        >
-          {{ dayLabel(option, i) }}
-        </button>
-      </div>
-    </fieldset>
-
-    <fieldset>
+    <fieldset v-if="choice && !shown.past">
       <legend class="mb-2 font-semibold [font-family:var(--font-numbers)]">{{ t('coachSession.durations') }}</legend>
       <div class="flex flex-wrap gap-1.5" data-testid="coach-session-durations">
         <button
@@ -248,17 +268,17 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
             ? 'border-(--ui-text-highlighted) bg-inverted text-inverted'
             : 'border-accented bg-default text-highlighted hover:bg-elevated/50'"
           :aria-pressed="minutes === duration"
-          @click="minutes = duration"
+          @click="pickMinutes(duration)"
         >
           {{ formatDuration(duration) }}
         </button>
       </div>
     </fieldset>
 
-    <CoachWeatherSlot :minutes="plan.minutes" :day="day" />
+    <CoachWeatherSlot v-if="choice && forecast" :minutes="plan.minutes" :day="day" />
 
     <UButton
-      v-if="routable"
+      v-if="choice && !shown.past && routable"
       :label="t('sessionRoute.fromHome')"
       icon="i-lucide-route"
       size="lg"
@@ -269,7 +289,7 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
     />
 
     <UButton
-      v-if="choice.options > 1"
+      v-if="choice && !shown.past && choice.options > 1"
       :label="t('coachSession.other')"
       icon="i-lucide-shuffle"
       color="neutral"
@@ -277,7 +297,7 @@ const pace = computed(() => t('coachSession.paceValue', { pace: formatPaceSettin
       block
       class="min-h-11"
       data-testid="coach-session-other"
-      @click="other++"
+      @click="nextSession()"
     />
   </div>
 </template>

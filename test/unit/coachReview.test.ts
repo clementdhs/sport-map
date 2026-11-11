@@ -198,7 +198,7 @@ describe('formEffect', () => {
 
 describe('tomorrowSession', () => {
   it('follows the rules on tomorrow\'s form, today\'s outing counted', () => {
-    const input = { goal: null, minutes: 60 as const, easyPace: 6 }
+    const input = { goal: null, easyPace: 6, choiceOf: () => null }
     const outings = [outing(0), ...history()]
     const plan = tomorrowSession(outings, input, NOW)
     // Tomorrow, today becomes one more outing day: the alternation moves on.
@@ -209,7 +209,7 @@ describe('tomorrowSession', () => {
 
   it('rests after a heavy overload', () => {
     const outings = [outing(0, 60), outing(1, 60), ...history()]
-    expect(tomorrowSession(outings, { goal: null, minutes: 60, easyPace: 6 }, NOW).kind).toBe('rest')
+    expect(tomorrowSession(outings, { goal: null, easyPace: 6, choiceOf: () => null }, NOW).kind).toBe('rest')
   })
 })
 
@@ -246,7 +246,6 @@ describe('sessionOn', () => {
 
   it('gives a later day the session of its form, the outings until then among the days before', () => {
     const outings = [outing(0), ...history()]
-    expect(sessionOn(outings, input, '2026-11-10').plan).toEqual(tomorrowSession(outings, input, NOW))
     const later = trainingForm(outings, new Date('2026-11-12T12:00:00Z'))
     expect(sessionOn(outings, input, '2026-11-12')).toEqual(sessionOfTheDay({
       ...input,

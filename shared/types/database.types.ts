@@ -186,32 +186,6 @@ export type Database = {
           },
         ]
       }
-      loop_sentence_usage: {
-        Row: {
-          count: number
-          day: string
-          user_id: string
-        }
-        Insert: {
-          count?: number
-          day: string
-          user_id: string
-        }
-        Update: {
-          count?: number
-          day?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "loop_sentence_usage_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       live_shares: {
         Row: {
           expires_at: string
@@ -268,6 +242,32 @@ export type Database = {
           started_at?: string
         }
         Relationships: []
+      }
+      loop_sentence_usage: {
+        Row: {
+          count: number
+          day: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          day: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          day?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loop_sentence_usage_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       osm_route_elevations: {
         Row: {

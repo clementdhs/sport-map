@@ -106,13 +106,14 @@ describe('loopSettingsFromUnderstanding', () => {
       climb: 'flat',
       start: { kind: 'my_point' },
       place: null,
+      gain: null,
       ignored: [],
     })
   })
 
   it('leaves out what the sentence does not say, so the panel keeps its settings', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 12 }))
-    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, ignored: [] })
+    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, gain: null, ignored: [] })
   })
 
   it('takes a duration when no distance is given', () => {
@@ -179,17 +180,30 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.place).toBeNull()
   })
 
-  it('reports the gain in metres and the paths it cannot use yet, with their words', () => {
-    const settings = loopSettingsFromUnderstanding(understanding({
-      sport: 'cycling',
-      elevation_gain: { meters: 600, text: 'environ 600 mètres de dénivelé' },
-      prefer_paths: { text: 'sur du chemin' },
-    }))
+  it('reports the paths it cannot use yet, with their words', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ sport: 'cycling', prefer_paths: { text: 'sur du chemin' } }))
     expect(settings?.sport).toBe('cycling')
-    expect(settings?.ignored).toEqual([
-      { kind: 'gain', text: 'environ 600 mètres de dénivelé' },
-      { kind: 'paths', text: 'sur du chemin' },
-    ])
+    expect(settings?.ignored).toEqual([{ kind: 'paths', text: 'sur du chemin' }])
+  })
+
+  it('fills a gain in metres, rounded to the slider step, even without a distance (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ elevation_gain: { meters: 630, text: 'environ 630 m de D+' } }))
+    expect(settings).toMatchObject({ target: null, gain: 650, ignored: [] })
+  })
+
+  it('keeps the distance with the gain: « 40 km avec 600 m de D+ » (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 40, elevation_gain: { meters: 600, text: '600 m de D+' } }))
+    expect(settings).toMatchObject({ target: { kind: 'distance', km: 40 }, gain: 600 })
+  })
+
+  it('reports a gain given with a duration, which it cannot combine (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ duration_min: 120, elevation_gain: { meters: 800, text: '800 m of climbing' } }))
+    expect(settings).toMatchObject({ target: { kind: 'duration', min: 120 }, gain: null, ignored: [{ kind: 'gain', text: '800 m of climbing' }] })
+  })
+
+  it('reports a gain out of the sliders range (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 10, elevation_gain: { meters: 5000, text: '5000 m de D+' } }))
+    expect(settings).toMatchObject({ gain: null, ignored: [{ kind: 'gain', text: '5000 m de D+' }] })
   })
 
   it('cuts the words it quotes to a short excerpt', () => {

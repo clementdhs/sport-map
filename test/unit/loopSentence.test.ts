@@ -105,13 +105,14 @@ describe('loopSettingsFromUnderstanding', () => {
       shape: 'out_and_back',
       climb: 'flat',
       start: { kind: 'my_point' },
+      place: null,
       ignored: [],
     })
   })
 
   it('leaves out what the sentence does not say, so the panel keeps its settings', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 12 }))
-    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, ignored: [] })
+    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, ignored: [] })
   })
 
   it('takes a duration when no distance is given', () => {
@@ -149,16 +150,43 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, start: { kind: 'place', name: ' ' } }))?.start).toBeNull()
   })
 
-  it('reports the places, the gain in metres and the paths it cannot use yet, with their words', () => {
+  it('fills the first named place to go through or head towards, with its words (#293)', () => {
     const settings = loopSettingsFromUnderstanding(understanding({
       sport: 'cycling',
       places: [{ name: 'Chartreuse', hint: 'en direction de', text: 'en direction de la Chartreuse' }],
+    }))
+    expect(settings?.place).toEqual({ name: 'Chartreuse', text: 'en direction de la Chartreuse' })
+    expect(settings?.ignored).toEqual([])
+  })
+
+  it('reports the other places, since a loop goes through one named place only', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({
+      places: [
+        { name: 'Isère', hint: 'autour de', text: 'autour de l\'Isère' },
+        { name: 'Bastille', hint: 'par', text: 'par la Bastille' },
+      ],
+    }))
+    expect(settings?.place?.name).toBe('Isère')
+    expect(settings?.ignored).toEqual([{ kind: 'via', text: 'par la Bastille' }])
+  })
+
+  it('fills a place alone: the loop can be generated from it', () => {
+    expect(loopSettingsFromUnderstanding(understanding({ places: [{ name: 'Isère', hint: 'le long de', text: 'le long de l\'Isère' }] })))
+      .not.toBeNull()
+  })
+
+  it('ignores a place without a name', () => {
+    expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.place).toBeNull()
+  })
+
+  it('reports the gain in metres and the paths it cannot use yet, with their words', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({
+      sport: 'cycling',
       elevation_gain: { meters: 600, text: 'environ 600 mètres de dénivelé' },
       prefer_paths: { text: 'sur du chemin' },
     }))
     expect(settings?.sport).toBe('cycling')
     expect(settings?.ignored).toEqual([
-      { kind: 'via', text: 'en direction de la Chartreuse' },
       { kind: 'gain', text: 'environ 600 mètres de dénivelé' },
       { kind: 'paths', text: 'sur du chemin' },
     ])

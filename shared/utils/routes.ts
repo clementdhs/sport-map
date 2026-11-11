@@ -295,6 +295,9 @@ export const routingLoopSchema = z.object({
   precision: z.enum(LOOP_PRECISIONS).default('precise'),
   // A place to go through (a peak, a drinking water point), found in OpenStreetMap by the browser.
   via: coordinateSchema.optional(),
+  // The bearing of a place the member named but the loop only heads for (#293: a massif, a place out of reach), in
+  // degrees from north; ignored with a via.
+  heading: z.number().min(-180).max(360).optional(),
 })
 
 export type RoutingLoopRequest = z.input<typeof routingLoopSchema>

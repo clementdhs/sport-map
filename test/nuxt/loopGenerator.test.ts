@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildSession } from '#shared/utils/coachSessions'
 import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
+import type { NamedPlace } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, RoutingLoopRequest, RoutingSegmentRequest } from '#shared/utils/routes'
 
@@ -58,6 +59,8 @@ registerEndpoint('/api/routing/loop', {
 // Overpass, for the place to go through (#214).
 const { searchLoopViaMock } = vi.hoisted(() => ({ searchLoopViaMock: vi.fn() }))
 mockNuxtImport('searchLoopVia', () => searchLoopViaMock)
+const { searchNamedPlacesMock } = vi.hoisted(() => ({ searchNamedPlacesMock: vi.fn() }))
+mockNuxtImport('searchNamedPlaces', () => searchNamedPlacesMock)
 
 const segmentCalls: RoutingSegmentRequest[] = []
 registerEndpoint('/api/routing/segment', {
@@ -77,6 +80,7 @@ beforeEach(() => {
   climbBySeed.clear()
   hillySeeds.clear()
   searchLoopViaMock.mockReset()
+  searchNamedPlacesMock.mockReset()
   routingQuota = null
   // Seeds 0, 1 and 2.
   vi.spyOn(Math, 'random').mockReturnValue(0)
@@ -237,6 +241,64 @@ describe('proposals', () => {
     await loop.generate()
     expect(searchLoopViaMock).toHaveBeenCalledTimes(1)
     expect(loop.viaPlace?.id).toBe('high')
+  })
+
+  it('goes through a named river in reach, at its point nearest to the start (#293)', async () => {
+    const river: NamedPlace = { id: 'w1', name: 'L\'Isère', kind: 'river', coordinates: [6.11, 45.905], distanceM: 1200 }
+    searchNamedPlacesMock.mockResolvedValue([river])
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'named'
+    loop.viaName = 'l\'Isère'
+    await loop.generate()
+
+    expect(searchNamedPlacesMock).toHaveBeenCalledWith('l\'Isère', START)
+    expect(loop.viaStatus).toBe('found')
+    expect(loop.namedChoice).toEqual({ role: 'via', place: river })
+    expect(loop.viaPoint).toEqual(river.coordinates)
+    expect(loopCalls.every(call => call.via?.[0] === 6.11 && call.heading === undefined)).toBe(true)
+
+    await loop.generate()
+    expect(searchNamedPlacesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('only heads for a named massif, sending its bearing (#293)', async () => {
+    searchNamedPlacesMock.mockResolvedValue([
+      { id: 'r1', name: 'Massif de la Chartreuse', kind: 'massif', coordinates: [6.1, 46.1], distanceM: 22000 },
+    ] satisfies NamedPlace[])
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'named'
+    loop.viaName = 'la Chartreuse'
+    await loop.generate()
+
+    expect(loop.namedChoice?.role).toBe('heading')
+    expect(loop.viaPoint).toBeNull()
+    expect(loopCalls).toHaveLength(3)
+    expect(loopCalls.every(call => !call.via && typeof call.heading === 'number' && Math.abs(call.heading) < 10)).toBe(true)
+  })
+
+  it('goes without a named place it cannot find (#293)', async () => {
+    searchNamedPlacesMock.mockResolvedValue([])
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'named'
+    loop.viaName = 'Atlantide'
+    await loop.generate()
+    expect(loop.viaStatus).toBe('none')
+    expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'ready', 'ready'])
+    expect(loopCalls.every(call => !call.via && call.heading === undefined)).toBe(true)
+  })
+
+  it('does not look for a place said by its kind only, and says so (#293)', async () => {
+    const loop = useLoopGeneratorStore()
+    loop.setStart(START)
+    loop.via = 'named'
+    loop.viaName = 'le lac'
+    await loop.generate()
+    expect(searchNamedPlacesMock).not.toHaveBeenCalled()
+    expect(loop.viaStatus).toBe('vague')
+    expect(loop.proposals).toHaveLength(3)
   })
 
   it('goes without a place when none is in reach or Overpass fails (#214)', async () => {
@@ -405,7 +467,7 @@ describe('choosing a proposal', () => {
 
 describe('settings from a sentence (#216)', () => {
   const settings = (fields: Partial<LoopSentenceSettings>): LoopSentenceSettings => ({
-    sport: null, target: null, precision: null, shape: null, climb: null, start: null, ignored: [], ...fields,
+    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, ignored: [], ...fields,
   })
 
   it('fills the sport, distance, precision, shape and climbing, and says which settings changed', () => {
@@ -457,6 +519,15 @@ describe('settings from a sentence (#216)', () => {
     expect(loop.canGenerate).toBe(true)
     await pending
     expect(loop.proposals).toEqual([])
+  })
+
+  it('fills the named place to go through (#293)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    const changed = loop.applySentence(settings({ place: { name: 'Isère', text: 'autour de l\'Isère' } }))
+    expect(loop.via).toBe('named')
+    expect(loop.viaName).toBe('Isère')
+    expect(changed).toEqual(['via'])
   })
 
   it('keeps the proposals generated right after it', async () => {

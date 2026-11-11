@@ -537,8 +537,18 @@
     "vias": {
       "none": "Aucun lieu imposé",
       "peak": "Le sommet le plus haut à portée",
-      "water": "Un point d'eau potable"
+      "water": "Un point d'eau potable",
+      "named": "Un lieu que je nomme"
     },
+    "namedLabel": "Lieu à traverser ou à viser",
+    "namedPlaceholder": "Ex. l'Isère, le lac de Paladru, la Chartreuse",
+    "namedHint": "Cherché dans OpenStreetMap autour du départ : une rivière, un lac, un sommet ou un village à portée est traversé, un massif ou un lieu plus loin donne seulement la direction.",
+    "namedSearching": "Recherche de « {name} » autour du départ…",
+    "namedNone": "« {name} » introuvable à moins de {radius} du départ : les propositions s'en passent.",
+    "namedVague": "« {name} » : lequel ? Donne son nom, par exemple « le lac de Paladru ». Les propositions s'en passent.",
+    "namedFailed": "OpenStreetMap ne répond pas : les propositions ne passent par aucun lieu.",
+    "namedVia": "Passage : {name}, à {distance}.",
+    "namedHeading": "Direction : {name}, à {distance}. La boucle part de ce côté sans chercher à l'atteindre.",
     "viaSearching": {
       "peak": "Recherche d'un sommet à moins de {radius}…",
       "water": "Recherche d'un point d'eau à moins de {radius}…"
@@ -578,6 +588,7 @@
     },
     "approximate": "± 20 %",
     "loop": "Boucle",
+    "place": "Lieu : {name}",
     "start": "Départ : {start}",
     "startPlaced": "point posé",
     "startLocated": "ma position",
@@ -594,7 +605,7 @@
     "ignored": {
       "distance": "« {text} » : la distance va de 1 à 100 km, je ne l'ai pas reprise.",
       "duration": "« {text} » : la durée va de 10 min à 10 h, je ne l'ai pas reprise.",
-      "via": "« {text} » : je ne sais pas encore passer par un lieu nommé, la boucle se fait sans.",
+      "via": "« {text} » : une boucle ne passe que par un lieu nommé, celui-ci est laissé de côté.",
       "gain": "« {text} » : je ne sais pas encore viser un dénivelé en mètres, choisis plat, vallonné ou costaud.",
       "paths": "« {text} » : je ne sais pas encore préférer les chemins, la boucle se fait sans."
     }

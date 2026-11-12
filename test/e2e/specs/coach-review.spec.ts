@@ -6,10 +6,20 @@ test.use({ role: 'account' })
 
 const DAY = 86_400_000
 const START = { latitude: 45.9, longitude: 6.12, accuracy: 5 }
+const PARIS_DATE = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Paris' })
 
-async function addOuting(page: Page, routeId: string, daysAgo: number) {
+// When the page's fake clock starts (#313). The recorder times fixes with Date.now(): half an hour ago, so the
+// 25 min outing ends before now. The coach counts an outing on the day it ends and keeps the duration chosen on
+// /coach for the day it was chosen on (French dates), so the choice, the outing and its review must share a
+// day: an hour and a half ago when half an hour ago is too close to midnight in Paris.
+function clockStart(now: number) {
+  const start = now - 30 * 60_000
+  return PARIS_DATE.format(start) === PARIS_DATE.format(start + 45 * 60_000) ? start : now - 90 * 60_000
+}
+
+async function addOuting(page: Page, routeId: string, start: number, daysAgo: number) {
   const response = await page.request.post(`/api/routes/${routeId}/outings`, {
-    data: { started_at: new Date(Date.now() - daysAgo * DAY - 3_600_000).toISOString(), duration_s: 3000, moving_s: 3000, distance_m: 50_000 },
+    data: { started_at: new Date(start - daysAgo * DAY - 3_600_000).toISOString(), duration_s: 3000, moving_s: 3000, distance_m: 50_000 },
   })
   expect(response.ok()).toBe(true)
 }
@@ -23,15 +33,16 @@ test('a recorded outing is the session of the day, its feeling weighs on the for
     data: { name: 'Bilan du coach e2e', sport_type: 'running', is_public: false, coordinates: [[6.1, 45.9], [6.1, 46.35]] },
   })).json() as { id: string }
   const recorded: string[] = []
+  const start = clockStart(Date.now())
 
   try {
-    // All before this week's Monday, so the week's volume (#284) leaves the whole time chosen whatever the day
-    const sinceMonday = (new Date().getDay() + 6) % 7
-    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, daysAgo + sinceMonday)
+    // All before the week's Monday, so the week's volume (#284) leaves the whole time chosen whatever the day:
+    // counted from the fake clock in Paris time, not from the machine's (UTC on CI).
+    const sinceMonday = (new Date(PARIS_DATE.format(start)).getUTCDay() + 6) % 7
+    for (const daysAgo of [8, 12, 15, 19, 22, 26, 29, 33, 1, 3]) await addOuting(page, routeId, start, daysAgo + sinceMonday)
     // No goal set: coach-session.spec.ts, run after this one on the same account on CI, starts without any.
 
-    // The recorder times fixes with Date.now(): a fake clock, half an hour ago so the outing ends before now.
-    await page.clock.install({ time: new Date(Date.now() - 30 * 60_000) })
+    await page.clock.install({ time: new Date(start) })
     page.on('dialog', dialog => dialog.accept())
 
     // 30 min chosen on the coach page: the review looks for that session.

@@ -6,6 +6,7 @@ import {
   loopSettingsFromUnderstanding,
   loopUnderstandingSchema,
 } from '#shared/utils/loopSentence'
+import { LOOP_MAX_VIAS } from '#shared/utils/loops'
 import type { LoopUnderstanding } from '#shared/utils/loopSentence'
 
 // What the LLM answers when it understood nothing: every field there, all empty.
@@ -105,7 +106,7 @@ describe('loopSettingsFromUnderstanding', () => {
       shape: 'out_and_back',
       climb: 'flat',
       start: { kind: 'my_point' },
-      place: null,
+      places: [],
       paths: null,
       gain: null,
       ignored: [],
@@ -114,7 +115,7 @@ describe('loopSettingsFromUnderstanding', () => {
 
   it('leaves out what the sentence does not say, so the panel keeps its settings', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 12 }))
-    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, paths: null, gain: null, ignored: [] })
+    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, places: [], paths: null, gain: null, ignored: [] })
   })
 
   it('takes a duration when no distance is given', () => {
@@ -152,24 +153,33 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, start: { kind: 'place', name: ' ' } }))?.start).toBeNull()
   })
 
-  it('fills the first named place to go through or head towards, with its words (#293)', () => {
+  it('fills a named place to go through or head towards, with its words (#293)', () => {
     const settings = loopSettingsFromUnderstanding(understanding({
       sport: 'cycling',
       places: [{ name: 'Chartreuse', hint: 'en direction de', text: 'en direction de la Chartreuse' }],
     }))
-    expect(settings?.place).toEqual({ name: 'Chartreuse', text: 'en direction de la Chartreuse' })
+    expect(settings?.places).toEqual([{ name: 'Chartreuse', text: 'en direction de la Chartreuse' }])
     expect(settings?.ignored).toEqual([])
   })
 
-  it('reports the other places, since a loop goes through one named place only', () => {
+  it('fills every place the sentence names, in its order (#326)', () => {
     const settings = loopSettingsFromUnderstanding(understanding({
+      sport: 'cycling',
+      distance_km: 70,
       places: [
-        { name: 'Isère', hint: 'autour de', text: 'autour de l\'Isère' },
-        { name: 'Bastille', hint: 'par', text: 'par la Bastille' },
+        { name: 'Autrans', hint: 'passant par', text: 'passant par Autrans' },
+        { name: 'Lans-en-Vercors', hint: 'et', text: 'et Lans-en-Vercors' },
       ],
     }))
-    expect(settings?.place?.name).toBe('Isère')
-    expect(settings?.ignored).toEqual([{ kind: 'via', text: 'par la Bastille' }])
+    expect(settings?.places.map(place => place.name)).toEqual(['Autrans', 'Lans-en-Vercors'])
+    expect(settings?.ignored).toEqual([])
+  })
+
+  it('reports the places beyond the most a loop goes through (#326)', () => {
+    const places = Array.from({ length: LOOP_MAX_VIAS + 1 }, (_, i) => ({ name: `Lieu ${i}`, hint: 'par', text: `par Lieu ${i}` }))
+    const settings = loopSettingsFromUnderstanding(understanding({ places }))
+    expect(settings?.places).toHaveLength(LOOP_MAX_VIAS)
+    expect(settings?.ignored).toEqual([{ kind: 'via', text: `par Lieu ${LOOP_MAX_VIAS}` }])
   })
 
   it('fills a place alone: the loop can be generated from it', () => {
@@ -178,7 +188,7 @@ describe('loopSettingsFromUnderstanding', () => {
   })
 
   it('ignores a place without a name', () => {
-    expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.place).toBeNull()
+    expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.places).toEqual([])
   })
 
   it('fills a gain in metres, rounded to the slider step, even without a distance (#294)', () => {

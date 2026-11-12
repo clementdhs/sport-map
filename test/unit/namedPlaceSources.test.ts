@@ -8,6 +8,7 @@ import {
   namedPlaceSources,
   nominatimNamedPlaceQuery,
   nominatimNamedPlaces,
+  nominatimRetryName,
   type NominatimResult,
   searchNamedPlacesWith,
 } from '#shared/utils/namedPlaces'
@@ -168,7 +169,26 @@ describe('nominatimNamedPlaceQuery', () => {
   })
 })
 
+describe('nominatimRetryName', () => {
+  // Nominatim finds « l'Isère » as said but only the département for « isere », and finds « moucherotte » but
+  // nothing for « le mont Moucherotte »: the name as said first, then its core when that found nothing.
+  it('retries a name said with generic words with its core', () => {
+    expect(nominatimRetryName('le mont Moucherotte')).toBe('moucherotte')
+    expect(nominatimRetryName('lac de Paladru')).toBe('paladru')
+  })
+
+  it('doesn\'t retry a name that is already its core', () => {
+    expect(nominatimRetryName('Moucherotte')).toBeNull()
+    expect(nominatimRetryName('Seyssinet')).toBeNull()
+  })
+})
+
 describe('nominatimNamedPlaces', () => {
+  it('takes a natural boundary as a massif, as Nominatim gives the Massif de la Chartreuse', () => {
+    const massif: NominatimResult = { ...moucherotte, osm_type: 'relation', osm_id: 3, category: 'boundary', type: 'natural', addresstype: 'natural', name: 'Massif de la Chartreuse' }
+    expect(nominatimNamedPlaces([massif], grenoble)[0]).toMatchObject({ kind: 'massif' })
+  })
+
   it('turns a peak into a peak at its point', () => {
     expect(nominatimNamedPlaces([moucherotte], grenoble)[0]).toMatchObject({ id: 'n1508804918', name: 'Moucherotte', kind: 'peak', coordinates: [5.639453, 45.147603] })
   })

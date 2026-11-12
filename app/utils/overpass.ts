@@ -3,7 +3,9 @@ import { type Bbox, OSM_ROUTE_TAGS, type OsmRoute, type OsmRouteKind, type Overp
 import { type OsmPlace, osmPlacesFrom, osmPlacesQuery, type OverpassElement } from '#shared/utils/osmPlaces'
 import type { LngLat } from '#shared/utils/routes'
 import { loopViaPlaces, loopViaQuery, type LoopViaType, type NamedOverpassElement, type NamedPlace, namedPlaceQuery, namedPlacesFrom } from '#shared/utils/loops'
+import { LOOP_VIA_CACHE_RADIUS_M, nearestLoopPlaces } from '#shared/utils/loopPlacesCache'
 import { LocalizedError } from '~/utils/localizedError'
+import { cachedLoopPlaces } from '~/utils/loopPlacesCache'
 
 // The Overpass API (#69), queried from the browser: it allows 2 queries at a time per IP address, and the server
 // functions' addresses are shared with other sites on Vercel. Free, without a key, shared by every OSM tool and
@@ -112,9 +114,13 @@ export async function searchOsmRoutes(bbox: Bbox, kind: OsmRouteKind, signal?: A
   return routes
 }
 
-// The peaks or drinking water points around a loop's start (#214); the loop store keeps the last search.
-export async function searchLoopVia(type: LoopViaType, start: LngLat, radiusM: number, signal?: AbortSignal): Promise<OsmPlace[]> {
-  return loopViaPlaces(await queryOverpass<OverpassElement>(loopViaQuery(type, start, radiusM, QUERY_TIMEOUT_S), [start], signal))
+// The peaks or drinking water points around a loop's start (#214), as far as any loop from its cell can go: kept for
+// the family (#311, `cachedLoopPlaces`), the loop store keeping the last search; pickLoopVia keeps those in reach.
+export async function searchLoopVia(type: LoopViaType, start: LngLat, signal?: AbortSignal): Promise<OsmPlace[]> {
+  return cachedLoopPlaces({ kind: type }, start, async centre => ({
+    places: nearestLoopPlaces(loopViaPlaces(await queryOverpass<OverpassElement>(loopViaQuery(type, centre, LOOP_VIA_CACHE_RADIUS_M, QUERY_TIMEOUT_S), [centre], signal)), centre),
+    complete: true,
+  }), signal)
 }
 
 // The places of that name around a loop's start that Overpass knows (#293): none for a place said by its kind only

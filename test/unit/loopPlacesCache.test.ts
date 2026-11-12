@@ -8,7 +8,9 @@ import {
   LOOP_VIA_CACHE_RADIUS_M,
   loopPlacesCacheKey,
   loopPlacesCell,
+  MAX_LOOP_CACHED_PLACES,
   namedPlacesFromCell,
+  nearestLoopPlaces,
 } from '#shared/utils/loopPlacesCache'
 
 const MEYLAN: LngLat = [5.7795, 45.2093]
@@ -35,7 +37,7 @@ describe('loopPlacesCacheKey', () => {
 
   it('keys a named place by its normalized core: articles, accents, case and generic words aside', () => {
     const said = loopPlacesCacheKey({ kind: 'named', name: 'le massif de la Chartreuse', language: 'fr' }, MEYLAN)
-    expect(said).toBe(loopPlacesCacheKey({ kind: 'named', name: 'CHARTREUSE', language: 'fr' }, MEYLAN))
+    expect(said).toBe(loopPlacesCacheKey({ kind: 'named', name: 'MASSIF Chartreuse', language: 'fr' }, MEYLAN))
     expect(loopPlacesCacheKey({ kind: 'named', name: "l'Isère", language: 'fr' }, MEYLAN))
       .toBe(loopPlacesCacheKey({ kind: 'named', name: 'isere', language: 'fr' }, MEYLAN))
   })
@@ -44,6 +46,12 @@ describe('loopPlacesCacheKey', () => {
     const chartreuse = loopPlacesCacheKey({ kind: 'named', name: 'Chartreuse', language: 'fr' }, MEYLAN)
     expect(chartreuse).not.toBe(loopPlacesCacheKey({ kind: 'named', name: 'Vercors', language: 'fr' }, MEYLAN))
     expect(chartreuse).not.toBe(loopPlacesCacheKey({ kind: 'peak' }, MEYLAN))
+  })
+
+  it('keeps a name said with its kind apart from the bare name: they ask different sources', () => {
+    const bare = loopPlacesCacheKey({ kind: 'named', name: 'Chartreuse', language: 'fr' }, MEYLAN)
+    expect(loopPlacesCacheKey({ kind: 'named', name: 'village Chartreuse', language: 'fr' }, MEYLAN)).not.toBe(bare)
+    expect(loopPlacesCacheKey({ kind: 'named', name: 'massif de la Chartreuse', language: 'fr' }, MEYLAN)).not.toBe(bare)
   })
 
   it('keeps the languages apart: the geocoders name places in it', () => {
@@ -95,6 +103,16 @@ describe('isLoopPlacesFresh', () => {
 
   it('takes an unreadable date as stale', () => {
     expect(isLoopPlacesFresh('not a date', now)).toBe(false)
+  })
+})
+
+describe('nearestLoopPlaces', () => {
+  it('keeps the places nearest to the cell centre when there are too many to keep', () => {
+    const centre = loopPlacesCell(MEYLAN)
+    const places = Array.from({ length: MAX_LOOP_CACHED_PLACES + 1 }, (_, i) => ({ id: `n${i}`, coordinates: move(centre, 10_000 - i, 90) }))
+    const kept = nearestLoopPlaces(places, centre)
+    expect(kept).toHaveLength(MAX_LOOP_CACHED_PLACES)
+    expect(kept.some(place => place.id === 'n0')).toBe(false)
   })
 })
 

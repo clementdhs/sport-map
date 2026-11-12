@@ -490,6 +490,7 @@
     "routingFailed": "Couldn't compute the route",
     "elevationTooFast": "Too many elevation requests in a short time, try again in a minute",
     "elevationUnavailable": "The elevation service is not responding",
+    "loopPlacesUnavailable": "The places already found are not available",
     "routingFailedHint": "{message}. The segment stays a straight line, without elevation.",
     "submitCreate": "Save the route",
     "submitEdit": "Save changes",

@@ -1,6 +1,13 @@
+import { supabaseAdmin } from '../admin'
 import { expect, moveEditorFarAway, openProfileRoutes, routeAction, test, waitForMap } from '../fixtures'
 
 test.use({ role: 'account' })
+
+// The loop panel's Overpass answers are kept for the family (#311), and every test starts at the map's centre:
+// each test gets its own OpenStreetMap. Only this file generates loops through places.
+test.beforeEach(async () => {
+  await supabaseAdmin('/rest/v1/loop_place_searches?key=neq.', { method: 'DELETE' })
+})
 
 test('draws, saves, then edits a route', async ({ page }) => {
   await page.goto('/routes/create')
@@ -282,6 +289,43 @@ test('generates an out and back of a rough length through the highest peak (#214
 
   await panel.getByRole('button', { name: 'Choisir cet aller-retour' }).click()
   await expect(page.locator('p.text-3xl')).toHaveText(/^10,0\d km$/)
+})
+
+test('keeps the peaks found around a start, even while Overpass is down (#311)', async ({ page }) => {
+  let start: [number, number] = [0, 0]
+  let overpassDown = false
+  const overpassQueries: string[] = []
+  await page.route('**/api/interpreter', async (route) => {
+    overpassQueries.push(route.request().postData() ?? '')
+    if (overpassDown) return route.fulfill({ status: 504, body: 'Gateway Timeout' })
+    const [lng, lat] = start
+    await route.fulfill({ json: { elements: [{ type: 'node', id: 43, lon: lng, lat: lat + 0.018, tags: { natural: 'peak', ele: '1500', name: 'Mont Cache' } }] } })
+  })
+  const generateThroughPeak = async () => {
+    await page.goto('/routes/create?mode=loop')
+    await waitForMap(page)
+    const panel = page.getByRole('region', { name: 'Boucle automatique' })
+    const map = page.locator('.maplibregl-canvas')
+    const box = (await map.boundingBox())!
+    await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+    await expect(panel.getByText('Départ placé')).toBeVisible()
+    start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
+    await panel.getByRole('combobox', { name: 'Passer par' }).click()
+    await page.getByRole('option', { name: 'Le sommet le plus haut à portée' }).click()
+    await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+    await expect(panel.getByText('Passe par Mont Cache (1500 m).')).toBeVisible()
+    await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  }
+
+  await generateThroughPeak()
+  expect(overpassQueries).toHaveLength(1)
+  // Kept by the server once Overpass answered.
+  await expect.poll(async () => (await supabaseAdmin<unknown[]>('/rest/v1/loop_place_searches?key=like.peak:*&select=key')).length).toBe(1)
+
+  // Another visit from the same start, Overpass down: the kept peak, without asking it.
+  overpassDown = true
+  await generateThroughPeak()
+  expect(overpassQueries).toHaveLength(1)
 })
 
 test('aims at a gain in metres, the length deduced from it, and says when the terrain is too flat (#294)', async ({ page }) => {

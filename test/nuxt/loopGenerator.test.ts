@@ -338,7 +338,9 @@ describe('proposals', () => {
     await loop.generate()
 
     // 10 km within 10 %: 11 km there and back, 4.2 km as the crow flies.
-    expect(searchLoopViaMock).toHaveBeenCalledWith('peak', START, 4231)
+    // The search covers any loop from the start's cell (#311): the radius only picks among the places found.
+    expect(searchLoopViaMock).toHaveBeenCalledWith('peak', START)
+    expect(loop.viaRadiusM).toBe(4231)
     expect(loop.viaStatus).toBe('found')
     expect(loop.viaPlace?.id).toBe('high')
     expect(loopCalls.every(call => call.via?.[1] === 45.92)).toBe(true)

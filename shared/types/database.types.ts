@@ -243,6 +243,24 @@ export type Database = {
         }
         Relationships: []
       }
+      loop_place_searches: {
+        Row: {
+          fetched_at: string
+          key: string
+          places: Json
+        }
+        Insert: {
+          fetched_at?: string
+          key: string
+          places: Json
+        }
+        Update: {
+          fetched_at?: string
+          key?: string
+          places?: Json
+        }
+        Relationships: []
+      }
       loop_sentence_usage: {
         Row: {
           count: number

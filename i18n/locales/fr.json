@@ -490,6 +490,7 @@
     "routingFailed": "Calcul de l'itinéraire impossible",
     "elevationTooFast": "Trop de calculs d'altitude en peu de temps, réessaie dans une minute",
     "elevationUnavailable": "Le service d'altitude ne répond pas",
+    "loopPlacesUnavailable": "Les lieux déjà trouvés ne sont pas disponibles",
     "routingFailedHint": "{message}. Le segment reste en ligne droite, sans dénivelé.",
     "submitCreate": "Enregistrer le parcours",
     "submitEdit": "Enregistrer les modifications",

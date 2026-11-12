@@ -134,12 +134,13 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   // The place the proposals go through, searched in OpenStreetMap around the start; null without one.
   async function findVia(type: LoopViaType, from: LngLat, current: number): Promise<OsmPlace | null> {
     const radiusM = viaSearchRadius(targetM.value, LOOP_TOLERANCES[precision.value])
-    const key = `${type}:${from.join(',')}:${radiusM}`
+    // The places found don't depend on the radius (#311): pickLoopVia keeps those in reach.
+    const key = `${type}:${from.join(',')}`
     viaRadiusM.value = radiusM
     viaStatus.value = 'searching'
     let places: OsmPlace[]
     try {
-      places = viaSearch?.key === key ? viaSearch.places : await searchLoopVia(type, from, radiusM)
+      places = viaSearch?.key === key ? viaSearch.places : await searchLoopVia(type, from)
       viaSearch = { key, places }
     }
     catch {

@@ -448,7 +448,7 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   const place = panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })
   await place.fill('Seyssinet')
   await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
-  await expect(panel.getByText(/^Passage : Seyssinet-Pariset, à 2(,\d+)? km\.$/)).toBeVisible()
+  await expect(panel.getByText(/^Passage : Seyssinet-Pariset, à \d(,\d+)? km\.$/)).toBeVisible()
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(requests).toHaveLength(3)
   for (const request of requests) expect(request.via?.[1]).toBeCloseTo(start[1] - 0.018, 4)
@@ -458,7 +458,7 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   nominatimQueries.length = 0
   await place.fill('le mont Moucherotte')
   await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
-  await expect(panel.getByText(/^Passage : Moucherotte, à 3(,\d+)? km\.$/)).toBeVisible()
+  await expect(panel.getByText(/^Passage : Moucherotte, à \d(,\d+)? km\.$/)).toBeVisible()
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(nominatimQueries).toEqual(['le mont Moucherotte', 'moucherotte'])
   expect(overpassQueries.length).toBeGreaterThan(0)

@@ -72,7 +72,9 @@
 /* A lower header than Nuxt UI's 4rem (#154): every pixel of it is map lost on the map pages. Radii (#227): cards
    `rounded-lg` 16px, buttons, inputs and thumbnails `rounded-md` 12px, small marks `rounded-sm` 8px. */
 :root {
-  --ui-header-height: 3.5rem;
+  /* Plus the phone's status bar, which the page is drawn under (viewport-fit=cover, #318): AppHeader pads its top
+     by the inset, and the pages measuring the header (sticky settings menu, sign-in screen, UMain) follow. */
+  --ui-header-height: calc(3.5rem + env(safe-area-inset-top));
   --ui-radius: 0.5rem;
 }
 
@@ -327,7 +329,8 @@ body {
 /* The padding makes up the first margin: on phones the zoom group is hidden (display: none), and a
    `:first-child` margin would go with it. */
 .maplibregl-map .maplibregl-ctrl-top-right {
-  padding-top: 0.25rem;
+  /* Under the phone's status bar when the page is drawn behind it (viewport-fit=cover, #318). */
+  padding-top: calc(0.25rem + env(safe-area-inset-top));
 }
 .maplibregl-map .maplibregl-ctrl-top-right .maplibregl-ctrl {
   margin: 0.5rem 0.75rem 0 0;

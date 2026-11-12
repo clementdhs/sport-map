@@ -28,6 +28,9 @@ export default defineNuxtConfig({
 
   app: {
     head: {
+      // cover: the page is drawn under the phone's status and navigation bars (the Android app's would be black
+      // otherwise, #318) and leaves room for them with env(safe-area-inset-*).
+      viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
       // Generated from public/icon.svg by `npm run pwa:assets`.
       link: [
         { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },

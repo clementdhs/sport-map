@@ -326,6 +326,7 @@ const overlayHidden = computed(() => dragHeight.value === null
 
         <div
           class="min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-default p-4 md:border-t-0"
+          :class="{ 'pb-[max(1rem,env(safe-area-inset-bottom))]': fullscreen }"
           :inert="mobile && snap === 'collapsed'"
         >
           <slot />

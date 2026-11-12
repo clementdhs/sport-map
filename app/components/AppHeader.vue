@@ -15,7 +15,7 @@ const newItems = useNewItems()
 </script>
 
 <template>
-  <UHeader to="/" :toggle="false" class="app-header" :ui="{ root: 'bg-default backdrop-blur-none', container: wide ? 'max-w-none lg:px-6' : undefined, center: 'hidden md:flex' }">
+  <UHeader to="/" :toggle="false" class="app-header" :ui="{ root: 'bg-default backdrop-blur-none pt-[env(safe-area-inset-top)]', container: wide ? 'max-w-none lg:px-6' : undefined, center: 'hidden md:flex' }">
     <!-- Pages showing the logo in large (sign-in) set `headerLogo: false` in their meta: no second one up here. -->
     <template v-if="route.meta.headerLogo === false" #left>
       <span />

@@ -172,10 +172,10 @@ function discard() {
       </ClientOnly>
 
       <!-- Over the map, which keeps following the position; the top bar stays above it. -->
-      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-20" mode="record" :stats="liveStats" :default-pace="false" @lap="lap" />
+      <LiveData v-if="dataView && recording" class="absolute inset-0 z-10 pt-[calc(5rem+env(safe-area-inset-top))]" mode="record" :stats="liveStats" :default-pace="false" @lap="lap" />
 
       <!-- Right padding: the map controls stay reachable. -->
-      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3" :class="dataView && recording ? 'pr-3' : 'pr-14'">
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 space-y-2 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]" :class="dataView && recording ? 'pr-3' : 'pr-14'">
         <div class="map-float pointer-events-auto flex items-center gap-1.5 rounded-lg p-1.5">
           <UButton to="/" icon="i-lucide-x" :aria-label="t('record.quit')" color="neutral" variant="ghost" size="lg" />
           <!-- The status in ink with the stopwatch (#235); its words only from sm up: the bar overflowed a 360 px screen. -->

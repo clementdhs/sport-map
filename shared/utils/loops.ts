@@ -114,6 +114,56 @@ export function rankByGain<T extends RankedProposal>(proposals: T[], targetPerKm
   return rankBy(proposals, perKm => Math.abs(perKm - targetPerKmM))
 }
 
+// A gain in metres to aim at (#294), « environ 600 m de D+ »: the slider's range, narrowed per sport by
+// loopGainRange.
+export const LOOP_GAIN_M = { min: 100, max: 3000, step: 50 } as const
+// A proposal within this share of the gain asked for is close enough; when none is, the terrain is said to fit.
+export const GAIN_TOLERANCE = 0.25
+
+// Without a distance, the length a gain asks for: ORS can't aim at a gain, so the loop is as long as a hilly outing
+// of the sport needs to climb that much (600 m on a bike: 32 km), the proposals then ranked by their gain.
+export function loopLengthForGain(sport: SportType, gainM: number): number {
+  const lengthM = gainM / typicalGainPerKm(sport, 'hilly') * 1000
+  return Math.round(Math.min(Math.max(lengthM, LOOP_MIN_M), LOOP_MAX_M))
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface GainRange {
+  min: number
+  max: number
+  step: number
+}
+
+// The gains the slider offers for a sport: up to what a hilly loop of 100 km climbs (1850 m on a bike, 1500 m on a
+// road bike, 2500 m on foot).
+export function loopGainRange(sport: SportType): GainRange {
+  const { min, max, step } = LOOP_GAIN_M
+  const reachable = Math.floor(typicalGainPerKm(sport, 'hilly') * LOOP_MAX_M / 1000 / step) * step
+  return { min, max: Math.min(max, reachable), step }
+}
+
+// Proposals closest first to a gain in metres, whatever their length.
+export function rankByTotalGain<T extends RankedProposal>(proposals: T[], targetGainM: number): T[] {
+  return sortByScore(proposals, proposal =>
+    proposal.status === 'ready' ? Math.abs((proposal.gainM ?? 0) - targetGainM) : Number.POSITIVE_INFINITY)
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface GainShortfall {
+  direction: 'low' | 'high'
+  closestM: number
+}
+
+// When no ready proposal comes within GAIN_TOLERANCE of the gain asked for: whether the terrain is too flat or
+// climbs too much around the start, and the closest gain; null otherwise.
+export function gainShortfall(proposals: RankedProposal[], targetGainM: number): GainShortfall | null {
+  const gains = proposals.filter(proposal => proposal.status === 'ready').map(proposal => proposal.gainM ?? 0)
+  if (!gains.length) return null
+  const closestM = gains.reduce((best, gain) => Math.abs(gain - targetGainM) < Math.abs(best - targetGainM) ? gain : best)
+  if (Math.abs(closestM - targetGainM) <= targetGainM * GAIN_TOLERANCE) return null
+  return { direction: closestM < targetGainM ? 'low' : 'high', closestM: Math.round(closestM) }
+}
+
 // Preferring paths (#295). OpenRouteService has no option to avoid tarmac: the loops go on a profile that takes
 // more paths (hiking for runs, mountain bike for rides), then are ranked by their share of path. Road cycling keeps
 // its road profile, so it isn't offered.

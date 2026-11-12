@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
-  canPreferPaths, climbOf, fewPaths, isOnTarget, isShortestThrough, isViaInReach, LOOP_TOLERANCES, type LoopClimb, loopCorner, loopLengthForDuration, loopProfile, loopRoutePoints,
-  loopViaPlaces, loopViaQuery, loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain, rankByPaths,
+  canPreferPaths, climbOf, fewPaths, gainShortfall, isOnTarget, isShortestThrough, isViaInReach, LOOP_GAIN_M, LOOP_TOLERANCES, type LoopClimb,
+  loopCorner, loopGainRange, loopLengthForDuration, loopLengthForGain, loopProfile, loopRoutePoints, loopViaPlaces, loopViaQuery,
+  loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain, rankByPaths, rankByTotalGain,
   seedBearing, typicalGainPerKm, viaSearchRadius,
 } from '#shared/utils/loops'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
@@ -310,6 +311,67 @@ describe('loopWaypointIndices', () => {
   it('never repeats a point when the loop has few of them', () => {
     const loop: LngLat[] = [[6.12, 45.9], [6.13, 45.9], [6.12, 45.9]]
     expect(loopWaypointIndices(loop)).toEqual([0, 1, 2])
+  })
+})
+
+describe('a gain in metres (#294)', () => {
+  it('deduces the length from the gain and the sport, climbing as much as a hilly outing per km', () => {
+    // 600 m on a bike at 18.75 m/km: 32 km.
+    expect(loopLengthForGain('cycling', 600)).toBe(32_000)
+    // 600 m on foot at 25 m/km: 24 km.
+    expect(loopLengthForGain('running', 600)).toBe(24_000)
+    // A trail climbs more per km: shorter.
+    expect(loopLengthForGain('trail', 600)).toBe(12_000)
+  })
+
+  it('keeps the deduced length within what a loop can be', () => {
+    expect(loopLengthForGain('road_cycling', 3000)).toBe(100_000)
+    expect(loopLengthForGain('trail', 10)).toBe(1000)
+  })
+
+  it('bounds the gain per sport so the deduced length stays under 100 km', () => {
+    expect(loopGainRange('cycling')).toEqual({ min: LOOP_GAIN_M.min, max: 1850, step: LOOP_GAIN_M.step })
+    expect(loopGainRange('road_cycling').max).toBe(1500)
+    expect(loopGainRange('running').max).toBe(2500)
+    expect(loopGainRange('trail').max).toBe(LOOP_GAIN_M.max)
+    for (const sport of ['running', 'trail', 'hiking', 'cycling', 'road_cycling', 'mountain_biking'] as const) {
+      expect(loopLengthForGain(sport, loopGainRange(sport).max)).toBeLessThanOrEqual(100_000)
+    }
+  })
+
+  it('ranks the proposals closest first to the gain asked for, whatever their length, the missing ones last', () => {
+    const proposals = [
+      { id: 'failed', status: 'failed', distanceM: 0, gainM: null },
+      { id: 'far', status: 'ready', distanceM: 30_000, gainM: 250 },
+      { id: 'over', status: 'ready', distanceM: 34_000, gainM: 700 },
+      { id: 'close', status: 'ready', distanceM: 28_000, gainM: 580 },
+    ]
+    expect(rankByTotalGain(proposals, 600).map(({ id }) => id)).toEqual(['close', 'over', 'far', 'failed'])
+  })
+
+  it('says nothing while a proposal comes within a quarter of the gain asked for', () => {
+    const proposals = [
+      { status: 'ready', distanceM: 30_000, gainM: 200 },
+      { status: 'ready', distanceM: 30_000, gainM: 460 },
+    ]
+    expect(gainShortfall(proposals, 600)).toBeNull()
+  })
+
+  it('flags a terrain too flat for the gain asked for, with the closest gain', () => {
+    const proposals = [
+      { status: 'ready', distanceM: 30_000, gainM: 120 },
+      { status: 'ready', distanceM: 30_000, gainM: 240 },
+      { status: 'failed', distanceM: 0, gainM: null },
+    ]
+    expect(gainShortfall(proposals, 600)).toEqual({ direction: 'low', closestM: 240 })
+  })
+
+  it('flags a terrain that climbs too much for the gain asked for', () => {
+    expect(gainShortfall([{ status: 'ready', distanceM: 10_000, gainM: 450 }], 200)).toEqual({ direction: 'high', closestM: 450 })
+  })
+
+  it('says nothing without a ready proposal', () => {
+    expect(gainShortfall([{ status: 'failed', distanceM: 0, gainM: null }], 600)).toBeNull()
   })
 })
 

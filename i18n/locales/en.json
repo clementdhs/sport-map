@@ -518,6 +518,16 @@
     "durationMin": "Duration (min)",
     "durationWithGain": "About {duration} with ~{gain} m of climbing.",
     "distanceWithGain": "About {distance} with ~{gain} m of climbing.",
+    "gain": "Gain",
+    "gainM": "Elevation gain (m)",
+    "lengthForGain": "About {distance} and {duration} for ~{gain} m of gain.",
+    "gainWithDistance": "Set the distance too",
+    "gainWithDistanceHint": "Otherwise the length follows from the gain and the sport.",
+    "gainHint": "Proposals are ranked from closest to furthest from this gain.",
+    "gainMissed": {
+      "low": "No proposal comes near {gain} m of gain: the terrain is too flat around the start (closest: {closest} m).",
+      "high": "No proposal stays near {gain} m of gain: it climbs too much around the start (closest: {closest} m)."
+    },
     "range": "Approximate length (± 20%)",
     "rangeHint": "More possible routes around the length you want.",
     "outAndBack": "Out and back",
@@ -583,6 +593,7 @@
   "loopSentence": {
     "label": "Describe your outing",
     "placeholder": "E.g. 5 km run along the river from my spot",
+    "gain": "{gain} m gain",
     "submit": "Read my sentence",
     "dictate": "Dictate my sentence",
     "stopDictation": "Stop dictating",
@@ -620,7 +631,7 @@
       "distance": "\"{text}\": the distance goes from 1 to 100 km, I left it out.",
       "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
       "via": "\"{text}\": a loop goes through one named place only, this one is left out.",
-      "gain": "\"{text}\": I can't aim at a gain in metres yet, pick flat, rolling or tough.",
+      "gain": "\"{text}\": a gain to aim at goes from 100 to 3,000 m, with a distance or alone (not with a duration), I left it out.",
       "paths": "\"{text}\": a road ride stays on roads, the loop goes without paths."
     }
   },

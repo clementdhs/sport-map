@@ -107,13 +107,14 @@ describe('loopSettingsFromUnderstanding', () => {
       start: { kind: 'my_point' },
       place: null,
       paths: null,
+      gain: null,
       ignored: [],
     })
   })
 
   it('leaves out what the sentence does not say, so the panel keeps its settings', () => {
     const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 12 }))
-    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, paths: null, ignored: [] })
+    expect(settings).toEqual({ sport: null, target: { kind: 'distance', km: 12 }, precision: null, shape: null, climb: null, start: null, place: null, paths: null, gain: null, ignored: [] })
   })
 
   it('takes a duration when no distance is given', () => {
@@ -180,13 +181,29 @@ describe('loopSettingsFromUnderstanding', () => {
     expect(loopSettingsFromUnderstanding(understanding({ distance_km: 5, places: [{ name: ' ', hint: 'par', text: 'par là' }] }))?.place).toBeNull()
   })
 
-  it('reports the gain in metres it cannot use yet, with its words', () => {
-    const settings = loopSettingsFromUnderstanding(understanding({
-      sport: 'cycling',
-      elevation_gain: { meters: 600, text: 'environ 600 mètres de dénivelé' },
-    }))
-    expect(settings?.sport).toBe('cycling')
-    expect(settings?.ignored).toEqual([{ kind: 'gain', text: 'environ 600 mètres de dénivelé' }])
+  it('fills a gain in metres, rounded to the slider step, even without a distance (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ elevation_gain: { meters: 630, text: 'environ 630 m de D+' } }))
+    expect(settings).toMatchObject({ target: null, gain: 650, ignored: [] })
+  })
+
+  it('keeps the distance with the gain: « 40 km avec 600 m de D+ » (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 40, elevation_gain: { meters: 600, text: '600 m de D+' } }))
+    expect(settings).toMatchObject({ target: { kind: 'distance', km: 40 }, gain: 600 })
+  })
+
+  it('drops the climbing level when a gain is given, which replaces it (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ climb: 'hilly', elevation_gain: { meters: 600, text: '600 m de D+' } }))
+    expect(settings).toMatchObject({ climb: null, gain: 600 })
+  })
+
+  it('reports a gain given with a duration, which it cannot combine (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ duration_min: 120, elevation_gain: { meters: 800, text: '800 m of climbing' } }))
+    expect(settings).toMatchObject({ target: { kind: 'duration', min: 120 }, gain: null, ignored: [{ kind: 'gain', text: '800 m of climbing' }] })
+  })
+
+  it('reports a gain out of the sliders range (#294)', () => {
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 10, elevation_gain: { meters: 5000, text: '5000 m de D+' } }))
+    expect(settings).toMatchObject({ gain: null, ignored: [{ kind: 'gain', text: '5000 m de D+' }] })
   })
 
   it('prefers paths when the sentence asks for them (#295)', () => {
@@ -203,7 +220,7 @@ describe('loopSettingsFromUnderstanding', () => {
   })
 
   it('cuts the words it quotes to a short excerpt', () => {
-    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 5, elevation_gain: { meters: 600, text: 'x'.repeat(500) } }))
+    const settings = loopSettingsFromUnderstanding(understanding({ distance_km: 5, elevation_gain: { meters: 5000, text: 'x'.repeat(500) } }))
     expect(settings?.ignored[0]!.text.length).toBeLessThanOrEqual(80)
   })
 
@@ -218,6 +235,7 @@ describe('loopSettingsFromUnderstanding', () => {
   it('gives nothing when no setting could be filled', () => {
     expect(loopSettingsFromUnderstanding(nothing)).toBeNull()
     expect(loopSettingsFromUnderstanding(understanding({ approximate: true }))).toBeNull()
-    expect(loopSettingsFromUnderstanding(understanding({ elevation_gain: { meters: 600, text: '600 m' } }))).toBeNull()
+    // A gain out of range (#294) fills nothing either.
+    expect(loopSettingsFromUnderstanding(understanding({ elevation_gain: { meters: 5000, text: '5000 m' } }))).toBeNull()
   })
 })

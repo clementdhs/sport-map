@@ -1,5 +1,5 @@
 import * as z from 'zod'
-import { canPreferPaths, LOOP_CLIMBS } from './loops'
+import { canPreferPaths, LOOP_CLIMBS, LOOP_GAIN_M } from './loops'
 import type { LoopClimb } from './loops'
 import { LOOP_SHAPES, SPORT_TYPES } from './routes'
 import type { LoopShape, SportType } from './routes'
@@ -34,8 +34,8 @@ export const loopUnderstandingSchema = z.object({
   shape: z.enum(LOOP_SHAPES).nullable(),
   climb: z.enum(LOOP_CLIMBS).nullable(),
   start: z.object({ kind: z.enum(['my_point', 'place']), name: z.string().max(200).nullable() }).nullable(),
-  // Named places to go through or head towards (#293: the first one is a setting), paths (#295, a setting), gain
-  // in metres (#294): not a setting yet.
+  // Named places to go through or head towards (#293: the first one is a setting), paths (#295) and gain in metres
+  // (#294): settings too.
   places: z.array(z.object({ name: z.string().max(200), hint: z.string().max(200), text: quote })).max(10),
   elevation_gain: z.object({ meters: z.number(), text: quote }).nullable(),
   prefer_paths: z.object({ text: quote }).nullable(),
@@ -114,6 +114,8 @@ export interface LoopSentenceSettings {
   place: LoopSentencePlace | null
   // True when the sentence asks for paths (#295)
   paths: true | null
+  // A gain in metres to aim at (#294), with the distance or alone (the length then deduced from it).
+  gain: number | null
   ignored: LoopSentenceIgnored[]
 }
 
@@ -148,7 +150,14 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
   const [first, ...others] = understanding.places.filter(place => place.name.trim())
   const place: LoopSentencePlace | null = first ? { name: first.name.trim(), text: short(first.text || first.name) } : null
   for (const other of others) ignored.push({ kind: 'via', text: short(other.text || other.name) })
-  if (understanding.elevation_gain) ignored.push({ kind: 'gain', text: short(understanding.elevation_gain.text) })
+  // A gain goes with a distance or alone: a duration already sets the length.
+  let gain: number | null = null
+  const asked = understanding.elevation_gain
+  if (asked) {
+    const rounded = Math.round(asked.meters / LOOP_GAIN_M.step) * LOOP_GAIN_M.step
+    if (target?.kind !== 'duration' && within(rounded, LOOP_GAIN_M)) gain = rounded
+    else ignored.push({ kind: 'gain', text: short(asked.text || `${asked.meters} m`) })
+  }
   // A road ride has no paths to prefer: quoted back.
   const roadRide = understanding.sport !== null && !canPreferPaths(understanding.sport)
   const paths = understanding.prefer_paths && !roadRide ? true : null
@@ -160,13 +169,15 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
     // "environ" only means something with a target.
     precision: understanding.approximate && target ? 'range' : null,
     shape: understanding.shape,
-    climb: understanding.climb,
+    // A gain replaces the climbing levels (hidden in the panel's gain mode).
+    climb: gain === null ? understanding.climb : null,
     start,
     place,
     paths,
+    gain,
     ignored,
   }
   const filled = settings.sport || settings.target || settings.shape || settings.climb || settings.start || settings.place
-    || settings.paths
+    || settings.paths || settings.gain
   return filled ? settings : null
 }

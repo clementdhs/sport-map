@@ -518,6 +518,16 @@
     "durationMin": "Durée (min)",
     "durationWithGain": "Environ {duration} avec ~{gain} m de D+.",
     "distanceWithGain": "Environ {distance} avec ~{gain} m de D+.",
+    "gain": "D+",
+    "gainM": "Dénivelé positif (m)",
+    "lengthForGain": "Environ {distance} et {duration} pour ~{gain} m de D+.",
+    "gainWithDistance": "Fixer aussi la distance",
+    "gainWithDistanceHint": "Sinon, la longueur découle du dénivelé et du sport.",
+    "gainHint": "Les propositions sont classées de la plus proche à la plus éloignée de ce dénivelé.",
+    "gainMissed": {
+      "low": "Aucune proposition n'approche {gain} m de D+ : le terrain est trop plat autour du départ (la plus proche : {closest} m).",
+      "high": "Aucune proposition ne reste vers {gain} m de D+ : ça grimpe trop autour du départ (la plus proche : {closest} m)."
+    },
     "range": "Longueur approximative (± 20 %)",
     "rangeHint": "Plus de tracés possibles autour de la longueur visée.",
     "outAndBack": "Aller-retour",
@@ -583,6 +593,7 @@
   "loopSentence": {
     "label": "Décris ta sortie",
     "placeholder": "Ex. footing de 5 km autour de l'Isère depuis mon point",
+    "gain": "{gain} m D+",
     "submit": "Comprendre ma phrase",
     "dictate": "Dicter ma phrase",
     "stopDictation": "Arrêter la dictée",
@@ -620,7 +631,7 @@
       "distance": "« {text} » : la distance va de 1 à 100 km, je ne l'ai pas reprise.",
       "duration": "« {text} » : la durée va de 10 min à 10 h, je ne l'ai pas reprise.",
       "via": "« {text} » : une boucle ne passe que par un lieu nommé, celui-ci est laissé de côté.",
-      "gain": "« {text} » : je ne sais pas encore viser un dénivelé en mètres, choisis plat, vallonné ou costaud.",
+      "gain": "« {text} » : un dénivelé visé va de 100 à 3 000 m, avec une distance ou seul (pas avec une durée), je ne l'ai pas repris.",
       "paths": "« {text} » : le vélo de route reste sur la route, la boucle se fait sans chemins."
     }
   },

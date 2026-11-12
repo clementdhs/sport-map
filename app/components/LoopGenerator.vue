@@ -28,6 +28,7 @@ const estimateDuration = useDurationEstimate()
 const targetItems = computed(() => [
   { label: t('loop.distance'), value: 'distance' },
   { label: t('loop.duration'), value: 'duration' },
+  { label: t('loop.gain'), value: 'gain' },
 ])
 
 const climbItems = computed(() => LOOP_CLIMBS.map(value => ({ label: t(`loop.climbs.${value}`), value })))
@@ -54,6 +55,13 @@ const outAndBack = computed({
 // gain the chosen climbing usually brings.
 const targetHint = computed(() => {
   if (!loop.targetInRange) return t('loop.outOfRange', { min: formatDistance(LOOP_MIN_M), max: formatDistance(LOOP_MAX_M) })
+  if (loop.target === 'gain') {
+    const gain = loop.gainTargetM
+    const duration = formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, gain))
+    return loop.gainWithDistance
+      ? t('loop.durationWithGain', { duration, gain })
+      : t('loop.lengthForGain', { distance: formatDistance(loop.targetM), duration, gain })
+  }
   const gain = Math.round(loop.gainPerKmM * loop.targetM / 1000)
   return loop.target === 'distance'
     ? t('loop.durationWithGain', { duration: formatDuration(estimateDuration(editor.details.sport_type, loop.targetM, gain)), gain })
@@ -102,15 +110,37 @@ const viaMessage = computed(() => {
     default: return null
   }
 })
-// The slider holds the figure; it is written out above it, like the mockup's "15 km".
-const target = computed(() => loop.target === 'distance'
-  ? { model: 'distanceKm' as const, min: 1, max: 100, step: 1, value: String(loop.distanceKm), unit: 'km' }
-  : { model: 'durationMin' as const, min: 10, max: 600, step: 5, value: formatDuration(loop.durationMin), unit: '' })
+// The slider holds the figure; it is written out above it, like the mockup's "15 km". A gain (#294) has its own
+// slider, bounded by the sport, and the distance's under it when it is kept too.
+const DISTANCE_SLIDER = { model: 'distanceKm' as const, ...LOOP_SENTENCE_DISTANCE_KM, step: 1 }
+const target = computed(() => {
+  if (loop.target === 'gain') return { ...loopGainRange(editor.details.sport_type), model: 'gainM' as const, value: String(loop.gainTargetM), unit: 'm' }
+  return loop.target === 'distance'
+    ? { ...DISTANCE_SLIDER, value: String(loop.distanceKm), unit: 'km' }
+    : { model: 'durationMin' as const, min: 10, max: 600, step: 5, value: formatDuration(loop.durationMin), unit: '' }
+})
 const targetValue = computed({
-  get: () => loop[target.value.model],
+  get: () => loop.target === 'gain' ? loop.gainTargetM : loop[target.value.model],
   set: (value: number | undefined) => {
     if (value !== undefined) loop[target.value.model] = value
   },
+})
+const targetLabel = computed(() => loop.target === 'distance'
+  ? { label: t('loop.distanceKm'), text: formatDistance(loop.targetM) }
+  : loop.target === 'duration'
+  ? { label: t('loop.durationMin'), text: formatDuration(loop.durationMin) }
+  : { label: t('loop.gainM'), text: `${loop.gainTargetM} m` })
+const gainDistance = computed({
+  get: () => loop.distanceKm,
+  set: (value: number | undefined) => {
+    if (value !== undefined) loop.distanceKm = value
+  },
+})
+
+// No proposal near the gain asked for (#294): the terrain around the start doesn't allow it, said rather than forced.
+const gainMissedMessage = computed(() => {
+  const missed = loop.gainMissed
+  return missed ? t(`loop.gainMissed.${missed.direction}`, { gain: loop.gainTargetM, closest: missed.closestM }) : null
 })
 
 // On a phone, new proposals would stay below the fold of the bottom sheet.
@@ -152,7 +182,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <SportChips v-model="editor.details.sport_type" :items="sportChips" :label="t('filters.sport')" />
     </div>
 
-    <div id="loop-setting-target" :class="markClass('target', 'precision', 'shape')">
+    <div id="loop-setting-target" :class="markClass('target', 'gain', 'precision', 'shape')">
       <div class="flex items-center justify-between gap-3">
         <UTabs
           v-model="loop.target"
@@ -172,18 +202,37 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
         :min="target.min"
         :max="target.max"
         :step="target.step"
-        :aria-label="loop.target === 'distance' ? t('loop.distanceKm') : t('loop.durationMin')"
-        :aria-valuetext="loop.target === 'distance' ? formatDistance(loop.targetM) : formatDuration(loop.durationMin)"
+        :aria-label="targetLabel.label"
+        :aria-valuetext="targetLabel.text"
         class="mt-3"
       />
+      <template v-if="loop.target === 'gain'">
+        <USwitch v-model="loop.gainWithDistance" :label="t('loop.gainWithDistance')" :description="t('loop.gainWithDistanceHint')" size="sm" class="mt-3" />
+        <template v-if="loop.gainWithDistance">
+          <p class="mt-3 text-end font-numbers text-lg leading-none font-semibold text-highlighted tabular-nums" aria-hidden="true">
+            {{ loop.distanceKm }}<span class="ms-1 font-sans text-sm font-medium text-muted">km</span>
+          </p>
+          <USlider
+            v-model="gainDistance"
+            :min="DISTANCE_SLIDER.min"
+            :max="DISTANCE_SLIDER.max"
+            :step="DISTANCE_SLIDER.step"
+            :aria-label="t('loop.distanceKm')"
+            :aria-valuetext="formatDistance(loop.targetM)"
+            class="mt-2"
+          />
+        </template>
+      </template>
       <p class="mt-2 text-sm text-muted">{{ targetHint }}</p>
+      <p v-if="loop.target === 'gain'" class="mt-1 text-sm text-muted">{{ t('loop.gainHint') }}</p>
       <div class="mt-3 space-y-2">
         <USwitch v-model="range" :label="t('loop.range')" :description="t('loop.rangeHint')" size="sm" />
         <USwitch v-model="outAndBack" :label="t('loop.outAndBack')" :description="t('loop.outAndBackHint')" size="sm" />
       </div>
     </div>
 
-    <div id="loop-setting-climb" :class="markClass('climb')">
+    <!-- The gain in metres (#294) replaces the climbing levels. -->
+    <div v-if="loop.target !== 'gain'" id="loop-setting-climb" :class="markClass('climb')">
       <p class="mb-1.5 text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('loop.climb') }}</p>
       <UTabs v-model="loop.climb" :items="climbItems" :content="false" size="sm" :aria-label="t('loop.climb')" />
       <p class="mt-2 text-sm text-muted">{{ t('loop.climbHint') }}</p>
@@ -222,6 +271,10 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <span>{{ viaMessage }}</span>
     </p>
 
+    <p v-if="gainMissedMessage" class="flex items-start gap-2 text-sm text-highlighted" role="status" data-testid="loop-gain-missed">
+      <UIcon name="i-lucide-triangle-alert" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <span>{{ gainMissedMessage }}</span>
+    </p>
     <p v-if="loop.pathsActive && !loop.generating && fewPaths(loop.proposals)" class="flex items-start gap-2 text-sm text-muted" role="status">
       <UIcon name="i-lucide-info" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{{ t('loop.fewPaths') }}</span>
@@ -265,7 +318,7 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
             <span class="min-w-0 flex-1">
               <span class="flex items-center gap-2 font-semibold text-highlighted">
                 {{ t(outAndBack ? 'loop.outAndBackProposal' : 'loop.proposal', { n: i + 1 }) }}
-                <UBadge v-if="proposal.status === 'ready'" :label="proposalClimb(proposal)" color="neutral" variant="soft" size="sm" />
+                <UBadge v-if="proposal.status === 'ready' && loop.target !== 'gain'" :label="proposalClimb(proposal)" color="neutral" variant="soft" size="sm" />
               </span>
               <span v-if="proposal.status === 'loading'" class="block text-sm text-muted">
                 <UIcon name="i-lucide-loader-circle" class="mr-1 size-4 animate-spin align-text-bottom" />{{ t('editor.routing') }}

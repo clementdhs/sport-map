@@ -429,6 +429,16 @@ function namePattern(core: string): string {
   return core.split(' ').map(word => [...word].map(letter).join('')).join('.*').replace(/\\/g, '\\\\')
 }
 
+// The area searched for a named place, NAMED_PLACE_SEARCH_M from the start on each side: west, south, east, north.
+// Every source (Overpass, MapTiler, Nominatim, #310) looks in it.
+export function namedPlaceBox(start: LngLat): [number, number, number, number] {
+  const [, south] = move(start, NAMED_PLACE_SEARCH_M, 180)
+  const [, north] = move(start, NAMED_PLACE_SEARCH_M, 0)
+  const [west] = move(start, NAMED_PLACE_SEARCH_M, -90)
+  const [east] = move(start, NAMED_PLACE_SEARCH_M, 90)
+  return [west, south, east, north]
+}
+
 // A box NAMED_PLACE_SEARCH_M away from the start on each side (Overpass takes south, west, north, east): `around`
 // that far, with a name regex, was cut by the timeout on a busy instance, a box answered. Lines (rivers, lakes
 // drawn as ways) come with their geometry, the rest with their centre: a massif's boundary is too big to download.
@@ -436,10 +446,7 @@ function namePattern(core: string): string {
 export function namedPlaceQuery(name: string, start: LngLat, timeoutS: number): string | null {
   const core = namedPlaceCore(name)
   if (!core) return null
-  const [, south] = move(start, NAMED_PLACE_SEARCH_M, 180)
-  const [, north] = move(start, NAMED_PLACE_SEARCH_M, 0)
-  const [west] = move(start, NAMED_PLACE_SEARCH_M, -90)
-  const [east] = move(start, NAMED_PLACE_SEARCH_M, 90)
+  const [west, south, east, north] = namedPlaceBox(start)
   const filter = `["name"~"${namePattern(core)}",i]`
   return `[out:json][timeout:${timeoutS}][bbox:${south},${west},${north},${east}];`
     + `(way["waterway"~"^(river|stream|canal)$"]${filter};way["natural"="water"]${filter};);out tags geom;`
@@ -457,6 +464,25 @@ export function namedPlaceKind(tags: Record<string, string>): NamedPlaceKind | n
   return null
 }
 
+// A place found, at the point of its lines nearest to the start (a river, a lake's outline), else at `point`.
+// Null without either.
+export function namedPlaceAt(id: string, name: string, kind: NamedPlaceKind, start: LngLat, point: LngLat | null, lines: LngLat[][] = []): NamedPlace | null {
+  let coordinates: LngLat | null = null
+  let nearestM = Infinity
+  for (const line of lines.filter(line => line.length >= 2)) {
+    const nearest = nearestPointOnLine(lineString(line), start)
+    const [lng, lat] = nearest.geometry.coordinates
+    const distanceM = nearest.properties.dist ?? Infinity
+    if (!coordinates || distanceM < nearestM) {
+      coordinates = [round6(lng!), round6(lat!)]
+      nearestM = distanceM
+    }
+  }
+  if (!coordinates) coordinates = point ? [round6(point[0]), round6(point[1])] : lines.flat()[0] ?? null
+  if (!coordinates) return null
+  return { id, name, kind, coordinates, distanceM: Math.round(metres(start, coordinates)) }
+}
+
 export function namedPlacesFrom(elements: NamedOverpassElement[], start: LngLat): NamedPlace[] {
   const places: NamedPlace[] = []
   for (const element of elements) {
@@ -465,18 +491,10 @@ export function namedPlacesFrom(elements: NamedOverpassElement[], start: LngLat)
     const name = tags.name?.trim()
     if (!kind || !name) continue
     const line = (element.geometry ?? []).map(({ lon, lat }): LngLat => [lon, lat])
-    let coordinates: LngLat
-    if (line.length >= 2) {
-      const [lng, lat] = nearestPointOnLine(lineString(line), start).geometry.coordinates
-      coordinates = [round6(lng!), round6(lat!)]
-    }
-    else {
-      const lat = element.lat ?? element.center?.lat ?? line[0]?.[1]
-      const lon = element.lon ?? element.center?.lon ?? line[0]?.[0]
-      if (lat === undefined || lon === undefined) continue
-      coordinates = [round6(lon), round6(lat)]
-    }
-    places.push({ id: `${element.type[0]}${element.id}`, name, kind, coordinates, distanceM: Math.round(metres(start, coordinates)) })
+    const lat = element.lat ?? element.center?.lat
+    const lon = element.lon ?? element.center?.lon
+    const place = namedPlaceAt(`${element.type[0]}${element.id}`, name, kind, start, lat === undefined || lon === undefined ? null : [lon, lat], [line])
+    if (place) places.push(place)
   }
   return places
 }

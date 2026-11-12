@@ -117,8 +117,9 @@ export async function searchLoopVia(type: LoopViaType, start: LngLat, radiusM: n
   return loopViaPlaces(await queryOverpass<OverpassElement>(loopViaQuery(type, start, radiusM, QUERY_TIMEOUT_S), [start], signal))
 }
 
-// The places of that name around a loop's start (#293): none for a place said by its kind only (« le lac »).
-export async function searchNamedPlaces(name: string, start: LngLat, signal?: AbortSignal): Promise<NamedPlace[]> {
+// The places of that name around a loop's start that Overpass knows (#293): none for a place said by its kind only
+// (« le lac »). `searchNamedPlaces` (namedPlaces.ts) also asks MapTiler and Nominatim (#310).
+export async function searchOverpassNamedPlaces(name: string, start: LngLat, signal?: AbortSignal): Promise<NamedPlace[]> {
   const query = namedPlaceQuery(name, start, QUERY_TIMEOUT_S)
   if (!query) return []
   return namedPlacesFrom(await queryOverpass<NamedOverpassElement>(query, [start], signal), start)

@@ -404,6 +404,75 @@ test('goes through a named river, heads for a named massif and goes without an u
   expect(requests.every(request => !request.via && request.heading === undefined)).toBe(true)
 })
 
+test('finds a named village with MapTiler and a peak with Nominatim when Overpass is down (#310)', async ({ page }) => {
+  let start: [number, number] = [0, 0]
+  const overpassQueries: string[] = []
+  await page.route('**/api/interpreter', (route) => {
+    overpassQueries.push(route.request().postData() ?? '')
+    return route.fulfill({ status: 504, body: 'Gateway Timeout' })
+  })
+  // MapTiler knows a commune 2 km south of the start, Nominatim a peak 3 km east.
+  await page.route('https://api.maptiler.com/geocoding/**', (route) => {
+    const [lng, lat] = start
+    const features = decodeURIComponent(route.request().url()).includes('/Seyssinet.json')
+      ? [{ id: 'municipality.46973', text: 'Seyssinet-Pariset', place_type: ['municipality'], center: [lng, lat - 0.018], properties: { ref: 'osm:r191039' } }]
+      : []
+    return route.fulfill({ json: { features } })
+  })
+  const nominatimQueries: string[] = []
+  await page.route('https://nominatim.openstreetmap.org/**', (route) => {
+    const q = new URL(route.request().url()).searchParams.get('q') ?? ''
+    nominatimQueries.push(q)
+    const [lng, lat] = start
+    // Like the real one: nothing for « le mont Moucherotte », the peak for « moucherotte ».
+    const results = q === 'moucherotte'
+      ? [{ osm_type: 'node', osm_id: 1508804918, lat: String(lat), lon: String(lng + 0.038), category: 'natural', type: 'peak', addresstype: 'peak', name: 'Moucherotte' }]
+      : []
+    return route.fulfill({ json: results })
+  })
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+  start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
+
+  const requests: { via?: [number, number], heading?: number }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  await panel.getByRole('combobox', { name: 'Passer par' }).click()
+  await page.getByRole('option', { name: 'Un lieu que je nomme' }).click()
+  const place = panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })
+  await place.fill('Seyssinet')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^Passage : Seyssinet-Pariset, à \d(,\d+)? km\.$/)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(requests).toHaveLength(3)
+  for (const request of requests) expect(request.via?.[1]).toBeCloseTo(start[1] - 0.018, 4)
+
+  // A peak isn't asked to MapTiler: Overpass first, then Nominatim, with the name as said then its core.
+  requests.length = 0
+  nominatimQueries.length = 0
+  await place.fill('le mont Moucherotte')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^Passage : Moucherotte, à \d(,\d+)? km\.$/)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(nominatimQueries).toEqual(['le mont Moucherotte', 'moucherotte'])
+  expect(overpassQueries.length).toBeGreaterThan(0)
+  for (const request of requests) expect(request.via?.[0]).toBeCloseTo(start[0] + 0.038, 4)
+
+  // Found nowhere: the proposals go without it, as before.
+  requests.length = 0
+  await place.fill('Atlantide')
+  await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
+  await expect(panel.getByText(/^« Atlantide » introuvable à moins de 30 km du départ/)).toBeVisible()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  expect(requests.every(request => !request.via && request.heading === undefined)).toBe(true)
+})
+
 test('fills the loop settings from a sentence, then generates (#216)', async ({ page }) => {
   // The LLM is the server's: its reading is simulated here, as the routing is.
   const sentences: string[] = []

@@ -1,9 +1,8 @@
 import * as z from 'zod'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const id = getRouteIdParam(event)
   const photoId = getRouterParam(event, 'photoId')

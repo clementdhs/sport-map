@@ -1,10 +1,8 @@
-import { serverSupabaseUser } from '#supabase/server'
 import type { LngLatEle, RoutingSegmentResponse, WayInfo } from '#shared/utils/routes'
 
 export default defineEventHandler(async (event): Promise<RoutingSegmentResponse> => {
   // Signed-in users only: the OpenRouteService quota is shared by the whole app.
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const { from, to, mode, sport_type } = await readLocalizedBody(event, routingSegmentSchema)
 

@@ -1,10 +1,9 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { CoachGoal } from '#shared/types/account'
 
 // The coach's goal (#264), null until the member picks one.
 export default defineEventHandler(async (event): Promise<CoachGoal | null> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase
     .from('coach_goals')

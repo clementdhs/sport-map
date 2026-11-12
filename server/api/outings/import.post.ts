@@ -1,12 +1,11 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { OutingImportResponse } from '#shared/types/routes'
 
 // One outing imported from a GPX, FIT or TCX file (#268), read in the browser: saved like an outing recorded in
 // /record (`saveRecording`), unless the member already has an outing starting within IMPORT_SAME_START_S of it,
 // on any route: the same file imported again, or the same outing recorded by the app and by a watch.
 export default defineEventHandler(async (event): Promise<OutingImportResponse> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const body = await readLocalizedBody(event, recordingSchema)
   const supabase = await serverSupabaseClient(event)

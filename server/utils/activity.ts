@@ -1,13 +1,12 @@
 import type { H3Event } from 'h3'
 import * as z from 'zod'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { Database } from '#shared/types/database.types'
 import type { ActivityType } from '#shared/utils/routes'
 
 // Shared by the PUT / DELETE handlers of /api/routes/:id/activity/:type.
 export async function activityContext(event: H3Event) {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const routeId = getRouteIdParam(event)
   const parsedType = z.enum(ACTIVITY_TYPES).safeParse(getRouterParam(event, 'type'))

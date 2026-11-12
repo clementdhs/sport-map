@@ -1,11 +1,10 @@
 import * as z from 'zod'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { PrivacyZonesResult } from '#shared/types/account'
 
 // Removes a privacy zone (#254), then cuts the member's routes and outings again without it.
 export default defineEventHandler(async (event): Promise<PrivacyZonesResult> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   const id = getRouterParam(event, 'id')
   if (!z.uuid().safeParse(id).success) throw apiError(event, 404, 'api.privacyZoneNotFound')
   const supabase = await serverSupabaseClient(event)

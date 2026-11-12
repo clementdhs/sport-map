@@ -1,12 +1,10 @@
 import type { H3Event } from 'h3'
 import * as z from 'zod'
-import { serverSupabaseUser } from '#supabase/server'
 
 // Shared by the /api/collections handlers.
 
 export async function requireUserId(event: H3Event): Promise<string> {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   return user.sub
 }
 

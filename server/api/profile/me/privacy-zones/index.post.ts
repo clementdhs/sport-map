@@ -1,11 +1,10 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { PrivacyZonesResult } from '#shared/types/account'
 
 // Adds a privacy zone (#254), its cutting circle moved at random from the place picked, then cuts the member's
 // routes and outings again.
 export default defineEventHandler(async (event): Promise<PrivacyZonesResult> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   const body = await readLocalizedBody(event, privacyZoneSchema)
   const supabase = await serverSupabaseClient(event)
 

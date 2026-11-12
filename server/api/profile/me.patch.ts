@@ -1,8 +1,7 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const { username, display_name, bio } = await readLocalizedBody(event, profileUpdateSchema)
   const supabase = await serverSupabaseClient(event)

@@ -1,11 +1,10 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { LiveShareStarted } from '#shared/types/live'
 
 // Starts sharing the member's position with the family, replacing a share of theirs whose end never reached
 // the server (one at a time). It ends with DELETE /api/live/:id, or 12 hours later at the latest.
 export default defineEventHandler(async (event): Promise<LiveShareStarted> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const body = await readLocalizedBody(event, liveShareStartSchema)
   const supabase = await serverSupabaseClient(event)

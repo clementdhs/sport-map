@@ -1,10 +1,9 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { MyPreferences } from '#shared/types/account'
 
 // The preferences kept in the caller's account (#145), loaded once per visit by the preferences store.
 export default defineEventHandler(async (event): Promise<MyPreferences> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase

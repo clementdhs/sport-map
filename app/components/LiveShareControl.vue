@@ -39,7 +39,8 @@ const status = computed(() => {
       <UIcon name="i-lucide-radio" class="size-5 shrink-0 animate-pulse text-primary" />
       <div class="min-w-0">
         <p class="text-sm font-medium">{{ t('live.sharing') }}</p>
-        <p class="text-xs text-muted" data-testid="live-status">{{ status }}</p>
+        <!-- data-waiting: the count itself, which the text only gives from 2 on (e2e: each point kept, #211) -->
+        <p class="text-xs text-muted" data-testid="live-status" :data-waiting="waiting">{{ status }}</p>
       </div>
       <UButton class="ml-auto" :label="t('live.stop')" color="neutral" variant="outline" size="sm" @click="emit('stop')" />
     </div>

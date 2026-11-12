@@ -64,7 +64,7 @@ const map3d = usePreference('map3d')
 const loaded = ref(false)
 // Exposed as data-map-center ("lng,lat") and data-map-bearing (whole degrees clockwise from north, 0 to 359) so
 // end-to-end tests check where the map went and how it is turned.
-const center = ref<string>()
+const mapCenter = ref<string>()
 const bearing = ref<string>()
 // North up and seen from above: phones then hide the compass (data-map-flat, main.css).
 const flat = ref(true)
@@ -184,7 +184,7 @@ onMounted(async () => {
   instance.on('pitch', updateFlat)
   const updateView = () => {
     const { lng, lat } = instance.getCenter()
-    center.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
+    mapCenter.value = `${lng.toFixed(4)},${lat.toFixed(4)}`
     bearing.value = String((Math.round(instance.getBearing()) + 360) % 360)
   }
   updateView()
@@ -293,7 +293,7 @@ onBeforeUnmount(() => {
     ref="container"
     class="size-full"
     :data-map-loaded="loaded || undefined"
-    :data-map-center="center"
+    :data-map-center="mapCenter"
     :data-map-bearing="bearing"
     :data-map-flat="flat || undefined"
     :data-map-3d="view3d || undefined"

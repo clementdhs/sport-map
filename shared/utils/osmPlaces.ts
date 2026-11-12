@@ -151,7 +151,7 @@ const MAX_LINE_POINTS = 800
 export function queryLine(track: LngLat[]): LngLat[] {
   if (track.length < 3) return track
   let tolerance = LINE_TOLERANCE
-  let line = track
+  let line: LngLat[]
   do {
     line = simplify(lineString(track), { tolerance }).geometry.coordinates as LngLat[]
     tolerance *= 2

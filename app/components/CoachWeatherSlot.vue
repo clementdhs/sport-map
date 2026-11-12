@@ -43,7 +43,9 @@ onMounted(async () => {
     const data = await $fetch<CoachWeather | null>('/api/profile/me/coach-weather', { query: position ?? {} })
     if (data) weather.value = data
   }
-  catch {}
+  catch {
+    // Open-Meteo or the place failed: the card stays hidden and the session shows alone.
+  }
 })
 
 // The place's local time read again with each duration, so a page left open doesn't offer a slot gone by. A later

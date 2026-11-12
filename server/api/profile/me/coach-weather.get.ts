@@ -16,7 +16,7 @@ export default defineEventHandler(async (event): Promise<CoachWeather | null> =>
   const user = await requireUser(event)
   const { lat, lng } = getLocalizedQuery(event, coachWeatherQuerySchema)
 
-  let place: StartPlace | null = null
+  let place: StartPlace | null
   if (lat !== undefined && lng !== undefined) {
     place = { lat, lng, elevation: null }
   }

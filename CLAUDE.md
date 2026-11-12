@@ -4,7 +4,7 @@ Web app (installable PWA) to create, share and discover running / hiking / cycli
 
 The backlog lives in GitHub issues (milestones and labels for theme and effort), managed with the `gh` CLI. Each issue gets its own branch and pull request (`Closes #N`), squash-merged once Clem approves it; file new ideas as issues. `ROADMAP.md` only keeps the history of what was shipped. The `ship-issue` skill describes the whole cycle (branch, checks, code review, PR, merge) and parallel sessions in worktrees.
 
-Dependabot (`.github/dependabot.yml`) opens its own PRs, without an issue: one grouped PR for npm minor and patch updates on Mondays, one for GitHub Actions each month, plus one grouped PR for npm security fixes. Vercel installs with `npm ci` (`vercel.json`): its `npm install` on a cached `node_modules` broke the build of a lockfile that removes packages (#191). A push to main runs the types and unit tests only; the e2e tests run on branches, on main every Sunday and on a manual run (Actions minutes are limited). Before asking Clem for the go, read the release notes of the updated packages for breaking changes and check that the branch CI (e2e included) is green; merge with `gh pr merge <M> --squash`. Dependabot skips npm major versions: upgrading one is an issue of its own.
+Dependabot (`.github/dependabot.yml`) opens its own PRs, without an issue: one grouped PR for npm minor and patch updates on Mondays, one for GitHub Actions each month, plus one grouped PR for npm security fixes. Vercel installs with `npm ci` (`vercel.json`): its `npm install` on a cached `node_modules` broke the build of a lockfile that removes packages (#191). A push to main runs the lint, types and unit tests only; the e2e tests run on branches, on main every Sunday and on a manual run (Actions minutes are limited). Before asking Clem for the go, read the release notes of the updated packages for breaking changes and check that the branch CI (e2e included) is green; merge with `gh pr merge <M> --squash`. Dependabot skips npm major versions: upgrading one is an issue of its own.
 
 Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews, follow/record, offline, weather, stats, slopes, surface and trail difficulty, useful OSM places, collections, auth emails, Sentry, link previews, Android app, live location sharing, OSM marked routes, 3D flyover, map legend, profile photos, pace per sport, privacy zones, coach, outing import) live in `.claude/rules/` and load when the matching files are read. When a feature adds a non-obvious rule, write it there, not here.
 
@@ -35,6 +35,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - `npm run db:start` then `npm run dev:local`: same, on the local Supabase (Docker), to try new migrations before pushing them. New migration files need `npx supabase migration up --local`.
 - `npm run build` / `npm run preview`
 - `npm run typecheck`
+- `npm run lint` / `npm run lint:fix`: ESLint (`@nuxt/eslint`, config in `eslint.config.mjs`, stylistic rules off). Run it with the typecheck; CI runs both. An exception gets a comment saying why.
 - `npm run android:sync` / `npm run android:open`: Capacitor Android app (needs Android Studio)
 - `npm run db:push`: apply migrations to the hosted project (linked)
 - `npm run db:types`: regenerate DB types (project must be linked)

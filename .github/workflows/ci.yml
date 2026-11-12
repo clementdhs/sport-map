@@ -22,10 +22,10 @@ concurrency:
 permissions:
   contents: read
 
-# Two jobs in parallel: the end-to-end tests don't wait for the types and unit tests.
+# Two jobs in parallel: the end-to-end tests don't wait for the lint, types and unit tests.
 jobs:
   checks:
-    name: Types et tests unitaires
+    name: Lint, types et tests unitaires
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -37,6 +37,10 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      # The ESLint config extends .nuxt/eslint.config.mjs, written by npm ci's postinstall (nuxt prepare).
+      - name: Lint
+        run: npm run lint
 
       - name: Types
         run: npm run typecheck

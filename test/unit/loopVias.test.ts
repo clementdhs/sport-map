@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
-  fitVias, isShortestThrough, isViaInReach, LOOP_MAX_VIAS, loopRoutePoints, maxTourCrowM, NAMED_PLACE_SEARCH_M,
+  fitVias, isShortestThrough, isViaInReach, loopRoutePoints, maxTourCrowM, NAMED_PLACE_SEARCH_M,
   type NamedPlace, type NamedPlaceChoice, namedPlaceReach, namedPlacesPlan, orderVias, tourCrowM, VIA_SEARCH_MAX_M,
   viaSearchRadius,
 } from '#shared/utils/loops'
-import type { LngLat } from '#shared/utils/routes'
+import { type LngLat, LOOP_MAX_VIAS } from '#shared/utils/routes'
 
 // Several named places in one loop, further than 10 km (#326). From Grenoble: Autrans 14 km west, Lans-en-Vercors
 // 12.6 km west-south-west, 6 km apart.
@@ -139,7 +139,7 @@ describe('loopRoutePoints through several places (#326)', () => {
   it('stretches a short tour with a detour on one leg, picked by the seed, to the length', () => {
     const tour = tourCrowM('loop', GRENOBLE, [LANS, AUTRANS])
     const crowM = 70_000 / 1.3
-    const legs = new Set<string>()
+    const corners: LngLat[] = []
     for (const seed of [10, 11, 12]) {
       const route = loopRoutePoints('loop', GRENOBLE, 70_000, seed, [AUTRANS, LANS])!
       expect(route.points).toHaveLength(5)
@@ -148,13 +148,15 @@ describe('loopRoutePoints through several places (#326)', () => {
       expect(route.points.filter(point => point === AUTRANS || point === LANS)).toHaveLength(2)
       const corner = route.radiuses.indexOf(-1)
       expect(corner).toBeGreaterThan(0)
-      legs.add(String(corner))
+      corners.push(route.points[corner]!)
       const perimeter = route.points.slice(1).reduce((sum, point, i) => sum + metres(route.points[i]!, point), 0)
       expect(Math.abs(perimeter - crowM)).toBeLessThan(100)
       expect(perimeter).toBeGreaterThan(tour)
     }
-    // Three seeds, three different legs.
-    expect(legs.size).toBe(3)
+    // Three seeds, three different legs (the corner's place in the list also depends on the direction).
+    expect(metres(corners[0]!, corners[1]!)).toBeGreaterThan(1000)
+    expect(metres(corners[1]!, corners[2]!)).toBeGreaterThan(1000)
+    expect(metres(corners[0]!, corners[2]!)).toBeGreaterThan(1000)
   })
 
   it('takes an out and back through the places, nearest first, and beyond the last when there is room', () => {

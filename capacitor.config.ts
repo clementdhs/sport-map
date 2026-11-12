@@ -22,6 +22,10 @@ const config: CapacitorConfig = {
     useLegacyBridge: true,
   },
   plugins: {
+    // The site asks for viewport-fit=cover (nuxt.config.ts, #318): start edge-to-edge without a layout jump.
+    SystemBars: {
+      initialViewportFitValueHint: 'cover',
+    },
     // The launch screen stays up while the site loads, until the page hides it once hydrated
     // (app/plugins/splash-screen.client.ts, capacitor/www/offline.html). This duration is only the safety net:
     // a cold start of the hosted site's server alone takes about 5 s.

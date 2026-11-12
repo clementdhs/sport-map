@@ -72,7 +72,7 @@ const follow = ref(false)
       </ClientOnly>
 
       <!-- Right padding: the map controls stay reachable. -->
-      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pr-14">
+      <div class="pointer-events-none absolute inset-x-0 top-0 z-20 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pr-14">
         <div class="pointer-events-auto flex items-center gap-2">
           <UButton to="/live" icon="i-lucide-arrow-left" :label="t('live.title')" color="neutral" variant="ghost" class="map-float h-10 font-semibold" />
         </div>

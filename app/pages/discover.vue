@@ -18,9 +18,9 @@ const focus = ref<MapFocus | null>(null)
 
 // The URL holds the kind, the filters and the view (#70), to share a search. Without any (a link of the app), the
 // page keeps the store's, then writes them.
-const route = useRoute()
+const currentRoute = useRoute()
 const router = useRouter()
-if (Object.keys(route.query).length) discover.applyState(parseOsmDiscoverQuery(route.query))
+if (Object.keys(currentRoute.query).length) discover.applyState(parseOsmDiscoverQuery(currentRoute.query))
 // A view of its own (link, other page, previous visit), else the member's start area (#147).
 const startBounds = useStartBounds(discover.viewKnown)
 const pageQuery = computed(() => JSON.stringify(osmDiscoverQuery({ kind: discover.kind, filters: discover.filters, view: discover.view })))
@@ -30,7 +30,7 @@ const pageQuery = computed(() => JSON.stringify(osmDiscoverQuery({ kind: discove
 // with it when the page is left: it gets the new one too.
 onMounted(() => {
   watch(pageQuery, (query) => {
-    const { fullPath, href } = router.resolve({ path: route.path, query: JSON.parse(query) })
+    const { fullPath, href } = router.resolve({ path: currentRoute.path, query: JSON.parse(query) })
     window.history.replaceState({ ...window.history.state, current: fullPath }, '', href)
   }, { immediate: true })
   // Elevation gains (#71) are computed while the page is open.

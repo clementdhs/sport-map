@@ -37,7 +37,9 @@ export async function watchNativePosition(
     const { LocalNotifications } = await import('@capacitor/local-notifications')
     await LocalNotifications.requestPermissions()
   }
-  catch {}
+  catch {
+    // Refused or unavailable: the watch starts anyway (see above).
+  }
 
   const id = await BackgroundGeolocation.addWatcher(
     {

@@ -8,6 +8,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/supabase',
     '@nuxtjs/i18n',
+    // Generates .nuxt/eslint.config.mjs (auto-imports, Vue, TypeScript), extended by eslint.config.mjs.
+    '@nuxt/eslint',
     // The PWA plugin imports a virtual module that does not exist in Vitest's Nuxt environment; Sentry is
     // useless there.
     ...(process.env.VITEST ? [] : ['@vite-pwa/nuxt', '@sentry/nuxt/module']),

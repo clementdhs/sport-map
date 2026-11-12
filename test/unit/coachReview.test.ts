@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { buildSession } from '#shared/utils/coachSessions'
 import { formEffect, matchesSession, outingFeelingSchema, regularity, repeatTimes, tomorrowSession } from '#shared/utils/coachReview'
-import { coachDays, outingDaysBefore, sessionOfTheDay, sessionOn } from '#shared/utils/coachSessions'
+import { buildSession, coachDays, outingDaysBefore, sessionOfTheDay, sessionOn } from '#shared/utils/coachSessions'
 import type { OutingTrackPoint } from '#shared/utils/routes'
 import { FEELING_FACTORS, type LoadOuting, outingLoad, trainingForm } from '#shared/utils/trainingForm'
 

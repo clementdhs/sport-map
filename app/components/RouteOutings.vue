@@ -42,7 +42,9 @@ async function loadBreakers() {
   try {
     breakers.value = await $fetch<RecordBreakers>('/api/profile/me/record-breakers')
   }
-  catch {}
+  catch {
+    // The record badges are a bonus: without them the outings list as usual.
+  }
 }
 onMounted(() => {
   if (opened.value) document.querySelector(`[data-outing-id="${opened.value}"]`)?.scrollIntoView({ block: 'start' })

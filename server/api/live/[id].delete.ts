@@ -1,9 +1,8 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 
 // Stops sharing: the share and its track are deleted. Stopping a share already gone is a success.
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const shareId = getLiveShareIdParam(event)
   const supabase = await serverSupabaseClient(event)

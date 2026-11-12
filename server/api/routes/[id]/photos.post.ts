@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { RoutePhoto } from '#shared/types/routes'
 
 // Adds one photo (multipart field "photo") to a route of the caller. The browser has already resized and
 // compressed it; the server checks what it really is.
 export default defineEventHandler(async (event): Promise<RoutePhoto> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)

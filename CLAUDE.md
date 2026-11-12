@@ -19,7 +19,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 ## Conventions
 - Secrets (`NUXT_OPENROUTESERVICE_KEY`, `NUXT_SUPABASE_SECRET_KEY`) are only read in `server/`. Only the MapTiler key and Supabase URL/publishable key are public.
 - Server routes use `serverSupabaseClient(event)` (user session + RLS) by default; `serverSupabaseServiceRole` only when bypassing RLS is really required.
-- Mutating routes check `await serverSupabaseUser(event)` and return 401 when missing.
+- Mutating routes (and any route that needs a signed-in member) start with `const user = await requireUser(event)` (`server/utils/requireUser.ts`): non-null claims, else a translated 401. Routes where signing in is optional keep `serverSupabaseUser(event)` and `user?.sub`.
 - `useSupabaseUser()` / `serverSupabaseUser()` return JWT claims: the user id is `.sub`, not `.id`.
 - API response types live in `shared/types/` and are used both as the handler's return type and as `useFetch<T>()`'s generic: the app's TS project can't resolve server-only aliases, so types inferred from handlers become `any`.
 - Validation schemas (zod) live in `shared/utils/` and are shared by `UForm` (through `useLocalizedSchema`) and the API (`readLocalizedBody` / `getLocalizedQuery`). Their messages are translation keys.

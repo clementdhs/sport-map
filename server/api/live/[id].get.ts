@@ -1,5 +1,5 @@
 import type { LineString } from 'geojson'
-import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import type { LivePoint, LiveShareDetail } from '#shared/types/live'
 import type { Database } from '#shared/types/database.types'
 
@@ -8,8 +8,7 @@ const PAGE_SIZE = 1000
 
 // A share in progress and its track, for the family's map. With ?after=, only the newer points (polling).
 export default defineEventHandler(async (event): Promise<LiveShareDetail> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
   await requireMfa(event)
 

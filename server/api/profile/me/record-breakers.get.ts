@@ -1,11 +1,10 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { RecordBreakers } from '#shared/types/routes'
 
 // The member's GPS outings that beat one of their records when recorded (#140), for the "Record !" badge of a
 // route page's Passages tab. Counted from the same outings as their statistics and records.
 export default defineEventHandler(async (event): Promise<RecordBreakers> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const [recorded, done] = await Promise.all([

@@ -1,10 +1,9 @@
 import * as z from 'zod'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 
 // Removes one of the caller's outings from a route. The route stays marked as done.
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const routeId = getRouteIdParam(event)
   const outingId = getRouterParam(event, 'outingId')

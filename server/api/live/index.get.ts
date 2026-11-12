@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import { serverSupabaseClient, serverSupabaseServiceRole, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient, serverSupabaseServiceRole } from '#supabase/server'
 import type { LiveShareListItem } from '#shared/types/live'
 import type { LngLat, SportType } from '#shared/utils/routes'
 import type { Database } from '#shared/types/database.types'
@@ -10,8 +10,7 @@ const PAGE_SIZE = 1000
 // The family's shares in progress, latest started first. With ?map=true (/live, #237), each with its sport, the
 // distance covered and its mini-map; without (the home banner), only the summary, so its polling stays light.
 export default defineEventHandler(async (event): Promise<LiveShareListItem[]> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
   await requireMfa(event)
 

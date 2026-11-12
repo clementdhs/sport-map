@@ -1,4 +1,3 @@
-import { serverSupabaseUser } from '#supabase/server'
 import type { LoopSentenceResponse } from '#shared/types/loopSentence'
 
 // A loop described in one sentence (#216): the LLM gets the sentence alone (no position, no identity) and can only
@@ -9,8 +8,7 @@ import type { LoopSentenceResponse } from '#shared/types/loopSentence'
 const LOOP_LLM_MAX_WAIT_MS = 10_000
 
 export default defineEventHandler(async (event): Promise<LoopSentenceResponse> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const { sentence } = await readLocalizedBody(event, loopSentenceSchema)
   const { loopLlmProvider, loopLlmKey, loopLlmModel, loopLlmUrl } = useRuntimeConfig(event)

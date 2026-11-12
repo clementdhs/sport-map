@@ -1,4 +1,4 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { PaceSuggestions } from '#shared/types/account'
 import type { PaceOuting } from '#shared/utils/pace'
 
@@ -9,8 +9,7 @@ const OUTINGS_READ = 200
 // The caller's pace per sport from their latest GPS outings (#146), offered in the settings: they choose to keep
 // it or not.
 export default defineEventHandler(async (event): Promise<PaceSuggestions> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase

@@ -1,9 +1,8 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 
 // Removes the caller's profile photo: their initials come back.
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const { error } = await supabase.from('profiles').update({ avatar_path: null }).eq('id', user.sub)

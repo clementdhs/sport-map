@@ -1,9 +1,8 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { MyProfile } from '#shared/types/routes'
 
 export default defineEventHandler(async (event): Promise<MyProfile> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const [profile, created, activity, outings] = await Promise.all([

@@ -1,13 +1,12 @@
 import type { LineString } from 'geojson'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { AccountExport } from '#shared/types/account'
 import type { Poi } from '#shared/utils/routes'
 
 // Everything the caller put on sportmap, for the "download my data" archive (RGPD). Read with the
 // caller's session: RLS already lets them read all their own rows.
 export default defineEventHandler(async (event): Promise<AccountExport> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   const supabase = await serverSupabaseClient(event)
 
   const [profile, routes, reviews, activity, outings, collections, reports, routingUsage, liveShares, preferences, privacyZones, coachGoal, loopSentenceUsage] = await Promise.all([

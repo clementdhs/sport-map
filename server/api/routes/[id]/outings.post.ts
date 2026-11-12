@@ -1,12 +1,11 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { Json } from '#shared/types/database.types'
 
 // Saves an outing recorded while following a route: listed on the route's page with the others, and the
 // route is marked as completed with its times and leaves the "À faire" list. Its GPS points and their times
 // are kept for its splits.
 export default defineEventHandler(async (event) => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const routeId = getRouteIdParam(event)
   const body = await readLocalizedBody(event, outingSchema)

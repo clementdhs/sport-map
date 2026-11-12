@@ -1,13 +1,12 @@
 import { randomUUID } from 'node:crypto'
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { AvatarSaved } from '#shared/types/routes'
 
 // Sets the caller's profile photo (multipart field "photo"), replacing the previous one. The browser has already
 // cropped and compressed it; the server checks what it really is. Each photo gets a new file name, so no cache
 // keeps showing the previous one.
 export default defineEventHandler(async (event): Promise<AvatarSaved> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const file = (await readMultipartFormData(event))?.find(part => part.name === 'photo')
   if (!file?.data.length) throw apiError(event, 400, 'api.photoMissing')

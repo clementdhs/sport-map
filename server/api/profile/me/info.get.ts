@@ -1,10 +1,9 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { ProfileInfo } from '#shared/types/routes'
 
 // The profile alone, without the route lists of GET /api/profile/me: for the settings page.
 export default defineEventHandler(async (event): Promise<ProfileInfo> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const supabase = await serverSupabaseClient(event)
   const { data, error } = await supabase

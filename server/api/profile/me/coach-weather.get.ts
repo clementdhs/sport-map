@@ -1,4 +1,4 @@
-import { serverSupabaseClient, serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseClient } from '#supabase/server'
 import type { CoachWeather } from '#shared/types/account'
 import type { Database } from '#shared/types/database.types'
 import { COACH_DAYS } from '#shared/utils/coachSessions'
@@ -13,8 +13,7 @@ const DAYS = COACH_DAYS
 // gives it (rounded to 0.01°), else at the start of their recent outings (usualStart), else of their latest
 // routes. null without any.
 export default defineEventHandler(async (event): Promise<CoachWeather | null> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
   const { lat, lng } = getLocalizedQuery(event, coachWeatherQuerySchema)
 
   let place: StartPlace | null = null

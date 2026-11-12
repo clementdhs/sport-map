@@ -1,4 +1,3 @@
-import { serverSupabaseUser } from '#supabase/server'
 import type { RoutingLoopResponse } from '#shared/utils/routes'
 import type { LoopTry } from '#shared/utils/loops'
 
@@ -8,8 +7,7 @@ import type { LoopTry } from '#shared/utils/loops'
 // points placed by `loopRoutePoints` instead of an ORS round trip; an out and back only on its way out. Towards a
 // named place out of reach (#293), the browser only sends its bearing.
 export default defineEventHandler(async (event): Promise<RoutingLoopResponse> => {
-  const user = await serverSupabaseUser(event)
-  if (!user) throw apiError(event, 401, 'api.signInRequired')
+  const user = await requireUser(event)
 
   const { start, length_m, sport_type, seed, shape, precision, via, heading, prefer_paths } = await readLocalizedBody(event, routingLoopSchema)
   if (via && !isViaInReach(start, via)) throw apiError(event, 422, 'api.loopViaTooFar')

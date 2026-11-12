@@ -6,6 +6,13 @@ import { expect, SEEDED_ROUTE_NAME, test, waitForMap } from '../fixtures'
 // never run at the same time. The test account shares, a family member follows.
 test.use({ role: 'account' })
 
+// A test that fails (or a page closed before it could stop sharing) leaves its share behind, and the next test, or
+// its retry, would see it: none is left before or after each test (#211).
+const deleteShares = async (userIds: string[]) =>
+  await supabaseAdmin(`/rest/v1/live_shares?user_id=in.(${userIds.join(',')})`, { method: 'DELETE' })
+test.beforeEach(async ({ userIds }) => await deleteShares(userIds))
+test.afterEach(async ({ userIds }) => await deleteShares(userIds))
+
 test('shares the location with the family during an outing, then deletes it', async ({ request, requestAs, users }) => {
   const member = await requestAs('family')
   const point = (minute: number) => ({ fixed_at: `2026-10-04T08:0${minute}:00Z`, lng: 6.12, lat: 45.9 + minute / 1000, accuracy_m: 5 })
@@ -67,12 +74,15 @@ test.describe('sharing the location during an outing', () => {
     await page.clock.install({ time: new Date('2026-10-04T08:00:00Z') })
     const member = await requestAs('family')
     const shares = async () => await (await member.get('/api/live')).json() as LiveShareSummary[]
-    // `meters` south of the start, 30 simulated seconds later.
-    const moveTo = async (meters: number) => {
+    const status = page.getByTestId('live-status')
+    // `meters` south of the start, 30 simulated seconds later, while offline. The page gets the new position a bit
+    // later: it must have kept it before the clock moves on, or that point would be dated 30 s later and the next
+    // one skipped, too close to it (#211).
+    const moveTo = async (meters: number, waiting: number) => {
       await page.clock.fastForward(30_000)
       await context.setGeolocation({ ...START, latitude: START.latitude - meters / 111_194.93 })
+      await expect(status).toHaveAttribute('data-waiting', String(waiting))
     }
-    const status = page.getByTestId('live-status')
 
     await page.goto(`/routes/${process.env.E2E_ROUTE_ID}/follow`)
     await waitForMap(page)
@@ -89,8 +99,8 @@ test.describe('sharing the location during an outing', () => {
 
     // No network for a minute: the points wait, then all arrive in order.
     await context.setOffline(true)
-    await moveTo(100)
-    await moveTo(200)
+    await moveTo(100, 1)
+    await moveTo(200, 2)
     await expect(status).toHaveText('Pas de réseau : 2 positions en attente')
     await context.setOffline(false)
     // The next try, 30 s after the last one.
@@ -99,10 +109,11 @@ test.describe('sharing the location during an outing', () => {
     const { points } = await (await member.get(`/api/live/${share!.id}`)).json() as LiveShareDetail
     expect(points.map(point => Math.round((START.latitude - point.lat) * 111_194.93))).toEqual([0, 100, 200])
 
-    // Leaving follow mode stops sharing.
+    // Leaving follow mode stops sharing. The request only leaves once the next page has replaced this one, which
+    // takes a few seconds on a slow runner.
     await page.getByRole('link', { name: 'Quitter' }).click()
     await expect(page).toHaveURL(new RegExp(`/routes/${process.env.E2E_ROUTE_ID}$`))
-    await expect.poll(shares).toEqual([])
+    await expect.poll(shares, { timeout: 15_000 }).toEqual([])
   })
 
   // Reached from "Partager ma position" (#262): the recording asks at once when the outing starts.

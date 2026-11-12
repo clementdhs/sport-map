@@ -3,11 +3,12 @@ import { expect, test, waitForMap } from '../fixtures'
 
 test.use({ role: 'account' })
 
-// Marked routes come from 4 real relations of Fontainebleau; the first Overpass instance is busy, as it often is.
+// Marked routes come from 4 real relations of Fontainebleau; the first Overpass instance is busy, as it often is, and
+// the European one (second for an area in Europe, #312) answers.
 test('finds marked routes around a place and imports one into the editor', async ({ page }) => {
   const fontainebleau = readFileSync('test/fixtures/overpass-fontainebleau.json', 'utf8')
   await page.route('https://overpass-api.de/api/interpreter', route => route.fulfill({ status: 504, body: 'busy' }))
-  await page.route('https://maps.mail.ru/osm/tools/overpass/api/interpreter', route =>
+  await page.route('https://ovp.dresel.systems/api/interpreter', route =>
     route.fulfill({ contentType: 'application/json', body: fontainebleau }))
   await page.route('https://api.maptiler.com/geocoding/**', route => route.fulfill({
     json: { features: [{ place_name: 'Fontainebleau, Seine-et-Marne, France', center: [2.65, 48.41] }] },

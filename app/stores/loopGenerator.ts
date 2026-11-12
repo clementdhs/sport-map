@@ -40,6 +40,7 @@ const round = (value: number) => Math.round(value * 1e6) / 1e6
 export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const editor = useRouteEditorStore()
   const preferences = usePreferencesStore()
+  const { $i18n } = useNuxtApp()
 
   const open = ref(false)
   // The "Séance" mode of the panel (#266): the loops aim at the coach's session of the day, `session` once it is
@@ -163,7 +164,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     viaStatus.value = 'searching'
     let places: NamedPlace[]
     try {
-      places = namedSearch?.key === key ? namedSearch.places : await searchNamedPlaces(name, from)
+      places = namedSearch?.key === key ? namedSearch.places : await searchNamedPlaces(name, from, $i18n.locale.value)
       namedSearch = { key, places }
     }
     catch {

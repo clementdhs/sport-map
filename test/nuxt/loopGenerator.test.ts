@@ -357,7 +357,7 @@ describe('proposals', () => {
     loop.viaName = 'l\'Isère'
     await loop.generate()
 
-    expect(searchNamedPlacesMock).toHaveBeenCalledWith('l\'Isère', START)
+    expect(searchNamedPlacesMock).toHaveBeenCalledWith('l\'Isère', START, expect.any(String))
     expect(loop.viaStatus).toBe('found')
     expect(loop.namedChoice).toEqual({ role: 'via', place: river })
     expect(loop.viaPoint).toEqual(river.coordinates)

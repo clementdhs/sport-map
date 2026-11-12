@@ -101,6 +101,8 @@ async function mockExternalServices(page: Page) {
   await page.route('https://data.geopf.fr/**', route => route.fulfill({ contentType: 'image/png', body: EMPTY_TILE }))
   // No marked route from any Overpass instance (queried from the browser), unless a test mocks its own.
   await page.route('**/api/interpreter', route => route.fulfill({ json: { elements: [] } }))
+  // Nor from Nominatim, the named places' fallback (#310): never the real one, whose usage policy forbids bulk tests.
+  await page.route('https://nominatim.openstreetmap.org/**', route => route.fulfill({ json: [] }))
   // Fake routing: a straight line through the midpoint, climbing from 100 to 200 m, on a street then a gravel
   // track graded T3 (walking) or S2 (cycling).
   await page.route('**/api/routing/segment', async (route) => {

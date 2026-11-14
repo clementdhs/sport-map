@@ -43,6 +43,13 @@ describe('outingFollowsRoute', () => {
     expect(outingFollowsRoute(eastward(2000), route)).toBe(false)
   })
 
+  it('measures the part of the route covered along its length, not by its points', () => {
+    // Dense points on its first kilometre, then one straight stretch of 4 km.
+    const uneven = [...eastward(1000, { stepM: 5 }), ...eastward(4000, { stepM: 4000, fromM: 1000 }).slice(1)]
+    expect(outingFollowsRoute(eastward(1000), uneven)).toBe(false)
+    expect(outingFollowsRoute(eastward(5000), uneven)).toBe(true)
+  })
+
   it('refuses an outing alongside the route, more than 50 m away', () => {
     expect(outingFollowsRoute(eastward(5000, { offsetM: 80 }), route)).toBe(false)
   })

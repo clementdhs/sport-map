@@ -120,3 +120,85 @@ test.describe('from the coach', () => {
     }
   })
 })
+
+test.describe('on a route', () => {
+  test.use({ role: 'account' })
+
+  // A route along the points of `gpxFile`, 550 m northwards.
+  async function createRoute(request: APIRequestContext) {
+    const response = await request.post('/api/routes', {
+      data: { name: 'Import sur parcours e2e', sport_type: 'running', is_public: false, coordinates: [[LNG, LAT], [LNG, LAT + 0.005]] },
+    })
+    return (await response.json() as { id: string }).id
+  }
+
+  // The same GPX moved `east` degrees of longitude east (0.05°: about 4 km at New Zealand's latitude).
+  function movedGpx(start: Date, east: number) {
+    const file = gpxFile('Footing ailleurs e2e', start)
+    const xml = file.buffer.toString().replace(/lon="([-\d.]+)"/g, (_, lng: string) => `lon="${(Number(lng) + east).toFixed(6)}"`)
+    return { ...file, name: 'ailleurs.gpx', buffer: Buffer.from(xml) }
+  }
+
+  test('a member imports a watch outing on the route, which counts as done; one done elsewhere is refused', async ({ page }) => {
+    const routeId = await createRoute(page.request)
+    const start = startDaysAgo(4)
+    const elsewhere = startDaysAgo(5)
+    try {
+      await page.goto(`/routes/${routeId}`)
+      await waitForHydration(page)
+
+      const chooser = page.waitForEvent('filechooser')
+      await page.getByRole('button', { name: "Plus d'actions" }).click()
+      await page.getByRole('menuitem', { name: /Importer une sortie/ }).click()
+      await (await chooser).setFiles([gpxFile('Footing montre e2e', start), movedGpx(elsewhere, 0.05)])
+      const dialog = page.getByRole('dialog', { name: 'Import des sorties' })
+      await expect(dialog.getByTestId('outing-import-summary')).toHaveText('1 sortie importée, 1 fichier non importé.')
+      await expect(dialog.getByTestId('outing-import-failures')).toContainText('ailleurs.gpx : Cette sortie ne suit pas ce parcours.')
+      await page.keyboard.press('Escape')
+      await expect(dialog).toBeHidden()
+
+      // Listed among the route's outings, which is marked as done.
+      await expect(page.getByRole('tab', { name: /Passages/ })).toHaveAttribute('aria-selected', 'true')
+      await expect(page.getByRole('tab', { name: /Passages/ })).toContainText('1')
+      await expect(page.getByRole('button', { name: /Fait le/ })).toBeVisible()
+    }
+    finally {
+      await page.request.delete(`/api/routes/${routeId}`)
+    }
+  })
+
+  test('a file dropped on the route page is imported on it, and not twice', async ({ page }) => {
+    const routeId = await createRoute(page.request)
+    const start = startDaysAgo(6)
+    const file = gpxFile('Footing déposé e2e', start)
+    try {
+      await page.goto(`/routes/${routeId}`)
+      await waitForHydration(page)
+
+      // Playwright can't drag files from the OS: the drag events carry a DataTransfer built in the page.
+      const drop = async () => {
+        const dataTransfer = await page.evaluateHandle(({ name, content }) => {
+          const transfer = new DataTransfer()
+          transfer.items.add(new File([content], name, { type: 'application/gpx+xml' }))
+          return transfer
+        }, { name: file.name, content: file.buffer.toString() })
+        await page.locator('body').dispatchEvent('dragenter', { dataTransfer })
+        await expect(page.getByTestId('outing-drop-overlay')).toContainText('ajouter ta sortie à ce parcours')
+        await page.locator('body').dispatchEvent('drop', { dataTransfer })
+        await expect(page.getByTestId('outing-drop-overlay')).toBeHidden()
+        return page.getByRole('dialog', { name: 'Import des sorties' })
+      }
+
+      const dialog = await drop()
+      await expect(dialog.getByTestId('outing-import-summary')).toHaveText('1 sortie importée.')
+      await page.keyboard.press('Escape')
+      await expect(page.getByRole('tab', { name: /Passages/ })).toContainText('1')
+
+      const again = await drop()
+      await expect(again.getByTestId('outing-import-summary')).toHaveText('0 sortie importée, 1 déjà présente.')
+    }
+    finally {
+      await page.request.delete(`/api/routes/${routeId}`)
+    }
+  })
+})

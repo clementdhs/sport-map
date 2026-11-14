@@ -429,6 +429,11 @@ export const outingSchema = z.object({ ...outingFields, ...outingTrackField }).r
 
 export type OutingPayload = z.infer<typeof outingSchema>
 
+// An outing imported on a route from a watch's file (#138): its points are needed to check it was done there.
+export const outingImportSchema = z.object({ ...outingFields, track: outingTrackSchema }).refine(movingWithinDuration, movingExceedsDuration)
+
+export type OutingImportPayload = z.infer<typeof outingImportSchema>
+
 // An outing recorded from /record: its track, saved as a new route, and its times and GPS points. distance_m is
 // optional for pages loaded before it existed (the route's distance is used instead).
 export const recordingSchema = z.object({

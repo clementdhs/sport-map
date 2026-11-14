@@ -1,7 +1,7 @@
 import { serverSupabaseClient } from '#supabase/server'
 
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const id = getRouteIdParam(event)
   const supabase = await serverSupabaseClient(event)

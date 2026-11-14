@@ -222,6 +222,8 @@ for (const device of [{ name: 'phone', width: 375, height: 812 }, { name: 'compu
     expect(requests.map(({ length_m, sport_type }) => ({ length_m, sport_type }))).toEqual(Array(3).fill({ length_m: 4902, sport_type: 'trail' }))
     expect(new Set(requests.map(request => request.seed)).size).toBe(3)
     await expect(panel.getByRole('button', { name: 'Autres propositions' })).toBeEnabled()
+    // The panel scrolls, never the page: a blank strip showed under the map once the proposals were in (#327).
+    expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBe(0)
 
     // The chosen loop becomes the editor's track, cut into editable segments.
     // The first one is picked until another one is.

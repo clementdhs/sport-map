@@ -3,7 +3,7 @@ import { serverSupabaseClient } from '#supabase/server'
 // Adds the points of the sharer's track not yet received. Points sent again (lost answer) are ignored, and
 // the latest position is always the latest fix: a point arriving late never replaces a newer one.
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const shareId = getLiveShareIdParam(event)
   const body = await readLocalizedBody(event, livePointsSchema)

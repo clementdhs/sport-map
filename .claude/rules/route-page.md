@@ -1,13 +1,13 @@
 ---
 paths:
   - app/pages/routes/[id]/index.vue
-  - app/components/RouteOffline.vue
-  - app/components/RouteCollections.vue
-  - app/components/RouteOutings.vue
+  - app/components/route/RouteOffline.vue
+  - app/components/route/RouteCollections.vue
+  - app/components/route/RouteOutings.vue
   - app/components/map/TrackColouring.vue
-  - app/components/RouteSteps.vue
-  - app/components/RouteTeamWords.vue
-  - app/components/RouteActionButton.vue
+  - app/components/route/RouteSteps.vue
+  - app/components/route/RouteTeamWords.vue
+  - app/components/route/RouteActionButton.vue
   - app/utils/routeSteps.ts
 ---
 

@@ -1,7 +1,7 @@
 ---
 paths:
   - "shared/utils/osmFilters.ts"
-  - "app/components/OsmRouteFilters.vue"
+  - "app/components/osm/OsmRouteFilters.vue"
   - "test/unit/osmFilters.test.ts"
   - "app/utils/osmImport.ts"
   - "test/nuxt/osmDiscover.test.ts"
@@ -20,7 +20,7 @@ paths:
   - "test/unit/trackElevation.test.ts"
   - "shared/utils/lineSection.ts"
   - "app/stores/osmSection.ts"
-  - "app/components/OsmSectionPanel.vue"
+  - "app/components/osm/OsmSectionPanel.vue"
   - "test/unit/lineSection.test.ts"
   - "test/nuxt/osmSection.test.ts"
 ---

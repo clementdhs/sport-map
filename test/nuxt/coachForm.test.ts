@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import type { LoadOuting } from '#shared/utils/trainingForm'
-import CoachFormCard from '~/components/CoachFormCard.vue'
+import CoachFormCard from '~/components/coach/CoachFormCard.vue'
 
 // The form card of the coach page (#263): the state with its gauge and sentence, or the start card while the coach
 // is still learning.

@@ -12,7 +12,7 @@ paths:
   - "app/pages/index.vue"
   - "app/components/SearchBox.vue"
   - "supabase/migrations/*search*"
-  - "app/components/RouteEditorWorkspace.vue"
+  - "app/components/route/RouteEditorWorkspace.vue"
   - "app/components/map/RouteEditor.vue"
   - "app/components/map/PoiMarkers.vue"
 ---

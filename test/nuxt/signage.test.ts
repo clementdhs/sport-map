@@ -6,7 +6,7 @@ import DoneStamp from '~/components/DoneStamp.vue'
 import DurationSign from '~/components/DurationSign.vue'
 import HerePlate from '~/components/HerePlate.vue'
 import KeyFigures from '~/components/KeyFigures.vue'
-import SportMark from '~/components/SportMark.vue'
+import SportMark from '~/components/sport/SportMark.vue'
 
 // The trail signage components (#229): the yellow is never the only information, the text is always there.
 describe('DurationSign', () => {

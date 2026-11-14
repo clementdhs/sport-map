@@ -25,6 +25,7 @@ Notes specific to one feature (map, mobile bottom sheet, editor, photos, reviews
 - Validation schemas (zod) live in `shared/utils/` and are shared by `UForm` (through `useLocalizedSchema`) and the API (`readLocalizedBody` / `getLocalizedQuery`). Their messages are translation keys.
 - API errors: `throw apiError(event, status, 'api.…')` (`server/utils/messages.ts`), whose statusMessage is written in the request's language (locale cookie, else `Accept-Language`); pages show it as is.
 - Every new table gets RLS enabled with explicit policies, in a new file under `supabase/migrations/` (never edit an applied migration).
+- Components: a feature folder (`app/components/route/`, `coach/`, `map/`…) only holds files whose name already starts with its prefix (`coach/CoachFormCard.vue` stays `<CoachFormCard>`); other components stay at the root, since a folder would rename them. `map/` predates this and also prefixes non-`Map` files (`map/RouteDisplay.vue` is `<MapRouteDisplay>`).
 - Auto-imported `utils/` files: an exported function returning an inline object type with several properties (`): { a: A, b: B } {`) hides the next export from the scanner (mlly) when no comment line comes between them. Prefer a named type.
 - `useFetch` data is a shallow ref (Nuxt 4 default): state a page changes after loading gets its own `ref`, since assigning a property of the fetched object doesn't re-render.
 - Free-tier quotas matter: debounce OpenRouteService calls, serve images straight from Supabase Storage, mind MapTiler's 100k requests/month.

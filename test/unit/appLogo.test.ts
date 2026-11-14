@@ -9,7 +9,7 @@ describe('app logo', () => {
   const path = read('../../public/icon.svg').match(/<path d="([^"]+)"/)![1]
 
   it('draws the same mark as public/icon.svg in AppLogo.vue and the link preview', () => {
-    expect(read('../../app/components/AppLogo.vue')).toContain(`d="${path}"`)
+    expect(read('../../app/components/app/AppLogo.vue')).toContain(`d="${path}"`)
     expect(read('../../server/utils/ogImage.ts')).toContain(`d="${path}"`)
   })
 

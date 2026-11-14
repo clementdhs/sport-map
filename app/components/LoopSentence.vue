@@ -212,7 +212,8 @@ const chips = computed(() => {
   if (understood.precision) list.push({ setting: 'precision', label: t('loopSentence.approximate') })
   if (understood.shape) list.push({ setting: 'shape', label: t(understood.shape === 'out_and_back' ? 'loop.outAndBack' : 'loopSentence.loop') })
   if (understood.climb) list.push({ setting: 'climb', label: t(`loop.climbs.${understood.climb}`) })
-  if (understood.place) list.push({ setting: 'via', label: t('loopSentence.place', { name: understood.place.name }) })
+  // One chip per place (#326), each scrolling to « Passer par ».
+  for (const place of understood.places ?? []) list.push({ setting: 'via', label: t('loopSentence.place', { name: place.name }) })
   if (understood.paths && canPreferPaths(editor.details.sport_type)) list.push({ setting: 'paths', label: t('loopSentence.paths') })
   if (startLabel.value) {
     const warn = startState.value === 'missing' || startState.value === 'notFound'
@@ -290,7 +291,7 @@ const chips = computed(() => {
       <span class="me-0.5 text-[0.6875rem] font-bold tracking-wider text-muted uppercase">{{ t('loopSentence.understood') }}</span>
       <button
         v-for="chip in chips"
-        :key="chip.setting"
+        :key="`${chip.setting}-${chip.label}`"
         type="button"
         class="inline-flex h-7.5 items-center rounded-full border border-(--ui-border-inverted) px-2.5 text-[0.8125rem] font-semibold text-highlighted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         :class="chip.warn ? 'bg-(--sign) text-(--sign-text)' : 'bg-default hover:bg-elevated'"
@@ -302,7 +303,7 @@ const chips = computed(() => {
 
     <p v-for="part in settings?.ignored ?? []" :key="`${part.kind}-${part.text}`" class="flex items-start gap-2 text-sm text-muted">
       <UIcon name="i-lucide-circle-alert" class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-      <span>{{ t(`loopSentence.ignored.${part.kind}`, { text: part.text }) }}</span>
+      <span>{{ t(`loopSentence.ignored.${part.kind}`, { text: part.text, max: LOOP_MAX_VIAS }) }}</span>
     </p>
 
     <div v-if="failure" role="alert" class="flex gap-2.5 rounded-md border border-accented bg-default px-3 py-2.5 text-sm">

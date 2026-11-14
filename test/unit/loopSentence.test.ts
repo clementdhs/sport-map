@@ -6,7 +6,7 @@ import {
   loopSettingsFromUnderstanding,
   loopUnderstandingSchema,
 } from '#shared/utils/loopSentence'
-import { LOOP_MAX_VIAS } from '#shared/utils/loops'
+import { LOOP_MAX_VIAS } from '#shared/utils/routes'
 import type { LoopUnderstanding } from '#shared/utils/loopSentence'
 
 // What the LLM answers when it understood nothing: every field there, all empty.

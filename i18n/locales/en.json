@@ -557,13 +557,20 @@
     },
     "namedLabel": "Place to go through or head for",
     "namedPlaceholder": "E.g. the Isère, Lake Paladru, the Chartreuse",
-    "namedHint": "Looked for in OpenStreetMap around the start: a river, lake, peak or village in reach is gone through, a massif or a place further away only gives the direction.",
+    "namedHint": "Looked for in OpenStreetMap around the start: a river, lake, peak or village in reach is gone through, in the order of the tour, a massif or a place further away only gives the direction.",
     "namedSearching": "Looking for \"{name}\" around the start…",
     "namedNone": "\"{name}\" not found within {radius} of the start: the proposals go without it.",
     "namedVague": "\"{name}\": which one? Give its name, e.g. \"Lake Paladru\". The proposals go without it.",
     "namedFailed": "OpenStreetMap isn't answering: the proposals go through no place.",
+    "namedFailedOne": "\"{name}\": OpenStreetMap isn't answering, this place is left out.",
     "namedVia": "Through {name}, {distance} away.",
     "namedHeading": "Towards {name}, {distance} away. The loop heads that way without trying to reach it.",
+    "namedTooFar": "{name}, {distance} away, doesn't fit this length with the other places: left out.",
+    "namedAsideHeading": "{name} only gives a direction: left out, the loop goes through the other places.",
+    "namedMoreLabel": "Place {n} to go through or head for",
+    "namedMorePlaceholder": "Another place, e.g. Lans-en-Vercors",
+    "namedAdd": "Add a place",
+    "namedRemove": "Remove the place {name}",
     "viaSearching": {
       "peak": "Looking for a peak within {radius}…",
       "water": "Looking for a water point within {radius}…"
@@ -631,7 +638,7 @@
     "ignored": {
       "distance": "\"{text}\": the distance goes from 1 to 100 km, I left it out.",
       "duration": "\"{text}\": the duration goes from 10 min to 10 h, I left it out.",
-      "via": "\"{text}\": a loop goes through one named place only, this one is left out.",
+      "via": "\"{text}\": a loop goes through {max} named places at most, this one is left out.",
       "gain": "\"{text}\": a gain to aim at goes from 100 to 3,000 m, with a distance or alone (not with a duration), I left it out.",
       "paths": "\"{text}\": a road ride stays on roads, the loop goes without paths."
     }
@@ -1512,7 +1519,7 @@
     "loopNotFound": "No usable path around this start",
     "loopOffTarget": "No loop of this distance in this direction",
     "loopViaNotFound": "No usable path to the place to go through",
-    "loopViaTooFar": "This place is too far along the paths for this length",
+    "loopViaTooFar": "The places to go through are too far along the paths for this length",
     "outAndBackOffTarget": "No out and back of this distance in this direction",
     "exportFailed": "Couldn't prepare the export",
     "exportPhotosFailed": "Couldn't prepare the photo export",

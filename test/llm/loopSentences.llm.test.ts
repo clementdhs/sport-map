@@ -28,9 +28,9 @@ describe.skipIf(!options.key)(`reference sentences (${options.provider}, ${optio
         return
       }
       expect(settings).not.toBeNull()
-      const { ignored, place, ...fields } = expected
+      const { ignored, places, ...fields } = expected
       expect(settings).toMatchObject(fields)
-      expect(settings!.place && namedPlaceCore(settings!.place.name)).toBe(place === undefined ? null : namedPlaceCore(place))
+      expect(settings!.places.map(place => namedPlaceCore(place.name))).toEqual((places ?? []).map(namedPlaceCore))
       expect(settings!.ignored.map(part => part.kind).sort()).toEqual([...(ignored ?? [])].sort())
     })
   }

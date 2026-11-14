@@ -205,7 +205,7 @@ describe('proposals', () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     await loop.generate()
-    expect(loopCalls.every(call => call.shape === 'loop' && call.precision === 'precise' && !call.via)).toBe(true)
+    expect(loopCalls.every(call => call.shape === 'loop' && call.precision === 'precise' && !call.vias)).toBe(true)
 
     loop.shape = 'out_and_back'
     await nextTick()
@@ -343,7 +343,7 @@ describe('proposals', () => {
     expect(loop.viaRadiusM).toBe(4231)
     expect(loop.viaStatus).toBe('found')
     expect(loop.viaPlace?.id).toBe('high')
-    expect(loopCalls.every(call => call.via?.[1] === 45.92)).toBe(true)
+    expect(loopCalls.every(call => call.vias?.[0]?.[1] === 45.92)).toBe(true)
 
     await loop.generate()
     expect(searchLoopViaMock).toHaveBeenCalledTimes(1)
@@ -356,14 +356,14 @@ describe('proposals', () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     loop.via = 'named'
-    loop.viaName = 'l\'Isère'
+    loop.viaNames = ['l\'Isère']
     await loop.generate()
 
     expect(searchNamedPlacesMock).toHaveBeenCalledWith('l\'Isère', START, expect.any(String))
     expect(loop.viaStatus).toBe('found')
-    expect(loop.namedChoice).toEqual({ role: 'via', place: river })
-    expect(loop.viaPoint).toEqual(river.coordinates)
-    expect(loopCalls.every(call => call.via?.[0] === 6.11 && call.heading === undefined)).toBe(true)
+    expect(loop.namedPlan?.vias).toEqual([river])
+    expect(loop.viaPoints).toEqual([river.coordinates])
+    expect(loopCalls.every(call => call.vias?.[0]?.[0] === 6.11 && call.heading === undefined)).toBe(true)
 
     await loop.generate()
     expect(searchNamedPlacesMock).toHaveBeenCalledTimes(1)
@@ -376,13 +376,13 @@ describe('proposals', () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     loop.via = 'named'
-    loop.viaName = 'la Chartreuse'
+    loop.viaNames = ['la Chartreuse']
     await loop.generate()
 
-    expect(loop.namedChoice?.role).toBe('heading')
-    expect(loop.viaPoint).toBeNull()
+    expect(loop.namedPlan?.heading?.role).toBe('heading')
+    expect(loop.viaPoints).toEqual([])
     expect(loopCalls).toHaveLength(3)
-    expect(loopCalls.every(call => !call.via && typeof call.heading === 'number' && Math.abs(call.heading) < 10)).toBe(true)
+    expect(loopCalls.every(call => !call.vias && typeof call.heading === 'number' && Math.abs(call.heading) < 10)).toBe(true)
   })
 
   it('goes without a named place it cannot find (#293)', async () => {
@@ -390,18 +390,57 @@ describe('proposals', () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     loop.via = 'named'
-    loop.viaName = 'Atlantide'
+    loop.viaNames = ['Atlantide']
     await loop.generate()
     expect(loop.viaStatus).toBe('none')
     expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'ready', 'ready'])
-    expect(loopCalls.every(call => !call.via && call.heading === undefined)).toBe(true)
+    expect(loopCalls.every(call => !call.vias && call.heading === undefined)).toBe(true)
+  })
+
+  it('goes through several named places, further than 10 km, ordered around the start (#326)', async () => {
+    const grenoble: LngLat = [5.7245, 45.1885]
+    const autrans: NamedPlace = { id: 'n1', name: 'Autrans', kind: 'village', coordinates: [5.5434, 45.1753], distanceM: 14270 }
+    const lans: NamedPlace = { id: 'n2', name: 'Lans-en-Vercors', kind: 'village', coordinates: [5.5886, 45.1283], distanceM: 12584 }
+    searchNamedPlacesMock.mockImplementation(async (name: string) => (name === 'Autrans' ? [autrans] : [lans]))
+    const loop = useLoopGeneratorStore()
+    loop.setStart(grenoble)
+    loop.distanceKm = 70
+    loop.via = 'named'
+    loop.viaNames = ['Autrans', 'Lans-en-Vercors']
+    await loop.generate()
+
+    expect(searchNamedPlacesMock).toHaveBeenCalledTimes(2)
+    expect(loop.viaStatus).toBe('found')
+    expect(loop.namedPlan?.vias).toEqual([lans, autrans])
+    expect(loop.namedPlan?.setAside).toEqual([])
+    expect(loop.viaPoints).toEqual([lans.coordinates, autrans.coordinates])
+    expect(loopCalls).toHaveLength(3)
+    expect(loopCalls.every(call => call.vias?.length === 2 && call.heading === undefined)).toBe(true)
+  })
+
+  it('sets aside a named place too far for the length (#326)', async () => {
+    const grenoble: LngLat = [5.7245, 45.1885]
+    const autrans: NamedPlace = { id: 'n1', name: 'Autrans', kind: 'village', coordinates: [5.5434, 45.1753], distanceM: 14270 }
+    const meylan: NamedPlace = { id: 'n3', name: 'Meylan', kind: 'village', coordinates: [5.7799, 45.2092], distanceM: 4900 }
+    searchNamedPlacesMock.mockImplementation(async (name: string) => (name === 'Autrans' ? [autrans] : [meylan]))
+    const loop = useLoopGeneratorStore()
+    loop.setStart(grenoble)
+    loop.distanceKm = 20
+    loop.via = 'named'
+    loop.viaNames = ['Autrans', 'Meylan']
+    await loop.generate()
+
+    // 20 km within 10 %: 8.5 km as the crow flies at most, each way. Autrans is only a direction, set aside beside Meylan.
+    expect(loop.namedPlan?.vias).toEqual([meylan])
+    expect(loop.namedPlan?.setAside.map(choice => choice.place)).toEqual([autrans])
+    expect(loopCalls.every(call => call.vias?.length === 1 && call.vias[0]![0] === 5.7799)).toBe(true)
   })
 
   it('does not look for a place said by its kind only, and says so (#293)', async () => {
     const loop = useLoopGeneratorStore()
     loop.setStart(START)
     loop.via = 'named'
-    loop.viaName = 'le lac'
+    loop.viaNames = ['le lac']
     await loop.generate()
     expect(searchNamedPlacesMock).not.toHaveBeenCalled()
     expect(loop.viaStatus).toBe('vague')
@@ -416,7 +455,7 @@ describe('proposals', () => {
     await loop.generate()
     expect(loop.viaStatus).toBe('none')
     expect(loop.proposals.map(proposal => proposal.status)).toEqual(['ready', 'ready', 'ready'])
-    expect(loopCalls.every(call => !call.via)).toBe(true)
+    expect(loopCalls.every(call => !call.vias)).toBe(true)
 
     searchLoopViaMock.mockRejectedValue(new Error('busy'))
     loop.setStart([6.2, 45.9])
@@ -486,7 +525,7 @@ describe('session mode (#266)', () => {
     await loop.generate()
     expect(loopCalls).toHaveLength(3)
     expect(loopCalls.every(call => call.length_m === Math.round(plan.distanceM) && call.sport_type === 'running'
-      && call.shape === 'loop' && call.precision === 'precise' && !call.via)).toBe(true)
+      && call.shape === 'loop' && call.precision === 'precise' && !call.vias)).toBe(true)
     // Endurance climbs about 5 m/km: seed 2 (~5 m/km) first, then the flatter seed 1, the hilliest last.
     expect(loop.proposals.map(proposal => proposal.seed)).toEqual([2, 1, 0])
     expect(loop.proposals.every(proposal => proposal.climbs === null)).toBe(true)
@@ -574,7 +613,7 @@ describe('choosing a proposal', () => {
 
 describe('settings from a sentence (#216)', () => {
   const settings = (fields: Partial<LoopSentenceSettings>): LoopSentenceSettings => ({
-    sport: null, target: null, precision: null, shape: null, climb: null, start: null, place: null, paths: null, gain: null, ignored: [], ...fields,
+    sport: null, target: null, precision: null, shape: null, climb: null, start: null, places: [], paths: null, gain: null, ignored: [], ...fields,
   })
 
   it('fills the sport, distance, precision, shape and climbing, and says which settings changed', () => {
@@ -682,9 +721,18 @@ describe('settings from a sentence (#216)', () => {
   it('fills the named place to go through (#293)', () => {
     const loop = useLoopGeneratorStore()
     loop.show()
-    const changed = loop.applySentence(settings({ place: { name: 'Isère', text: 'autour de l\'Isère' } }))
+    const changed = loop.applySentence(settings({ places: [{ name: 'Isère', text: 'autour de l\'Isère' }] }))
     expect(loop.via).toBe('named')
-    expect(loop.viaName).toBe('Isère')
+    expect(loop.viaNames).toEqual(['Isère'])
+    expect(changed).toEqual(['via'])
+  })
+
+  it('fills every named place of the sentence (#326)', () => {
+    const loop = useLoopGeneratorStore()
+    loop.show()
+    const changed = loop.applySentence(settings({ places: [{ name: 'Autrans', text: 'par Autrans' }, { name: 'Lans-en-Vercors', text: 'et Lans-en-Vercors' }] }))
+    expect(loop.via).toBe('named')
+    expect(loop.viaNames).toEqual(['Autrans', 'Lans-en-Vercors'])
     expect(changed).toEqual(['via'])
   })
 

@@ -247,6 +247,6 @@ describe('loopRoutePoints towards a place (#293)', () => {
 
   it('goes through a place rather than towards a bearing when it has both', () => {
     const via = at(2000, 90)
-    expect(loopRoutePoints('loop', grenoble, lengthM, 2, via, 10)).toEqual(loopRoutePoints('loop', grenoble, lengthM, 2, via))
+    expect(loopRoutePoints('loop', grenoble, lengthM, 2, [via], 10)).toEqual(loopRoutePoints('loop', grenoble, lengthM, 2, [via]))
   })
 })

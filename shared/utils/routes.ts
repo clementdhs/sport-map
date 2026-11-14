@@ -277,6 +277,8 @@ export type RoutingSegmentResponse = {
 // Automatic loops (#50), OpenRouteService round trips: 100 km at most.
 export const LOOP_MIN_M = 1000
 export const LOOP_MAX_M = 100_000
+// Several named places in one loop (#326): at most this many places to go through.
+export const LOOP_MAX_VIAS = 5
 
 // A loop, or an out and back (#214): the way out, then the same way back.
 export const LOOP_SHAPES = ['loop', 'out_and_back'] as const
@@ -293,7 +295,9 @@ export const routingLoopSchema = z.object({
   seed: z.number().int().min(0).max(1_000_000),
   shape: z.enum(LOOP_SHAPES).default('loop'),
   precision: z.enum(LOOP_PRECISIONS).default('precise'),
-  // A place to go through (a peak, a drinking water point), found in OpenStreetMap by the browser.
+  // Places to go through (a peak, a drinking water point, named places: #326), found in OpenStreetMap by the
+  // browser, LOOP_MAX_VIAS at most. `via`: a single place, as sent before #326 (an app still cached).
+  vias: z.array(coordinateSchema).max(LOOP_MAX_VIAS).optional(),
   via: coordinateSchema.optional(),
   // The bearing of a place the member named but the loop only heads for (#293: a massif, a place out of reach), in
   // degrees from north; ignored with a via.

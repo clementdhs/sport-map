@@ -194,6 +194,17 @@ async function toggleActivity(type: ActivityType) {
   }
 }
 
+// Outings imported on this route (#138): the route is fetched again for its outings and its "done" state, which
+// the page keeps in refs of their own.
+const outingImport = useTemplateRef('outingImport')
+async function onOutingsImported() {
+  await refreshNuxtData()
+  if (!parcours.value) return
+  outings.value = parcours.value.outings
+  if (parcours.value.viewer) viewer.value = parcours.value.viewer
+  activeTab.value = 'outings'
+}
+
 const collectionsOpen = ref(false)
 const deleteOpen = ref(false)
 const deleting = ref(false)
@@ -212,6 +223,16 @@ const moreActions = computed(() => {
     },
     { label: t('route.exportGpx'), icon: 'i-lucide-download', to: `/api/routes/${id}/gpx`, external: true, download: true },
   ]]
+  // An outing recorded by a watch on this route (#138).
+  if (user.value) {
+    actions[0]!.push({
+      label: t('route.importOuting'),
+      description: t('route.importOutingHint'),
+      icon: 'i-lucide-upload',
+      ui: { itemDescription: 'whitespace-normal' },
+      onSelect: () => outingImport.value?.pick(),
+    })
+  }
   if (offline.value?.supported && !offline.value.available) {
     actions[0]!.push({
       label: t('route.prepareOffline'),
@@ -416,6 +437,7 @@ useSeoMeta({
     </p>
 
     <RouteOffline ref="offline" :route-id="parcours.id" :name="parcours.name" :coordinates="coordinates" />
+    <OutingImport v-if="user" ref="outingImport" :route-id="parcours.id" drop @imported="onOutingsImported" />
 
     <UTabs v-model="activeTab" :items="tabs" variant="link" :unmount-on-hide="false" class="gap-4">
       <template #overview>

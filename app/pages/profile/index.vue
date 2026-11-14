@@ -47,6 +47,7 @@ const routeTabs = computed(() => [
       <template #actions>
         <!-- Outings recorded by a watch or another app (#268) -->
         <OutingImportButton
+          drop
           icon="i-lucide-upload"
           :label="t('outingImport.button')"
           :aria-label="t('outingImport.button')"

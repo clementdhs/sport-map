@@ -7,8 +7,9 @@ export interface OutingImportFailure {
 }
 
 // Importing outings from GPX, FIT and TCX files (#268): each file is read in the browser and sent on its own,
-// one after the other, so a long list shows its progress and one bad file doesn't stop the others.
-export function useOutingImport() {
+// one after the other, so a long list shows its progress and one bad file doesn't stop the others. With a route
+// (#138), each outing is added to that route, which it must follow, instead of becoming a route of its own.
+export function useOutingImport(routeId?: MaybeRefOrGetter<string | undefined>) {
   const { t } = useI18n()
   const { formatDate } = useFormat()
   const errorMessage = useErrorMessage()
@@ -34,7 +35,10 @@ export function useOutingImport() {
             name: t('record.defaultName', { date: formatDate(new Date(outing.startedAt).toISOString()) }),
             sport: defaultSport.value ?? 'hiking',
           })
-          const answer = await $fetch<OutingImportResponse>('/api/outings/import', { method: 'POST', body })
+          const route = toValue(routeId)
+          const answer = route
+            ? await $fetch<OutingImportResponse>(`/api/routes/${route}/outings/import`, { method: 'POST', body: routeOutingPayload(body) })
+            : await $fetch<OutingImportResponse>('/api/outings/import', { method: 'POST', body })
           if (answer.duplicate) duplicates.value++
           else imported.value++
         }

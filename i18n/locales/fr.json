@@ -200,6 +200,8 @@
     "actionFailed": "Action impossible",
     "addToCollection": "Ajouter à une collection",
     "exportGpx": "Exporter en GPX",
+    "importOuting": "Importer une sortie",
+    "importOutingHint": "Fichier GPX, FIT ou TCX de ta montre, enregistré sur ce parcours",
     "prepareOffline": "Préparer pour le hors-ligne",
     "prepareOfflineHint": "Carte et suivi sans réseau · 20 à 30 Mo pour 30 km, de préférence en Wi-Fi",
     "edit": "Modifier le parcours",
@@ -1459,6 +1461,7 @@
     "tooManyLogins": "Trop d'essais de connexion : réessaie dans quelques minutes",
     "loginFailed": "Connexion impossible pour le moment, réessaie plus tard",
     "usernameTaken": "Ce pseudo est déjà pris",
+    "outingOffRoute": "Cette sortie ne suit pas ce parcours. Importe-la depuis ton profil : elle y deviendra un parcours à elle.",
     "routeNotFound": "Parcours introuvable",
     "outingNotFound": "Passage introuvable",
     "deleteOutingFailed": "Impossible de supprimer le passage",
@@ -1884,7 +1887,10 @@
     "duplicates": "{count} déjà présente | {count} déjà présentes",
     "failed": "{count} fichier non importé | {count} fichiers non importés",
     "failure": "{file} : {message}",
-    "where": "Elles comptent dans tes statistiques et ta forme, et figurent dans tes parcours faits, en privé."
+    "where": "Elles comptent dans tes statistiques et ta forme, et figurent dans tes parcours faits, en privé.",
+    "whereRoute": "Elle figure dans l'onglet Passages du parcours, coché Réalisé, et compte dans tes statistiques.",
+    "drop": "Dépose tes fichiers GPX, FIT ou TCX pour importer tes sorties",
+    "dropOnRoute": "Dépose ton fichier GPX, FIT ou TCX pour ajouter ta sortie à ce parcours"
   },
   "coachImport": {
     "title": "Aller plus vite : importe tes sorties",

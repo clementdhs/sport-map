@@ -6,7 +6,7 @@ import type { Database } from '#shared/types/database.types'
 // Elevation gain and loss of a marked route (#71), computed from the points its import into the editor would have,
 // so that both show the same figure, then kept for the family until the relation changes (a new version).
 export default defineEventHandler(async (event): Promise<OsmRouteElevation> => {
-  const user = await requireUser(event)
+  await requireUser(event)
   // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
   await requireMfa(event)
 

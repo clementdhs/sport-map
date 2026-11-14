@@ -2,7 +2,7 @@ import type { LngLatEle, RoutingSegmentResponse, WayInfo } from '#shared/utils/r
 
 export default defineEventHandler(async (event): Promise<RoutingSegmentResponse> => {
   // Signed-in users only: the OpenRouteService quota is shared by the whole app.
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const { from, to, mode, sport_type } = await readLocalizedBody(event, routingSegmentSchema)
 

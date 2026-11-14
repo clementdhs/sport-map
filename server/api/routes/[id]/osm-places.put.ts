@@ -10,7 +10,7 @@ import type { LngLat } from '#shared/utils/routes'
 // Saves the useful places the browser found near the route in OpenStreetMap (#52). Any member who can see the
 // route may, as it is map data rather than the owner's content: RLS checks that the route is visible.
 export default defineEventHandler(async (event): Promise<RouteOsmPlaces> => {
-  const user = await requireUser(event)
+  await requireUser(event)
   // The service role below bypasses RLS, which asks members with two-factor authentication for their code.
   await requireMfa(event)
 

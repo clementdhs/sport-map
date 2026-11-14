@@ -3,7 +3,7 @@ import type { Json } from '#shared/types/database.types'
 
 // Saves the preferences changed on a device (#145), key by key: the others stay as another device left them.
 export default defineEventHandler(async (event) => {
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const changes = await readLocalizedBody(event, preferencesPatchSchema)
   if (Object.keys(changes).length) {

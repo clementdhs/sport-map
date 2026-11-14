@@ -211,7 +211,7 @@ const sessionClimbs = computed(() => {
 
 const loopLayerData = computed(() => ({
   start: loop.open ? loop.start : null,
-  via: loop.open ? loop.viaPoint : null,
+  vias: loop.open ? loop.viaPoints : [],
   loops: loop.proposals.map(proposal => proposal.coordinates),
   highlighted: loop.highlighted,
   climbs: sessionClimbs.value,

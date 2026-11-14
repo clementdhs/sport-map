@@ -270,7 +270,7 @@ test('generates an out and back of a rough length through the highest peak (#214
   await panel.getByRole('combobox', { name: 'Passer par' }).click()
   await page.getByRole('option', { name: 'Le sommet le plus haut à portée' }).click()
 
-  const requests: { shape: string, precision: string, via?: [number, number] }[] = []
+  const requests: { shape: string, precision: string, vias?: [number, number][] }[] = []
   page.on('request', (request) => {
     if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
   })
@@ -285,8 +285,8 @@ test('generates an out and back of a rough length through the highest peak (#214
   for (const request of requests) {
     expect(request.shape).toBe('out_and_back')
     expect(request.precision).toBe('range')
-    expect(request.via?.[0]).toBeCloseTo(peak[0], 5)
-    expect(request.via?.[1]).toBeCloseTo(peak[1], 5)
+    expect(request.vias?.[0]?.[0]).toBeCloseTo(peak[0], 5)
+    expect(request.vias?.[0]?.[1]).toBeCloseTo(peak[1], 5)
   }
 
   await panel.getByRole('button', { name: 'Choisir cet aller-retour' }).click()
@@ -413,7 +413,7 @@ test('goes through a named river, heads for a named massif and goes without an u
   await expect(panel.getByText('Départ placé')).toBeVisible()
   start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
 
-  const requests: { via?: [number, number], heading?: number }[] = []
+  const requests: { vias?: [number, number][], heading?: number }[] = []
   page.on('request', (request) => {
     if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
   })
@@ -426,7 +426,7 @@ test('goes through a named river, heads for a named massif and goes without an u
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(requests).toHaveLength(3)
   for (const request of requests) {
-    expect(request.via?.[0]).toBeCloseTo(start[0] + 0.015, 4)
+    expect(request.vias?.[0]?.[0]).toBeCloseTo(start[0] + 0.015, 4)
     expect(request.heading).toBeUndefined()
   }
 
@@ -438,7 +438,7 @@ test('goes through a named river, heads for a named massif and goes without an u
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(requests).toHaveLength(3)
   for (const request of requests) {
-    expect(request.via).toBeUndefined()
+    expect(request.vias).toBeUndefined()
     expect(Math.abs(request.heading!)).toBeLessThan(1)
   }
 
@@ -447,7 +447,7 @@ test('goes through a named river, heads for a named massif and goes without an u
   await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
   await expect(panel.getByText(/^« Atlantide » introuvable à moins de 30 km du départ/)).toBeVisible()
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
-  expect(requests.every(request => !request.via && request.heading === undefined)).toBe(true)
+  expect(requests.every(request => !request.vias && request.heading === undefined)).toBe(true)
 })
 
 test('finds a named village with MapTiler and a peak with Nominatim when Overpass is down (#310)', async ({ page }) => {
@@ -485,7 +485,7 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   await expect(panel.getByText('Départ placé')).toBeVisible()
   start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
 
-  const requests: { via?: [number, number], heading?: number }[] = []
+  const requests: { vias?: [number, number][], heading?: number }[] = []
   page.on('request', (request) => {
     if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
   })
@@ -497,7 +497,7 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   await expect(panel.getByText(/^Passage : Seyssinet-Pariset, à \d(,\d+)? km\.$/)).toBeVisible()
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(requests).toHaveLength(3)
-  for (const request of requests) expect(request.via?.[1]).toBeCloseTo(start[1] - 0.018, 4)
+  for (const request of requests) expect(request.vias?.[0]?.[1]).toBeCloseTo(start[1] - 0.018, 4)
 
   // A peak isn't asked to MapTiler: Overpass first, then Nominatim, with the name as said then its core.
   requests.length = 0
@@ -508,7 +508,7 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
   expect(nominatimQueries).toEqual(['le mont Moucherotte', 'moucherotte'])
   expect(overpassQueries.length).toBeGreaterThan(0)
-  for (const request of requests) expect(request.via?.[0]).toBeCloseTo(start[0] + 0.038, 4)
+  for (const request of requests) expect(request.vias?.[0]?.[0]).toBeCloseTo(start[0] + 0.038, 4)
 
   // Found nowhere: the proposals go without it, as before.
   requests.length = 0
@@ -516,7 +516,82 @@ test('finds a named village with MapTiler and a peak with Nominatim when Overpas
   await panel.getByRole('button', { name: 'Proposer des boucles' }).click()
   await expect(panel.getByText(/^« Atlantide » introuvable à moins de 30 km du départ/)).toBeVisible()
   await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
-  expect(requests.every(request => !request.via && request.heading === undefined)).toBe(true)
+  expect(requests.every(request => !request.vias && request.heading === undefined)).toBe(true)
+})
+
+test('goes through several named places further than 10 km, and sets aside the one the length cannot fit (#326)', async ({ page }) => {
+  let start: [number, number] = [0, 0]
+  // OpenStreetMap knows none of them; MapTiler knows three villages: two west, 13 and 14 km away, 6 km apart, and one
+  // 26 km south-east that a 70 km loop through the others can't reach too.
+  await page.route('**/api/interpreter', route => route.fulfill({ json: { elements: [] } }))
+  const villages: Record<string, [number, number]> = { 'Autrans': [-0.181, -0.0132], 'Lans-en-Vercors': [-0.1359, -0.0602], 'Uriage': [0.25, -0.15] }
+  await page.route('https://api.maptiler.com/geocoding/**', (route) => {
+    const [lng, lat] = start
+    const url = decodeURIComponent(route.request().url())
+    // Each village keeps its own id: the panel tells places apart by it.
+    const features = Object.entries(villages).map(([name, [dLng, dLat]], i) => ({ name, dLng, dLat, i })).filter(({ name }) => url.includes(`/${name}.json`)).map(({ name, dLng, dLat, i }) => ({
+      id: `municipality.${i}`, text: name, place_type: ['municipality'], center: [lng + dLng, lat + dLat], properties: { ref: `osm:r${100 + i}` },
+    }))
+    return route.fulfill({ json: { features } })
+  })
+  await page.route('**/api/loops/understand', route => route.fulfill({
+    json: {
+      settings: {
+        sport: 'cycling',
+        target: { kind: 'distance', km: 70 },
+        precision: null,
+        shape: 'loop',
+        climb: null,
+        start: { kind: 'my_point' },
+        places: Object.keys(villages).map(name => ({ name, text: name })),
+        paths: null,
+        gain: null,
+        ignored: [],
+      },
+      quota_remaining: 29,
+    },
+  }))
+  await page.goto('/routes/create?mode=loop')
+  await waitForMap(page)
+  const panel = page.getByRole('region', { name: 'Boucle automatique' })
+  const map = page.locator('.maplibregl-canvas')
+  const box = (await map.boundingBox())!
+  await map.click({ position: { x: box.width / 2, y: box.height / 2 } })
+  await expect(panel.getByText('Départ placé')).toBeVisible()
+  start = (await page.locator('[data-map-center]').getAttribute('data-map-center'))!.split(',').map(Number) as [number, number]
+
+  const requests: { vias?: [number, number][], heading?: number }[] = []
+  page.on('request', (request) => {
+    if (request.url().endsWith('/api/routing/loop')) requests.push(request.postDataJSON())
+  })
+  const field = panel.getByRole('textbox', { name: 'Décris ta sortie' })
+  await field.fill('Tour de 70km en vélo passant par Autrans, Lans-en-Vercors et Uriage')
+  await field.press('Enter')
+
+  // Every place fills « Passer par », one field each.
+  const understood = panel.getByTestId('loop-sentence-understood')
+  for (const name of Object.keys(villages)) await expect(understood.getByRole('button', { name: `Lieu : ${name}` })).toBeVisible()
+  await expect(panel.getByRole('textbox', { name: 'Lieu à traverser ou à viser' })).toHaveValue('Autrans')
+  await expect(panel.getByRole('textbox', { name: 'Lieu 2 à traverser ou à viser' })).toHaveValue('Lans-en-Vercors')
+  await expect(panel.getByRole('textbox', { name: 'Lieu 3 à traverser ou à viser' })).toHaveValue('Uriage')
+
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(3)
+  await expect(panel.getByRole('status').filter({ hasText: /^Passage : Autrans, à 1\d(,\d+)? km\.$/ })).toBeVisible()
+  await expect(panel.getByRole('status').filter({ hasText: /^Passage : Lans-en-Vercors, à 1\d(,\d+)? km\.$/ })).toBeVisible()
+  await expect(panel.getByRole('status').filter({ hasText: /^Uriage, à 2\d(,\d+)? km, ne tient pas dans cette longueur/ })).toBeVisible()
+  expect(requests).toHaveLength(3)
+  for (const request of requests) {
+    expect(request.heading).toBeUndefined()
+    // Both villages, in their order around the start (Lans-en-Vercors's bearing comes first clockwise).
+    expect(request.vias).toHaveLength(2)
+    expect(request.vias![0]![0]).toBeCloseTo(start[0] + villages['Lans-en-Vercors']![0], 4)
+    expect(request.vias![1]![0]).toBeCloseTo(start[0] + villages.Autrans![0], 4)
+  }
+
+  // A place removed by hand: the proposals go without it.
+  await panel.getByRole('button', { name: 'Retirer le lieu Uriage' }).click()
+  await expect(panel.getByRole('textbox', { name: 'Lieu 3 à traverser ou à viser' })).toBeHidden()
+  await expect(panel.getByRole('list', { name: 'Boucles proposées' }).getByRole('listitem')).toHaveCount(0)
 })
 
 test('fills the loop settings from a sentence, then generates (#216)', async ({ page }) => {
@@ -532,7 +607,7 @@ test('fills the loop settings from a sentence, then generates (#216)', async ({ 
         shape: 'out_and_back',
         climb: 'hilly',
         start: { kind: 'my_point' },
-        place: { name: 'Isère', text: 'le long de l\'Isère' },
+        places: [{ name: 'Isère', text: 'le long de l\'Isère' }],
         paths: true,
         gain: null,
         ignored: [],

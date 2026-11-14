@@ -1,7 +1,7 @@
 import { bearing, destination, distance, lineString, nearestPointOnLine } from '@turf/turf'
 import { type OsmPlace, toOsmPlace, type OverpassElement } from './osmPlaces'
 import {
-  estimateDurationMin, type LngLat, type LngLatEle, LOOP_MAX_M, LOOP_MIN_M, type LoopPrecision, type LoopShape,
+  estimateDurationMin, type LngLat, type LngLatEle, LOOP_MAX_M, LOOP_MAX_VIAS, LOOP_MIN_M, type LoopPrecision, type LoopShape,
   ROUTING_PROFILES, SPORT_KINDS, type SportType, trackDistances, type WayInfo, type WayRange,
 } from './routes'
 
@@ -240,13 +240,59 @@ export function loopCorner(start: LngLat, via: LngLat, perimeterM: number, angle
 // Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
 type RoutedPoints = { points: LngLat[], radiuses: number[] }
 
-// What OpenRouteService routes for a loop through a place or an out and back (#214), aiming at lengthM along
+// The corner of a detour on the leg from → to, on the side away from `centre`, making that leg `extraM` longer as
+// the crow flies.
+function detourCorner(from: LngLat, to: LngLat, extraM: number, centre: LngLat): LngLat {
+  const d = metres(from, to)
+  const height = Math.sqrt(Math.max(((d + extraM) / 2) ** 2 - (d / 2) ** 2, 0))
+  const heading = d > 0 ? bearing(from, to) : 0
+  const middle = move(from, d / 2, heading)
+  const [left, right] = [move(middle, height, heading - 90), move(middle, height, heading + 90)]
+  return metres(left, centre) >= metres(right, centre) ? left : right
+}
+
+// Through several places (#326): a loop goes start → places by their bearing → start, clockwise for even seeds,
+// with no third corner; when that tour is shorter than the loop, one leg (picked by the seed, so the proposals
+// differ) takes a detour. An out and back goes through them nearest first, then beyond the last one when there is
+// room.
+function routeThroughPlaces(shape: LoopShape, start: LngLat, lengthM: number, seed: number, vias: LngLat[]): RoutedPoints {
+  const crowM = lengthM / PATH_DETOUR
+  const ordered = orderVias(shape, start, vias, point => point, seed % 2 === 0)
+  const placesRadiuses = ordered.map(() => VIA_RADIUS_M)
+  if (shape === 'out_and_back') {
+    if (isShortestThrough(shape, start, lengthM, vias)) return { points: [start, ...ordered], radiuses: [START_RADIUS_M, ...placesRadiuses] }
+    const last = ordered.at(-1)!
+    const end = move(last, crowM / 2 - tourCrowM(shape, start, ordered) / 2, bearing(start, last) + VIA_SPREAD[seed % VIA_SPREAD.length]!)
+    return { points: [start, ...ordered, end], radiuses: [START_RADIUS_M, ...placesRadiuses, -1] }
+  }
+  const stops = [start, ...ordered, start]
+  const radiuses = [START_RADIUS_M, ...placesRadiuses, START_RADIUS_M]
+  const tourM = tourCrowM(shape, start, ordered)
+  if (crowM <= tourM) return { points: stops, radiuses }
+  // The leg is counted on the clockwise tour, so that a counter-clockwise seed doesn't detour its neighbour's leg.
+  const legs = stops.length - 1
+  const clockwiseLeg = seed % legs
+  const leg = seed % 2 === 0 ? clockwiseLeg : legs - 1 - clockwiseLeg
+  const centre: LngLat = [
+    stops.slice(0, -1).reduce((sum, [lng]) => sum + lng, 0) / (stops.length - 1),
+    stops.slice(0, -1).reduce((sum, [, lat]) => sum + lat, 0) / (stops.length - 1),
+  ]
+  const corner = detourCorner(stops[leg]!, stops[leg + 1]!, crowM - tourM, centre)
+  return {
+    points: [...stops.slice(0, leg + 1), corner, ...stops.slice(leg + 1)],
+    radiuses: [...radiuses.slice(0, leg + 1), -1, ...radiuses.slice(leg + 1)],
+  }
+}
+
+// What OpenRouteService routes for a loop through places or an out and back (#214), aiming at lengthM along
 // paths, with each point's snapping radius; null for a plain loop, which is an ORS round trip. An out and back is
 // routed on the way out only, to its far end. Towards a bearing (#293: a massif, a place out of reach), a loop goes
-// first through a point a third of its perimeter away that way, an out and back ends that way; a place to go
-// through wins over a bearing.
-export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number, seed: number, via?: LngLat, headingDeg?: number): RoutedPoints | null {
+// first through a point a third of its perimeter away that way, an out and back ends that way; places to go
+// through win over a bearing. Several places (#326): `routeThroughPlaces`.
+export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number, seed: number, vias: LngLat[] = [], headingDeg?: number): RoutedPoints | null {
   const crowM = lengthM / PATH_DETOUR
+  if (vias.length > 1) return routeThroughPlaces(shape, start, lengthM, seed, vias)
+  const via = vias[0]
   if (!via && headingDeg !== undefined) {
     if (shape === 'out_and_back') {
       return { points: [start, move(start, crowM / 2, headingDeg + VIA_SPREAD[seed % VIA_SPREAD.length]!)], radiuses: [START_RADIUS_M, -1] }
@@ -260,7 +306,7 @@ export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number
   if (shape === 'loop') {
     if (!via) return null
     // Already the shortest loop through the place: its third corner would be the start itself.
-    if (isShortestThrough(shape, start, lengthM, via)) {
+    if (isShortestThrough(shape, start, lengthM, [via])) {
       return { points: [start, via, start], radiuses: [START_RADIUS_M, VIA_RADIUS_M, START_RADIUS_M] }
     }
     return {
@@ -270,17 +316,17 @@ export function loopRoutePoints(shape: LoopShape, start: LngLat, lengthM: number
   }
   if (!via) return { points: [start, move(start, crowM / 2, seedBearing(seed))], radiuses: [START_RADIUS_M, -1] }
   const d = metres(start, via)
-  if (isShortestThrough(shape, start, lengthM, via)) return { points: [start, via], radiuses: [START_RADIUS_M, VIA_RADIUS_M] }
+  if (isShortestThrough(shape, start, lengthM, [via])) return { points: [start, via], radiuses: [START_RADIUS_M, VIA_RADIUS_M] }
   const end = move(start, crowM / 2, (d > 0 ? bearing(start, via) : 0) + VIA_SPREAD[seed % VIA_SPREAD.length]!)
   return { points: [start, via, end], radiuses: [START_RADIUS_M, VIA_RADIUS_M, -1] }
 }
 
-// True when the route asked for lengthM goes straight to the place and back: the shortest one through it, which
-// asking less can't shorten.
-export function isShortestThrough(shape: LoopShape, start: LngLat, lengthM: number, via: LngLat): boolean {
+// True when the route asked for lengthM goes straight through the places and back: the shortest one through them,
+// which asking less can't shorten.
+export function isShortestThrough(shape: LoopShape, start: LngLat, lengthM: number, vias: LngLat[]): boolean {
   const crowM = lengthM / PATH_DETOUR
-  const d = metres(start, via)
-  return shape === 'loop' ? crowM <= 2 * d : crowM / 2 <= d + MIN_LEG_M
+  const tourM = tourCrowM(shape, start, orderVias(shape, start, vias, point => point))
+  return shape === 'loop' ? crowM <= tourM : crowM / 2 <= tourM / 2 + MIN_LEG_M
 }
 
 // Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
@@ -310,9 +356,82 @@ export type LoopViaType = typeof LOOP_VIA_TYPES[number]
 // Overpass is asked around the start, at most this far.
 export const VIA_SEARCH_MAX_M = 10_000
 
-// The server only routes through a place the browser could have picked.
-export function isViaInReach(start: LngLat, via: LngLat): boolean {
-  return metres(start, via) <= VIA_SEARCH_MAX_M
+// How far a route through places can go as the crow flies, for its length along paths to stay within the tolerance.
+export function maxTourCrowM(lengthM: number, tolerance: number): number {
+  return lengthM * (1 + tolerance) / PATH_DETOUR
+}
+
+// How far a named place can be gone through (#326): going there and back fits in the length, within the named
+// place search. Not capped at VIA_SEARCH_MAX_M, which only bounds the peak and water search.
+export function namedPlaceReach(lengthM: number, tolerance: number): number {
+  return Math.round(Math.min(maxTourCrowM(lengthM, tolerance) / 2, NAMED_PLACE_SEARCH_M))
+}
+
+// The server only routes through a place the browser could have picked: a peak or water point within
+// viaSearchRadius, a named place within namedPlaceReach, which is never less.
+export function isViaInReach(start: LngLat, via: LngLat, lengthM: number, tolerance: number): boolean {
+  return metres(start, via) <= namedPlaceReach(lengthM, tolerance)
+}
+
+// The places in the order a route goes through them (#326). A loop: by their bearing around the start, clockwise
+// (or not), from the one after the widest gap between bearings, so that the tour goes round rather than zigzags. An
+// out and back: nearest first.
+export function orderVias<T>(shape: LoopShape, start: LngLat, items: T[], at: (item: T) => LngLat, clockwise = true): T[] {
+  if (shape === 'out_and_back') return sortByScore(items, item => metres(start, at(item)))
+  const around = sortByScore(items, item => (bearing(start, at(item)) + 360) % 360)
+  if (around.length < 2) return around
+  const bearings = around.map(item => (bearing(start, at(item)) + 360) % 360)
+  let first = 0
+  let widest = -1
+  bearings.forEach((value, i) => {
+    const last = i === bearings.length - 1
+    // Places on one bearing are 0° apart; only the wrap from the last to the first is all the way round.
+    const gap = ((bearings[(i + 1) % bearings.length]! - value) + 360) % 360 || (last ? 360 : 0)
+    if (gap > widest) {
+      widest = gap
+      first = (i + 1) % bearings.length
+    }
+  })
+  const ordered = [...around.slice(first), ...around.slice(0, first)]
+  return clockwise ? ordered : ordered.reverse()
+}
+
+// How long the route through the ordered places is as the crow flies: back to the start for a loop, the way out
+// twice for an out and back.
+export function tourCrowM(shape: LoopShape, start: LngLat, ordered: LngLat[]): number {
+  const stops = [start, ...ordered]
+  const out = stops.slice(1).reduce((sum, point, i) => sum + metres(stops[i]!, point), 0)
+  if (shape === 'out_and_back') return 2 * out
+  return out + (ordered.length ? metres(ordered.at(-1)!, start) : 0)
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface FittedVias<T> {
+  kept: T[]
+  dropped: T[]
+}
+
+// The places a route of lengthM can go through (#326), in their order: those out of reach, then those beyond
+// LOOP_MAX_VIAS, then, while the tour is too long, the one whose detour costs the most, are dropped.
+export function fitVias<T>(shape: LoopShape, start: LngLat, items: T[], at: (item: T) => LngLat, lengthM: number, tolerance: number): FittedVias<T> {
+  const dropped = items.filter(item => !isViaInReach(start, at(item), lengthM, tolerance))
+  let kept = orderVias(shape, start, items.filter(item => !dropped.includes(item)), at)
+  const cost = (i: number) => {
+    const prev = i ? at(kept[i - 1]!) : start
+    const next = kept[i + 1] ? at(kept[i + 1]!) : shape === 'loop' ? start : null
+    const point = at(kept[i]!)
+    return next ? metres(prev, point) + metres(point, next) - metres(prev, next) : metres(prev, point)
+  }
+  const tooLong = () => tourCrowM(shape, start, kept.map(at)) > maxTourCrowM(lengthM, tolerance)
+  while (kept.length && (kept.length > LOOP_MAX_VIAS || tooLong())) {
+    let costliest = 0
+    kept.forEach((_, i) => {
+      if (cost(i) > cost(costliest)) costliest = i
+    })
+    dropped.push(kept[costliest]!)
+    kept = orderVias(shape, start, kept.filter((_, i) => i !== costliest), at)
+  }
+  return { kept, dropped }
 }
 
 // How far a place can be, as the crow flies, for going there and back to fit in the length.
@@ -519,6 +638,32 @@ export function pickNamedPlace(name: string, places: NamedPlace[], start: LngLat
   if (!best) return null
   if (best.kind !== 'massif' && best.distanceM <= reachM) return { role: 'via', place: best }
   return { role: 'heading', place: best, bearingDeg: Math.round(bearing(start, best.coordinates) * 10) / 10 }
+}
+
+// Named: an inline type would hide the next export from the auto-imports (see CLAUDE.md).
+export interface NamedPlacesPlan {
+  // Gone through, in their order around the start
+  vias: NamedPlace[]
+  // Headed for when there is no place to go through
+  heading: NamedPlaceChoice | null
+  // Places too far for the length, or headings beside places to go through
+  setAside: NamedPlaceChoice[]
+}
+
+// What a loop does with the places named (#326): every place to go through that fits the length (fitVias), else
+// the first one it can only head for.
+export function namedPlacesPlan(shape: LoopShape, start: LngLat, choices: NamedPlaceChoice[], lengthM: number, tolerance: number): NamedPlacesPlan {
+  // Two names of one place (« Autrans », « village d'Autrans ») count once.
+  const unique = choices.filter((choice, i) => choices.findIndex(other => other.place.id === choice.place.id) === i)
+  const throughs = unique.filter(choice => choice.role === 'via')
+  const headings = unique.filter(choice => choice.role === 'heading')
+  const { kept, dropped } = fitVias(shape, start, throughs, choice => choice.place.coordinates, lengthM, tolerance)
+  const heading = kept.length ? null : headings[0] ?? null
+  return {
+    vias: kept.map(choice => choice.place),
+    heading,
+    setAside: [...dropped, ...headings.filter(choice => choice !== heading)],
+  }
 }
 
 // Indices of the waypoints that split a loop into segments of about the same length, first and last point

@@ -68,48 +68,76 @@ const targetHint = computed(() => {
     : t('loop.distanceWithGain', { distance: formatDistance(loop.targetM), gain })
 })
 
-// What came of the search for a named place (#293): « Passe par l'Isère, à 1,2 km ».
-const namedMessage = computed(() => {
-  const name = loop.viaName.trim()
-  switch (loop.viaStatus) {
-    case 'searching': return t('loop.namedSearching', { name })
-    case 'none': return t('loop.namedNone', { name, radius: `${formatNumber(NAMED_PLACE_SEARCH_M / 1000)} km` })
-    case 'vague': return t('loop.namedVague', { name })
-    case 'failed': return t('loop.namedFailed')
-    case 'found': {
-      const { role, place } = loop.namedChoice!
-      const distance = formatDistance(place.distanceM)
-      return t(role === 'via' ? 'loop.namedVia' : 'loop.namedHeading', { name: place.name, distance })
-    }
-    default: return null
+// A line said under the settings about the places to go through: what came of their search.
+interface ViaLine {
+  key: string
+  icon: string
+  text: string
+  found: boolean
+}
+
+// What came of the search for each named place (#293, several since #326): « Passage : Autrans, à 14,3 km. », a
+// direction, a place set aside because the loop can't fit it, or not found.
+const namedLines = computed((): ViaLine[] => {
+  if (loop.viaStatus === 'searching') {
+    return [{ key: 'searching', icon: 'i-lucide-loader-circle', text: t('loop.namedSearching', { name: loop.namedNames.join(', ') }), found: false }]
   }
-})
-const viaIcon = computed(() => {
-  if (loop.viaStatus === 'searching') return 'i-lucide-loader-circle'
-  if (loop.via !== 'named') return OSM_PLACE_ICONS[loop.via === 'peak' ? 'peak' : 'water']
-  const choice = loop.namedChoice
-  if (!choice) return 'i-lucide-map-pin-off'
-  return choice.role === 'heading' ? 'i-lucide-compass' : NAMED_ICONS[choice.place.kind]
+  const plan = loop.namedPlan
+  const isIn = (list: { id: string }[], id: string) => list.some(found => found.id === id)
+  const several = loop.namedResults.length > 1
+  const shown = new Set<string>()
+  return loop.namedResults.flatMap(({ name, status, choice }, index): ViaLine[] => {
+    const key = `${index}-${name}`
+    if (status === 'vague') return [{ key, icon: 'i-lucide-map-pin-off', text: t('loop.namedVague', { name }), found: false }]
+    // Among several places, only this one is missing.
+    if (status === 'failed') return [{ key, icon: 'i-lucide-map-pin-off', text: several ? t('loop.namedFailedOne', { name }) : t('loop.namedFailed'), found: false }]
+    if (status === 'none' || !choice) {
+      return [{ key, icon: 'i-lucide-map-pin-off', text: t('loop.namedNone', { name, radius: `${formatNumber(NAMED_PLACE_SEARCH_M / 1000)} km` }), found: false }]
+    }
+    const { place } = choice
+    // Two names of one place: said once.
+    if (shown.has(place.id)) return []
+    shown.add(place.id)
+    const distance = formatDistance(place.distanceM)
+    if (plan && isIn(plan.vias, place.id)) return [{ key, icon: NAMED_ICONS[place.kind], text: t('loop.namedVia', { name: place.name, distance }), found: true }]
+    if (plan?.heading?.place.id === place.id) return [{ key, icon: 'i-lucide-compass', text: t('loop.namedHeading', { name: place.name, distance }), found: true }]
+    // Set aside: too far for the length (a place gone through, or out of reach), or a massif beside places to go through.
+    const text = place.kind === 'massif' ? t('loop.namedAsideHeading', { name: place.name }) : t('loop.namedTooFar', { name: place.name, distance })
+    return [{ key, icon: 'i-lucide-map-pin-off', text, found: false }]
+  })
 })
 
 // What came of the search for a place to go through.
-const viaMessage = computed(() => {
-  if (loop.via === 'none') return null
-  if (loop.via === 'named') return namedMessage.value
+const viaLines = computed((): ViaLine[] => {
+  if (loop.via === 'none') return []
+  if (loop.via === 'named') return namedLines.value
   const type = loop.via
   const radius = formatDistance(loop.viaRadiusM)
+  const line = (text: string, icon = OSM_PLACE_ICONS[type]): ViaLine[] => [{ key: type, icon, text, found: loop.viaStatus === 'found' }]
   switch (loop.viaStatus) {
-    case 'searching': return t(`loop.viaSearching.${type}`, { radius })
-    case 'none': return t(`loop.viaNone.${type}`, { radius })
-    case 'failed': return t(`loop.viaFailed.${type}`)
+    case 'searching': return line(t(`loop.viaSearching.${type}`, { radius }), 'i-lucide-loader-circle')
+    case 'none': return line(t(`loop.viaNone.${type}`, { radius }))
+    case 'failed': return line(t(`loop.viaFailed.${type}`))
     case 'found': {
       const place = loop.viaPlace!
       const name = place.name ?? t(`loop.viaUnnamed.${type}`)
-      return place.ele === undefined ? t('loop.viaFound', { name }) : t('loop.viaFoundEle', { name, ele: place.ele })
+      return line(place.ele === undefined ? t('loop.viaFound', { name }) : t('loop.viaFoundEle', { name, ele: place.ele }))
     }
-    default: return null
+    default: return []
   }
 })
+
+// « Passer par » takes up to LOOP_MAX_VIAS names (#326), one field each.
+function addNamedPlace() {
+  if (loop.viaNames.length < LOOP_MAX_VIAS) loop.viaNames = [...loop.viaNames, '']
+}
+function removeNamedPlace(index: number) {
+  loop.viaNames = loop.viaNames.length > 1 ? loop.viaNames.filter((_, i) => i !== index) : ['']
+}
+function setNamedPlace(index: number, value: string) {
+  loop.viaNames = loop.viaNames.map((name, i) => (i === index ? value : name))
+}
+
 // The slider holds the figure; it is written out above it, like the mockup's "15 km". A gain (#294) has its own
 // slider, bounded by the sport, and the distance's under it when it is kept too.
 const DISTANCE_SLIDER = { model: 'distanceKm' as const, ...LOOP_SENTENCE_DISTANCE_KM, step: 1 }
@@ -247,28 +275,50 @@ function proposalMinutes({ distanceM, gainM }: LoopProposal) {
       <UFormField :label="t('loop.via')" :ui="{ label: 'text-[0.6875rem] font-bold tracking-wider text-muted uppercase' }">
         <USelect v-model="loop.via" :items="viaItems" class="w-full" />
       </UFormField>
-      <UInput
-        v-if="loop.via === 'named'"
-        v-model="loop.viaName"
-        :placeholder="t('loop.namedPlaceholder')"
-        :aria-label="t('loop.namedLabel')"
-        icon="i-lucide-search"
-        maxlength="200"
-        class="mt-2 w-full"
-      />
-      <p v-if="loop.via === 'named'" class="mt-2 text-sm text-muted">{{ t('loop.namedHint') }}</p>
+      <template v-if="loop.via === 'named'">
+        <div v-for="(name, index) in loop.viaNames" :key="index" class="mt-2 flex items-center gap-1">
+          <UInput
+            :model-value="name"
+            :placeholder="index ? t('loop.namedMorePlaceholder') : t('loop.namedPlaceholder')"
+            :aria-label="index ? t('loop.namedMoreLabel', { n: index + 1 }) : t('loop.namedLabel')"
+            icon="i-lucide-search"
+            maxlength="200"
+            class="min-w-0 flex-1"
+            @update:model-value="setNamedPlace(index, String($event))"
+          />
+          <UButton
+            v-if="loop.viaNames.length > 1"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="ghost"
+            :aria-label="t('loop.namedRemove', { name: name.trim() || index + 1 })"
+            @click="removeNamedPlace(index)"
+          />
+        </div>
+        <UButton
+          v-if="loop.viaNames.length < LOOP_MAX_VIAS"
+          icon="i-lucide-plus"
+          color="neutral"
+          variant="link"
+          size="sm"
+          class="mt-1 px-0"
+          :label="t('loop.namedAdd')"
+          @click="addNamedPlace"
+        />
+        <p class="mt-2 text-sm text-muted">{{ t('loop.namedHint') }}</p>
+      </template>
     </div>
 
     <LoopStartRow id="loop-setting-start" />
 
-    <p v-if="viaMessage" class="flex items-start gap-2 text-sm" :class="loop.viaStatus === 'found' ? 'text-highlighted' : 'text-muted'" role="status">
+    <p v-for="line in viaLines" :key="line.key" class="flex items-start gap-2 text-sm" :class="line.found ? 'text-highlighted' : 'text-muted'" role="status">
       <UIcon
-        :name="viaIcon"
+        :name="line.icon"
         class="mt-0.5 size-4 shrink-0"
         :class="{ 'animate-spin': loop.viaStatus === 'searching' }"
         aria-hidden="true"
       />
-      <span>{{ viaMessage }}</span>
+      <span>{{ line.text }}</span>
     </p>
 
     <p v-if="gainMissedMessage" class="flex items-start gap-2 text-sm text-highlighted" role="status" data-testid="loop-gain-missed">

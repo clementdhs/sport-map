@@ -559,13 +559,20 @@
     },
     "namedLabel": "Lieu à traverser ou à viser",
     "namedPlaceholder": "Ex. l'Isère, le lac de Paladru, la Chartreuse",
-    "namedHint": "Cherché dans OpenStreetMap autour du départ : une rivière, un lac, un sommet ou un village à portée est traversé, un massif ou un lieu plus loin donne seulement la direction.",
+    "namedHint": "Cherchés dans OpenStreetMap autour du départ : une rivière, un lac, un sommet ou un village à portée est traversé, dans l'ordre du tour, un massif ou un lieu plus loin donne seulement la direction.",
     "namedSearching": "Recherche de « {name} » autour du départ…",
     "namedNone": "« {name} » introuvable à moins de {radius} du départ : les propositions s'en passent.",
     "namedVague": "« {name} » : lequel ? Donne son nom, par exemple « le lac de Paladru ». Les propositions s'en passent.",
     "namedFailed": "OpenStreetMap ne répond pas : les propositions ne passent par aucun lieu.",
+    "namedFailedOne": "« {name} » : OpenStreetMap ne répond pas, ce lieu est laissé de côté.",
     "namedVia": "Passage : {name}, à {distance}.",
     "namedHeading": "Direction : {name}, à {distance}. La boucle part de ce côté sans chercher à l'atteindre.",
+    "namedTooFar": "{name}, à {distance}, ne tient pas dans cette longueur avec les autres lieux : laissé de côté.",
+    "namedAsideHeading": "{name} donne seulement une direction : laissé de côté, la boucle passe par les autres lieux.",
+    "namedMoreLabel": "Lieu {n} à traverser ou à viser",
+    "namedMorePlaceholder": "Un autre lieu, ex. Lans-en-Vercors",
+    "namedAdd": "Ajouter un lieu",
+    "namedRemove": "Retirer le lieu {name}",
     "viaSearching": {
       "peak": "Recherche d'un sommet à moins de {radius}…",
       "water": "Recherche d'un point d'eau à moins de {radius}…"
@@ -633,7 +640,7 @@
     "ignored": {
       "distance": "« {text} » : la distance va de 1 à 100 km, je ne l'ai pas reprise.",
       "duration": "« {text} » : la durée va de 10 min à 10 h, je ne l'ai pas reprise.",
-      "via": "« {text} » : une boucle ne passe que par un lieu nommé, celui-ci est laissé de côté.",
+      "via": "« {text} » : une boucle passe par {max} lieux nommés au plus, celui-ci est laissé de côté.",
       "gain": "« {text} » : un dénivelé visé va de 100 à 3 000 m, avec une distance ou seul (pas avec une durée), je ne l'ai pas repris.",
       "paths": "« {text} » : le vélo de route reste sur la route, la boucle se fait sans chemins."
     }
@@ -1515,7 +1522,7 @@
     "loopNotFound": "Aucun chemin praticable autour de ce départ",
     "loopOffTarget": "Pas de boucle de cette distance dans cette direction",
     "loopViaNotFound": "Aucun chemin praticable jusqu'au lieu de passage",
-    "loopViaTooFar": "Ce lieu est trop loin par les chemins pour cette distance",
+    "loopViaTooFar": "Les lieux de passage sont trop loin par les chemins pour cette distance",
     "outAndBackOffTarget": "Pas d'aller-retour de cette distance dans cette direction",
     "exportFailed": "Impossible de préparer l'export",
     "exportPhotosFailed": "Impossible de préparer l'export des photos",

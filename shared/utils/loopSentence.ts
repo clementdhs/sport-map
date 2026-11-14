@@ -1,7 +1,7 @@
 import * as z from 'zod'
 import { canPreferPaths, LOOP_CLIMBS, LOOP_GAIN_M } from './loops'
 import type { LoopClimb } from './loops'
-import { LOOP_SHAPES, SPORT_TYPES } from './routes'
+import { LOOP_MAX_VIAS, LOOP_SHAPES, SPORT_TYPES } from './routes'
 import type { LoopShape, SportType } from './routes'
 
 // A loop described in one sentence (#216): an LLM reads it into the fields below, which only ever fill the loop
@@ -34,7 +34,7 @@ export const loopUnderstandingSchema = z.object({
   shape: z.enum(LOOP_SHAPES).nullable(),
   climb: z.enum(LOOP_CLIMBS).nullable(),
   start: z.object({ kind: z.enum(['my_point', 'place']), name: z.string().max(200).nullable() }).nullable(),
-  // Named places to go through or head towards (#293: the first one is a setting), paths (#295) and gain in metres
+  // Named places to go through or head towards (#293, several since #326), paths (#295) and gain in metres
   // (#294): settings too.
   places: z.array(z.object({ name: z.string().max(200), hint: z.string().max(200), text: quote })).max(10),
   elevation_gain: z.object({ meters: z.number(), text: quote }).nullable(),
@@ -111,7 +111,8 @@ export interface LoopSentenceSettings {
   shape: LoopShape | null
   climb: LoopClimb | null
   start: LoopSentenceStart | null
-  place: LoopSentencePlace | null
+  // In the sentence's order, LOOP_MAX_VIAS at most (#326)
+  places: LoopSentencePlace[]
   // True when the sentence asks for paths (#295)
   paths: true | null
   // A gain in metres to aim at (#294), with the distance or alone (the length then deduced from it).
@@ -146,10 +147,10 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
     ? { kind: 'my_point' }
     : understanding.start?.kind === 'place' && name ? { kind: 'place', name } : null
 
-  // One place per loop: the others are quoted back.
-  const [first, ...others] = understanding.places.filter(place => place.name.trim())
-  const place: LoopSentencePlace | null = first ? { name: first.name.trim(), text: short(first.text || first.name) } : null
-  for (const other of others) ignored.push({ kind: 'via', text: short(other.text || other.name) })
+  // Up to LOOP_MAX_VIAS places per loop (#326): the others are quoted back.
+  const named = understanding.places.filter(place => place.name.trim())
+  const places = named.slice(0, LOOP_MAX_VIAS).map((place): LoopSentencePlace => ({ name: place.name.trim(), text: short(place.text || place.name) }))
+  for (const other of named.slice(LOOP_MAX_VIAS)) ignored.push({ kind: 'via', text: short(other.text || other.name) })
   // A gain goes with a distance or alone: a duration already sets the length.
   let gain: number | null = null
   const asked = understanding.elevation_gain
@@ -172,12 +173,12 @@ export function loopSettingsFromUnderstanding(understanding: LoopUnderstanding):
     // A gain replaces the climbing levels (hidden in the panel's gain mode).
     climb: gain === null ? understanding.climb : null,
     start,
-    place,
+    places,
     paths,
     gain,
     ignored,
   }
-  const filled = settings.sport || settings.target || settings.shape || settings.climb || settings.start || settings.place
+  const filled = settings.sport || settings.target || settings.shape || settings.climb || settings.start || settings.places.length
     || settings.paths || settings.gain
   return filled ? settings : null
 }

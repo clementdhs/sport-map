@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { distance } from '@turf/turf'
 import {
-  canPreferPaths, climbOf, fewPaths, gainShortfall, isOnTarget, isShortestThrough, isViaInReach, LOOP_GAIN_M, LOOP_TOLERANCES, type LoopClimb,
+  canPreferPaths, climbOf, fewPaths, gainShortfall, isOnTarget, isShortestThrough, LOOP_GAIN_M, LOOP_TOLERANCES, type LoopClimb,
   loopCorner, loopGainRange, loopLengthForDuration, loopLengthForGain, loopProfile, loopRoutePoints, loopViaPlaces, loopViaQuery,
   loopWaypointIndices, nextLoopLength, outAndBack, pickLoopVia, rankByClimb, rankByGain, rankByPaths, rankByTotalGain,
   seedBearing, typicalGainPerKm, viaSearchRadius,
@@ -178,7 +178,7 @@ describe('loopRoutePoints', () => {
   })
 
   it('goes through the place and a third corner, back to the start', () => {
-    const route = loopRoutePoints('loop', START, 13_000, 3, PEAK)!
+    const route = loopRoutePoints('loop', START, 13_000, 3, [PEAK])!
     expect(route.points).toHaveLength(4)
     expect(route.points[0]).toEqual(START)
     expect(route.points[1]).toEqual(PEAK)
@@ -188,7 +188,7 @@ describe('loopRoutePoints', () => {
     const [, , corner] = route.points
     expect(Math.abs(metres(START, PEAK) + metres(PEAK, corner!) + metres(corner!, START) - 10_000)).toBeLessThan(50)
     // Each seed turns another way.
-    expect(loopRoutePoints('loop', START, 13_000, 4, PEAK)!.points[2]).not.toEqual(corner)
+    expect(loopRoutePoints('loop', START, 13_000, 4, [PEAK])!.points[2]).not.toEqual(corner)
   })
 
   it('sends an out and back half the way as the crow flies, in the seed\'s direction', () => {
@@ -199,11 +199,11 @@ describe('loopRoutePoints', () => {
   })
 
   it('takes an out and back through the place, and beyond when there is room', () => {
-    const near = loopRoutePoints('out_and_back', START, 8_000, 7, PEAK)!
+    const near = loopRoutePoints('out_and_back', START, 8_000, 7, [PEAK])!
     expect(near.points).toEqual([START, PEAK])
     expect(near.radiuses).toEqual([350, 1000])
 
-    const far = loopRoutePoints('out_and_back', START, 13_000, 0, PEAK)!
+    const far = loopRoutePoints('out_and_back', START, 13_000, 0, [PEAK])!
     expect(far.points.slice(0, 2)).toEqual([START, PEAK])
     expect(metres(START, far.points[2]!)).toBeCloseTo(5_000, -1)
     expect(far.radiuses).toEqual([350, 1000, -1])
@@ -212,26 +212,19 @@ describe('loopRoutePoints', () => {
 
 describe('loopRoutePoints through a far place', () => {
   it('goes straight there and back when that is already the whole loop', () => {
-    const route = loopRoutePoints('loop', START, 7_700, 3, PEAK)!
+    const route = loopRoutePoints('loop', START, 7_700, 3, [PEAK])!
     expect(route.points).toEqual([START, PEAK, START])
     expect(route.radiuses).toEqual([350, 1000, 350])
-  })
-})
-
-describe('isViaInReach', () => {
-  it('accepts places the browser could have picked only', () => {
-    expect(isViaInReach(START, PEAK)).toBe(true)
-    expect(isViaInReach(START, [START[0], START[1] + 0.1])).toBe(false)
   })
 })
 
 describe('isShortestThrough', () => {
   it('tells when asking less can\'t shorten a route through the place', () => {
     // 3 km away: 6 km there and back as the crow flies, 7.8 km along paths.
-    expect(isShortestThrough('loop', START, 7_700, PEAK)).toBe(true)
-    expect(isShortestThrough('loop', START, 8_500, PEAK)).toBe(false)
-    expect(isShortestThrough('out_and_back', START, 8_000, PEAK)).toBe(true)
-    expect(isShortestThrough('out_and_back', START, 9_000, PEAK)).toBe(false)
+    expect(isShortestThrough('loop', START, 7_700, [PEAK])).toBe(true)
+    expect(isShortestThrough('loop', START, 8_500, [PEAK])).toBe(false)
+    expect(isShortestThrough('out_and_back', START, 8_000, [PEAK])).toBe(true)
+    expect(isShortestThrough('out_and_back', START, 9_000, [PEAK])).toBe(false)
   })
 })
 

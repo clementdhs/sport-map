@@ -27,8 +27,8 @@ export const LOOPS_HIT_LAYER = 'loop-proposals-hit'
 
 export interface LoopLayerData {
   start: LngLat | null
-  // The place the proposals go through (#214)
-  via: LngLat | null
+  // The places the proposals go through (#214, several since #326)
+  vias: LngLat[]
   // Coordinates of each proposal, in list order (empty while loading or failed)
   loops: LngLat[][]
   highlighted: number | null
@@ -49,9 +49,9 @@ function loopsData({ loops, highlighted }: LoopLayerData): FeatureCollection<Lin
   return { type: 'FeatureCollection', features: features.sort((a, b) => Number(a.properties.highlighted) - Number(b.properties.highlighted)) }
 }
 
-// The start, and the place to go through.
-function startData(start: LngLat | null, via: LngLat | null): FeatureCollection<Point> {
-  const points = [...(start ? [{ kind: 'start', coordinates: start }] : []), ...(via ? [{ kind: 'via', coordinates: via }] : [])]
+// The start, and the places to go through.
+function startData(start: LngLat | null, vias: LngLat[]): FeatureCollection<Point> {
+  const points = [...(start ? [{ kind: 'start', coordinates: start }] : []), ...vias.map(coordinates => ({ kind: 'via', coordinates }))]
   return {
     type: 'FeatureCollection',
     features: points.map(({ kind, coordinates }) => ({ type: 'Feature', properties: { kind }, geometry: { type: 'Point', coordinates } })),
@@ -67,8 +67,8 @@ function climbsData(climbs: LngLat[][] = []): FeatureCollection<LineString> {
 
 export function addLoopLayers(map: Map) {
   map.on('style.load', repaintLoops)
-  map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, via: null, loops: [], highlighted: null }) })
-  map.addSource(START_SOURCE, { type: 'geojson', data: startData(null, null) })
+  map.addSource(LOOPS_SOURCE, { type: 'geojson', data: loopsData({ start: null, vias: [], loops: [], highlighted: null }) })
+  map.addSource(START_SOURCE, { type: 'geojson', data: startData(null, []) })
   map.addSource(CLIMBS_SOURCE, { type: 'geojson', data: climbsData() })
 
   map.addLayer({
@@ -132,6 +132,6 @@ function repaintLoops(this: void, event: { target: Map }) {
 
 export function setLoopLayerData(map: Map, data: LoopLayerData) {
   map.getSource<GeoJSONSource>(LOOPS_SOURCE)?.setData(loopsData(data))
-  map.getSource<GeoJSONSource>(START_SOURCE)?.setData(startData(data.start, data.via))
+  map.getSource<GeoJSONSource>(START_SOURCE)?.setData(startData(data.start, data.vias))
   map.getSource<GeoJSONSource>(CLIMBS_SOURCE)?.setData(climbsData(data.climbs))
 }

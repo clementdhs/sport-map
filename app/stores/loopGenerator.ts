@@ -1,7 +1,7 @@
 import type { FetchError } from 'ofetch'
 import type { SessionPlan } from '#shared/utils/coachSessions'
 import type { Climb } from '#shared/utils/slopes'
-import type { LoopClimb, LoopViaType, NamedPlace, NamedPlaceChoice } from '#shared/utils/loops'
+import type { LoopClimb, LoopViaType, NamedPlace, NamedPlaceChoice, NamedPlacesPlan } from '#shared/utils/loops'
 import type { LoopSentenceSettings } from '#shared/utils/loopSentence'
 import type { OsmPlace } from '#shared/utils/osmPlaces'
 import type { LngLat, LoopPrecision, LoopShape, RoutingLoopRequest, RoutingLoopResponse, WayInfo } from '#shared/utils/routes'
@@ -16,6 +16,12 @@ export type LoopSentenceSetting = 'sport' | 'target' | 'gain' | 'precision' | 's
 // The search of the place to go through: 'none' when there is none in reach, 'failed' when Overpass didn't answer,
 // 'vague' for a named place said by its kind only (« le lac »), not looked for (#293).
 export type LoopViaStatus = 'idle' | 'searching' | 'found' | 'none' | 'failed' | 'vague'
+// What the search of one named place gave (#326): its own status, and its choice once found.
+export interface NamedPlaceResult {
+  name: string
+  status: Exclude<LoopViaStatus, 'idle' | 'searching'>
+  choice: NamedPlaceChoice | null
+}
 
 export interface LoopProposal {
   seed: number
@@ -66,10 +72,13 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   const pathsActive = computed(() => preferPaths.value && canPreferPaths(editor.details.sport_type))
   const viaStatus = ref<LoopViaStatus>('idle')
   const viaPlace = ref<OsmPlace | null>(null)
-  // The place named (#293) and what OpenStreetMap made of it: gone through, or only headed for.
-  const viaName = ref('')
-  const namedChoice = ref<NamedPlaceChoice | null>(null)
-  let namedSearch: { key: string, places: NamedPlace[] } | null = null
+  // The places named (#293, several since #326, LOOP_MAX_VIAS at most) and what OpenStreetMap made of each: gone
+  // through, only headed for, or set aside when the loop can't fit it (`namedPlan`).
+  const viaNames = ref<string[]>([''])
+  const namedResults = ref<NamedPlaceResult[]>([])
+  const namedPlan = ref<NamedPlacesPlan | null>(null)
+  // The answers per name around the last start: "Autres propositions" doesn't ask again.
+  let namedSearches = { from: '', places: new Map<string, NamedPlace[]>() }
   // How far the peak or water point was looked for (m).
   const viaRadiusM = ref(0)
   // The last Overpass answer: "Autres propositions" doesn't ask again.
@@ -111,7 +120,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     highlighted.value = null
     viaStatus.value = 'idle'
     viaPlace.value = null
-    namedChoice.value = null
+    namedResults.value = []
+    namedPlan.value = null
   }
 
   // By the gain asked for (#294), else by climbing; paths (#295) then come first by tenths of their share.
@@ -155,33 +165,45 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
   }
 
   // A named place (#293), searched around the start as far as a loop can head for; gone through when in reach.
-  async function findNamed(name: string, from: LngLat, current: number): Promise<NamedPlaceChoice | null> {
-    if (!namedPlaceCore(name)) {
-      viaStatus.value = 'vague'
-      return null
-    }
-    const reachM = viaSearchRadius(targetM.value, LOOP_TOLERANCES[precision.value])
-    const key = `${name}:${from.join(',')}`
-    viaStatus.value = 'searching'
-    let places: NamedPlace[]
+  async function findNamed(name: string, from: LngLat): Promise<NamedPlaceResult> {
+    if (!namedPlaceCore(name)) return { name, status: 'vague', choice: null }
+    const reachM = namedPlaceReach(targetM.value, LOOP_TOLERANCES[precision.value])
+    const at = from.join(',')
+    if (namedSearches.from !== at) namedSearches = { from: at, places: new Map() }
+    const cache = namedSearches.places
+    let places = cache.get(name)
     try {
-      places = namedSearch?.key === key ? namedSearch.places : await searchNamedPlaces(name, from, $i18n.locale.value)
-      namedSearch = { key, places }
+      places ??= await searchNamedPlaces(name, from, $i18n.locale.value)
+      cache.set(name, places)
     }
     catch {
-      if (current === generation) viaStatus.value = 'failed'
-      return null
+      return { name, status: 'failed', choice: null }
     }
-    if (current !== generation) return null
     const choice = pickNamedPlace(name, places, from, reachM)
-    namedChoice.value = choice
-    viaStatus.value = choice ? 'found' : 'none'
-    return choice
+    return { name, status: choice ? 'found' : 'none', choice }
   }
 
-  // The point the proposals go through, drawn on the map: a peak, a water point or a named place in reach.
-  const viaPoint = computed<LngLat | null>(() => viaPlace.value?.coordinates
-    ?? (namedChoice.value?.role === 'via' ? namedChoice.value.place.coordinates : null))
+  // Every named place (#326), searched in parallel (Overpass takes 2 at a time, `overpass.ts`), then those the loop
+  // goes through, in their order around the start, or the one it heads for.
+  async function findAllNamed(names: string[], from: LngLat, current: number): Promise<NamedPlacesPlan | null> {
+    viaStatus.value = 'searching'
+    const results = await Promise.all(names.map(name => findNamed(name, from)))
+    if (current !== generation) return null
+    const choices = results.map(result => result.choice).filter(choice => choice !== null)
+    const plan = namedPlacesPlan(shape.value, from, choices, targetM.value, LOOP_TOLERANCES[precision.value])
+    namedResults.value = results
+    namedPlan.value = plan
+    const statuses = new Set(results.map(result => result.status))
+    viaStatus.value = choices.length ? 'found' : statuses.size === 1 ? results[0]!.status : 'none'
+    return plan
+  }
+
+  // The points the proposals go through, drawn on the map: a peak, a water point or the named places in reach.
+  const viaPoints = computed<LngLat[]>(() => viaPlace.value
+    ? [viaPlace.value.coordinates]
+    : (namedPlan.value?.vias ?? []).map(place => place.coordinates))
+  // The names typed, without the empty fields.
+  const namedNames = computed(() => viaNames.value.map(name => name.trim()).filter(Boolean))
 
   // The start is shared with the hand-drawn mode (#215): the track's start when there is one.
   function show() {
@@ -233,7 +255,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
 
   // Proposals routed for another sport, or of another shape, would mislead.
   // Synchronous: a change made just before generate() mustn't clear the new proposals.
-  watch([() => editor.details.sport_type, shape, via, viaName], () => {
+  watch([() => editor.details.sport_type, shape, via, () => namedNames.value.join('|')], () => {
     // The session mode has no sport to pick: saving its route resets the editor's.
     if (!forSession.value) clearProposals()
   }, { flush: 'sync' })
@@ -264,12 +286,13 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     const from = start.value
     // A session's loops keep to its distance, with none of the loop mode's options.
     const plan = forSession.value ? session.value : null
-    const name = viaName.value.trim()
+    const names = namedNames.value
     const kind = plan ? 'none' : via.value
     const place = kind === 'peak' || kind === 'water' ? await findVia(kind, from, current) : null
-    const named = kind === 'named' && name ? await findNamed(name, from, current) : null
+    const named = kind === 'named' && names.length ? await findAllNamed(names, from, current) : null
     if (current !== generation) return
-    const through = place?.coordinates ?? (named?.role === 'via' ? named.place.coordinates : undefined)
+    const through = place ? [place.coordinates] : (named?.vias ?? []).map(found => found.coordinates)
+    const heading = named?.heading?.role === 'heading' ? named.heading.bearingDeg : undefined
     const firstSeed = Math.floor(Math.random() * (1_000_000 - LOOP_PROPOSALS))
     const body: Omit<RoutingLoopRequest, 'seed'> = {
       start: from,
@@ -278,8 +301,8 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
       sport_type: plan ? 'running' : editor.details.sport_type,
       shape: plan ? 'loop' : shape.value,
       precision: plan ? 'precise' : precision.value,
-      ...(through ? { via: through } : {}),
-      ...(named?.role === 'heading' ? { heading: named.bearingDeg } : {}),
+      ...(through.length ? { vias: through } : {}),
+      ...(heading !== undefined ? { heading } : {}),
       ...(!plan && pathsActive.value ? { prefer_paths: true } : {}),
     }
     const hill = plan ? sessionHill(plan) : null
@@ -361,10 +384,11 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     set('precision', precision.value, settings.precision, (value) => { precision.value = value })
     set('shape', shape.value, settings.shape, (value) => { shape.value = value })
     set('climb', climb.value, settings.climb, (value) => { climb.value = value })
-    const place = settings.place
-    if (place && (via.value !== 'named' || viaName.value !== place.name)) {
+    // Every place it names (#326); absent from an answer that predates it: none.
+    const names = (settings.places ?? []).map(place => place.name)
+    if (names.length && (via.value !== 'named' || names.join('|') !== namedNames.value.join('|'))) {
       via.value = 'named'
-      viaName.value = place.name
+      viaNames.value = names
       changed.push('via')
     }
     // Not for a road ride (the editor's sport when the sentence names none): the option is hidden.
@@ -400,7 +424,7 @@ export const useLoopGeneratorStore = defineStore('loopGenerator', () => {
     open, forSession, session, fromCoach, picked, start, placingStart, target, distanceKm, durationMin, gainM, gainWithDistance,
     aimsAtGain, gainTargetM, gainMissed, shape, precision, climb, via, viaStatus, viaPlace,
     preferPaths, pathsActive,
-    viaName, namedChoice, viaPoint, viaRadiusM, proposals, highlighted, settledCount,
+    viaNames, namedNames, namedResults, namedPlan, viaPoints, viaRadiusM, proposals, highlighted, settledCount,
     gainPerKmM, targetM, targetInRange, generating, canGenerate,
     show, showSession, setSession, hide, leave, switchToManual, setStart, generate, choose, applySentence,
   }

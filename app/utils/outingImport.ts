@@ -1,5 +1,5 @@
 import { distance } from '@turf/turf'
-import type { RecordingPayload, SportType } from '#shared/utils/routes'
+import type { OutingImportPayload, RecordingPayload, SportType } from '#shared/utils/routes'
 import { LocalizedError } from '~/utils/localizedError'
 import {
   MAX_SPEED_MS,
@@ -296,5 +296,17 @@ export function importPayload(outing: ImportedOuting, defaults: { name: string, 
     moving_s: outing.movingS,
     distance_m: outing.distanceM,
     track: outingTrack(outing.recording) ?? undefined,
+  }
+}
+
+// The same outing added to an existing route (#138), as POST /api/routes/:id/outings/import takes it: its times
+// and points only, the route keeping its own track, name and sport.
+export function routeOutingPayload(body: RecordingPayload): OutingImportPayload {
+  return {
+    started_at: body.started_at,
+    duration_s: body.duration_s,
+    moving_s: body.moving_s,
+    distance_m: body.distance_m ?? 0,
+    track: body.track!,
   }
 }

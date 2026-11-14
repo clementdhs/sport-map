@@ -282,7 +282,7 @@ const overlayHidden = computed(() => dragHeight.value === null
           :aria-valuenow="panelWidth"
           :aria-valuemin="SIDE_PANEL_WIDTH.min"
           :aria-valuemax="panelMaxWidth"
-          class="absolute inset-y-0 -left-1.5 hidden w-3 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors hover:after:bg-primary focus-visible:after:w-1 focus-visible:after:bg-primary md:block"
+          class="absolute inset-y-0 -left-1.5 z-10 hidden w-3 cursor-col-resize touch-none outline-none after:absolute after:inset-y-0 after:left-1/2 after:w-0.5 after:-translate-x-1/2 after:transition-colors hover:after:bg-primary focus-visible:after:w-1 focus-visible:after:bg-primary md:block"
           :class="{ 'after:bg-primary': resizing }"
           @pointerdown="onResizeStart"
           @pointermove="onResizeMove"
@@ -297,7 +297,7 @@ const overlayHidden = computed(() => dragHeight.value === null
           icon="i-lucide-chevron-right"
           color="neutral"
           variant="outline"
-          class="absolute top-1/2 right-full hidden h-14 w-5 -translate-y-1/2 justify-center rounded-l-sm rounded-r-none bg-default p-0 text-muted shadow-sm ring-accented hover:text-highlighted md:flex"
+          class="absolute top-1/2 right-full z-10 hidden h-14 w-5 -translate-y-1/2 justify-center rounded-l-sm rounded-r-none bg-default p-0 text-muted shadow-sm ring-accented hover:text-highlighted md:flex"
           :ui="{ leadingIcon: 'size-3.5' }"
           :aria-label="t('sheet.collapse')"
           aria-expanded="true"
@@ -324,8 +324,11 @@ const overlayHidden = computed(() => dragHeight.value === null
           </div>
         </div>
 
+        <!-- Relative (#327): absolute content without a positioned ancestor (sr-only texts) is placed against this
+             scroll area, not the aside, so it is clipped and can't make the page scroll past the window. Being
+             positioned, it would paint over the resize edge's inner half: the edge has z-10. -->
         <div
-          class="min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-default p-4 md:border-t-0"
+          class="relative min-h-0 flex-1 space-y-4 overflow-y-auto border-t border-default p-4 md:border-t-0"
           :class="{ 'pb-[max(1rem,env(safe-area-inset-bottom))]': fullscreen }"
           :inert="mobile && snap === 'collapsed'"
         >

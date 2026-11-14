@@ -8,7 +8,7 @@ import type { LoopSentenceResponse } from '#shared/types/loopSentence'
 const LOOP_LLM_MAX_WAIT_MS = 10_000
 
 export default defineEventHandler(async (event): Promise<LoopSentenceResponse> => {
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const { sentence } = await readLocalizedBody(event, loopSentenceSchema)
   const { loopLlmProvider, loopLlmKey, loopLlmModel, loopLlmUrl } = useRuntimeConfig(event)

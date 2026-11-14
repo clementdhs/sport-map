@@ -8,7 +8,7 @@ import type { LoopTry } from '#shared/utils/loops'
 // named place out of reach (#293), the browser only sends its bearing. Several places (#326): `vias`, each within
 // `namedPlaceReach` and the tour through them within the length, else refused before any ORS call.
 export default defineEventHandler(async (event): Promise<RoutingLoopResponse> => {
-  const user = await requireUser(event)
+  await requireUser(event)
 
   const { start, length_m, sport_type, seed, shape, precision, vias: asked, via, heading, prefer_paths } = await readLocalizedBody(event, routingLoopSchema)
   const vias = asked ?? (via ? [via] : [])

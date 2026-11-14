@@ -259,7 +259,9 @@
       "maskedOwner": "The rest of the team doesn't see the start and end of this route, which are in one of your privacy zones.",
       "hiddenOwner": "The rest of the team doesn't see this route: it lies entirely within your privacy zones.",
       "settingsLink": "My zones"
-    }
+    },
+    "importOuting": "Import an outing",
+    "importOutingHint": "GPX, FIT or TCX file from your watch, recorded on this route"
   },
   "reviews": {
     "saveFailed": "Couldn't save your review",
@@ -1466,6 +1468,7 @@
     "tooManyLogins": "Too many sign-in attempts: try again in a few minutes",
     "loginFailed": "Couldn't sign in right now, try again later",
     "usernameTaken": "This username is already taken",
+    "outingOffRoute": "This outing doesn't follow this route. Import it from your profile instead: it will become a route of its own.",
     "routeNotFound": "Route not found",
     "outingNotFound": "Outing not found",
     "deleteOutingFailed": "Couldn't delete the outing",
@@ -1891,7 +1894,10 @@
     "duplicates": "{count} already there | {count} already there",
     "failed": "{count} file not imported | {count} files not imported",
     "failure": "{file}: {message}",
-    "where": "They count in your statistics and your form, and are listed in your done routes, privately."
+    "where": "They count in your statistics and your form, and are listed in your done routes, privately.",
+    "whereRoute": "It is listed in the route's Outings tab, marked as done, and counts in your statistics.",
+    "drop": "Drop your GPX, FIT or TCX files to import your outings",
+    "dropOnRoute": "Drop your GPX, FIT or TCX file to add your outing to this route"
   },
   "coachImport": {
     "title": "Get there sooner: import your outings",

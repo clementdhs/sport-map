@@ -1,7 +1,7 @@
 ---
 paths:
   - "shared/utils/wayInfo.ts"
-  - "app/components/RouteBreakdown.vue"
+  - "app/components/route/RouteBreakdown.vue"
   - "server/utils/openrouteservice.ts"
   - "server/api/routing/**"
   - "app/stores/routeEditor.ts"

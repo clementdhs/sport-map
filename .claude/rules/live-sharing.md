@@ -8,12 +8,12 @@ paths:
   - "app/utils/liveShare.ts"
   - "app/composables/useLiveShare.ts"
   - "app/composables/usePolling.ts"
-  - "app/components/LiveShareControl.vue"
-  - "app/components/LiveLastPosition.vue"
-  - "app/components/LiveSharesBanner.vue"
+  - "app/components/live/LiveShareControl.vue"
+  - "app/components/live/LiveLastPosition.vue"
+  - "app/components/live/LiveSharesBanner.vue"
   - "app/components/map/LiveShare.vue"
   - "app/pages/live/**"
-  - "app/components/LiveShareCard.vue"
+  - "app/components/live/LiveShareCard.vue"
   - "shared/utils/liveThumbnail.ts"
 ---
 

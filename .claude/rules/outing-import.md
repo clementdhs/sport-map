@@ -2,9 +2,9 @@
 paths:
   - "app/utils/outingImport.ts"
   - "app/composables/useOutingImport.ts"
-  - "app/components/OutingImport.vue"
-  - "app/components/OutingImportButton.vue"
-  - "app/components/CoachImport.vue"
+  - "app/components/outing/OutingImport.vue"
+  - "app/components/outing/OutingImportButton.vue"
+  - "app/components/coach/CoachImport.vue"
   - "server/api/outings/import.post.ts"
   - "server/api/routes/*/outings/import.post.ts"
   - "server/utils/saveRouteOuting.ts"

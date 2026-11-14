@@ -9,7 +9,7 @@ paths:
   - "app/components/AvatarEditor.vue"
   - "app/components/AvatarCropper.vue"
   - "app/components/AccountMenu.vue"
-  - "app/components/AppTabBar.vue"
+  - "app/components/app/AppTabBar.vue"
   - "server/api/profile/me/avatar*"
   - "server/utils/avatars.ts"
 ---

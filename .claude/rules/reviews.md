@@ -3,7 +3,7 @@ paths:
   - "server/api/routes/*/reviews*"
   - "server/api/routes/*/reviews/**"
   - "server/utils/reviews.ts"
-  - "app/components/RouteReviews.vue"
+  - "app/components/route/RouteReviews.vue"
   - "app/components/RatingStars.vue"
 ---
 

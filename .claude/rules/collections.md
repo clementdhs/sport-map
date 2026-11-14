@@ -3,11 +3,11 @@ paths:
   - "server/api/collections/**"
   - "server/utils/collections.ts"
   - "shared/utils/collections.ts"
-  - "app/components/RouteCollections.vue"
+  - "app/components/route/RouteCollections.vue"
   - "app/components/map/RouteCollection.vue"
   - "app/pages/collections/**"
   - "app/pages/profile/index.vue"
-  - "app/components/ProfileCollections.vue"
+  - "app/components/profile/ProfileCollections.vue"
   - "server/utils/activity.ts"
 ---
 

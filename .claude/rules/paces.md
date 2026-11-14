@@ -3,7 +3,7 @@ paths:
   - "shared/utils/pace.ts"
   - "shared/utils/routes.ts"
   - "app/components/PaceSettings.vue"
-  - "app/components/RouteEditorWorkspace.vue"
+  - "app/components/route/RouteEditorWorkspace.vue"
   - "app/composables/useDurationEstimate.ts"
   - "app/composables/useDurationMethod.ts"
   - "server/api/profile/me/pace-suggestions.get.ts"

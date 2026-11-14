@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SearchScope, SearchSort } from '#shared/utils/routes'
 import type { MapFocus } from '~/stores/routeSearch'
-import type { SheetSnap } from '~/components/MapSheetLayout.vue'
+import type { SheetSnap } from '~/components/map/MapSheetLayout.vue'
 
 // Map page: MapSheetLayout brings its own header (md up), tab bar and floating top bar (phones).
 definePageMeta({ layout: false })

@@ -2,7 +2,7 @@
 import type { LngLat } from '#shared/utils/routes'
 import type { MapFocus, MapViewState } from '~/stores/routeSearch'
 import type { CreateMode } from '~/utils/createMode'
-import type { SheetSnap } from '~/components/MapSheetLayout.vue'
+import type { SheetSnap } from '~/components/map/MapSheetLayout.vue'
 import type { KeyFigure } from '~/utils/keyFigures'
 
 const { formatDistance } = useFormat()

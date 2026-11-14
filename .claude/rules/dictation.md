@@ -2,7 +2,7 @@
 paths:
   - "app/composables/useDictation.ts"
   - "app/utils/dictation.ts"
-  - "app/components/LoopSentence.vue"
+  - "app/components/loop/LoopSentence.vue"
 ---
 
 # Dictating the loop sentence (#296)

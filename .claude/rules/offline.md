@@ -3,7 +3,7 @@ paths:
   - "service-worker/**"
   - "app/utils/offlineRoute.ts"
   - "shared/utils/offlineMaps.ts"
-  - "app/components/RouteOffline.vue"
+  - "app/components/route/RouteOffline.vue"
   - "app/plugins/offline-routes.client.ts"
   - "app/utils/mapStyle.ts"
   - "app/utils/basemaps.ts"

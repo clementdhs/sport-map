@@ -1,7 +1,7 @@
 ---
 paths:
   - "app/utils/gpx.ts"
-  - "app/components/RouteEditorWorkspace.vue"
+  - "app/components/route/RouteEditorWorkspace.vue"
   - "test/unit/gpx.test.ts"
 ---
 

@@ -4,7 +4,7 @@ paths:
   - "server/api/routes/*/photos/**"
   - "server/utils/photos.ts"
   - "app/utils/photos.ts"
-  - "app/components/RoutePhotos.vue"
+  - "app/components/route/RoutePhotos.vue"
 ---
 
 # Route photos

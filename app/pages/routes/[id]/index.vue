@@ -3,7 +3,7 @@ import type { DropdownMenuItem, TabsItem } from '@nuxt/ui'
 import type { FetchError } from 'ofetch'
 import type { RouteDetail, RouteOuting, RoutePhoto, ViewerActivity } from '#shared/types/routes'
 import type { ActivityType, LngLat, OutingTrackPoint } from '#shared/utils/routes'
-import type { SheetSnap } from '~/components/MapSheetLayout.vue'
+import type { SheetSnap } from '~/components/map/MapSheetLayout.vue'
 import type { KeyFigure } from '~/utils/keyFigures'
 
 const { formatDistance, formatDate, formatShortDate, formatSpeed, formatRating } = useFormat()

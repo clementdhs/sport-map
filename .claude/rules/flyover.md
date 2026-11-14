@@ -5,8 +5,8 @@ paths:
   - "app/components/FlyoverControls.vue"
   - "app/components/map/RouteDisplay.vue"
   - "app/pages/routes/[id]/index.vue"
-  - "app/components/OutingDetail.vue"
-  - "app/components/OutingChart.vue"
+  - "app/components/outing/OutingDetail.vue"
+  - "app/components/outing/OutingChart.vue"
 ---
 
 # 3D flyover (#74)

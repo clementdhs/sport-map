@@ -2,7 +2,7 @@
 paths:
   - "server/api/routes/*/weather.get.ts"
   - "shared/utils/weather.ts"
-  - "app/components/RouteWeather.vue"
+  - "app/components/route/RouteWeather.vue"
   - "test/e2e/fake-weather.ts"
   - "server/utils/openMeteo.ts"
 ---

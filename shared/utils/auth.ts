@@ -2,8 +2,9 @@ import * as z from 'zod'
 
 // Validation messages are translation keys (i18n/locales), translated where they are shown.
 
-// Supabase only enforces 6 characters: the app asks for more, at sign-up and when changing a password.
-export const MIN_PASSWORD_LENGTH = 8
+// Same minimum as the hosted Supabase project (Authentication → Email, #334), so the form rejects what
+// Supabase would. Only checked when a password is set: shorter existing passwords still sign in.
+export const MIN_PASSWORD_LENGTH = 10
 
 export const newPasswordSchema = z.object({
   password: z.string().min(MIN_PASSWORD_LENGTH, 'validation.minChars'),

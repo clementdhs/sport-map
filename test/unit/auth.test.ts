@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isEmailLogin, USERNAME_PATTERN, usernameLoginSchema } from '#shared/utils/auth'
+import { isEmailLogin, newPasswordSchema, USERNAME_PATTERN, usernameLoginSchema } from '#shared/utils/auth'
 import { profileUpdateSchema } from '#shared/utils/routes'
 
 describe('isEmailLogin', () => {
@@ -24,6 +24,15 @@ describe('usernameLoginSchema', () => {
   it('needs both fields', () => {
     expect(usernameLoginSchema.safeParse({ username: '  ', password: 'x' }).error?.issues[0]?.message).toBe('auth.identifierRequired')
     expect(usernameLoginSchema.safeParse({ username: 'clem', password: '' }).error?.issues[0]?.message).toBe('auth.passwordRequired')
+  })
+})
+
+describe('newPasswordSchema', () => {
+  const check = (password: string) => newPasswordSchema.safeParse({ password, confirm: password })
+
+  it('asks for at least 10 characters, like the hosted Supabase project', () => {
+    expect(check('a'.repeat(9)).error?.issues[0]?.message).toBe('validation.minChars')
+    expect(check('a'.repeat(10)).success).toBe(true)
   })
 })
 

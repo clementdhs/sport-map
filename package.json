@@ -60,7 +60,7 @@
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.3",
-    "@capacitor/cli": "^8.5.3",
+    "@capacitor/cli": "^8.6.2",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/test-utils": "^4.3.3",
     "@playwright/test": "^1.64.0",

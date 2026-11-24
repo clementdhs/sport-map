@@ -1229,7 +1229,8 @@
       "startArea": "Ma zone de départ",
       "privacy": "Confidentialité",
       "voice": "Guidage vocal",
-      "security": "Sécurité"
+      "security": "Sécurité",
+      "androidApp": "Appli Android"
     },
     "mfa": {
       "sectionHint": "Ce qui protège ton compte si ton mot de passe fuit.",
@@ -1921,5 +1922,18 @@
     },
     "countdown": "J-{n}",
     "daysLeft": "jour avant la course | jours avant la course"
+  },
+  "androidApp": {
+    "download": {
+      "description": "L'appli Android garde le GPS allumé écran éteint pendant le suivi et l'enregistrement d'une sortie. Même compte, mêmes parcours que le site.",
+      "button": "Télécharger l'appli Android",
+      "help": "La première fois, Android demande d'autoriser l'installation d'applis depuis le navigateur : accepte, puis ouvre sportmap.apk."
+    },
+    "update": {
+      "title": "Nouvelle version de l'appli",
+      "description": "La version {version} est disponible.",
+      "descriptionDebug": "Ton appli actuelle a été installée à la main : désinstalle-la d'abord (session, parcours hors ligne et réglages du téléphone seront perdus), puis installe la version {version}.",
+      "download": "Télécharger"
+    }
   }
 }

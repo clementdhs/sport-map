@@ -7,6 +7,8 @@ name: CI
 # the repository (dependencies resolved at install, external services).
 on:
   push:
+    # Branches only: an android-v* tag starts the Android release instead (android-release.yml, #337).
+    branches: ['**']
   schedule:
     - cron: '0 5 * * 0'
   workflow_dispatch:

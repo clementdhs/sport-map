@@ -56,6 +56,16 @@ function onPasswordChanged() {
   toast.add({ title: t('auth.passwordChanged'), color: 'success', icon: 'i-lucide-check' })
 }
 
+// Offered in Android browsers and the PWA only, known once mounted (#337).
+const androidDownload = useAndroidDownload()
+// The router scrolled to the hash before the section existed.
+const route = useRoute()
+watch(androidDownload.visible, async (visible) => {
+  if (!visible || route.hash !== '#android-app') return
+  await nextTick()
+  document.getElementById('android-app')?.scrollIntoView()
+})
+
 // Ids in English whatever the language, since links to them are shared.
 const sections = computed(() => [
   { id: 'profile', label: t('settings.sections.profile'), icon: 'i-lucide-user' },
@@ -67,6 +77,7 @@ const sections = computed(() => [
   { id: 'start-area', label: t('settings.sections.startArea'), icon: 'i-lucide-map-pinned' },
   { id: 'privacy', label: t('settings.sections.privacy'), icon: 'i-lucide-shield' },
   { id: 'voice', label: t('settings.sections.voice'), icon: 'i-lucide-volume-2' },
+  ...(androidDownload.visible.value ? [{ id: 'android-app', label: t('settings.sections.androidApp'), icon: 'i-lucide-smartphone' }] : []),
 ])
 // Under the sticky header, plus the strip of sections on phones.
 const SECTION_CLASS = 'scroll-mt-[calc(var(--ui-header-height)+4rem)] space-y-3 md:scroll-mt-[calc(var(--ui-header-height)+2rem)]'
@@ -195,6 +206,13 @@ const voice = useVoicePrefs()
             <ClientOnly>
               <VoiceGuideForm :prefs="voice.prefs.value" :supported="voice.supported.value" :background="isNativeApp()" @update="voice.setPrefs" />
             </ClientOnly>
+          </div>
+        </section>
+
+        <section v-if="androidDownload.visible.value" id="android-app" :class="SECTION_CLASS" aria-labelledby="settings-android-app-title">
+          <h2 id="settings-android-app-title" :class="TITLE_CLASS">{{ t('settings.sections.androidApp') }}</h2>
+          <div :class="CARD_CLASS">
+            <AndroidAppDownload />
           </div>
         </section>
       </div>

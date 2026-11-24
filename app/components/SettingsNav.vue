@@ -23,6 +23,8 @@ function followHash(hash: string) {
 }
 // Also a link to another section while the page is open: same page, new hash.
 watch(() => route.hash, followHash)
+// A section added once mounted (the Android app's, #337) may be the one the URL points at.
+watch(() => props.sections.length, () => followHash(route.hash))
 
 function go(event: MouseEvent, id: string) {
   // Ctrl-click and the like open the link elsewhere, as usual.

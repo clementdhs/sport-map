@@ -1,10 +1,36 @@
-# sport-map
+# sportmap
 
 [![CI](https://github.com/clementdhs/sport-map/actions/workflows/ci.yml/badge.svg)](https://github.com/clementdhs/sport-map/actions/workflows/ci.yml)
 
 Crée, partage et découvre des parcours de course à pied, randonnée et vélo sur une carte — application web installable (PWA).
 
 **Stack** : Nuxt 4 · Nuxt UI · Pinia · Supabase (Postgres + PostGIS, Auth, Storage) · MapLibre GL + MapTiler · OpenRouteService
+
+## Aperçu
+
+Tes parcours sur la carte, filtrés par sport, avec leur durée estimée à ton allure :
+
+![Accueil : la carte et la liste des parcours](docs/screenshots/accueil.jpg)
+
+<table>
+  <tr>
+    <td width="68%"><img src="docs/screenshots/parcours.jpg" alt="Page d'un parcours : tracé, statistiques et météo au départ"></td>
+    <td width="32%" rowspan="2"><img src="docs/screenshots/mobile-parcours.jpg" alt="Page d'un parcours sur mobile, avec son panneau coulissant"></td>
+  </tr>
+  <tr>
+    <td>La page d'un parcours : statistiques, météo au départ, avis et sorties. Sur mobile, le détail tient dans un panneau coulissant.</td>
+  </tr>
+</table>
+
+L'éditeur suit les chemins entre les points, calcule le dénivelé et le profil, et génère des boucles :
+
+![Éditeur de parcours](docs/screenshots/editeur.jpg)
+
+Les statistiques de tes sorties, semaine par semaine, et tes records :
+
+![Profil : statistiques et records](docs/screenshots/profil.jpg)
+
+<sub>Captures faites avec des données de démo fictives (`npm run screenshots`). Fonds de carte © MapTiler © contributeurs OpenStreetMap.</sub>
 
 ## Installation
 
@@ -55,6 +81,7 @@ Puis ouvre http://localhost:3000.
 | `npm test` | tests unitaires et du store (Vitest), sans réseau |
 | `npm run db:start` / `npm run db:stop` | démarre / arrête Supabase en local (Docker) |
 | `npm run test:e2e` | tests de bout en bout (Playwright), sur Supabase local |
+| `npm run screenshots` | régénère les captures du README (`docs/screenshots`), sur Supabase local avec des données de démo et les vraies tuiles MapTiler (`SCREENSHOTS_SKIP_BUILD=1` réutilise le build) |
 | `npm run db:push` | applique les migrations au projet Supabase lié |
 | `npm run db:types` | régénère les types de la base |
 

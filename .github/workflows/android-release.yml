@@ -1,0 +1,98 @@
+name: Android release
+
+# Builds the Android app signed with the release key and publishes it as a GitHub Release (#337), on a tag
+# android-vX.Y[.Z] (scripts/android-version.ts turns it into versionName / versionCode):
+#   git tag android-v1.0.0 && git push origin android-v1.0.0
+# The APK is always named sportmap.apk, so releases/latest/download/sportmap.apk is the latest version: the
+# settings page links to it and the installed app reads the latest release (server/api/app/android-release.get.ts).
+# Secrets (repository settings → Secrets and variables → Actions): ANDROID_KEYSTORE_BASE64 (the keystore file in
+# base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. .claude/rules/android.md says where
+# the key lives.
+on:
+  push:
+    tags:
+      - 'android-v*'
+
+concurrency:
+  group: android-release-${{ github.ref }}
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: APK signé et Release GitHub
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      # Stops here on a tag that isn't a version (android-vX.Y[.Z], minor and patch under 100).
+      - name: Version from the tag
+        id: version
+        run: node --experimental-strip-types --no-warnings scripts/android-version.ts "$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+
+      # Capacitor 8 needs JDK 21; the runner already has the Android SDK (ANDROID_HOME).
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Sync the Capacitor project
+        run: npx cap sync android
+
+      # The keystore only exists in the runner's temporary folder, deleted with the job. The secrets are masked
+      # in the logs, and Gradle reads them from the environment (android/app/build.gradle).
+      - name: Restore the release key
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::The ANDROID_KEYSTORE_BASE64 secret is missing: the APK would not be signed with the release key."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.keystore"
+
+      - name: Build the signed APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease \
+            -PversionCode=${{ steps.version.outputs.code }} \
+            -PversionName=${{ steps.version.outputs.name }}
+
+      # Fails when the APK isn't signed; prints the certificate's fingerprints (public), which must stay the same
+      # from one release to the next for updates to install.
+      - name: Check the signature
+        run: |
+          set -o pipefail
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          APKSIGNER=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)apksigner
+          "$APKSIGNER" verify --print-certs "$APK" | grep -i 'SHA-256'
+          cp "$APK" sportmap.apk
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" sportmap.apk \
+            --verify-tag --latest \
+            --title "sportmap Android ${{ steps.version.outputs.name }}" \
+            --notes "Appli Android de sportmap, version ${{ steps.version.outputs.name }} (versionCode ${{ steps.version.outputs.code }}). Installer : télécharger sportmap.apk sur le téléphone et l'ouvrir ; la première fois, Android demande d'autoriser l'installation depuis le navigateur."
+
+      - name: Remove the release key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/release.keystore"

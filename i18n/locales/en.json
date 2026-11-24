@@ -1229,7 +1229,8 @@
       "startArea": "My start area",
       "privacy": "Privacy",
       "voice": "Voice guidance",
-      "security": "Security"
+      "security": "Security",
+      "androidApp": "Android app"
     },
     "mfa": {
       "sectionHint": "What protects your account if your password leaks.",
@@ -1921,5 +1922,18 @@
     },
     "countdown": "D-{n}",
     "daysLeft": "day to the race | days to the race"
+  },
+  "androidApp": {
+    "download": {
+      "description": "The Android app keeps the GPS on with the screen off while following a route or recording an outing. Same account and routes as the website.",
+      "button": "Download the Android app",
+      "help": "The first time, Android asks you to allow installing apps from the browser: accept, then open sportmap.apk."
+    },
+    "update": {
+      "title": "New version of the app",
+      "description": "Version {version} is available.",
+      "descriptionDebug": "Your current app was installed by hand: uninstall it first (the session, offline routes and phone settings will be lost), then install version {version}.",
+      "download": "Download"
+    }
   }
 }

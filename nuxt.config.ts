@@ -60,6 +60,9 @@ export default defineNuxtConfig({
     loopLlmModel: 'openai/gpt-oss-120b',
     loopLlmUrl: '',
     loopSentenceDailyLimit: 30,
+    // Optional GitHub token (NUXT_GITHUB_TOKEN) for reading the latest Android release (#337): without one, GitHub
+    // allows 60 requests an hour per IP, shared with everything else running on Vercel's IPs. Cached for an hour anyway.
+    githubToken: '',
     // Weather forecast API (free, no key). The e2e tests point it at a local fake.
     openMeteoUrl: 'https://api.open-meteo.com/v1/forecast',
     // Elevations of tracks imported without any (#71): the IGN's in France (NUXT_IGN_ALTIMETRY_URL), Open-Meteo's

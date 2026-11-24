@@ -44,7 +44,7 @@ async function create() {
 
 <template>
   <div class="space-y-2.5">
-    <ul class="grid gap-2.5 lg:grid-cols-2">
+    <ul class="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
       <li>
         <NuxtLink to="/collections/todo" class="flex h-full items-center gap-3.5 rounded-lg border border-default bg-default p-3 transition-colors hover:bg-elevated focus-visible:bg-elevated">
           <!-- Four outlines in rust on the muted tone, like the route cards' thumbnails. -->

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { androidVersionFromTag, isAndroidBrowser, shouldOfferAndroidUpdate } from '#shared/utils/androidRelease'
+import { androidReleaseFromGithub, androidVersionFromTag, isAndroidBrowser, isDebugAndroidBuild, shouldOfferAndroidUpdate } from '#shared/utils/androidRelease'
 
 // Android app distributed through GitHub Releases (#337): the release tag gives the version, the site offers the APK
 // to Android browsers and tells the installed app when a newer release exists.
@@ -62,5 +62,30 @@ describe('shouldOfferAndroidUpdate', () => {
   it('stays quiet for a version already dismissed, and comes back for the next one', () => {
     expect(shouldOfferAndroidUpdate({ installedCode: 10000, latestCode: 10001, dismissedCode: 10001 })).toBe(false)
     expect(shouldOfferAndroidUpdate({ installedCode: 10000, latestCode: 10002, dismissedCode: 10001 })).toBe(true)
+  })
+})
+
+describe('androidReleaseFromGithub', () => {
+  const apk = { name: 'sportmap.apk', browser_download_url: 'https://github.com/clementdhs/sport-map/releases/download/android-v1.2.3/sportmap.apk' }
+  const release = { tag_name: 'android-v1.2.3', draft: false, prerelease: false, assets: [{ name: 'notes.txt', browser_download_url: 'x' }, apk] }
+
+  it('gives the version and the APK of an Android release', () => {
+    expect(androidReleaseFromGithub(release)).toEqual({ versionName: '1.2.3', versionCode: 10203, apkUrl: apk.browser_download_url })
+  })
+
+  it('gives nothing for another tag, a release without sportmap.apk, a draft or a pre-release', () => {
+    expect(androidReleaseFromGithub({ ...release, tag_name: 'v2.0.0' })).toBeNull()
+    expect(androidReleaseFromGithub({ ...release, assets: [] })).toBeNull()
+    expect(androidReleaseFromGithub({ ...release, draft: true })).toBeNull()
+    expect(androidReleaseFromGithub({ ...release, prerelease: true })).toBeNull()
+    expect(androidReleaseFromGithub(null)).toBeNull()
+  })
+})
+
+describe('isDebugAndroidBuild', () => {
+  it('recognises the debug builds installed by hand, signed with another key than the releases', () => {
+    expect(isDebugAndroidBuild(1)).toBe(true)
+    expect(isDebugAndroidBuild(10000)).toBe(false)
+    expect(isDebugAndroidBuild(10203)).toBe(false)
   })
 })

@@ -108,7 +108,7 @@ const routeTabs = computed(() => [
       <template #routes>
         <UTabs :items="routeTabs" size="sm" class="gap-3" :ui="{ list: 'w-auto self-start' }">
           <template #created>
-            <ul v-if="data.created.length" class="grid gap-3.5 pt-1 lg:grid-cols-2">
+            <ul v-if="data.created.length" class="grid grid-cols-1 gap-3.5 pt-1 lg:grid-cols-2">
               <li v-for="route in data.created" :key="route.id"><RouteCard :route="route" hide-owner class="h-full" /></li>
             </ul>
             <UEmpty
@@ -120,7 +120,7 @@ const routeTabs = computed(() => [
             />
           </template>
           <template #completed>
-            <ul v-if="data.completed.length" class="grid gap-3.5 pt-1 lg:grid-cols-2">
+            <ul v-if="data.completed.length" class="grid grid-cols-1 gap-3.5 pt-1 lg:grid-cols-2">
               <li v-for="route in data.completed" :key="route.id">
                 <RouteCard :route="route" :note="completedNote(route)" class="h-full" />
               </li>

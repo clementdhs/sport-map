@@ -130,6 +130,21 @@ test.describe('as the test account', () => {
       expect(await label.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true)
     }
 
+    // The name gets the width next to the avatar, the action buttons going below it rather than cutting it every
+    // few letters (#342).
+    const name = page.getByRole('heading', { level: 1 })
+    const profileNameBox = (await name.boundingBox())!
+    expect(profileNameBox.width).toBeGreaterThanOrEqual(160)
+    expect((await page.getByRole('link', { name: 'Paramètres', exact: true }).boundingBox())!.y).toBeGreaterThan(profileNameBox.y + profileNameBox.height)
+
+    // A card whose sport label doesn't fit (a road run loop already done, on a real phone) cuts the label with an
+    // ellipsis; it never widens the list and lets the whole page slide sideways (#342).
+    const card = page.getByRole('link', { name: new RegExp(ACCOUNT_ROUTE_NAME) })
+    await card.locator('.truncate').first().evaluate((el) => { el.textContent = 'Course sur route · Boucle · Course sur route · Boucle' })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360)
+    const cardBox = (await card.boundingBox())!
+    expect(cardBox.x + cardBox.width).toBeLessThanOrEqual(360)
+
     // The sheet title shows the name (collapsed sheet), and the big h1 of the topo header (#233) wraps rather
     // than overflowing.
     await page.goto(`/routes/${accountRouteId}`)

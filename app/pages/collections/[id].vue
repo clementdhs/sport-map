@@ -220,7 +220,7 @@ useSeoMeta({
         @mouseenter="highlightedId = item.id"
         @mouseleave="highlightedId = null"
       >
-        <RouteCard :route="item" :highlighted="highlightedId === item.id" class="flex-1" />
+        <RouteCard :route="item" :highlighted="highlightedId === item.id" class="min-w-0 flex-1" />
         <UButton
           v-if="collection.is_mine"
           icon="i-lucide-x"

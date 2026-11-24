@@ -20,7 +20,9 @@ const name = computed(() => props.profile.display_name ?? props.profile.username
 <template>
   <div class="relative space-y-4 overflow-y-clip pt-2 pb-1">
     <ContourTexture />
-    <div class="relative flex items-center gap-4">
+    <!-- The actions wrap below the avatar and name when the name would get less than 10rem (phones): next to it,
+      they left room for a few letters per line and cut the name mid-word (#342). -->
+    <div class="relative flex flex-wrap items-center gap-4">
       <!-- The name is the heading next to it. A ring of the surface, then of the accented border, like a map pin. -->
       <span
         class="flex shrink-0 rounded-full shadow-[0_0_0_3px_var(--ui-bg),0_0_0_4.5px_var(--ui-border-accented)]"
@@ -29,7 +31,7 @@ const name = computed(() => props.profile.display_name ?? props.profile.username
       >
         <MemberAvatar :name="name" :path="profile.avatar_path" size="3xl" class="size-17 font-display text-3xl font-bold lg:size-21 lg:text-4xl" />
       </span>
-      <div class="min-w-0 flex-1">
+      <div class="min-w-0 flex-1 basis-40">
         <h1 class="font-display text-3xl leading-none font-bold break-words lg:text-5xl">{{ name }}</h1>
         <p class="mt-1 text-sm text-muted lg:text-base">
           @{{ profile.username }} · {{ t('profile.memberSince', { date: formatDate(profile.created_at) }) }}<template v-if="detail"> · {{ detail }}</template>

@@ -28,7 +28,7 @@ useSeoMeta({
   <UContainer v-if="data" class="max-w-3xl space-y-6 py-8 lg:max-w-6xl">
     <ProfileHeader :profile="data.profile" :summary="data.summary" :detail="routeCount" />
 
-    <ul v-if="data.routes.length" class="grid gap-3.5 pt-1 lg:grid-cols-2">
+    <ul v-if="data.routes.length" class="grid grid-cols-1 gap-3.5 pt-1 lg:grid-cols-2">
       <li v-for="item in data.routes" :key="item.id"><RouteCard :route="item" hide-owner class="h-full" /></li>
     </ul>
     <UEmpty v-else icon="i-lucide-route" :title="t('profile.noPublic')" />
